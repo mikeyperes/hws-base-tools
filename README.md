@@ -1,2 +1,2 @@
-# hws-base-tools
-Wordpress plugin: Basic web tools for Hexa Web Systems' websites. Requires Hexa Cloud hosting. 
+# smp-verified-profiles
+Verified Profile integration for Scale My Publication news outlets.
