@@ -107,7 +107,7 @@ function display_settings_create_pages_and_listing_grids(){ ?>
 <?php }
 
 // Display the status of ACF fields and associated posts
-function display_acf_field_status() {
+function smp_vp_display_acf_field_status() {
     $acf_fields = array(
       'field_page_verified_profiles_badges',
             'field_page_verified_profiles_claim',

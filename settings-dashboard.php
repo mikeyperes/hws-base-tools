@@ -1,144 +1,359 @@
-<?php
-// Generic function to add a settings page under "Settings"
-if (!function_exists('add_settings_menu')) {
-    function add_settings_menu($page_title, $menu_title, $capability, $menu_slug, $callback_function) {
-        add_options_page(
-            $page_title,      // Page title
-            $menu_title,      // Menu title
-            $capability,      // Capability required to access this page
-            $menu_slug,       // Menu slug
-            $callback_function // Callback function to display the page content
-        );
-    }
-}
+<? // Add settings menu and page
+add_action('admin_menu', 'hws_ct_add_verified_profiles_menu');
 
 // Specific usage example for Verified Profiles
-function add_verified_profiles_menu() {
-    add_generic_settings_menu(
-        'Verified Profiles',       // Page title
-        'Verified Profiles',       // Menu title
-        'manage_options',          // Capability
-        'verified-profiles',       // Menu slug
-        'verified_profiles_page'   // Callback function
+function hws_ct_add_verified_profiles_menu() {
+    add_options_page(
+        'Hexa Core Tools',       // Page title
+        'Hexa Core Tools',       // Menu title
+        'manage_options',        // Capability
+        'hws-core-tools',        // Menu slug
+        'hws_ct_display_page'    // Callback function
     );
 }
-add_action('admin_menu', 'add_verified_profiles_menu');
-//add_action('admin_menu', 'add_another_settings_menu');
 
+function hws_ct_display_page() {?>
 
-
-// Callback function to display content on the settings page
-function verified_profiles_page() {?><div class="wrap">
+        <style>
+            /* Panel styles */
+            .components-panel__body {
+                margin-bottom: 1.5em;
+                border: 1px solid #ccd0d4;
+                border-radius: 4px;
+            }
+            .components-panel__body-title {
+                background-color: #f7f7f7;
+                padding: 0.75em 1em;
+                border-bottom: 1px solid #ccd0d4;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .components-panel__arrow {
+                transition: transform 0.3s ease;
+            }
+            .components-panel__body.is-opened .components-panel__arrow {
+                transform: rotate(-180deg);
+            }
+            .components-panel__body-content {
+                padding: 1em;
+                display: none;
+            }
+            .components-panel__body.is-opened .components-panel__body-content {
+                display: block;
+            }
+        </style>
         
         
+    <div class="wrap">
 
-        <h1>Verified Profiles</h1>
-  
+        <h1>Hexa Core Tools - WP-Config Settings</h1>
+
+
+
+
+
+<!-- WordPress Prechecks Panel -->
+<div class="components-panel__body is-opened" style="margin-bottom: 20px; border: 1px solid #ccd0d4; border-radius: 4px;">
+    <h2 class="components-panel__body-title" style="background-color: #f7f7f7; padding: 10px 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+        <span>WordPress Prechecks</span>
+        <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="components-panel__arrow" aria-hidden="true" focusable="false" style="transition: transform 0.3s ease;">
+                <path d="M6.5 12.4L12 8l5.5 4.4-.9 1.2L12 10l-4.5 3.6-1-1.2z"></path>
+            </svg>
+        </span>
+    </h2>
+    <div class="components-panel__body-content" style="padding: 15px;">
+        <div class="components-base-control components-notice is-info">
+            <?php
+          // Check WP Mail SMTP authentication
+            $smtp_check = check_wp_mail_smtp_authentication();
+            display_precheck_result('SMTP Authentication', $smtp_check['status'], $smtp_check['details']);
+
+
+            // Check WP_CACHE
+            display_precheck_result('WP_CACHE is enabled', check_wp_cache_enabled());
+
+            // Check memory limits
+            $memory_limits = check_memory_limits();
+            display_precheck_result(
+                'WP_MEMORY_LIMIT is over 512MB',
+                $memory_limits['memory_limit_ok'],
+                'Current: ' . esc_html($memory_limits['memory_limit'])
+            );
+            display_precheck_result(
+                'WP_MAX_MEMORY_LIMIT is over 512MB',
+                $memory_limits['max_memory_limit_ok'],
+                'Current: ' . esc_html($memory_limits['max_memory_limit'])
+            );
+            display_precheck_result(
+                'Elementor MEMORY_LIMIT is over 512MB',
+                $memory_limits['elementor_memory_limit_ok'],
+                'Current: ' . esc_html($memory_limits['elementor_memory_limit'])
+            );
+
+            // Check if WP_DEBUG is disabled
+            display_precheck_result('WP_DEBUG is disabled', check_wp_debug_disabled());
+
+            // Check if log files are less than 50MB
+            $log_file_sizes = check_log_file_sizes();
+            display_precheck_result(
+                'debug.log is less than 50MB',
+                $log_file_sizes['debug_log_size_ok'],
+                'Current Size: ' . esc_html($log_file_sizes['debug_log_size'])
+            );
+            display_precheck_result(
+                'error_log is less than 50MB',
+                $log_file_sizes['error_log_size_ok'],
+                'Current Size: ' . esc_html($log_file_sizes['error_log_size'])
+            );
+
+            // Check if server is LiteSpeed
+            display_precheck_result('Web server is LiteSpeed', check_server_is_litespeed());
+
+            // Check PHP version
+            display_precheck_result('PHP version is >= 8.3', check_php_version(), 'Current Version: ' . PHP_VERSION);
+
+            // Check if PHP SAPI is LiteSpeed
+            display_precheck_result('PHP SAPI is LiteSpeed', check_php_sapi_is_litespeed(), 'Current SAPI: ' . php_sapi_name());
+            ?>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+        <!-- WP-Config Settings Panel -->
+        <div class="components-panel__body">
+            <h2 class="components-panel__body-title">
+                <span>WP-Config Settings</span>
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="components-panel__arrow" aria-hidden="true" focusable="false">
+                        <path d="M6.5 12.4L12 8l5.5 4.4-.9 1.2L12 10l-4.5 3.6-1-1.2z"></path>
+                    </svg>
+                </span>
+                
+                
+                
+
+
+                
+
+
+            </h2>
+            
+            
+<?
+
+    // Get the sizes of debug.log and error.log
+    $debug_log_size = file_exists(WP_CONTENT_DIR . '/debug.log') ? size_format(filesize(WP_CONTENT_DIR . '/debug.log')) : 'Not found';
+    $error_log_size = file_exists(ABSPATH . 'error.log') ? size_format(filesize(ABSPATH . 'error.log')) : 'Not found';
+
+    // Get current WP constants values from wp-config.php
+    $wp_debug = defined('WP_DEBUG') ? (WP_DEBUG ? 'true' : 'false') : 'Not defined';
+    $wp_debug_display = defined('WP_DEBUG_DISPLAY') ? (WP_DEBUG_DISPLAY ? 'true' : 'false') : 'Not defined';
+    $wp_debug_log = defined('WP_DEBUG_LOG') ? (WP_DEBUG_LOG ? 'true' : 'false') : 'Not defined';
+
+    // Get all defined constants
+    $all_constants = get_defined_constants(true);
+
+    // Define an array of constants to exclude (those already displayed)
+    $exclude_constants = [
+        'WP_DEBUG',
+        'WP_DEBUG_DISPLAY',
+        'WP_DEBUG_LOG',
+        'DB_PASSWORD',  // Hide sensitive information
+        'DB_USER',
+        'DB_HOST',
+        'DB_NAME'
+    ];
+    ?>
+
            
-        <h2>ACF Field Groups Status</h2>
-        <ul>
-            <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_656ea6b4d7088'), 'Profile - Admin fields are imported.', 'Profile - Admin fields are not imported.'); ?></li>
-             <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_656ea59dc5ad8'), 'Profile - Organization - Public fields are imported.', 'Profile - Organization - Public fields are not imported.'); ?></li>
-            <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_656eb036374de'), 'Profile - Person - Public fields are imported.', 'Profile - Person - Public fields are not imported.'); ?></li>
-            <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_66b7bdf713e77'), 'Post - Verified Profile - Admin fields are imported.', 'Post - Verified Profile - Admin fields are not imported.'); ?></li>
-            <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_65a8b25062d91'), 'User - Profile Manager fields are imported.', 'User - Profile Manager fields are not imported.'); ?></li>
-            <li><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_658602c9eaa49'), 'User - Verified Profile Manager - Admin fields are imported.', 'User - Verified Profile Manager - Admin fields are not imported.'); ?></li>
-            <li style="opacity:.5"><?php verified_profiles_dashboard_display_check_status(is_acf_field_group_imported('group_verified_profiles_settings'), 'Verified Profiles Settings fields are imported.', 'Verified Profiles Settings fields are not imported.'); ?></li>
+            <div class="components-panel__body-content">
+                
+                
+                
+                <!-- WP-Config Settings content goes here -->
 
-        </ul>
+                <div class="components-base-control components-toggle-control">
+                    <div class="components-base-control__field">
+                        <div class="components-flex components-h-stack">
+                            <span class="components-form-toggle">
+                                <input class="components-form-toggle__input" id="debug-toggle" type="checkbox" <?php echo $wp_debug === 'true' ? 'checked' : ''; ?>>
+                                <span class="components-form-toggle__track"></span>
+                                <span class="components-form-toggle__thumb"></span>
+                            </span>
+                            <label for="debug-toggle" class="components-flex-item components-flex-block components-toggle-control__label">
+                                Enable WP_DEBUG (Current: <?php echo $wp_debug; ?>)
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="components-base-control components-toggle-control">
+                    <div class="components-base-control__field">
+                        <div class="components-flex components-h-stack">
+                            <span class="components-form-toggle">
+                                <input class="components-form-toggle__input" id="debug-display-toggle" type="checkbox" <?php echo $wp_debug_display === 'true' ? 'checked' : ''; ?>>
+                                <span class="components-form-toggle__track"></span>
+                                <span class="components-form-toggle__thumb"></span>
+                            </span>
+                            <label for="debug-display-toggle" class="components-flex-item components-flex-block components-toggle-control__label">
+                                Enable WP_DEBUG_DISPLAY (Current: <?php echo $wp_debug_display; ?>)
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-
-<h2>Pre-checks</h2>
-
-<h3>Theme</h3>
+                <div class="components-base-control components-toggle-control">
+                    <div class="components-base-control__field">
+                        <div class="components-flex components-h-stack">
+                            <span class="components-form-toggle">
+                                <input class="components-form-toggle__input" id="debug-log-toggle" type="checkbox" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
+                                <span class="components-form-toggle__track"></span>
+                                <span class="components-form-toggle__thumb"></span>
+                            </span>
+                            <label for="debug-log-toggle" class="components-flex-item components-flex-block components-toggle-control__label">
+                                Enable WP_DEBUG_LOG (Current: <?php echo $wp_debug_log; ?>)
+                            </label>
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
+                                                     
 <ul>
-    <li><?php display_check_status(is_hello_elementor_theme_active(), 'Hello Elementor theme is active.', 'Hello Elementor theme is not active. Please activate it to use the Hello World Plugin.'); ?></li>
-    <li style="margin-left: 20px;"><?php display_check_status(is_theme_auto_update_enabled("hello-elementor"), 'Hello Elementor theme auto updates are enabled.', 'Hello Elementor theme auto updates are not enabled. Please enable them.'); ?></li>
-</ul>
-
-<h3>Plugins</h3>
-<?php 
-$plugins = get_plugins_list();
-foreach ($plugins as $plugin => $name): 
-    list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status($plugin);
-?>
-    <ul>
-        <li><?php display_check_status($is_installed, "{$name} Plugin exists.", "{$name} Plugin does not exist. Please install it to use the Hello World Plugin."); ?></li>
-        <li style="margin-left: 20px;"><?php display_check_status($is_active, "{$name} Plugin is active.", "{$name} Plugin is not active. Please activate it to use the Hello World Plugin."); ?></li>
-        <li style="margin-left: 20px;"><?php display_check_status($is_auto_update_enabled, "{$name} Plugin auto updates are enabled.", "{$name} Plugin auto updates are not enabled. Please enable them."); ?></li>
-    </ul>
-<?php endforeach; ?>
-
-<h3>Other Checks</h3>
-<ul>
-    <li><?php display_check_status(does_post_type_exist('profile'), '"Profile" Custom Post Type is active.', '"Profile" Custom Post Type is not active. Please register it to use the Hello World Plugin.'); ?></li>
-    <li style="margin-left: 20px;"><?php display_check_status(does_taxonomy_exist('category'), 'Categories are enabled for "profile" CPT.', 'Categories are not enabled for "profile" CPT.'); ?>
-        <ul style="margin-left: 20px;">
-            <li><?php display_check_status(does_term_exist('person', 'category'), 'Category "Person" exists.', 'Category "Person" does not exist.'); ?></li>
-            <li><?php display_check_status(does_term_exist('organization', 'category'), 'Category "Orgnization" exists.', 'Category "Organization" does not exist.'); ?></li>
-        </ul>
-    </li>
-    <li><?php display_check_status(does_taxonomy_exist('post_tag'), 'Tags are enabled for "profile" CPT.', 'Tags are not enabled for "profile" CPT.'); ?></li>
-    <li><?php display_check_status(does_user_exist('unclaimed-profile'), 'The "unclaimed-profile" user exists.', 'The "unclaimed-profile" user does not exist. Please create this user to use the Hello World Plugin.'); ?></li>
-</ul>
-
-<button id="create-categories-button" class="button button-primary">Create Verified Profile Categories (person and company)</button>
-
-<script type="text/javascript">
-    document.getElementById('create-categories-button').addEventListener('click', function() {
-        var data = {
-            'action': 'create_verified_profile_categories'
-        };
-
-        fetch(ajaxurl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-            },
-            body: new URLSearchParams(data)
-        })
-        .then(response => response.text())
-        .then(data => {
-            location.reload();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    });
-</script>
-
-
-
-<h2>ACF Field Management</h2>
-       <? display_settings_create_pages_and_listing_grids(); ?>
-       
-       
-        <h2>Settings</h2>
-       
-       <? display_settings_acf_post_and_pages_form();?>
-
-
-    </div><?php
-}
-
-// Ensure ACF form functions are available
-if (function_exists('acf_form_head')) {
-    add_action('admin_head', 'acf_form_head');
-}
-
-// Hook the add_verified_profiles_menu function to the admin_menu action
-add_action('admin_menu', 'add_verified_profiles_menu');
-
-// Function to check if the ACF field group is imported
-function is_acf_field_group_imported($key) {
-    $groups = acf_get_local_field_groups();
-    foreach ($groups as $group) {
-        if ($group['key'] === $key) {
-            return true;
+    <?php
+    foreach ($all_constants['user'] as $constant => $value) {
+        if (!in_array($constant, $exclude_constants)) {
+            echo '<li>' . $constant . ': ' . ($value ? 'true' : 'false') . '</li>';
         }
     }
-    return false;
+    ?>
+</ul>
 
-}
+
+
+                
+                
+            </div>
+        </div>
+
+
+
+
+<!-- Plugin Status Panel -->
+<h1>Plugin Status</h1>
+<div class="components-panel__body is-opened">
+    <h2 class="components-panel__body-title">
+        <span>Installed Plugins Status</span>
+        <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="components-panel__arrow" aria-hidden="true" focusable="false">
+                <path d="M6.5 12.4L12 8l5.5 4.4-.9 1.2L12 10l-4.5 3.6-1-1.2z"></path>
+            </svg>
+        </span>
+    </h2>
+    <div class="components-panel__body-content">
+        <?php
+        $plugins = [
+            'elementor/elementor.php',
+            'elementor-pro/elementor-pro.php',
+            'seo-by-rank-math/rank-math.php',
+            'seo-by-rank-math-pro/rank-math-pro.php',
+            'classic-editor/classic-editor.php',
+            'jet-engine/jet-engine.php',
+            'media-cleaner/media-cleaner.php',
+            'wordfence/wordfence.php',
+            'google-site-kit/google-site-kit.php',
+            'wp-mail-smtp/wp_mail_smtp.php',
+            'wp-user-avatars/wp-user-avatars.php',
+            'advanced-custom-fields-pro/acf.php'
+        ];
+
+        foreach ($plugins as $plugin) {
+            list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status($plugin);
+
+            $plugin_name = ucwords(str_replace(['-', '/'], ' ', explode('/', $plugin)[0]));
+
+            echo "<p><strong>$plugin_name:</strong></p>";
+
+            $installed_status = $is_installed ? 'green' : 'red';
+            $installed_icon = $is_installed ? '&#x2705;' : '&#x274C;';
+            echo "<p style='color: $installed_status;'>$installed_icon Installed</p>";
+
+            $active_status = $is_active ? 'green' : 'red';
+            $active_icon = $is_active ? '&#x2705;' : '&#x274C;';
+            echo "<p style='color: $active_status;'>$active_icon Active</p>";
+
+            $auto_update_status = $is_auto_update_enabled ? 'green' : 'red';
+            $auto_update_icon = $is_auto_update_enabled ? '&#x2705;' : '&#x274C;';
+            echo "<p style='color: $auto_update_status;'>$auto_update_icon Auto-update Enabled</p>";
+
+            echo "<hr>";
+        }
+        ?>
+    </div>
+</div>
+
+
+
+        <!-- Debug Information Panel -->
+        <h1>Debug Information</h1>
+        <div class="components-panel__body is-opened">
+            <h2 class="components-panel__body-title">
+                <span>Log Files</span>
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="components-panel__arrow" aria-hidden="true" focusable="false">
+                        <path d="M6.5 12.4L12 8l5.5 4.4-.9 1.2L12 10l-4.5 3.6-1-1.2z"></path>
+                    </svg>
+                </span>
+            </h2>
+            <div class="components-panel__body-content">
+                <p>Debug Log Size: <?php echo $debug_log_size; ?></p>
+                <div class="components-base-control components-toggle-control">
+                    <div class="components-base-control__field">
+                        <div class="components-flex components-h-stack">
+                            <a href="/wp-content/debug.log" target="_blank" class="components-button">View debug.log</a>
+                            <button class="components-button components-notice__dismiss has-icon" id="delete-debug-log" aria-label="Delete debug.log">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p>Error Log Size: <?php echo $error_log_size; ?></p>
+                <div class="components-base-control components-toggle-control">
+                    <div class="components-base-control__field">
+                        <div class="components-flex components-h-stack">
+                            <a href="/error.log" target="_blank" class="components-button">View error.log</a>
+                            <button class="components-button components-notice__dismiss has-icon" id="delete-error-log" aria-label="Delete error.log">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+<? hws_ct_render_auto_delete_toggle();?>
+
+
+
+            
+            </div>
+        </div>
+    </div>
+        
+        <? } ?>
+        
+        
