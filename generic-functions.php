@@ -77,7 +77,7 @@ if (!function_exists('display_check_status')) {
     function display_check_status($condition, $message) {
         $color = $condition ? 'green' : 'red';
         $icon = $condition ? '&#x2705;' : '&#x274C;';
-        echo "<span style='color: $color;'>$icon $message</span>";
+        echo "<div style='color: $color;'>$icon $message</div>";
     }
 }
 
@@ -165,36 +165,25 @@ if (!function_exists('add_settings_menu')) {
 
 if (!function_exists('check_wp_mail_smtp_authentication')) {
     function check_wp_mail_smtp_authentication() {
-        // Default result
         $status = false;
         $details = 'WP Mail SMTP plugin is not active.';
 
-        // Check if the WP Mail SMTP plugin is active
         if (is_plugin_active('wp-mail-smtp/wp_mail_smtp.php')) {
-
-            // Get the WP Mail SMTP options
             $wp_mail_smtp_options = get_option('wp_mail_smtp');
-
-            // Check if SMTP is enabled
             if ($wp_mail_smtp_options && $wp_mail_smtp_options['mail']['mailer'] === 'smtp') {
-
-                // Check if SMTP authentication is enabled
                 $smtp_auth = isset($wp_mail_smtp_options['mail']['smtp']['auth']) ? $wp_mail_smtp_options['mail']['smtp']['auth'] : false;
 
                 if ($smtp_auth) {
                     $status = true;
-                    $details = 'SMTP authentication is enabled and configured properly.';
+                    $details = 'Domain: ' . $wp_mail_smtp_options['mail']['smtp']['host'];
                 } else {
-                    $details = 'SMTP authentication is not enabled.';
+                    $details = 'No SMTP authentication enabled.';
                 }
-
             } else {
-                $details = 'SMTP is not the selected mailer in WP Mail SMTP settings.';
+                $details = 'SMTP is not the selected mailer.';
             }
-
         }
 
-        // Return the result as an array
         return [
             'status' => $status,
             'details' => $details
@@ -202,30 +191,87 @@ if (!function_exists('check_wp_mail_smtp_authentication')) {
     }
 }
 
-
 if (!function_exists('check_wp_cache_enabled')) {
     function check_wp_cache_enabled() {
-        return defined('WP_CACHE') && WP_CACHE;
+        $status = defined('WP_CACHE') && WP_CACHE;
+        return [
+            'status' => $status,
+            'details' => $status ? 'Enabled' : 'Disabled'
+        ];
     }
 }
 
-if (!function_exists('check_memory_limits')) {
-    function check_memory_limits() {
-        $memory_limit = defined('WP_MEMORY_LIMIT') ? WP_MEMORY_LIMIT : 'Not defined';
-        $max_memory_limit = defined('WP_MAX_MEMORY_LIMIT') ? WP_MAX_MEMORY_LIMIT : 'Not defined';
-        $elementor_memory_limit = defined('ELEMENTOR_MEMORY_LIMIT') ? ELEMENTOR_MEMORY_LIMIT : 'Not defined';
 
-        $memory_limit_ok = wp_convert_hr_to_bytes($memory_limit) >= 512 * 1024 * 1024;
-        $max_memory_limit_ok = wp_convert_hr_to_bytes($max_memory_limit) >= 512 * 1024 * 1024;
-        $elementor_memory_limit_ok = wp_convert_hr_to_bytes($elementor_memory_limit) >= 512 * 1024 * 1024;
+if (!function_exists('check_wordpress_memory_limit')) {
+    function check_wordpress_memory_limit() {
+        $memory_limit = defined('WP_MEMORY_LIMIT') ? WP_MEMORY_LIMIT : 'Not defined';
+        $memory_limit_bytes = $memory_limit !== 'Not defined' ? wp_convert_hr_to_bytes($memory_limit) : 0;
+
+        // Check if the memory limit is at least 1GB (1024M)
+        $status = $memory_limit_bytes >= 1 * 1024 * 1024 * 1024; 
 
         return [
-            'memory_limit' => $memory_limit,
-            'memory_limit_ok' => $memory_limit_ok,
-            'max_memory_limit' => $max_memory_limit,
-            'max_memory_limit_ok' => $max_memory_limit_ok,
-            'elementor_memory_limit' => $elementor_memory_limit,
-            'elementor_memory_limit_ok' => $elementor_memory_limit_ok,
+            'status' => $status,
+            'details' => $memory_limit
+        ];
+    }
+}
+
+
+if (!function_exists('check_server_memory_limit')) {
+    function check_server_memory_limit() {
+        $total_ram = 0;
+
+        if (function_exists('shell_exec')) {
+            $total_ram = trim(shell_exec("free -b | awk '/^Mem:/{print $2}'")); // Get total RAM in bytes
+        }
+
+        $status = $total_ram >= 4 * 1024 * 1024 * 1024; // Check if RAM is at least 4GB
+
+        return [
+            'status' => $status,
+            'details' => $total_ram ? size_format($total_ram) : 'Not available'
+        ];
+    }
+}
+
+if (!function_exists('check_elementor_memory_limit')) {
+    function check_elementor_memory_limit() {
+        $elementor_memory_limit = defined('ELEMENTOR_MEMORY_LIMIT') ? ELEMENTOR_MEMORY_LIMIT : 'Not defined';
+
+        // Convert the memory limit to bytes for comparison, but only if it's defined
+        $elementor_memory_limit_bytes = $elementor_memory_limit !== 'Not defined' ? wp_convert_hr_to_bytes($elementor_memory_limit) : 0;
+        $status = $elementor_memory_limit_bytes >= 4 * 1024 * 1024 * 1024; // Check if it's at least 4GB
+
+        // Check if the value is "Not defined"
+        if ($elementor_memory_limit === 'Not defined') {
+            $status = false;
+        }
+
+        return [
+            'status' => $status,
+            'details' => $elementor_memory_limit
+        ];
+    }
+}
+
+
+
+
+
+if (!function_exists('check_server_ram')) {
+    function check_server_ram() {
+        $total_ram = 0;
+
+        if (function_exists('shell_exec')) {
+            $total_ram = trim(shell_exec("free -m | awk '/^Mem:/{print $2}'")) * 1024 * 1024; // Convert MB to bytes
+        }
+
+        $status = $total_ram >= 4 * 1024 * 1024 * 1024; // Check if RAM is at least 4GB
+
+        return [
+            'status' => $status,
+            'details' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
 }
@@ -241,20 +287,27 @@ if (!function_exists('check_log_file_sizes')) {
         $debug_log_path = WP_CONTENT_DIR . '/debug.log';
         $error_log_path = ABSPATH . 'error_log';
 
-        $debug_log_size = file_exists($debug_log_path) ? filesize($debug_log_path) : 0;
-        $error_log_size = file_exists($error_log_path) ? filesize($error_log_path) : 0;
+        // Check if the log files exist and get their sizes or show "Not Found"
+        $debug_log_size = file_exists($debug_log_path) ? filesize($debug_log_path) : 'Not Found';
+        $error_log_size = file_exists($error_log_path) ? filesize($error_log_path) : 'Not Found';
 
-        $debug_log_size_ok = $debug_log_size < 50 * 1024 * 1024;
-        $error_log_size_ok = $error_log_size < 50 * 1024 * 1024;
+        // Determine the status based on whether the log files exceed 20MB
+        $debug_log_status = is_numeric($debug_log_size) && $debug_log_size <= 20 * 1024 * 1024;
+        $error_log_status = is_numeric($error_log_size) && $error_log_size <= 20 * 1024 * 1024;
 
         return [
-            'debug_log_size_ok' => $debug_log_size_ok,
-            'error_log_size_ok' => $error_log_size_ok,
-            'debug_log_size' => size_format($debug_log_size),
-            'error_log_size' => size_format($error_log_size),
+            'debug_log' => [
+                'status' => $debug_log_status,
+                'details' => is_numeric($debug_log_size) ? size_format($debug_log_size) : 'Not Found'
+            ],
+            'error_log' => [
+                'status' => $error_log_status,
+                'details' => is_numeric($error_log_size) ? size_format($error_log_size) : 'Not Found'
+            ]
         ];
     }
 }
+
 
 if (!function_exists('check_server_is_litespeed')) {
     function check_server_is_litespeed() {
@@ -282,4 +335,454 @@ if (!function_exists('display_precheck_result')) {
         echo "<div style='color: $color; margin-bottom: 10px;'><strong>$label:</strong> $icon $details_html</div>";
     }
 }
-?>
+
+if (!function_exists('check_all_in_one_wp_migration_status')) {
+    function check_all_in_one_wp_migration_status() {
+        // Check the status of All-in-One WP Migration plugin using the generic function
+        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('all-in-one-wp-migration/all-in-one-wp-migration.php');
+
+        // Check if the plugin has no backups
+        $backup_dir = WP_CONTENT_DIR . '/ai1wm-backups';
+        $backup_files = is_dir($backup_dir) ? glob($backup_dir . '/*.wpress') : [];
+        $no_backups = empty($backup_files);
+
+        return [
+            'is_installed' => $is_installed,
+            'is_active' => $is_active,
+            'no_backups' => $no_backups,
+        ];
+    }
+}
+
+if (!function_exists('check_imagick_available')) {
+    function check_imagick_available() {
+        return extension_loaded('imagick');
+    }
+}
+
+if (!function_exists('check_query_monitor_status')) {
+    function check_query_monitor_status() {
+        // Check the status of Query Monitor plugin using the generic function
+        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('query-monitor/query-monitor.php');
+        return [
+            'is_installed' => $is_installed,
+            'is_active' => $is_active,
+        ];
+    }
+}
+
+if (!function_exists('check_wp_sweep_status')) {
+    function check_wp_sweep_status() {
+        // Check the status of WP-Sweep plugin using the generic function
+        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('wp-sweep/wp-sweep.php');
+        return [
+            'is_installed' => $is_installed,
+            'is_active' => $is_active,
+        ];
+    }
+}
+
+if (!function_exists('check_site_kit_by_google_status')) {
+    function check_site_kit_by_google_status() {
+        // Check if the Site Kit by Google plugin is active
+        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('google-site-kit/google-site-kit.php');
+
+        // Check if the necessary services are connected
+        $connected_services = get_option('googlesitekit_connected_services', []);
+        $required_services = ['search-console', 'tagmanager', 'analytics'];
+        $missing_services = array_diff($required_services, $connected_services);
+
+        return [
+            'is_installed' => $is_installed,
+            'is_active' => $is_active,
+            'services_connected' => empty($missing_services),
+        ];
+    }
+}
+
+if (!function_exists('check_server_specs')) {
+    function check_server_specs() {
+        $num_processors = function_exists('shell_exec') ? shell_exec('nproc') : 'Unknown';
+        $total_ram = function_exists('shell_exec') ? shell_exec("free -m | awk '/^Mem:/{print $2}'") : 'Unknown';
+
+        return [
+            'num_processors' => trim($num_processors),
+            'total_ram' => trim($total_ram) . ' MB'
+        ];
+    }
+}
+
+if (!function_exists('check_wordfence_notification_email')) {
+    function check_wordfence_notification_email() {
+        $wf_options = get_option('wordfence');
+        $status = isset($wf_options['alertEmails']) && !empty($wf_options['alertEmails']);
+        return [
+            'status' => $status,
+            'details' => $status ? implode(', ', $wf_options['alertEmails']) : 'Not set'
+        ];
+    }
+}
+if (!function_exists('check_wordpress_main_email')) {
+    function check_wordpress_main_email() {
+        $admin_email = get_option('admin_email');
+
+        // Ensure the email is retrieved and is a valid email address
+        $status = !empty($admin_email) && is_email($admin_email);
+
+        return [
+            'status' => $status,
+            'details' => $status ? $admin_email : 'Not set'
+        ];
+    }
+}
+
+if (!function_exists('check_cloudlinux_config')) {
+    function check_cloudlinux_config() {
+        $lve_enabled = function_exists('lve_get_limits');
+        return $lve_enabled;
+    }
+}
+
+if (!function_exists('check_redis_active')) {
+    function check_redis_active() {
+        global $wp_object_cache;
+
+        $status = extension_loaded('redis') && isset($wp_object_cache) && is_a($wp_object_cache, 'WP_Object_Cache') && method_exists($wp_object_cache, 'redis');
+        return [
+            'status' => $status,
+            'details' => $status ? 'Yes' : 'No'
+        ];
+    }
+}
+
+
+
+if (!function_exists('check_wp_cache_enabled')) {
+    function check_wp_cache_enabled() {
+        return defined('WP_CACHE') && WP_CACHE;
+    }
+}
+
+if (!function_exists('check_caching_source')) {
+    function check_caching_source() {
+        $caching_plugins = [
+            'LiteSpeed Cache' => 'litespeed-cache/litespeed-cache.php',
+            'W3 Total Cache' => 'w3-total-cache/w3-total-cache.php',
+            'WP Super Cache' => 'wp-super-cache/wp-cache.php',
+            'WP Rocket' => 'wp-rocket/wp-rocket.php',
+            'Redis Cache' => 'redis-cache/redis-cache.php',
+            'Cache Enabler' => 'cache-enabler/cache-enabler.php',
+            'Comet Cache' => 'comet-cache/comet-cache.php',
+            'Swift Performance' => 'swift-performance-lite/swift-performance-lite.php'
+        ];
+
+        foreach ($caching_plugins as $name => $plugin_path) {
+            if (is_plugin_active($plugin_path)) {
+                return [
+                    'status' => true,
+                    'details' => $name
+                ];
+            }
+        }
+
+        if (check_redis_active()['status']) {
+            return [
+                'status' => true,
+                'details' => 'Redis'
+            ];
+        }
+
+        if (defined('LITESPEED_SERVER')) {
+            return [
+                'status' => true,
+                'details' => 'LiteSpeed Cache'
+            ];
+        }
+
+        return [
+            'status' => false,
+            'details' => 'None'
+        ];
+    }
+}
+
+
+/** CODE TO TOUCH UP ***/
+
+add_action('wp_ajax_modify_wp_config_constants', 'modify_wp_config_constants_handler');
+function modify_wp_config_constants_handler() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Unauthorized']);
+    }
+
+    $constants = isset($_POST['constants']) ? $_POST['constants'] : [];
+    if (empty($constants)) {
+        wp_send_json_error(['message' => 'No constants provided']);
+    }
+
+    $result = modify_wp_config_constants($constants);
+
+    if ($result['status']) {
+        wp_send_json_success(['message' => $result['message']]);
+    } else {
+        wp_send_json_error(['message' => $result['message']]);
+    }
+}
+
+
+if (!function_exists('modify_wp_config_constants')) {
+    function modify_wp_config_constants($constants_to_update) {
+        $wp_config_path = ABSPATH . 'wp-config.php';
+
+        if (!file_exists($wp_config_path) || !is_writable($wp_config_path)) {
+            return ['status' => false, 'message' => 'wp-config.php does not exist or is not writable.'];
+        }
+
+        $config_content = file_get_contents($wp_config_path);
+
+        foreach ($constants_to_update as $constant => $value) {
+            // Prepare the constant definition
+            $value = is_bool($value) ? ($value ? 'true' : 'false') : "'$value'";
+            $new_constant = "define('$constant', $value); // Added/Modified by HWS Core Tools plugin";
+
+            // Remove any existing definition of the constant, along with any existing comment
+            $config_content = preg_replace(
+                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*\/\/.*\n?/",
+                '',
+                $config_content
+            );
+
+            // Also, check for any duplicate constants without comments and remove them
+            $config_content = preg_replace(
+                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*/",
+                '',
+                $config_content
+            );
+
+            // Insert the new constant definition in the correct location
+            if ($constant === 'WP_DEBUG' || $constant === 'WP_DEBUG_DISPLAY' || $constant === 'WP_DEBUG_LOG') {
+                // Insert these debug-related constants after the 'WP_DEBUG' section
+                $debug_position = strpos($config_content, "define('WP_DEBUG',");
+                if ($debug_position !== false) {
+                    $end_of_debug_section = strpos($config_content, "\n", $debug_position) + 1;
+                    $config_content = substr_replace($config_content, "$new_constant\n", $end_of_debug_section, 0);
+                } else {
+                    // Fallback to inserting at the beginning if WP_DEBUG is not found
+                    $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
+                }
+            } else {
+                // Default behavior: insert at the beginning of the file
+                $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
+            }
+        }
+
+        // Write the updated content back to wp-config.php
+        if (file_put_contents($wp_config_path, $config_content)) {
+            return ['status' => true, 'message' => 'Constants updated successfully.'];
+        } else {
+            return ['status' => false, 'message' => 'Failed to update wp-config.php.'];
+        }
+    }
+}
+add_action('wp_ajax_hws_ct_update_wp_config', 'hws_ct_update_wp_config');
+function hws_ct_update_wp_config() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized user');
+    }
+
+    $constants_to_update = isset($_POST['constants']) ? $_POST['constants'] : [];
+    $result = hws_ct_modify_wp_config_constants($constants_to_update);
+
+    if ($result['status']) {
+        wp_send_json_success($result['message']);
+    } else {
+        wp_send_json_error($result['message']);
+    }
+}
+
+
+/** CODE TO TOUCH UP END ***/
+
+function convert_to_bytes($value) {
+    // Extract the numeric part and the unit (if any)
+    if (preg_match('/^(\d+)([KMG]?)$/i', $value, $matches)) {
+        $numeric_value = (int) $matches[1];
+        $unit = strtoupper($matches[2]);
+
+        // Convert based on the unit
+        switch ($unit) {
+            case 'G':
+                return $numeric_value * 1024 * 1024 * 1024; // Convert GB to bytes
+            case 'M':
+                return $numeric_value * 1024 * 1024; // Convert MB to bytes
+            case 'K':
+                return $numeric_value * 1024; // Convert KB to bytes
+            default:
+                return $numeric_value; // Already in bytes
+        }
+    }
+    // If the value does not match the pattern, return as is (consider as bytes)
+    return (int) $value;
+}
+
+if (!function_exists('get_constant_value_from_wp_config')) {
+    function get_constant_value_from_wp_config($constant_name) {
+        $wp_config_path = ABSPATH . 'wp-config.php';
+        $constant_value = 'Not defined';
+
+        // Check if the wp-config.php file exists
+        if (file_exists($wp_config_path)) {
+            $config_content = file_get_contents($wp_config_path);
+
+            // Regex pattern to match the constant definition regardless of single or double quotes
+            $pattern = "/define\(\s*['\"]" . preg_quote($constant_name, '/') . "['\"]\s*,\s*['\"]?(true|false)['\"]?\s*\)\s*;/i";
+
+            if (preg_match($pattern, $config_content, $matches)) {
+                $constant_value = $matches[1] === 'true' ? 'true' : 'false';
+            }
+        }
+
+        return $constant_value;
+    }
+}
+
+if (!function_exists('check_wp_core_auto_update_status')) {
+function check_wp_core_auto_update_status() {
+    $wp_auto_update_status = get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE');
+    return $wp_auto_update_status === 'true';
+}}
+
+
+// Function to check if plugin auto-updates are enabled
+function check_plugin_auto_update_status() {
+    // We check if the filter has been added
+    return has_filter('auto_update_plugin', '__return_true') !== false;
+}
+
+// Function to render the "Enable Plugin Auto Updates" button
+function render_enable_plugin_auto_updates_button() {
+    if (!check_plugin_auto_update_status()) {
+        echo "<button id='enable-plugin-auto-updates' class='button'>Enable Plugin Auto Updates</button>";
+    }
+    
+   
+}
+
+
+  
+    if (!function_exists('get_wp_config_defined_constants')) {
+    function get_wp_config_defined_constants() {
+        // List of constants to exclude (security-sensitive)
+        $exclude_constants = [
+            'DB_NAME',
+            'DB_USER',
+            'DB_PASSWORD',
+            'DB_HOST',
+            'DB_CHARSET',
+            'DB_COLLATE',
+            'AUTH_KEY',
+            'SECURE_AUTH_KEY',
+            'LOGGED_IN_KEY',
+            'NONCE_KEY',
+            'AUTH_SALT',
+            'SECURE_AUTH_SALT',
+            'LOGGED_IN_SALT',
+            'NONCE_SALT',
+        ];
+
+        // Get all defined constants
+        $all_constants = get_defined_constants(true);
+
+        // Filter out the excluded constants
+        $filtered_constants = array_filter($all_constants['user'], function($key) use ($exclude_constants) {
+            return !in_array($key, $exclude_constants);
+        }, ARRAY_FILTER_USE_KEY);
+
+        return $filtered_constants;
+    }
+}
+
+// Check if Cloudflare is active and get nameservers
+function check_cloudflare_active() {
+    // Get the domain from the server name
+    $domain = $_SERVER['SERVER_NAME'];
+    
+    // Get the nameservers for the domain
+    $nameservers = dns_get_record($domain, DNS_NS);
+    $nameserver_list = [];
+
+    foreach ($nameservers as $ns) {
+        $nameserver_list[] = $ns['target'];
+    }
+
+    // Check if any of the nameservers indicate Cloudflare
+    $is_active = false;
+    foreach ($nameserver_list as $ns) {
+        if (strpos($ns, 'cloudflare') !== false) {
+            $is_active = true;
+            break;
+        }
+    }
+
+    return [
+        'status' => $is_active,
+        'details' => $is_active ? 'Cloudflare is active. Nameservers: ' . implode(', ', $nameserver_list) : 'Cloudflare is not active. Nameservers: ' . implode(', ', $nameserver_list)
+    ];
+}
+// Check the type of PHP (CloudLinux or other)
+function check_php_type() {
+    $php_sapi = php_sapi_name();
+    return [
+        'status' => true, // This status would always be true since it's just informational
+        'details' => "PHP SAPI: $php_sapi"
+    ];
+}
+
+// Check if PHP-FPM is active
+function check_php_fpm_active() {
+    $is_fpm_active = strpos(php_sapi_name(), 'fpm-fcgi') !== false;
+    return [
+        'status' => $is_fpm_active,
+        'details' => $is_fpm_active ? 'PHP-FPM is active' : 'PHP-FPM is not active'
+    ];
+}
+
+
+
+if (!function_exists('enable_auto_update_plugins')) {
+    function enable_auto_update_plugins() {
+        add_filter('auto_update_plugin', '__return_true');
+    }
+}
+
+if (!function_exists('disable_litespeed_js_combine')) {
+    function disable_litespeed_js_combine() {
+        add_filter('litespeed_optm_js_comb_ext_inl', '__return_false');
+    }
+}
+
+if (!function_exists('custom_wp_admin_logo')) {
+    function custom_wp_admin_logo() {
+        add_action('login_enqueue_scripts', function() {
+            ?>
+            <style type="text/css">
+                #login h1 a, .login h1 a { 
+                    background-image: url('<?php echo esc_url(get_field('login_logo', 'option')); ?>'); 
+                    width:250px; 
+                    height:50px; 
+                    padding:30px; 
+                    background-size:contain; 
+                    background-repeat: no-repeat;
+                }
+            </style>
+            <?php
+        });
+        add_filter('login_headerurl', '__return_false');
+    }
+}
+
+if (!function_exists('disable_rankmath_sitemap_caching')) {
+    function disable_rankmath_sitemap_caching() {
+        add_filter('rank_math/sitemap/enable_caching', '__return_false');
+    }
+}

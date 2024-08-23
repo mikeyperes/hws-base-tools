@@ -1,10 +1,23 @@
 <?php
+/*
+Plugin Name: Hexa Web Systems - Website Base Tool
+Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
+Author: Michael Peres
+Plugin URI: https://github.com/mikeyperes/hws-base-tools
+Version: 1.0.0
+Author URI: https://michaelperes.com
+GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
+GitHub Branch: main
+*/ 
+
+// Ensure this file is being included by a parent file
+defined('ABSPATH') or die('No script kiddies please!');
 
 // Define global variables
 global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
 
 $plugin_name = "Hexa Web Systems - Website Base Tool";
-$plugin_description = "Basic tools for optimziation, performance, and debugging on Hexa based web systems.";
+$plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
 $plugin_version = "1.0.0";
@@ -15,19 +28,6 @@ $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
 
-/*
-Plugin Name: <?php echo $plugin_name; ?>
-Description: <?php echo $plugin_description; ?>
-Author: <?php echo $author_name; ?>
-Plugin URI: <?php echo $plugin_uri; ?>
-Version: <?php echo $plugin_version; ?>
-Author URI: <?php echo $author_uri; ?>
-GitHub Plugin URI: <?php echo $plugin_github_url; ?>
-GitHub Branch: main
-*/
-
-// Ensure this file is being included by a parent file
-defined('ABSPATH') or die('No script kiddies please!');
 
 // Generic functions import
 include_once("generic-functions.php");
@@ -45,6 +45,61 @@ if (!$acf_active) {
     return;
 }
 
+
+
+function hws_ct_get_settings_snippets()
+{
+    $settings_snippets = [
+        [
+            'id' => 'disable_rankmath_sitemap_caching',
+            'name' => 'Disable RankMath Sitemap Caching',
+            'description' => 'Disables caching for RankMath sitemaps.',
+            'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
+            'function' => 'disable_rankmath_sitemap_caching'
+        ],
+        [
+            'id' => 'enable_auto_update_plugins',
+            'name' => 'Enable Automatic Updates for Plugins',
+            'description' => 'Enables automatic updates for all plugins.',
+            'info' => 'Automatically keeps your plugins up to date.',
+            'function' => 'enable_auto_update_plugins'
+        ],
+        [
+            'id' => 'disable_litespeed_js_combine',
+            'name' => 'Disable JS Combine in LiteSpeed Cache',
+            'description' => 'Disables JS combining in LiteSpeed Cache.',
+            'info' => 'Prevents LiteSpeed from combining JavaScript files, which can be useful for resolving issues with script loading.',
+            'function' => 'disable_litespeed_js_combine'
+        ],
+        [
+            'id' => 'custom_wp_admin_logo',
+            'name' => 'Custom WP Admin Logo',
+            'description' => 'Adds a custom logo to the WP admin login screen.',
+            'info' => 'Allows you to upload a custom logo via ACF and display it on the login page.',
+            'function' => 'custom_wp_admin_logo'
+        ],
+    [
+        'name' => 'Enable Author Social ACFs',
+        'id' => 'hws_ct_snippets_author_social_acfs',
+         'function' => 'hws_ct_snippets_activate_author_social_acfs',
+        'description' => 'This will enable social media fields in author profiles.',
+        'info' => implode('<br>', array_map(function($field) {
+            if ($field['type'] === 'group') {
+                $sub_fields = implode(', ', array_map(function($sub_field) {
+                    return "{$sub_field['name']}";
+                }, $field['sub_fields']));
+                return "{$field['name']}<br>&emsp;{$sub_fields}";
+            } else {
+                return "{$field['name']}";
+            }
+        }, acf_get_fields('group_590d64c31db0a')))
+    ],
+];
+return $settings_snippets; 
+}
+
+
+
 // Precheck WordPress is set up correctly
 include_once("wordpress-pre-check.php");
 
@@ -53,6 +108,11 @@ include_once("register-acf-fields-settings-page.php");
 
 // Import ACF Fields
 include_once("register-acf-fields.php");
+// Import ACF Fields
+include_once("register-acf-fields-user.php");
+
+// Build Dashboard
+include_once("activate-snippets.php");
 
 // Precheck WordPress is set up correctly
 include_once("initiate-user-roles.php");
@@ -62,6 +122,7 @@ include_once("settings-dashboard.php");
 // Settings sub-pages
 include_once("settings-dashboard-wp-config.php");
 include_once("settings-dashboard-log-delete-cron.php");
+include_once("settings-dashboard-snippets.php");
 
 // Functionality to process empty Pages and Jet Engine Listing Grids
 include_once("create-pages-and-listing-grids.php");
