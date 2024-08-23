@@ -32,13 +32,14 @@ $github_access_token = ''; // Leave empty if not required for private repositori
 // Generic functions import
 include_once("generic-functions.php");
 
-// Check if ACF is installed and active using the generic function
-list($acf_installed, $acf_active, $acf_auto_update) = check_plugin_status('advanced-custom-fields/acf.php');
+// Check if ACF or ACF Pro is installed and active using the generic function
+list($acf_installed, $acf_active) = check_plugin_status('advanced-custom-fields/acf.php');
+list($acf_pro_installed, $acf_pro_active) = check_plugin_status('advanced-custom-fields-pro/acf.php');
 
-// If ACF is not active, display a warning and prevent the plugin from running
-if (!$acf_active) {
+// If neither ACF nor ACF Pro is active, display a warning and prevent the plugin from running
+if (!$acf_active && !$acf_pro_active) {
     add_action('admin_notices', function() {
-        echo '<div class="notice notice-error"><p><strong>Verified Profiles - Scale My Publication:</strong> The Advanced Custom Fields (ACF) plugin is required and must be active to use this plugin. Please activate ACF.</p></div>';
+        echo '<div class="notice notice-error"><p><strong>HWS - Base Tools:</strong> The Advanced Custom Fields (ACF) or Advanced Custom Fields Pro (ACF Pro) plugin is required and must be active to use this plugin. Please activate ACF or ACF Pro.</p></div>';
     });
 
     // Stop further execution of the plugin
