@@ -163,33 +163,73 @@ if (!function_exists('add_settings_menu')) {
 }
 
 
-if (!function_exists('check_wp_mail_smtp_authentication')) {
-    function check_wp_mail_smtp_authentication() {
-        $status = false;
-        $details = 'WP Mail SMTP plugin is not active.';
 
+
+
+
+
+
+
+
+
+
+if (!function_exists('check_smtp_auth_status_and_mailer')) {
+    function check_smtp_auth_status_and_mailer() {
+        $status = false;
+        $mailer = '';
+        $details = 'No details available';
+    
         if (is_plugin_active('wp-mail-smtp/wp_mail_smtp.php')) {
             $wp_mail_smtp_options = get_option('wp_mail_smtp');
-            if ($wp_mail_smtp_options && $wp_mail_smtp_options['mail']['mailer'] === 'smtp') {
-                $smtp_auth = isset($wp_mail_smtp_options['mail']['smtp']['auth']) ? $wp_mail_smtp_options['mail']['smtp']['auth'] : false;
-
-                if ($smtp_auth) {
-                    $status = true;
-                    $details = 'Domain: ' . $wp_mail_smtp_options['mail']['smtp']['host'];
-                } else {
-                    $details = 'No SMTP authentication enabled.';
-                }
+            $mailer = $wp_mail_smtp_options['mail']['mailer'] ?? 'Unknown';
+            
+            if ($mailer === 'smtp' || $mailer === 'sendinblue') {
+                $status = true;
+                $details = $wp_mail_smtp_options['mail']['from_email'] ?? 'Unknown';
             } else {
-                $details = 'SMTP is not the selected mailer.';
+                $details = 'Authenticated domain could not be determined for the mailer: ' . $mailer;
             }
         }
-
+    
+        // Always return the structure with status, mailer, and details
         return [
             'status' => $status,
+            'mailer' => $mailer,
             'details' => $details
         ];
     }
 }
+
+
+
+
+
+if (!function_exists('get_smtp_sending_domain')) {
+    function get_smtp_sending_domain() {
+        $sending_domain = '';
+
+        // Check if the WP Mail SMTP plugin is active
+        if (is_plugin_active('wp-mail-smtp/wp_mail_smtp.php')) {
+            // Get the WP Mail SMTP options
+            $wp_mail_smtp_options = get_option('wp_mail_smtp');
+
+            // Ensure the from_email is set up
+            if ($wp_mail_smtp_options && isset($wp_mail_smtp_options['mail']['from_email'])) {
+                $from_email = $wp_mail_smtp_options['mail']['from_email'];
+                $sending_domain = $from_email ? substr(strrchr($from_email, "@"), 1) : 'Domain not set';
+            }
+        }
+
+        return $sending_domain;
+    }
+}
+
+
+
+
+
+
+
 
 if (!function_exists('check_wp_cache_enabled')) {
     function check_wp_cache_enabled() {
@@ -231,26 +271,6 @@ if (!function_exists('check_server_memory_limit')) {
         return [
             'status' => $status,
             'details' => $total_ram ? size_format($total_ram) : 'Not available'
-        ];
-    }
-}
-
-if (!function_exists('check_elementor_memory_limit')) {
-    function check_elementor_memory_limit() {
-        $elementor_memory_limit = defined('ELEMENTOR_MEMORY_LIMIT') ? ELEMENTOR_MEMORY_LIMIT : 'Not defined';
-
-        // Convert the memory limit to bytes for comparison, but only if it's defined
-        $elementor_memory_limit_bytes = $elementor_memory_limit !== 'Not defined' ? wp_convert_hr_to_bytes($elementor_memory_limit) : 0;
-        $status = $elementor_memory_limit_bytes >= 4 * 1024 * 1024 * 1024; // Check if it's at least 4GB
-
-        // Check if the value is "Not defined"
-        if ($elementor_memory_limit === 'Not defined') {
-            $status = false;
-        }
-
-        return [
-            'status' => $status,
-            'details' => $elementor_memory_limit
         ];
     }
 }
@@ -336,23 +356,7 @@ if (!function_exists('display_precheck_result')) {
     }
 }
 
-if (!function_exists('check_all_in_one_wp_migration_status')) {
-    function check_all_in_one_wp_migration_status() {
-        // Check the status of All-in-One WP Migration plugin using the generic function
-        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('all-in-one-wp-migration/all-in-one-wp-migration.php');
 
-        // Check if the plugin has no backups
-        $backup_dir = WP_CONTENT_DIR . '/ai1wm-backups';
-        $backup_files = is_dir($backup_dir) ? glob($backup_dir . '/*.wpress') : [];
-        $no_backups = empty($backup_files);
-
-        return [
-            'is_installed' => $is_installed,
-            'is_active' => $is_active,
-            'no_backups' => $no_backups,
-        ];
-    }
-}
 
 if (!function_exists('check_imagick_available')) {
     function check_imagick_available() {
@@ -370,6 +374,42 @@ if (!function_exists('check_query_monitor_status')) {
         ];
     }
 }
+
+
+
+
+
+if (!function_exists('custom_wp_admin_logo')) {
+    function custom_wp_admin_logo() {
+        $logo_url = get_site_icon_url(); // Fetch the site icon URL from the WordPress settings
+        if ($logo_url) {
+            ?>
+            <style type="text/css">
+                #login h1 a, .login h1 a { 
+                    background-image: url('<?php echo esc_url($logo_url); ?>');
+                    width:250px;
+                    height:50px;
+                    padding:30px;
+                    background-size:contain;
+                    background-repeat: no-repeat;
+                }
+            </style>
+            <?php
+        }
+    }
+    add_action('login_enqueue_scripts', 'custom_wp_admin_logo');
+}
+
+if (!function_exists('custom_wp_admin_logo_link')) {
+    function custom_wp_admin_logo_link() {
+        return false;
+    }
+    add_filter('login_headerurl', 'custom_wp_admin_logo_link');
+}
+
+
+
+
 
 if (!function_exists('check_wp_sweep_status')) {
     function check_wp_sweep_status() {
@@ -412,16 +452,77 @@ if (!function_exists('check_server_specs')) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 if (!function_exists('check_wordfence_notification_email')) {
     function check_wordfence_notification_email() {
-        $wf_options = get_option('wordfence');
-        $status = isset($wf_options['alertEmails']) && !empty($wf_options['alertEmails']);
-        return [
-            'status' => $status,
-            'details' => $status ? implode(', ', $wf_options['alertEmails']) : 'Not set'
-        ];
+        global $wpdb;
+
+        // Get the database prefix
+        $prefix = $wpdb->prefix;
+
+        // Construct the table name dynamically
+        $table_name = $prefix . 'wfconfig';
+
+        // Query the BLOB data from the `alertEmails` field in the dynamically generated table name
+        $result = $wpdb->get_var($wpdb->prepare("SELECT `val` FROM `{$table_name}` WHERE `name` = %s", 'alertEmails'));
+
+        // Debugging: Log the raw data
+        write_log("Raw alertEmails data: " . print_r($result, true));
+
+        // Check if the result is serialized or not
+        $decoded_result = maybe_unserialize($result);
+
+        // If it's serialized, decoded_result will be an array or string
+        // If not, it will remain as is
+        if ($decoded_result === false || is_string($decoded_result)) {
+            $decoded_result = $result; // Use the original value if unserializing didn't work
+        }
+
+        // Debugging: Log the decoded result
+        write_log("Decoded alertEmails data: " . print_r($decoded_result, true));
+
+        // Handle both array and string cases
+        if (is_array($decoded_result) && !empty($decoded_result)) {
+            $emails = implode(', ', $decoded_result);
+            write_log('Valid alert emails found: ' . $emails);
+            return [
+                'status' => true,
+                'details' => $emails
+            ];
+        } elseif (is_string($decoded_result) && !empty($decoded_result)) {
+            write_log('Valid single alert email found: ' . $decoded_result);
+            return [
+                'status' => true,
+                'details' => $decoded_result
+            ];
+        } else {
+            write_log('No valid alert emails found.');
+            return [
+                'status' => false,
+                'details' => 'No valid alert emails found'
+            ];
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
 if (!function_exists('check_wordpress_main_email')) {
     function check_wordpress_main_email() {
         $admin_email = get_option('admin_email');
@@ -443,17 +544,77 @@ if (!function_exists('check_cloudlinux_config')) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 if (!function_exists('check_redis_active')) {
     function check_redis_active() {
         global $wp_object_cache;
 
-        $status = extension_loaded('redis') && isset($wp_object_cache) && is_a($wp_object_cache, 'WP_Object_Cache') && method_exists($wp_object_cache, 'redis');
+        // Check if the Redis PHP extension is loaded
+        $redis_extension_loaded = extension_loaded('redis');
+        write_log('Redis extension loaded: ' . ($redis_extension_loaded ? 'Yes' : 'No'));
+
+        // Force configuration of Redis in LiteSpeed settings
+        if (defined('LSCWP_CONTENT') && class_exists('LiteSpeed\Litespeed')) {
+            $lscwp_config = LiteSpeed\Litespeed::config();
+            if (isset($lscwp_config->data['litespeed-cache']['object_cache'])) {
+                $lscwp_config->data['litespeed-cache']['object_cache'] = 'redis';
+                $litespeed_redis_configured = true;
+            } else {
+                $litespeed_redis_configured = false;
+            }
+        } else {
+            $litespeed_redis_configured = false;
+        }
+        write_log('LiteSpeed Redis configured (after force): ' . ($litespeed_redis_configured ? 'Yes' : 'No'));
+
+        // Check if Redis is in use by WP_Object_Cache
+        $redis_in_use = isset($wp_object_cache) && is_a($wp_object_cache, 'WP_Object_Cache') && 
+                        method_exists($wp_object_cache, 'redis') && $wp_object_cache->redis instanceof Redis;
+                        write_log('Redis in use by WP_Object_Cache: ' . ($redis_in_use ? 'Yes' : 'No'));
+
+        // Test the Redis connection if it's in use
+        $redis_connected = false;
+        if ($redis_in_use) {
+            try {
+                $redis_connected = $wp_object_cache->redis->ping() === '+PONG';
+                write_log('Redis connection successful: Yes');
+            } catch (Exception $e) {
+                write_log('Redis connection failed: ' . $e->getMessage());
+                $redis_connected = false;
+            }
+        } else {
+            write_log('Redis connection test skipped because Redis is not in use.');
+        }
+
+        // Determine the final status
+        $status = $redis_extension_loaded && ($litespeed_redis_configured || $redis_in_use) && $redis_connected;
+        write_log('Final Redis status: ' . ($status ? 'Active' : 'Inactive'));
+
         return [
             'status' => $status,
             'details' => $status ? 'Yes' : 'No'
         ];
     }
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -738,16 +899,61 @@ function check_php_type() {
     ];
 }
 
-// Check if PHP-FPM is active
-function check_php_fpm_active() {
-    $is_fpm_active = strpos(php_sapi_name(), 'fpm-fcgi') !== false;
-    return [
-        'status' => $is_fpm_active,
-        'details' => $is_fpm_active ? 'PHP-FPM is active' : 'PHP-FPM is not active'
-    ];
+if (!function_exists('check_php_handler')) {
+    function check_php_handler() {
+        // Initialize variables
+        $php_handler = 'Unknown';
+        $server_software = isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : 'Unknown Server Software';
+        $sapi_name = php_sapi_name();
+
+        // Determine if PHP-FPM is active
+        if (strpos($sapi_name, 'fpm-fcgi') !== false) {
+            $php_handler = 'PHP-FPM';
+            $is_fpm_active = true;
+        } else {
+            $is_fpm_active = false;
+        }
+
+        // Determine if the server is LiteSpeed
+        if (strpos($server_software, 'LiteSpeed') !== false) {
+            $server = 'LiteSpeed';
+        } elseif (strpos($server_software, 'Apache') !== false) {
+            $server = 'Apache';
+        } elseif (strpos($server_software, 'Nginx') !== false) {
+            $server = 'Nginx';
+        } else {
+            $server = $server_software; // Use whatever is reported
+        }
+
+        // Additional checks if PHP-FPM is not active
+        if (!$is_fpm_active) {
+            if (strpos($sapi_name, 'cgi') !== false || strpos($sapi_name, 'fcgi') !== false) {
+                $php_handler = 'FastCGI';
+            } elseif (strpos($sapi_name, 'litespeed') !== false) {
+                $php_handler = 'LiteSpeed PHP Handler';
+            } else {
+                $php_handler = 'Unknown/Other';
+            }
+        }
+
+        // Determine status and details for reporting
+        $status = $is_fpm_active;
+        $details = $is_fpm_active 
+            ? "PHP-FPM is active with $server as the web server"
+            : "$php_handler is active with $server as the web server, not PHP-FPM";
+
+        // Log the results for debugging
+        write_log("Server Software: $server_software");
+        write_log("SAPI Name: $sapi_name");
+        write_log("PHP Handler: $php_handler");
+
+        // Return the status and details
+        return [
+            'status' => $status,
+            'details' => $details
+        ];
+    }
 }
-
-
 
 if (!function_exists('enable_auto_update_plugins')) {
     function enable_auto_update_plugins() {
@@ -784,5 +990,14 @@ if (!function_exists('custom_wp_admin_logo')) {
 if (!function_exists('disable_rankmath_sitemap_caching')) {
     function disable_rankmath_sitemap_caching() {
         add_filter('rank_math/sitemap/enable_caching', '__return_false');
+    }
+}
+
+// Define the write_log function only if it isn't already defined
+if (!function_exists('write_log')) {
+    function write_log($log,$full_debug=false) {
+        if (WP_DEBUG && WP_DEBUG_LOG && $full_debug) {
+            write_log(is_array($log) || is_object($log) ? print_r($log, true) : $log);
+        }
     }
 }

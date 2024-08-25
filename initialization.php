@@ -66,6 +66,13 @@ function hws_ct_get_settings_snippets()
             'function' => 'enable_auto_update_plugins'
         ],
         [
+            'id' => 'enable_wp_admin_logo',
+            'name' => 'Enable WP Admin Logo',
+            'description' => 'Enable a custom logo on the WP admin login screen using ACF.',
+            'info' => 'This will use the logo from the ACF field "login_logo".',
+            'function' => 'custom_wp_admin_logo'
+        ],
+        [
             'id' => 'disable_litespeed_js_combine',
             'name' => 'Disable JS Combine in LiteSpeed Cache',
             'description' => 'Disables JS combining in LiteSpeed Cache.',
@@ -79,6 +86,7 @@ function hws_ct_get_settings_snippets()
             'info' => 'Allows you to upload a custom logo via ACF and display it on the login page.',
             'function' => 'custom_wp_admin_logo'
         ],
+        
     [
         'name' => 'Enable Author Social ACFs',
         'id' => 'hws_ct_snippets_author_social_acfs',
@@ -135,7 +143,7 @@ include_once("create-pages-and-listing-grids.php");
 if (file_exists(plugin_dir_path(__FILE__) . 'GitHub_Updater.php')) {
     require_once(plugin_dir_path(__FILE__) . 'GitHub_Updater.php');
 } else {
-    error_log('WP_GitHub_Updater.php file is missing.');
+    write_log('WP_GitHub_Updater.php file is missing.');
 }
 
 // Initialize the updater

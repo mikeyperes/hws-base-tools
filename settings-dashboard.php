@@ -120,9 +120,9 @@ function hws_ct_display_page() { ?>
             'id' => 'php-type',
             'value' => hws_ct_highlight_if_failed(check_php_type())
         ],
-        'PHP-FPM Active' => [
-            'id' => 'php-fpm-active',
-            'value' => hws_ct_highlight_if_failed(check_php_fpm_active())
+        'PHP Handler' => [
+            'id' => 'php-handler',
+            'value' => hws_ct_highlight_if_failed(check_php_handler())
         ],
             // Add for plugin auto-updates
     'Plugin Auto Updates' => [
@@ -152,14 +152,27 @@ function hws_ct_display_page() { ?>
         'id' => 'error-log',
         'value' => hws_ct_highlight_if_failed(check_log_file_sizes()['error_log'])
     ],
-                    'SMTP Authentication Enabled' => [
-                        'id' => 'smtp-auth', 
-                        'value' => hws_ct_highlight_if_failed(check_wp_mail_smtp_authentication())
-                    ],
-                    'SMTP Authenticated Domain' => [
-                        'id' => 'smtp-domain', 
-                        'value' => hws_ct_highlight_if_failed(check_wp_mail_smtp_authentication())
-                    ],
+    'SMTP Authentication Enabled' => [
+        'id' => 'smtp-auth', 
+        'value' => hws_ct_highlight_if_failed([
+            'status' => check_smtp_auth_status_and_mailer()['status'],
+            'details' => check_smtp_auth_status_and_mailer()['status'] ? 'Yes' : 'No'
+        ])
+    ],
+    'SMTP Mailer Service' => [
+        'id' => 'smtp-mailer', 
+        'value' => hws_ct_highlight_if_failed([
+            'status' => !empty(check_smtp_auth_status_and_mailer()['mailer']),
+            'details' => check_smtp_auth_status_and_mailer()['mailer']
+        ])
+    ],
+    'SMTP Authenticated Domain' => [
+        'id' => 'smtp-domain', 
+        'value' => hws_ct_highlight_if_failed([
+            'status' => !empty(check_smtp_auth_status_and_mailer()['details']),
+            'details' => check_smtp_auth_status_and_mailer()['details']
+        ])
+    ],
                     'REDIS Active' => [
                         'id' => 'redis-active', 
                         'value' => hws_ct_highlight_if_failed(check_redis_active())
@@ -176,10 +189,7 @@ function hws_ct_display_page() { ?>
                         'id' => 'wp-ram',
                         'value' => hws_ct_highlight_if_failed(check_wordpress_memory_limit())
                     ],
-                    'Elementor RAM' => [
-                        'id' => 'elementor-ram',
-                        'value' => hws_ct_highlight_if_failed(check_elementor_memory_limit())
-                    ],
+             
                     'Server RAM' => [
                         'id' => 'server-ram',
                         'value' => hws_ct_highlight_if_failed(check_server_memory_limit())
@@ -305,9 +315,7 @@ jQuery(document).ready(function($) {
                 // Precheck results
                 $prechecks = [
                     
-                    'SMTP Authentication' => check_wp_mail_smtp_authentication(),
-                    'All-in-One WP Migration Installed' => check_all_in_one_wp_migration_status()['is_installed'],
-                    'All-in-One WP Migration Active' => check_all_in_one_wp_migration_status()['is_active'],
+                   // 'SMTP Authentication' => check_wp_mail_smtp_authentication(),
                     'Imagick Library Available' => check_imagick_available(),
                     'Query Monitor Installed' => check_query_monitor_status()['is_installed'],
                     'Query Monitor Active' => check_query_monitor_status()['is_active'],
