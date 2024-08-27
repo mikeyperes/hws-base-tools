@@ -1,11 +1,6 @@
 <?php
 function hws_ct_display_settings_theme_checks()
-{
-    // Check if output buffering is already active
-    if (ob_get_level() == 0) {
-        ob_start();
-    }
-    ?>
+{    ?>
     <!-- Theme Status Panel -->
     <div class="panel">
         <h2 class="panel-title">Theme Checks</h2>
@@ -41,7 +36,16 @@ function hws_ct_display_settings_theme_checks()
                         $is_active = ($theme_name === $active_theme->get_stylesheet());
                         $status = $is_active ? 'Active' : 'Inactive';
                         $focus_style = $is_active ? 'font-weight: bold;' : 'color: #555;';
-                        echo "<div style='$focus_style'>{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status</div>";
+
+                        // Check if auto-updates are enabled for the theme
+                        $theme_slug = $theme_data->get_stylesheet();
+                        $auto_update_enabled = wp_is_auto_update_enabled_for_type('theme', $theme_slug);
+
+                        // Adjust the status display to include auto-update information
+                        $auto_update_status = $auto_update_enabled ? 'Auto-Updates Enabled' : 'Auto-Updates Disabled';
+                        $auto_update_style = $auto_update_enabled ? 'color: green;' : 'color: red;';
+
+                        echo "<div style='$focus_style'>{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status - <span style='$auto_update_style'>$auto_update_status</span></div>";
                     }
                     ?>
                 </div>
@@ -57,9 +61,5 @@ function hws_ct_display_settings_theme_checks()
     </div>
     <?php
 
-    // Get the buffer contents and clean (erase) the output buffer
-    if (ob_get_level() != 0) {
-        echo ob_get_clean();
-    }
 }
 ?>

@@ -72,8 +72,7 @@ function hws_ct_display_wp_admin_settings_page() {
 
 /* WP-Config Constants Expand/Collapse */
 .wp-config-expandable {
-    border-top: 1px solid #ddd; /* Lighter border for section separation */
-    margin-top: 20px;
+    margin-top: 0px;
     padding-top: 15px;
 }
 

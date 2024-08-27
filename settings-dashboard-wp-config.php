@@ -119,21 +119,26 @@ $wp_debug_log = get_constant_value_from_wp_config('WP_DEBUG_LOG');
                 ];
                 ?>
 
-                <div>
-                    <label for="debug-toggle">Enable WP_DEBUG (Current: <?php echo $wp_debug; ?>)</label>
-                    <input type="checkbox" id="debug-toggle" <?php echo $wp_debug === 'true' ? 'checked' : ''; ?>>
-                </div>
+<div>
+    <label for="debug-toggle" style="color: <?php echo $wp_debug === 'true' ? 'red' : 'inherit'; ?>;">
+        Enable WP_DEBUG (Current: <?php echo $wp_debug; ?>)
+    </label>
+    <input type="checkbox" id="debug-toggle" <?php echo $wp_debug === 'true' ? 'checked' : ''; ?>>
+</div>
 
-                <div>
-                    <label for="debug-display-toggle">Enable WP_DEBUG_DISPLAY (Current: <?php echo $wp_debug_display; ?>)</label>
-                    <input type="checkbox" id="debug-display-toggle" <?php echo $wp_debug_display === 'true' ? 'checked' : ''; ?>>
-                </div>
+<div>
+    <label for="debug-display-toggle" style="color: <?php echo $wp_debug_display === 'true' ? 'red' : 'inherit'; ?>;">
+        Enable WP_DEBUG_DISPLAY (Current: <?php echo $wp_debug_display; ?>)
+    </label>
+    <input type="checkbox" id="debug-display-toggle" <?php echo $wp_debug_display === 'true' ? 'checked' : ''; ?>>
+</div>
 
-                <div>
-                    <label for="debug-log-toggle">Enable WP_DEBUG_LOG (Current: <?php echo $wp_debug_log; ?>)</label>
-                    <input type="checkbox" id="debug-log-toggle" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
-                </div>
-                
+<div>
+    <label for="debug-log-toggle" style="color: <?php echo $wp_debug_log === 'true' ? 'red' : 'inherit'; ?>;">
+        Enable WP_DEBUG_LOG (Current: <?php echo $wp_debug_log; ?>)
+    </label>
+    <input type="checkbox" id="debug-log-toggle" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
+</div>
                 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
@@ -184,30 +189,32 @@ jQuery(document).ready(function($) {
 <p>Debug Log Size: <?php echo $debug_log_size; ?></p>
 <div>
     <button class="button" id="toggle-debug-log">View Last 100 Lines of debug.log</button>
-    <pre id="debug-log-content" style="display:none; background-color:#f1f1f1; padding:10px; border:1px solid #ccc; max-height:200px; overflow:auto;"><?php
+  
+    <a href="<?php echo WP_CONTENT_URL . '/debug.log'; ?>" target="_blank" class="button">View debug.log</a>
+    <button class="button" id="delete-debug-log">Delete</button>
+    <pre id="debug-log-content" style="display:none; background-color:#222;color:#ddd; padding:10px; border:1px solid #ccc; max-height:300px; overflow:auto;"><?php
         if (file_exists(WP_CONTENT_DIR . '/debug.log')) {
-            echo htmlspecialchars(shell_exec("tail -n 100 " . WP_CONTENT_DIR . "/debug.log"));
+            echo htmlspecialchars(shell_exec("tail -n 200 " . WP_CONTENT_DIR . "/debug.log"));
         } else {
             echo "debug.log not found.";
         }
     ?></pre>
-    <a href="<?php echo WP_CONTENT_URL . '/debug.log'; ?>" target="_blank" class="button">View debug.log</a>
-    <button class="button" id="delete-debug-log">Delete</button>
 </div>
 
 <!-- Error Log -->
 <p>Error Log Size: <?php echo $error_log_size; ?></p>
 <div>
     <button class="button" id="toggle-error-log">View Last 100 Lines of error_log</button>
-    <pre id="error-log-content" style="display:none; background-color:#f1f1f1; padding:10px; border:1px solid #ccc; max-height:200px; overflow:auto;"><?php
+
+    <a href="<?php echo site_url('/error_log'); ?>" target="_blank" class="button">View error_log</a>
+    <button class="button" id="delete-error-log">Delete</button>
+    <pre id="error-log-content" style="display:none; background-color:#222;color:#ddd; padding:10px; border:1px solid #ccc; max-height:300px; overflow:auto;"><?php
         if (file_exists(ABSPATH . 'error_log')) {
-            echo htmlspecialchars(shell_exec("tail -n 100 " . ABSPATH . "error_log"));
+            echo htmlspecialchars(shell_exec("tail -n 200 " . ABSPATH . "error_log"));
         } else {
             echo "error_log not found.";
         }
     ?></pre>
-    <a href="<?php echo site_url('/error_log'); ?>" target="_blank" class="button">View error_log</a>
-    <button class="button" id="delete-error-log">Delete</button>
 </div>
 
 <script type="text/javascript">

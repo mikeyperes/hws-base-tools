@@ -219,7 +219,17 @@ if (!function_exists('check_smtp_auth_status_and_mailer')) {
 } else write_log("Warning: check_smtp_auth_status_and_mailer function is already declared",true);
 
 
-
+if (!function_exists('enable_auto_update_themes')) {
+    function enable_auto_update_themes() {
+        add_filter('auto_update_theme', '__return_true');
+        return [
+            'status' => true,
+            'details' => 'Theme auto-updates are enabled.'
+        ];
+    }
+} else {
+    write_log("Warning: enable_auto_update_themes function is already declared", true);
+}
 
 
 
@@ -246,22 +256,25 @@ if (!function_exists('get_smtp_sending_domain')) {
 
 
 
+if (!function_exists('check_wp_config_constant_status')) {
+    function check_wp_config_constant_status($constant_name) {
+        if (defined($constant_name)) {
+            $constant_value = constant($constant_name);
+            $status = !empty($constant_value); // Check if the constant is not empty (covers boolean, string, number)
+            $details = is_bool($constant_value) ? ($constant_value ? 'true' : 'false') : $constant_value;
 
-
-
-
-
-if (!function_exists('check_wp_cache_enabled')) {
-    function check_wp_cache_enabled() {
-        $status = defined('WP_CACHE') && WP_CACHE;
-        return [
-            'status' => $status,
-            'details' => $status ? 'Enabled' : 'Disabled'
-        ];
+            return [
+                'status' => $status,
+                'details' => $details
+            ];
+        } else {
+            return [
+                'status' => false,
+                'details' => 'Constant not defined'
+            ];
+        }
     }
-} else write_log("Warning: check_wp_cache_enabled function is already declared",true);
-
-
+} else write_log("Warning: check_wp_config_constant_status function is already declared", true);
 
 if (!function_exists('check_wordpress_memory_limit')) {
     function check_wordpress_memory_limit() {
@@ -277,6 +290,22 @@ if (!function_exists('check_wordpress_memory_limit')) {
         ];
     }
 } else write_log("Warning: check_wordpress_memory_limit function is already declared",true);
+
+
+if (!function_exists('get_database_table_prefix')) {
+    function get_database_table_prefix() {
+        global $table_prefix;
+
+        $status = !empty($table_prefix);
+
+        return [
+            'status' => $status,
+            'details' => $status ? $table_prefix : 'Not available'
+        ];
+    }
+} else {
+    write_log("Warning: get_database_table_prefix function is already declared", true);
+}
 
 
 
@@ -298,6 +327,62 @@ if (!function_exists('check_server_memory_limit')) {
 } else write_log("Warning: check_server_memory_limit function is already declared",true);
 
 
+if (!function_exists('check_myisam_tables')) {
+    function check_myisam_tables() {
+        global $wpdb;
+
+        // Get all tables in the database
+        $tables = $wpdb->get_results("SHOW TABLE STATUS WHERE Engine = 'MyISAM'", ARRAY_A);
+
+        // Check if any MyISAM tables exist
+        $status = empty($tables) ? true : false;
+        $details = $status ? 'No MyISAM tables found.' : 'Found MyISAM tables: ' . implode(', ', array_column($tables, 'Name'));
+
+        return [
+            'status' => $status,
+            'details' => $details
+        ];
+    }
+} else write_log("Warning: check_myisam_tables function is already declared", true);
+
+
+if (!function_exists('check_redis_active')) {
+    function check_redis_active() {
+        $status = false;
+        $details = 'Redis connection failed';
+
+        try {
+            // Initialize Redis object
+            $redis = new Redis();
+            
+            // Attempt to connect to Redis server
+            if ($redis->connect('127.0.0.1', 6379)) { // Adjust IP and port as necessary
+                // Test setting and getting a value
+                $redis->set("test-key", "Redis is working");
+                $test_value = $redis->get("test-key");
+
+                if ($test_value === "Redis is working") {
+                    $status = true;
+                    $details = 'Redis is working';
+                } else {
+                    $details = 'Redis connection successful, but failed to set/get a value';
+                }
+            }
+        } catch (Exception $e) {
+            $details = 'Exception: ' . $e->getMessage();
+        }
+
+        // Log the results for debugging purposes
+        write_log('Redis check: ' . $details, true);
+
+        return [
+            'status' => $status,
+            'details' => $details
+        ];
+    }
+} else {
+    write_log("Warning: check_redis_active function is already declared", true);
+}
 
 
 
@@ -326,7 +411,6 @@ if (!function_exists('check_wp_debug_disabled')) {
     }
 } else write_log("Warning: check_wp_debug_disabled function is already declared",true);
 
-
 if (!function_exists('check_log_file_sizes')) {
     function check_log_file_sizes() {
         $debug_log_path = WP_CONTENT_DIR . '/debug.log';
@@ -336,23 +420,20 @@ if (!function_exists('check_log_file_sizes')) {
         $debug_log_size = file_exists($debug_log_path) ? filesize($debug_log_path) : 'Not Found';
         $error_log_size = file_exists($error_log_path) ? filesize($error_log_path) : 'Not Found';
 
-        // Determine the status based on whether the log files exceed 20MB
-        $debug_log_status = is_numeric($debug_log_size) && $debug_log_size <= 20 * 1024 * 1024;
-        $error_log_status = is_numeric($error_log_size) && $error_log_size <= 20 * 1024 * 1024;
-
         return [
             'debug_log' => [
-                'status' => $debug_log_status,
+                'status' => is_numeric($debug_log_size) && $debug_log_size > 20 * 1024 * 1024,
                 'details' => is_numeric($debug_log_size) ? size_format($debug_log_size) : 'Not Found'
             ],
             'error_log' => [
-                'status' => $error_log_status,
+                'status' => is_numeric($error_log_size) && $error_log_size > 20 * 1024 * 1024,
                 'details' => is_numeric($error_log_size) ? size_format($error_log_size) : 'Not Found'
             ]
         ];
     }
-} else write_log("Warning: check_log_file_sizes function is already declared",true);
-
+} else {
+    write_log("Warning: check_log_file_sizes function is already declared", true);
+}
 
 
 if (!function_exists('check_server_is_litespeed')) {
@@ -547,7 +628,7 @@ if (!function_exists('check_wordpress_main_email')) {
     }
 } else write_log("Warning: check_wordpress_main_email function is already declared", true);
 
-
+/*
 if (!function_exists('check_cloudlinux_config')) {
     function check_cloudlinux_config() {
         $lve_enabled = function_exists('lve_get_limits');
@@ -557,50 +638,45 @@ if (!function_exists('check_cloudlinux_config')) {
         return $lve_enabled;
     }
 } else write_log("Warning: check_cloudlinux_config function is already declared", true);
+*/
 
 if (!function_exists('check_redis_active')) {
     function check_redis_active() {
-        global $wp_object_cache;
-
         // Check if the Redis PHP extension is loaded
         $redis_extension_loaded = extension_loaded('redis');
         write_log('Redis extension loaded: ' . ($redis_extension_loaded ? 'Yes' : 'No'), true);
 
-        // Force configuration of Redis in LiteSpeed settings
-        if (defined('LSCWP_CONTENT') && class_exists('LiteSpeed\Litespeed')) {
-            $lscwp_config = LiteSpeed\Litespeed::config();
-            if (isset($lscwp_config->data['litespeed-cache']['object_cache'])) {
-                $lscwp_config->data['litespeed-cache']['object_cache'] = 'redis';
-                $litespeed_redis_configured = true;
-            } else {
-                $litespeed_redis_configured = false;
-            }
-        } else {
-            $litespeed_redis_configured = false;
-        }
-        write_log('LiteSpeed Redis configured (after force): ' . ($litespeed_redis_configured ? 'Yes' : 'No'), true);
-
-        // Check if Redis is in use by WP_Object_Cache
-        $redis_in_use = isset($wp_object_cache) && is_a($wp_object_cache, 'WP_Object_Cache') && 
-                        method_exists($wp_object_cache, 'redis') && $wp_object_cache->redis instanceof Redis;
-        write_log('Redis in use by WP_Object_Cache: ' . ($redis_in_use ? 'Yes' : 'No'), true);
-
-        // Test the Redis connection if it's in use
+        // Initialize variables
+        $redis_in_use = false;
         $redis_connected = false;
-        if ($redis_in_use) {
+
+        if ($redis_extension_loaded) {
             try {
-                $redis_connected = $wp_object_cache->redis->ping() === '+PONG';
-                write_log('Redis connection successful: Yes', true);
+                // Create a new Redis instance and attempt to connect
+                $redis = new Redis();
+                $redis->connect('127.0.0.1', 6379); // Adjust the IP and port as necessary
+
+                // Test the Redis connection
+                $redis_connected = $redis->ping() === '+PONG';
+                write_log('Redis connection successful: ' . ($redis_connected ? 'Yes' : 'No'), true);
+
+                // Check if LiteSpeed Cache is configured to use Redis
+                if (defined('LSCWP_V') && class_exists('LiteSpeed\Litespeed')) {
+                    $lscwp = LiteSpeed\Litespeed::config();
+                    $redis_in_use = ($lscwp->get_option('object_cache') === 'redis');
+                    write_log('LiteSpeed Cache configured to use Redis: ' . ($redis_in_use ? 'Yes' : 'No'), true);
+                } else {
+                    write_log('LiteSpeed Cache not detected or not configured.', true);
+                }
             } catch (Exception $e) {
                 write_log('Redis connection failed: ' . $e->getMessage(), true);
-                $redis_connected = false;
             }
         } else {
-            write_log('Redis connection test skipped because Redis is not in use.', true);
+            write_log('Redis extension not loaded, skipping connection test.', true);
         }
 
         // Determine the final status
-        $status = $redis_extension_loaded && ($litespeed_redis_configured || $redis_in_use) && $redis_connected;
+        $status = $redis_extension_loaded && $redis_connected && $redis_in_use;
         write_log('Final Redis status: ' . ($status ? 'Active' : 'Inactive'), true);
 
         return [
@@ -608,14 +684,9 @@ if (!function_exists('check_redis_active')) {
             'details' => $status ? 'Yes' : 'No'
         ];
     }
-} else write_log("Warning: check_redis_active function is already declared", true);
-
-
-if (!function_exists('check_wp_cache_enabled')) {
-    function check_wp_cache_enabled() {
-        return defined('WP_CACHE') && WP_CACHE;
-    }
-} else write_log("Warning: check_wp_cache_enabled function is already declared", true);
+} else {
+    write_log("Warning: check_redis_active function is already declared", true);
+}
 
 if (!function_exists('check_caching_source')) {
     function check_caching_source() {
@@ -720,12 +791,6 @@ if (!function_exists('modify_wp_config_constants')) {
 
 
 
-
-if (!function_exists('check_wp_cache_enabled')) {
-    function check_wp_cache_enabled() {
-        return defined('WP_CACHE') && WP_CACHE;
-    }
-}
 
 if (!function_exists('check_caching_source')) {
     function check_caching_source() {

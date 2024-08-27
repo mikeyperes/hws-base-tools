@@ -29,15 +29,15 @@ function hws_ct_display_settings_check_plugins() { ?>
                 // Activation status
                 if ($is_active) {
                     if ($constraints['is_active']) {
-                        echo "<p style='color: green;'>&#x2705; Active</p>";
+                        echo "<p style='color: green;'>&#x2705; Enabled</p>";
                     } else {
-                        echo "<p style='color: red;'>&#x274C; Active (Should be Inactive)</p>";
+                        echo "<p style='color: red;'>&#x274C; Enabled (Should be Inactive)</p>";
                     }
                 } else {
                     if ($constraints['is_active']) {
-                        echo "<p style='color: red;'>&#x274C; Not Active</p>";
+                        echo "<p style='color: red;'>&#x274C; Not Enabled</p>";
                     } else {
-                        echo "<p style='color: green;'>&#x2705; Not Active (Correct)</p>";
+                        echo "<p style='color: green;'>&#x2705; Not Enabled (Correct)</p>";
                     }
                 }
 
@@ -60,11 +60,8 @@ function hws_ct_display_settings_check_plugins() { ?>
     </div>
 <?php }
 
-function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugin_name) {
-    // Check if the plugin is a premium one
-    $premium_plugins = ['elementor-pro/elementor-pro.php', 'seo-by-rank-math-pro/rank-math-pro.php'];
-    
-    if (in_array($plugin_id, $premium_plugins)) {
+function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugin_name, $upload_manually = false) {
+    if ($upload_manually) {
         return 'Upload the plugin manually';
     } else {
         // Dynamically get the WordPress admin URL
@@ -75,9 +72,33 @@ function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugi
         return '<a href="' . esc_url($search_url) . '" target="_blank">Download ' . esc_html($plugin_name) . '</a>';
     }
 }
+
 // Function to get the plugins list with dynamic download messages
 function hws_ct_get_plugins_list() {
     return [
+
+        
+
+        [
+            'id' => 'wp-optimize/wp-optimize.php',
+            'name' => 'WP Optimize',
+            'approved_constraints' => [
+                'is_installed' => true,
+                'is_active' => false,
+                'is_auto_update_enabled' => true
+            ],
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-optimize/wp-optimize.php', 'WP Optimize')
+        ],
+        [
+            'id' => 'hws-base-tools/initialization.php',
+            'name' => 'HWS Base Tools',
+            'approved_constraints' => [
+                'is_installed' => true,
+                'is_active' => true,
+                'is_auto_update_enabled' => true
+            ],
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('hws-base-tools/initialization.php', 'HWS Base Tools')
+        ],
         [
             'id' => 'elementor/elementor.php',
             'name' => 'Elementor',
@@ -96,7 +117,7 @@ function hws_ct_get_plugins_list() {
                 'is_active' => true,
                 'is_auto_update_enabled' => true
             ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro')
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro',true)
         ],
         [
             'id' => 'seo-by-rank-math/rank-math.php',
@@ -116,7 +137,7 @@ function hws_ct_get_plugins_list() {
                 'is_active' => true,
                 'is_auto_update_enabled' => false
             ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('seo-by-rank-math-pro/rank-math-pro.php', 'Rank Math Pro')
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('seo-by-rank-math-pro/rank-math-pro.php', 'Rank Math Pro',true)
         ],
         [
             'id' => 'classic-editor/classic-editor.php',
@@ -136,17 +157,17 @@ function hws_ct_get_plugins_list() {
                 'is_active' => true,
                 'is_auto_update_enabled' => true
             ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('jet-engine/jet-engine.php', 'JetEngine')
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('jet-engine/jet-engine.php', 'JetEngine',true)
         ],
         [
-            'id' => 'media-cleaner/media-cleaner.php',
-            'name' => 'Media Cleaner',
+            'id' => 'media-cleaner/media-cleaner-pro.php',
+            'name' => 'Media Cleaner Pro',
             'approved_constraints' => [
                 'is_installed' => true,
                 'is_active' => true,
                 'is_auto_update_enabled' => true
             ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('media-cleaner/media-cleaner.php', 'Media Cleaner')
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('media-cleaner/media-cleaner.php', 'Media Cleaner', true)
         ],
         [
             'id' => 'wordfence/wordfence.php',
@@ -196,7 +217,7 @@ function hws_ct_get_plugins_list() {
                 'is_active' => true,
                 'is_auto_update_enabled' => true
             ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('advanced-custom-fields-pro/acf.php', 'Advanced Custom Fields Pro')
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('advanced-custom-fields-pro/acf.php', 'Advanced Custom Fields Pro',true)
         ],
         [
             'id' => 'wp-sweep/wp-sweep.php',

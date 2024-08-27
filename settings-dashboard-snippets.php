@@ -208,6 +208,17 @@ add_action('wp_ajax_toggle_snippet', 'toggle_snippet');
                     // Trigger the toggleSnippet function to update the setting
                     toggleSnippet(snippetId);
                 });
+                        // Handle "Enable Plugin Auto Updates" button click
+                        $('#enable-theme-auto-updates').on('click', function() {
+                    var snippetId = 'enable_auto_update_themes';
+    
+                    // Automatically enable the checkbox for "Enable Automatic Updates for Plugins"
+                    $('#' + snippetId).prop('checked', true);
+    
+                    // Trigger the toggleSnippet function to update the setting
+                    toggleSnippet(snippetId);
+                });
+
             });
         </script>
     
