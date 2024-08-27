@@ -1,13 +1,12 @@
 <? 
-
 hws_ct_activate_snippets();
 function hws_ct_activate_snippets() {
    $settings_snippets = hws_ct_get_settings_snippets();
 
     if (!empty($settings_snippets)) {
-        error_log('Global $settings_snippets variable detected. Processing snippets...');
+        write_log('Global $settings_snippets variable detected. Processing snippets...');
     } else {
-        error_log('Global $settings_snippets variable is empty or not detected.');
+        write_log('Global $settings_snippets variable is empty or not detected.');
     }
 
     foreach ($settings_snippets as $snippet) {
@@ -18,19 +17,19 @@ function hws_ct_activate_snippets() {
         $is_enabled = get_option($snippet_id, false);
 
         // Log snippet information
-        error_log("Processing snippet: {$snippet['name']} (ID: $snippet_id)");
+        write_log("Processing snippet: {$snippet['name']} (ID: $snippet_id)");
 
         if ($is_enabled) {
-            error_log("Snippet $snippet_id is enabled. Preparing to activate.");
+            write_log("Snippet $snippet_id is enabled. Preparing to activate.");
             if (function_exists($function_to_call)) {
                 // Call the function to activate the snippet
                 call_user_func($function_to_call);
-                error_log("Snippet $snippet_id activated by calling $function_to_call.");
+                write_log("Snippet $snippet_id activated by calling $function_to_call.");
             } else {
-                error_log("Function $function_to_call does not exist for snippet $snippet_id.");
+                write_log("Function $function_to_call does not exist for snippet $snippet_id.");
             }
         } else {
-            error_log("Snippet $snippet_id is not enabled.");
+            write_log("Snippet $snippet_id is not enabled.");
         }
     }
 }

@@ -110,13 +110,14 @@ return $settings_snippets;
 
 
 // Precheck WordPress is set up correctly
-include_once("wordpress-pre-check.php");
+//include_once("wordpress-pre-check.php");
 
 // Import ACF Fields for wp-admin settings page
 include_once("register-acf-fields-settings-page.php");
 
 // Import ACF Fields
 include_once("register-acf-fields.php");
+
 // Import ACF Fields
 include_once("register-acf-fields-user.php");
 
@@ -132,6 +133,9 @@ include_once("settings-dashboard.php");
 include_once("settings-dashboard-wp-config.php");
 include_once("settings-dashboard-log-delete-cron.php");
 include_once("settings-dashboard-snippets.php");
+include_once("settings-dashboard-check-plugins.php");
+include_once("settings-dashboard-system-checks.php");
+include_once("settings-dashboard-theme-checks.php");
 
 // Functionality to process empty Pages and Jet Engine Listing Grids
 include_once("create-pages-and-listing-grids.php");

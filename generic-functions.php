@@ -1,4 +1,29 @@
 <?php
+
+// Define the write_log function only if it isn't already defined
+if (!function_exists('write_log')) {
+    function write_log($log, $full_debug = false) {
+        if (WP_DEBUG && WP_DEBUG_LOG && $full_debug) {
+            // Get the backtrace
+            $backtrace = debug_backtrace();
+            
+            // Extract the last function that called this one
+            $caller = isset($backtrace[1]['function']) ? $backtrace[1]['function'] : 'N/A';
+            
+            // Extract the file and line number where the caller is located
+            $caller_file = isset($backtrace[0]['file']) ? $backtrace[0]['file'] : 'N/A';
+            $caller_line = isset($backtrace[0]['line']) ? $backtrace[0]['line'] : 'N/A';
+            
+            // Prepare the log message
+            $log_message = is_array($log) || is_object($log) ? print_r($log, true) : $log;
+            $log_message .= "\n[Called by: $caller]\n[In file: $caller_file at line $caller_line]";
+            
+            // Write to the log
+            error_log($log_message);
+        }
+    }
+}
+
 /**
  * Check if the given plugin is installed, active, and auto-update is enabled.
  * 
@@ -16,7 +41,7 @@ if (!function_exists('check_plugin_status')) {
         $is_auto_update_enabled = in_array($plugin, $auto_updates);
         return [$is_installed, $is_active, $is_auto_update_enabled];
     }
-}
+} else write_log("Warning: check_plugin_status function is already declared",true);
 
 /**
  * Check if a user exists by login name.
@@ -28,7 +53,7 @@ if (!function_exists('does_user_exist')) {
     function does_user_exist($login) {
         return get_user_by('login', $login) !== false;
     }
-}
+} else write_log("Warning: does_user_exist function is already declared",true);
 
 /**
  * Check if a custom post type exists.
@@ -40,7 +65,8 @@ if (!function_exists('does_post_type_exist')) {
     function does_post_type_exist($post_type) {
         return post_type_exists($post_type);
     }
-}
+} else write_log("Warning: does_post_type_exist function is already declared",true);
+
 
 /**
  * Check if a specified theme is currently active.
@@ -52,7 +78,8 @@ if (!function_exists('is_theme_active')) {
     function is_theme_active($theme_name) {
         return wp_get_theme()->get('Name') === $theme_name;
     }
-}
+} else write_log("Warning: is_theme_active function is already declared",true);
+
 
 /**
  * Check if auto-updates are enabled for a specified theme.
@@ -65,7 +92,7 @@ if (!function_exists('is_theme_auto_update_enabled')) {
         $theme_updates = get_option('auto_update_themes', []);
         return in_array($theme_name, $theme_updates);
     }
-}
+} else write_log("Warning: is_theme_auto_update_enabled function is already declared",true);
 
 /**
  * Display the status of a condition with a message and colored icon.
@@ -79,7 +106,8 @@ if (!function_exists('display_check_status')) {
         $icon = $condition ? '&#x2705;' : '&#x274C;';
         echo "<div style='color: $color;'>$icon $message</div>";
     }
-}
+} else write_log("Warning: display_check_status function is already declared",true);
+
 
 /**
  * Check if a taxonomy exists.
@@ -91,7 +119,8 @@ if (!function_exists('does_taxonomy_exist')) {
     function does_taxonomy_exist($taxonomy) {
         return taxonomy_exists($taxonomy);
     }
-}
+} else write_log("Warning: does_taxonomy_exist function is already declared",true);
+
 
 /**
  * Check if a term exists within a specified taxonomy.
@@ -105,22 +134,10 @@ if (!function_exists('does_term_exist')) {
         $term_exists = term_exists($term, $taxonomy);
         return $term_exists !== 0 && $term_exists !== null;
     }
-}
+} else write_log("Warning: does_term_exist function is already declared",true);
 
-/**
- * Add a "Verified Profiles" settings page under the "Settings" menu in WordPress admin.
- */
-if (!function_exists('add_verified_profiles_menu')) {
-    function add_verified_profiles_menu() {
-        add_options_page(
-            'Verified Profiles',   // Page title
-            'Verified Profiles',   // Menu title
-            'manage_options',      // Capability required to access this page
-            'verified-profiles',   // Menu slug
-            'verified_profiles_page' // Callback function to display the page content
-        );
-    }
-}
+
+
 
 /**
  * Ensure ACF (Advanced Custom Fields) form functions are available.
@@ -160,7 +177,8 @@ if (!function_exists('add_settings_menu')) {
             $callback_function // Callback function to display the page content
         );
     }
-}
+} else write_log("Warning: add_settings_menu function is already declared",true);
+
 
 
 
@@ -198,7 +216,8 @@ if (!function_exists('check_smtp_auth_status_and_mailer')) {
             'details' => $details
         ];
     }
-}
+} else write_log("Warning: check_smtp_auth_status_and_mailer function is already declared",true);
+
 
 
 
@@ -222,7 +241,8 @@ if (!function_exists('get_smtp_sending_domain')) {
 
         return $sending_domain;
     }
-}
+} else write_log("Warning: get_smtp_sending_domain function is already declared",true);
+
 
 
 
@@ -239,7 +259,8 @@ if (!function_exists('check_wp_cache_enabled')) {
             'details' => $status ? 'Enabled' : 'Disabled'
         ];
     }
-}
+} else write_log("Warning: check_wp_cache_enabled function is already declared",true);
+
 
 
 if (!function_exists('check_wordpress_memory_limit')) {
@@ -255,7 +276,8 @@ if (!function_exists('check_wordpress_memory_limit')) {
             'details' => $memory_limit
         ];
     }
-}
+} else write_log("Warning: check_wordpress_memory_limit function is already declared",true);
+
 
 
 if (!function_exists('check_server_memory_limit')) {
@@ -273,7 +295,8 @@ if (!function_exists('check_server_memory_limit')) {
             'details' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
-}
+} else write_log("Warning: check_server_memory_limit function is already declared",true);
+
 
 
 
@@ -294,13 +317,15 @@ if (!function_exists('check_server_ram')) {
             'details' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
-}
+} else write_log("Warning: check_server_ram function is already declared",true);
+
 
 if (!function_exists('check_wp_debug_disabled')) {
     function check_wp_debug_disabled() {
         return defined('WP_DEBUG') && !WP_DEBUG;
     }
-}
+} else write_log("Warning: check_wp_debug_disabled function is already declared",true);
+
 
 if (!function_exists('check_log_file_sizes')) {
     function check_log_file_sizes() {
@@ -326,26 +351,30 @@ if (!function_exists('check_log_file_sizes')) {
             ]
         ];
     }
-}
+} else write_log("Warning: check_log_file_sizes function is already declared",true);
+
 
 
 if (!function_exists('check_server_is_litespeed')) {
     function check_server_is_litespeed() {
         return strpos($_SERVER['SERVER_SOFTWARE'], 'LiteSpeed') !== false;
     }
-}
+} else write_log("Warning: check_server_is_litespeed function is already declared",true);
+
 
 if (!function_exists('check_php_version')) {
     function check_php_version() {
         return version_compare(PHP_VERSION, '8.3', '>=');
     }
-}
+} else write_log("Warning: check_php_version function is already declared",true);
+
 
 if (!function_exists('check_php_sapi_is_litespeed')) {
     function check_php_sapi_is_litespeed() {
         return strpos(php_sapi_name(), 'litespeed') !== false;
     }
-}
+} else write_log("Warning: check_php_sapi_is_litespeed function is already declared",true);
+
 
 if (!function_exists('display_precheck_result')) {
     function display_precheck_result($label, $status, $details = '') {
@@ -354,7 +383,8 @@ if (!function_exists('display_precheck_result')) {
         $details_html = $details ? "<span style='color: gray; font-size: 12px;'>$details</span>" : '';
         echo "<div style='color: $color; margin-bottom: 10px;'><strong>$label:</strong> $icon $details_html</div>";
     }
-}
+} else write_log("Warning: display_precheck_result function is already declared",true);
+
 
 
 
@@ -362,7 +392,8 @@ if (!function_exists('check_imagick_available')) {
     function check_imagick_available() {
         return extension_loaded('imagick');
     }
-}
+} else write_log("Warning: check_imagick_available function is already declared",true);
+
 
 if (!function_exists('check_query_monitor_status')) {
     function check_query_monitor_status() {
@@ -373,72 +404,50 @@ if (!function_exists('check_query_monitor_status')) {
             'is_active' => $is_active,
         ];
     }
-}
-
+} else write_log("Warning: check_query_monitor_status function is already declared",true);
 
 
 
 
 if (!function_exists('custom_wp_admin_logo')) {
     function custom_wp_admin_logo() {
-        $logo_url = get_site_icon_url(); // Fetch the site icon URL from the WordPress settings
-        if ($logo_url) {
-            ?>
-            <style type="text/css">
-                #login h1 a, .login h1 a { 
-                    background-image: url('<?php echo esc_url($logo_url); ?>');
-                    width:250px;
-                    height:50px;
-                    padding:30px;
-                    background-size:contain;
-                    background-repeat: no-repeat;
-                }
-            </style>
-            <?php
+        // Check if this is being called in the correct context (login page)
+        if (did_action('login_enqueue_scripts')) {
+            $logo_url = get_site_icon_url(); // Fetch the site icon URL from the WordPress settings
+            write_log("adding custom logo: ". $logo_url, true);
+            if ($logo_url) {
+                write_log("adding custom logo WITH URL: ". $logo_url, true);
+                echo '
+                <style type="text/css">
+                    #login h1 a, .login h1 a { 
+                        background-image: url("' . esc_url($logo_url) . '");
+                        width: 250px;
+                        height: 50px;
+                        padding: 30px;
+                        background-size: contain;
+                        background-repeat: no-repeat;
+                    }
+                </style>';
+            }
         }
     }
-    add_action('login_enqueue_scripts', 'custom_wp_admin_logo');
-}
+    add_action('login_enqueue_scripts', 'custom_wp_admin_logo', 20); // Increased priority
+} else write_log("Warning: custom_wp_admin_logo function is already declared",true);
+
 
 if (!function_exists('custom_wp_admin_logo_link')) {
     function custom_wp_admin_logo_link() {
         return false;
     }
     add_filter('login_headerurl', 'custom_wp_admin_logo_link');
-}
+} else write_log("Warning: custom_wp_admin_logo_link function is already declared",true);
 
 
 
 
 
-if (!function_exists('check_wp_sweep_status')) {
-    function check_wp_sweep_status() {
-        // Check the status of WP-Sweep plugin using the generic function
-        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('wp-sweep/wp-sweep.php');
-        return [
-            'is_installed' => $is_installed,
-            'is_active' => $is_active,
-        ];
-    }
-}
 
-if (!function_exists('check_site_kit_by_google_status')) {
-    function check_site_kit_by_google_status() {
-        // Check if the Site Kit by Google plugin is active
-        list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('google-site-kit/google-site-kit.php');
 
-        // Check if the necessary services are connected
-        $connected_services = get_option('googlesitekit_connected_services', []);
-        $required_services = ['search-console', 'tagmanager', 'analytics'];
-        $missing_services = array_diff($required_services, $connected_services);
-
-        return [
-            'is_installed' => $is_installed,
-            'is_active' => $is_active,
-            'services_connected' => empty($missing_services),
-        ];
-    }
-}
 
 if (!function_exists('check_server_specs')) {
     function check_server_specs() {
@@ -450,7 +459,8 @@ if (!function_exists('check_server_specs')) {
             'total_ram' => trim($total_ram) . ' MB'
         ];
     }
-}
+} else write_log("Warning: check_server_specs function is already declared",true);
+
 
 
 
@@ -512,7 +522,7 @@ if (!function_exists('check_wordfence_notification_email')) {
             ];
         }
     }
-}
+} else write_log("Warning: check_wordfence_notification_email function is already declared",true);
 
 
 
@@ -535,26 +545,18 @@ if (!function_exists('check_wordpress_main_email')) {
             'details' => $status ? $admin_email : 'Not set'
         ];
     }
-}
+} else write_log("Warning: check_wordpress_main_email function is already declared", true);
+
 
 if (!function_exists('check_cloudlinux_config')) {
     function check_cloudlinux_config() {
         $lve_enabled = function_exists('lve_get_limits');
+        if (!$lve_enabled) {
+            write_log('lve_get_limits function does not exist or is not accessible.', true);
+        }
         return $lve_enabled;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
+} else write_log("Warning: check_cloudlinux_config function is already declared", true);
 
 if (!function_exists('check_redis_active')) {
     function check_redis_active() {
@@ -562,7 +564,7 @@ if (!function_exists('check_redis_active')) {
 
         // Check if the Redis PHP extension is loaded
         $redis_extension_loaded = extension_loaded('redis');
-        write_log('Redis extension loaded: ' . ($redis_extension_loaded ? 'Yes' : 'No'));
+        write_log('Redis extension loaded: ' . ($redis_extension_loaded ? 'Yes' : 'No'), true);
 
         // Force configuration of Redis in LiteSpeed settings
         if (defined('LSCWP_CONTENT') && class_exists('LiteSpeed\Litespeed')) {
@@ -576,42 +578,143 @@ if (!function_exists('check_redis_active')) {
         } else {
             $litespeed_redis_configured = false;
         }
-        write_log('LiteSpeed Redis configured (after force): ' . ($litespeed_redis_configured ? 'Yes' : 'No'));
+        write_log('LiteSpeed Redis configured (after force): ' . ($litespeed_redis_configured ? 'Yes' : 'No'), true);
 
         // Check if Redis is in use by WP_Object_Cache
         $redis_in_use = isset($wp_object_cache) && is_a($wp_object_cache, 'WP_Object_Cache') && 
                         method_exists($wp_object_cache, 'redis') && $wp_object_cache->redis instanceof Redis;
-                        write_log('Redis in use by WP_Object_Cache: ' . ($redis_in_use ? 'Yes' : 'No'));
+        write_log('Redis in use by WP_Object_Cache: ' . ($redis_in_use ? 'Yes' : 'No'), true);
 
         // Test the Redis connection if it's in use
         $redis_connected = false;
         if ($redis_in_use) {
             try {
                 $redis_connected = $wp_object_cache->redis->ping() === '+PONG';
-                write_log('Redis connection successful: Yes');
+                write_log('Redis connection successful: Yes', true);
             } catch (Exception $e) {
-                write_log('Redis connection failed: ' . $e->getMessage());
+                write_log('Redis connection failed: ' . $e->getMessage(), true);
                 $redis_connected = false;
             }
         } else {
-            write_log('Redis connection test skipped because Redis is not in use.');
+            write_log('Redis connection test skipped because Redis is not in use.', true);
         }
 
         // Determine the final status
         $status = $redis_extension_loaded && ($litespeed_redis_configured || $redis_in_use) && $redis_connected;
-        write_log('Final Redis status: ' . ($status ? 'Active' : 'Inactive'));
+        write_log('Final Redis status: ' . ($status ? 'Active' : 'Inactive'), true);
 
         return [
             'status' => $status,
             'details' => $status ? 'Yes' : 'No'
         ];
     }
-}
+} else write_log("Warning: check_redis_active function is already declared", true);
 
 
+if (!function_exists('check_wp_cache_enabled')) {
+    function check_wp_cache_enabled() {
+        return defined('WP_CACHE') && WP_CACHE;
+    }
+} else write_log("Warning: check_wp_cache_enabled function is already declared", true);
+
+if (!function_exists('check_caching_source')) {
+    function check_caching_source() {
+        $caching_plugins = [
+            'LiteSpeed Cache' => 'litespeed-cache/litespeed-cache.php',
+            'W3 Total Cache' => 'w3-total-cache/w3-total-cache.php',
+            'WP Super Cache' => 'wp-super-cache/wp-cache.php',
+            'WP Rocket' => 'wp-rocket/wp-rocket.php',
+            'Redis Cache' => 'redis-cache/redis-cache.php',
+            'Cache Enabler' => 'cache-enabler/cache-enabler.php',
+            'Comet Cache' => 'comet-cache/comet-cache.php',
+            'Swift Performance' => 'swift-performance-lite/swift-performance-lite.php'
+        ];
+
+        foreach ($caching_plugins as $name => $plugin_path) {
+            if (is_plugin_active($plugin_path)) {
+                return [
+                    'status' => true,
+                    'details' => $name
+                ];
+            }
+        }
+
+        if (check_redis_active()['status']) {
+            return [
+                'status' => true,
+                'details' => 'Redis'
+            ];
+        }
+
+        if (defined('LITESPEED_SERVER')) {
+            return [
+                'status' => true,
+                'details' => 'LiteSpeed Cache'
+            ];
+        }
+
+        return [
+            'status' => false,
+            'details' => 'None'
+        ];
+    }
+} else write_log("Warning: check_caching_source function is already declared", true);
 
 
+if (!function_exists('modify_wp_config_constants')) {
+    function modify_wp_config_constants($constants_to_update) {
+        $wp_config_path = ABSPATH . 'wp-config.php';
 
+        if (!file_exists($wp_config_path) || !is_writable($wp_config_path)) {
+            return ['status' => false, 'message' => 'wp-config.php does not exist or is not writable.'];
+        }
+
+        $config_content = file_get_contents($wp_config_path);
+
+        foreach ($constants_to_update as $constant => $value) {
+            // Prepare the constant definition
+            $value = is_bool($value) ? ($value ? 'true' : 'false') : "'$value'";
+            $new_constant = "define('$constant', $value); // Added/Modified by HWS Core Tools plugin";
+
+            // Remove any existing definition of the constant, along with any existing comment
+            $config_content = preg_replace(
+                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*\/\/.*\n?/",
+                '',
+                $config_content
+            );
+
+            // Also, check for any duplicate constants without comments and remove them
+            $config_content = preg_replace(
+                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*/",
+                '',
+                $config_content
+            );
+
+            // Insert the new constant definition in the correct location
+            if ($constant === 'WP_DEBUG' || $constant === 'WP_DEBUG_DISPLAY' || $constant === 'WP_DEBUG_LOG') {
+                // Insert these debug-related constants after the 'WP_DEBUG' section
+                $debug_position = strpos($config_content, "define('WP_DEBUG',");
+                if ($debug_position !== false) {
+                    $end_of_debug_section = strpos($config_content, "\n", $debug_position) + 1;
+                    $config_content = substr_replace($config_content, "$new_constant\n", $end_of_debug_section, 0);
+                } else {
+                    // Fallback to inserting at the beginning if WP_DEBUG is not found
+                    $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
+                }
+            } else {
+                // Default behavior: insert at the beginning of the file
+                $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
+            }
+        }
+
+        // Write the updated content back to wp-config.php
+        if (file_put_contents($wp_config_path, $config_content)) {
+            return ['status' => true, 'message' => 'Constants updated successfully.'];
+        } else {
+            return ['status' => false, 'message' => 'Failed to update wp-config.php.'];
+        }
+    }
+} else write_log("Warning: modify_wp_config_constants function is already declared", true);
 
 
 
@@ -745,7 +848,22 @@ if (!function_exists('modify_wp_config_constants')) {
         }
     }
 }
+
+
+
+
 add_action('wp_ajax_hws_ct_update_wp_config', 'hws_ct_update_wp_config');
+
+
+
+
+
+
+
+
+
+
+
 function hws_ct_update_wp_config() {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized user');
@@ -830,7 +948,18 @@ function render_enable_plugin_auto_updates_button() {
 }
 
 
-  
+if (!function_exists('hws_add_wp_admin_settings_page')) {
+function hws_add_wp_admin_settings_page($page_title, $menu_title, $capability, $menu_slug, $callback_function) {
+    add_options_page(
+        $page_title,
+        $menu_title,
+        $capability,
+        $menu_slug,
+        $callback_function
+    );
+}}
+
+
     if (!function_exists('get_wp_config_defined_constants')) {
     function get_wp_config_defined_constants() {
         // List of constants to exclude (security-sensitive)
@@ -967,25 +1096,7 @@ if (!function_exists('disable_litespeed_js_combine')) {
     }
 }
 
-if (!function_exists('custom_wp_admin_logo')) {
-    function custom_wp_admin_logo() {
-        add_action('login_enqueue_scripts', function() {
-            ?>
-            <style type="text/css">
-                #login h1 a, .login h1 a { 
-                    background-image: url('<?php echo esc_url(get_field('login_logo', 'option')); ?>'); 
-                    width:250px; 
-                    height:50px; 
-                    padding:30px; 
-                    background-size:contain; 
-                    background-repeat: no-repeat;
-                }
-            </style>
-            <?php
-        });
-        add_filter('login_headerurl', '__return_false');
-    }
-}
+
 
 if (!function_exists('disable_rankmath_sitemap_caching')) {
     function disable_rankmath_sitemap_caching() {
@@ -993,11 +1104,3 @@ if (!function_exists('disable_rankmath_sitemap_caching')) {
     }
 }
 
-// Define the write_log function only if it isn't already defined
-if (!function_exists('write_log')) {
-    function write_log($log,$full_debug=false) {
-        if (WP_DEBUG && WP_DEBUG_LOG && $full_debug) {
-            write_log(is_array($log) || is_object($log) ? print_r($log, true) : $log);
-        }
-    }
-}
