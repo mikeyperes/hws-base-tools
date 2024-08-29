@@ -372,31 +372,35 @@ if (!function_exists('hws_base_tools\check_server_memory_limit')) {
     }
 } else write_log("Warning: hws_base_tools/check_server_memory_limit function is already declared",true);
 
-
 if (!function_exists('hws_base_tools\check_redis_active')) {
     function check_redis_active() {
         $status = false;
-        $details = 'Redis connection failed';
+        $details = 'Redis extension is not installed or not enabled';
 
-        try {
-            // Initialize Redis object using the global namespace
-            $redis = new \Redis(); // Note the backslash to reference the global namespace
-            
-            // Attempt to connect to Redis server
-            if ($redis->connect('127.0.0.1', 6379)) { // Adjust IP and port as necessary
-                // Test setting and getting a value
-                $redis->set("test-key", "Redis is working");
-                $test_value = $redis->get("test-key");
+        // Check if the Redis class exists, meaning the extension is loaded
+        if (class_exists('Redis')) {
+            try {
+                // Initialize Redis object using the global namespace
+                $redis = new \Redis(); // Note the backslash to reference the global namespace
 
-                if ($test_value === "Redis is working") {
-                    $status = true;
-                    $details = 'Redis is working';
+                // Attempt to connect to Redis server
+                if ($redis->connect('127.0.0.1', 6379)) { // Adjust IP and port as necessary
+                    // Test setting and getting a value
+                    $redis->set("test-key", "Redis is working");
+                    $test_value = $redis->get("test-key");
+
+                    if ($test_value === "Redis is working") {
+                        $status = true;
+                        $details = 'Redis is working';
+                    } else {
+                        $details = 'Redis connection successful, but failed to set/get a value';
+                    }
                 } else {
-                    $details = 'Redis connection successful, but failed to set/get a value';
+                    $details = 'Redis connection failed';
                 }
+            } catch (Exception $e) {
+                $details = 'Exception: ' . $e->getMessage();
             }
-        } catch (Exception $e) {
-            $details = 'Exception: ' . $e->getMessage();
         }
 
         // Log the results for debugging purposes
@@ -410,7 +414,6 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 } else {
     write_log("Warning: check_redis_active function is already declared", true);
 }
-
 
 
 if (!function_exists('hws_base_tools\check_server_ram')) {
