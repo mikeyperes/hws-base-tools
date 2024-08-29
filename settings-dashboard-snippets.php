@@ -1,5 +1,85 @@
-<? 
-add_action('wp_ajax_toggle_snippet', 'toggle_snippet');
+<?php namespace hws_base_tools;
+
+use function hws_base_tools\disable_rankmath_sitemap_caching;
+use function hws_base_tools\enable_auto_update_plugins;
+use function hws_base_tools\enable_auto_update_themes;
+use function hws_base_tools\custom_wp_admin_logo;
+use function hws_base_tools\disable_litespeed_js_combine;
+use function hws_base_tools\hws_ct_snippets_activate_author_social_acfs;
+use function hws_base_tools\write_log;
+use function hws_base_tools\toggle_snippet;
+use function hws_base_tools\hws_ct_get_settings_snippets;
+
+/*
+function hws_ct_get_settings_snippets()
+{
+    $settings_snippets = [
+
+        [
+            'id' => 'disable_rankmath_sitemap_caching',
+            'name' => 'Disable RankMath Sitemap Caching',
+            'description' => 'Disables caching for RankMath sitemaps.',
+            'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
+            'function' => 'disable_rankmath_sitemap_caching'
+        ],
+        [
+            'id' => 'enable_auto_update_plugins',
+            'name' => 'Enable Automatic Updates for Plugins',
+            'description' => 'Enables automatic updates for all plugins.',
+            'info' => 'Automatically keeps your plugins up to date.',
+            'function' => 'enable_auto_update_plugins'
+        ],
+
+     [
+    'id' => 'enable_auto_update_themes',
+    'name' => 'Enable Automatic Updates for Themes',
+    'description' => 'Enables automatic updates for all themes.',
+    'info' => 'Automatically keeps your themes up to date.',
+    'function' => 'enable_auto_update_themes'
+],
+        [
+            'id' => 'enable_wp_admin_logo',
+            'name' => 'Enable WP Admin Logo',
+            'description' => 'Enable a custom logo on the WP admin login screen using ACF.',
+            'info' => 'This will use the logo from the ACF field "login_logo".',
+            'function' => 'custom_wp_admin_logo'
+        ],
+        [
+            'id' => 'disable_litespeed_js_combine',
+            'name' => 'Disable JS Combine in LiteSpeed Cache',
+            'description' => 'Disables JS combining in LiteSpeed Cache.',
+            'info' => 'Prevents LiteSpeed from combining JavaScript files, which can be useful for resolving issues with script loading.',
+            'function' => 'disable_litespeed_js_combine'
+        ],
+        [
+            'id' => 'custom_wp_admin_logo',
+            'name' => 'Custom WP Admin Logo',
+            'description' => 'Adds a custom logo to the WP admin login screen.',
+            'info' => 'Allows you to upload a custom logo via ACF and display it on the login page.',
+            'function' => 'custom_wp_admin_logo'
+        ],
+        
+    [
+        'name' => 'Enable Author Social ACFs',
+        'id' => 'hws_ct_snippets_author_social_acfs',
+         'function' => 'hws_ct_snippets_activate_author_social_acfs',
+        'description' => 'This will enable social media fields in author profiles.',
+        'info' => implode('<br>', array_map(function($field) {
+            if ($field['type'] === 'group') {
+                $sub_fields = implode(', ', array_map(function($sub_field) {
+                    return "{$sub_field['name']}";
+                }, $field['sub_fields']));
+                return "{$field['name']}<br>&emsp;{$sub_fields}";
+            } else {
+                return "{$field['name']}";
+            }
+        }, acf_get_fields('group_590d64c31db0a')))
+    ],
+];
+return $settings_snippets; 
+}
+*/
+
 
     function toggle_snippet() {
         $settings_snippets = hws_ct_get_settings_snippets();
@@ -34,6 +114,7 @@ add_action('wp_ajax_toggle_snippet', 'toggle_snippet');
         wp_die(); // Ensure proper termination of the script
     }
 
+    add_action('wp_ajax_toggle_snippet', 'hws_base_tools\toggle_snippet');
 
     function hws_ct_display_settings_snippets() {
         add_action('admin_init', 'acf_form_init');
@@ -164,64 +245,50 @@ add_action('wp_ajax_toggle_snippet', 'toggle_snippet');
                 </div>
             </div>
         </div>
-    
-        <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                function toggleSnippet(snippetId) {
-                    var isChecked = $('#' + snippetId).prop('checked');
-    
-                    // Make an AJAX call to toggle the snippet
-                    $.ajax({
-                        url: ajaxurl,  // Ensure ajaxurl is set correctly
-                        type: 'post',
-                        data: {
-                            action: 'toggle_snippet',
-                            snippet_id: snippetId,
-                            enable: isChecked
-                        },
-                        success: function(response) {
-                            if(response.success) {
-                                alert(response.data);
-                            } else {
-                                alert('Error: ' + response.data);
-                            }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
-                            alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
-                        }
-                    });
-                }
-    
-                // Attach the toggleSnippet function to checkbox click events
-                $('input[type="checkbox"]').on('change', function() {
-                    toggleSnippet(this.id);
-                });
-    
-                // Handle "Enable Plugin Auto Updates" button click
-                $('#enable-plugin-auto-updates').on('click', function() {
-                    var snippetId = 'enable_auto_update_plugins';
-    
-                    // Automatically enable the checkbox for "Enable Automatic Updates for Plugins"
-                    $('#' + snippetId).prop('checked', true);
-    
-                    // Trigger the toggleSnippet function to update the setting
-                    toggleSnippet(snippetId);
-                });
-                        // Handle "Enable Plugin Auto Updates" button click
-                        $('#enable-theme-auto-updates').on('click', function() {
-                    var snippetId = 'enable_auto_update_themes';
-    
-                    // Automatically enable the checkbox for "Enable Automatic Updates for Plugins"
-                    $('#' + snippetId).prop('checked', true);
-    
-                    // Trigger the toggleSnippet function to update the setting
-                    toggleSnippet(snippetId);
-                });
 
+
+
+        <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        function toggleSnippet(snippetId) {
+            var isChecked = $('#' + snippetId).prop('checked');
+
+            // Make an AJAX call to toggle the snippet
+            $.ajax({
+                url: ajaxurl,  // Ensure ajaxurl is set correctly
+                type: 'post',
+                data: {
+                    action: 'toggle_snippet',
+                    snippet_id: snippetId,
+                    enable: isChecked
+                },
+                success: function(response) {
+                    if(response.success) {
+                        alert(response.data);
+                    } else {
+                        alert('Error: ' + response.data);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                    alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+                }
             });
-        </script>
-    
+        }
+
+        // Handle "Enable Plugin Auto Updates" button click
+        $('.modify-snippet-via-button').on('click', function() {
+            var snippetId = $(this).data('constant') === 'auto_update_plugin' ? 'enable_auto_update_plugins' : 'enable_auto_update_themes';
+
+            // Automatically enable the checkbox for the corresponding snippet
+            $('#' + snippetId).prop('checked', true);
+
+            // Trigger the toggleSnippet function to update the setting
+            toggleSnippet(snippetId);
+        });
+
+    });
+</script>
         <?php
         // End output buffering and flush the output
         ob_end_flush();

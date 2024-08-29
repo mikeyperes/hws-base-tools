@@ -1,4 +1,6 @@
-<? // Function to delete log files
+<?php namespace hws_base_tools;
+
+// Function to delete log files
 function delete_log_file($log_file) {
     if (file_exists($log_file)) {
         if (unlink($log_file)) {
@@ -12,7 +14,7 @@ function delete_log_file($log_file) {
 }
 
 // Handle AJAX requests to delete debug.log
-add_action('wp_ajax_delete_debug_log', 'delete_debug_log');
+add_action('wp_ajax_delete_debug_log', 'hws_base_tools\delete_debug_log');
 function delete_debug_log() {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized user');
@@ -27,7 +29,7 @@ function delete_debug_log() {
 }
 
 // Handle AJAX requests to delete error_log
-add_action('wp_ajax_delete_error_log', 'delete_error_log');
+add_action('wp_ajax_delete_error_log', 'hws_base_tools\delete_error_log');
 function delete_error_log() {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized user');
@@ -80,7 +82,7 @@ function remove_check_wp_log_size_cron() {
 add_action('switch_theme', 'remove_check_wp_log_size_cron');
 
 // Handle the AJAX request to toggle auto-delete
-add_action('wp_ajax_hws_ct_toggle_auto_delete', 'hws_ct_toggle_auto_delete');
+add_action('wp_ajax_hws_ct_toggle_auto_delete', 'hws_base_tools\hws_ct_toggle_auto_delete');
 function hws_ct_toggle_auto_delete() {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized user');
@@ -112,7 +114,7 @@ function hws_ct_toggle_auto_delete() {
 }
 
 // Inject the inline script to handle the toggle
-add_action('admin_print_footer_scripts', 'hws_ct_inline_auto_delete_script');
+add_action('admin_print_footer_scripts', 'hws_base_tools\hws_ct_inline_auto_delete_script');
 function hws_ct_inline_auto_delete_script() {
     $is_enabled = get_option('hws_auto_delete_enabled', 'disabled') === 'enabled';
     ?>

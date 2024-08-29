@@ -4,11 +4,21 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 2.0
+Version: 2.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main
 */ 
+namespace hws_base_tools;
+// Generic functions import
+include_once("generic-functions.php");
+
+
+// Use function for easy access without namespace prefix
+use function hws_base_tools\check_plugin_status;
+
+
+
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
@@ -29,8 +39,7 @@ $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
 
 
-// Generic functions import
-include_once("generic-functions.php");
+
 
 // Check if ACF or ACF Pro is installed and active using the generic function
 list($acf_installed, $acf_active) = check_plugin_status('advanced-custom-fields/acf.php');
@@ -134,7 +143,7 @@ include_once("register-acf-fields-user.php");
 include_once("activate-snippets.php");
 
 // Precheck WordPress is set up correctly
-include_once("initiate-user-roles.php");
+//include_once("initiate-user-roles.php");
 
 // Build Dashboard
 include_once("settings-dashboard.php");
@@ -150,11 +159,14 @@ include_once("settings-dashboard-theme-checks.php");
 //include_once("create-pages-and-listing-grids.php");
 
 
-// Import plugin updater functionality
+// Include the GitHub Updater class
 include_once("GitHub_Updater.php");
 
+// Use the WP_GitHub_Updater class
+use hws_base_tools\WP_GitHub_Updater;
+
 // Initialize the updater
-if (is_admin()) { // Ensure this runs only in the admin area
+if (is_admin()) { // Ensure this runs only i n the admin area
 
     $config = array(
         'slug' => plugin_basename(__FILE__), // Plugin slug

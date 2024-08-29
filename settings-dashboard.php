@@ -1,4 +1,5 @@
-<?       
+<?php namespace hws_base_tools;
+
   
 if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
     function hws_ct_highlight_if_essential_setting_failed($result) {
@@ -7,19 +8,23 @@ if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
 }
 
  
-// Add settings menu and page
-add_action('admin_menu', 'hws_ct_hws_add_wp_admin_settings_page');
+
 
 // Abstract function to add a settings menu and page
-function hws_ct_hws_add_wp_admin_settings_page() {
+function hws_ct_add_wp_admin_settings_page() {
     hws_add_wp_admin_settings_page(
         'Hexa Core Tools',       // Page title
         'Hexa Core Tools',       // Menu title
         'manage_options',        // Capability
         'hws-core-tools',        // Menu slug
-        'hws_ct_display_wp_admin_settings_page'    // Callback function
+        'hws_base_tools\hws_ct_display_wp_admin_settings_page'    // Callback function
     );
 }
+
+// Add settings menu and page
+add_action('admin_menu', 'hws_base_tools\hws_ct_add_wp_admin_settings_page');
+
+
 function hws_ct_display_wp_admin_settings_page() {
     
     if (ob_get_level() == 0) ob_start();

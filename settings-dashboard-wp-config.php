@@ -1,11 +1,6 @@
-<?php
-// Inline jQuery for handling actions
-add_action('admin_footer', 'hws_ct_inline_admin_script');
-function hws_ct_inline_admin_script() {
-    ?>
- 
-    <?php
-}
+<?php namespace hws_base_tools;
+
+
 
 function hws_ct_display_settings_wp_config()
 {?>

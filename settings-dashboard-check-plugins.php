@@ -1,4 +1,25 @@
-<?php
+<?php namespace hws_base_tools;
+
+// Import functions from the hws_base_tools namespace
+use function hws_base_tools\get_database_table_prefix;
+use function hws_base_tools\check_wordpress_main_email;
+use function hws_base_tools\check_imagick_available;
+use function hws_base_tools\get_constant_value_from_wp_config;
+use function hws_base_tools\check_cloudflare_active;
+use function hws_base_tools\check_php_type;
+use function hws_base_tools\check_php_handler;
+use function hws_base_tools\hws_ct_highlight_if_essential_setting_failed;
+use function hws_base_tools\check_myisam_tables;
+use function hws_base_tools\check_wordfence_notification_email;
+use function hws_base_tools\check_wp_config_constant_status;
+use function hws_base_tools\check_log_file_sizes;
+use function hws_base_tools\check_smtp_auth_status_and_mailer;
+use function hws_base_tools\check_redis_active;
+use function hws_base_tools\check_caching_source;
+use function hws_base_tools\check_wordpress_memory_limit;
+use function hws_base_tools\check_server_memory_limit;
+use function hws_base_tools\check_server_specs;
+
 
 function hws_ct_display_settings_check_plugins() { ?>
 

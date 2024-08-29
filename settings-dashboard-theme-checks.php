@@ -1,4 +1,4 @@
-<?php
+<?php namespace hws_base_tools;
 function hws_ct_display_settings_theme_checks()
 {    ?>
     <!-- Theme Status Panel -->

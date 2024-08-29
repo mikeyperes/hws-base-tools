@@ -1,4 +1,4 @@
-<?php
+<?php namespace hws_base_tools;
 
 // Prevent loading this file directly and/or if the class is already defined
 if ( ! defined( 'ABSPATH' ) || class_exists( 'WPGitHubUpdater' ) || class_exists( 'WP_GitHub_Updater' ) )

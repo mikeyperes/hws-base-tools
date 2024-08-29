@@ -1,13 +1,9 @@
-<? 
-hws_ct_activate_snippets();
-function hws_ct_activate_snippets() {
-   $settings_snippets = hws_ct_get_settings_snippets();
+<?php namespace hws_base_tools;
 
-    if (!empty($settings_snippets)) {
-        write_log('Global $settings_snippets variable detected. Processing snippets...');
-    } else {
-        write_log('Global $settings_snippets variable is empty or not detected.');
-    }
+hws_ct_activate_snippets();
+
+function hws_ct_activate_snippets() {
+    $settings_snippets = hws_ct_get_settings_snippets();
 
     foreach ($settings_snippets as $snippet) {
         $snippet_id = $snippet['id'];
@@ -17,19 +13,23 @@ function hws_ct_activate_snippets() {
         $is_enabled = get_option($snippet_id, false);
 
         // Log snippet information
-        write_log("Processing snippet: {$snippet['name']} (ID: $snippet_id)");
+        write_log("Processing snippet: {$snippet['name']} (ID: $snippet_id)", false);
 
         if ($is_enabled) {
             write_log("Snippet $snippet_id is enabled. Preparing to activate.");
+            
+            // Adjust function name for correct namespace
+            $function_to_call = '\\' . __NAMESPACE__ . '\\' . $function_to_call;
+            
             if (function_exists($function_to_call)) {
                 // Call the function to activate the snippet
                 call_user_func($function_to_call);
-                write_log("Snippet $snippet_id activated by calling $function_to_call.");
+                write_log("Snippet $snippet_id activated by calling $function_to_call.", false);
             } else {
-                write_log("Function $function_to_call does not exist for snippet $snippet_id.");
+                write_log("Function $function_to_call does not exist for snippet $snippet_id.", true);
             }
         } else {
-            write_log("Snippet $snippet_id is not enabled.");
+            write_log("Snippet $snippet_id is not enabled.", true);
         }
     }
 }

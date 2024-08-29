@@ -1,4 +1,33 @@
-<? 
+<?php namespace hws_base_tools;
+
+use function hws_base_tools\modify_wp_config_constants;
+use function hws_base_tools\modify_wp_config_constants_handler;
+
+
+
+function modify_wp_config_constants_handler() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Unauthorized']);
+    }
+
+    $constants = isset($_POST['constants']) ? $_POST['constants'] : [];
+    if (empty($constants)) {
+        wp_send_json_error(['message' => 'No constants provided']);
+    }
+
+    $result = modify_wp_config_constants($constants);
+
+    if ($result['status']) {
+        wp_send_json_success(['message' => $result['message']]);
+    } else {
+        wp_send_json_error(['message' => $result['message']]);
+    }
+}
+
+add_action('wp_ajax_modify_wp_config_constants', 'hws_base_tools\modify_wp_config_constants_handler');
+
+
+
 function hws_ct_get_settings_system_checks()
 {
 
@@ -193,11 +222,11 @@ function hws_ct_display_settings_system_checks()
                 <?php endif; ?>
             
                 <?php if ($setting['id'] === 'plugin-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
-                    <button class="button modify-wp-config" data-constant="auto_update_plugin" data-value="__return_true" data-target="plugin-auto-updates">Enable Plugin Auto Updates</button>
+                    <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-value="__return_true" data-target="plugin-auto-updates">Enable Plugin Auto Updates</button>
                 <?php endif; ?>
             
                 <?php if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
-                    <button class="button modify-wp-config" data-constant="auto_update_theme" data-value="__return_true" data-target="theme-auto-updates">Enable Theme Auto Updates</button>
+                    <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-value="__return_true" data-target="theme-auto-updates">Enable Theme Auto Updates</button>
                 <?php endif; ?>
             <?php endforeach; 
 
@@ -237,7 +266,7 @@ if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color:
 jQuery(document).ready(function($) {
     $('.modify-wp-config').on('click', function(e) {
         e.preventDefault();
-
+alert("hi");
         const constant = $(this).data('constant');
         const value = $(this).data('value');
         const target = $(this).data('target');
@@ -262,9 +291,14 @@ jQuery(document).ready(function($) {
 });
 
 </script>
+<? 
+
+//add_action('wp_ajax_hws_ct_update_wp_config', 'hws_ct_update_wp_config');
 
 
-<!--
+?>
+
+
     <script type="text/javascript">
         jQuery(document).ready(function($) {
             // Event handler for enabling auto-updates for all plugins
@@ -340,7 +374,7 @@ jQuery(document).ready(function($) {
                 });
             });
         });
-    </script> -->
+    </script> 
     <?php
     
 
