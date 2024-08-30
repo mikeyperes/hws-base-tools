@@ -317,7 +317,7 @@ class WP_GitHub_Updater {
         write_log("WP_GitHub_Updater: Comparing versions. New: {$this->config['new_version']}, Current: {$this->config['version']}", true);
     
         if ($update === 1) {
-            $response = new stdClass;
+            $response = new \stdClass;
             $response->new_version = $this->config['new_version'];
             $response->slug = $this->config['proper_folder_name'];
             $response->url = add_query_arg(array('access_token' => $this->config['access_token']), $this->config['github_url']);
