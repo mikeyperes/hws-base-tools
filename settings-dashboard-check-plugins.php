@@ -20,12 +20,12 @@ use function hws_base_tools\check_wordpress_memory_limit;
 use function hws_base_tools\check_server_memory_limit;
 use function hws_base_tools\check_server_specs;
 
-
 function hws_ct_display_settings_check_plugins() { ?>
 
     <!-- Plugins Status Panel --> 
     <div class="panel">
         <h2 class="panel-title">Plugins Status</h2>
+        <small><a href="<?= admin_url('plugins.php') ?>" target="_blank">View all plugins</a></small>
         <div class="panel-content">
             <?php
             // Get the list of plugins
@@ -43,34 +43,40 @@ function hws_ct_display_settings_check_plugins() { ?>
                 // Installation status
                 if ($is_installed) {
                     echo "<p style='color: green;'>&#x2705; Installed</p>";
+
+                    // Activation status
+                    if ($is_active) {
+                        if ($constraints['is_active']) {
+                            echo "<p style='color: green;'>&#x2705; Enabled</p>";
+                        } else {
+                            echo "<p style='color: red;'>&#x274C; Enabled (Should be Inactive)</p>";
+                        }
+                    } else {
+                        if ($constraints['is_active']) {
+                            echo "<p style='color: red;'>&#x274C; Not Enabled</p>";
+                        } else {
+                            echo "<p style='color: green;'>&#x2705; Not Enabled (Correct)</p>";
+                        }
+                    }
+
+                    // Auto-update status
+                    if ($is_auto_update_enabled) {
+                        echo "<p style='color: green;'>&#x2705; Auto-update Enabled</p>";
+                    } else {
+                        echo "<p style='color: red;'>&#x274C; Auto-update Disabled</p>";
+                    }
+
+                    // Add "Deactivate plugin" or "Activate plugin" link below all the checks
+                    if ($is_active) {
+                        $deactivate_url = wp_nonce_url(admin_url('plugins.php?action=deactivate&plugin=' . $plugin['id']), 'deactivate-plugin_' . $plugin['id']);
+                        echo "<p><a href='$deactivate_url' target='_blank'>Deactivate plugin</a></p>";
+                    } else {
+                        $activate_url = wp_nonce_url(admin_url('plugins.php?action=activate&plugin=' . $plugin['id']), 'activate-plugin_' . $plugin['id']);
+                        echo "<p><a href='$activate_url' target='_blank'>Activate plugin</a></p>";
+                    }
                 } else {
                     echo "<p style='color: red;'>&#x274C; Not Installed</p>";
-                }
-
-                // Activation status
-                if ($is_active) {
-                    if ($constraints['is_active']) {
-                        echo "<p style='color: green;'>&#x2705; Enabled</p>";
-                    } else {
-                        echo "<p style='color: red;'>&#x274C; Enabled (Should be Inactive)</p>";
-                    }
-                } else {
-                    if ($constraints['is_active']) {
-                        echo "<p style='color: red;'>&#x274C; Not Enabled</p>";
-                    } else {
-                        echo "<p style='color: green;'>&#x2705; Not Enabled (Correct)</p>";
-                    }
-                }
-
-                // Auto-update status
-                if ($is_auto_update_enabled) {
-                    echo "<p style='color: green;'>&#x2705; Auto-update Enabled</p>";
-                } else {
-                    echo "<p style='color: red;'>&#x274C; Auto-update Disabled</p>";
-                }
-
-                // Add the additional info if the plugin is not installed
-                if (!$is_installed) {
+                    // Show additional info only if not installed
                     echo "<p>$additional_info</p>";
                 }
 
@@ -93,6 +99,7 @@ function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugi
         return '<a href="' . esc_url($search_url) . '" target="_blank">Download ' . esc_html($plugin_name) . '</a>';
     }
 }
+
 
 // Function to get the plugins list with dynamic download messages
 function hws_ct_get_plugins_list() {

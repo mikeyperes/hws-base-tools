@@ -50,19 +50,27 @@ if (!function_exists('hws_base_tools\write_log')) {
             if ($global_auto_update_enabled) {
                 $is_auto_update_enabled = true;
             } else {
-                // Get the update_plugins transient
-                $update_plugins = get_site_transient('update_plugins');
+                // Get the current list of plugins with auto-updates enabled
+                $auto_update_plugins = get_option('auto_update_plugins', []);
 
-                // Check the transient data for this specific plugin
-                if (isset($update_plugins->no_update[$plugin_slug])) {
-                    $plugin_data = $update_plugins->no_update[$plugin_slug];
-                } elseif (isset($update_plugins->response[$plugin_slug])) {
-                    $plugin_data = $update_plugins->response[$plugin_slug];
-                }
+                // Check if this specific plugin is in the list
+                $is_auto_update_enabled = in_array($plugin_slug, $auto_update_plugins);
 
-                // Apply the auto_update_plugin filter with both arguments
-                if (isset($plugin_data)) {
-                    $is_auto_update_enabled = apply_filters('auto_update_plugin', false, $plugin_data);
+                // If not in the auto-update plugins list, apply the global filter
+                if (!$is_auto_update_enabled) {
+                    $update_plugins = get_site_transient('update_plugins');
+
+                    // Check the transient data for this specific plugin
+                    if (isset($update_plugins->no_update[$plugin_slug])) {
+                        $plugin_data = $update_plugins->no_update[$plugin_slug];
+                    } elseif (isset($update_plugins->response[$plugin_slug])) {
+                        $plugin_data = $update_plugins->response[$plugin_slug];
+                    }
+
+                    // Apply the auto_update_plugin filter with both arguments
+                    if (isset($plugin_data)) {
+                        $is_auto_update_enabled = apply_filters('auto_update_plugin', false, $plugin_data);
+                    }
                 }
             }
         }
@@ -75,6 +83,8 @@ if (!function_exists('hws_base_tools\write_log')) {
 } else {
     write_log("Warning: hws_base_tools/check_plugin_status function is already declared", true);
 }
+
+
 /**
  * Check if a user exists by login name.
  * 
@@ -372,6 +382,9 @@ if (!function_exists('hws_base_tools\check_server_memory_limit')) {
     }
 } else write_log("Warning: hws_base_tools/check_server_memory_limit function is already declared",true);
 
+
+
+
 if (!function_exists('hws_base_tools\check_redis_active')) {
     function check_redis_active() {
         $status = false;
@@ -381,17 +394,33 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
         if (class_exists('Redis')) {
             try {
                 // Initialize Redis object using the global namespace
-                $redis = new \Redis(); // Note the backslash to reference the global namespace
+                $redis = new \Redis();
 
                 // Attempt to connect to Redis server
-                if ($redis->connect('127.0.0.1', 6379)) { // Adjust IP and port as necessary
+                if ($redis->connect('127.0.0.1', 6379)) {
                     // Test setting and getting a value
                     $redis->set("test-key", "Redis is working");
                     $test_value = $redis->get("test-key");
 
                     if ($test_value === "Redis is working") {
                         $status = true;
-                        $details = 'Redis is working';
+
+                        // Get Redis server information
+                        $redis_info = $redis->info();
+
+                        // Gather relevant details from the Redis server with proper formatting
+                        $details = "Redis is working<br>" .
+                        "<i>Server Version: " . $redis_info['redis_version'] . "<br>" .
+                        "Port: " . $redis_info['tcp_port'] . "<br>" .
+                        "Database: " . $redis->getDBNum() . "<br>" .
+                        "Used Memory: " . $redis_info['used_memory_human'] . "<br>" .
+                        "Peak Memory Used: " . $redis_info['used_memory_peak_human'] . "<br>" .
+                        "Uptime: " . $redis_info['uptime_in_seconds'] . " seconds<br>" .
+                        "Total Connections Received: " . $redis_info['total_connections_received'] . "<br>" .
+                        "Total Commands Processed: " . $redis_info['total_commands_processed'] . "<br>" .
+                        "<strong>Disclaimer:</strong> Just because Redis is active and working does not mean it is currently being used.<br> " .
+                        "<a target=_blank href='" . admin_url('admin.php?page=litespeed-cache') . "'>View more info in LiteSpeed</a></i>";
+
                     } else {
                         $details = 'Redis connection successful, but failed to set/get a value';
                     }
@@ -414,6 +443,8 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 } else {
     write_log("Warning: check_redis_active function is already declared", true);
 }
+
+
 
 
 if (!function_exists('hws_base_tools\check_server_ram')) {
@@ -720,15 +751,13 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 } else {
     write_log("Warning: check_redis_active function is already declared", true);
 }
-*/
-if (!function_exists('hws_base_tools\check_caching_source')) {
+*/if (!function_exists('hws_base_tools\check_caching_source')) {
     function check_caching_source() {
         $caching_plugins = [
             'LiteSpeed Cache' => 'litespeed-cache/litespeed-cache.php',
             'W3 Total Cache' => 'w3-total-cache/w3-total-cache.php',
             'WP Super Cache' => 'wp-super-cache/wp-cache.php',
             'WP Rocket' => 'wp-rocket/wp-rocket.php',
-            'Redis Cache' => 'redis-cache/redis-cache.php',
             'Cache Enabler' => 'cache-enabler/cache-enabler.php',
             'Comet Cache' => 'comet-cache/comet-cache.php',
             'Swift Performance' => 'swift-performance-lite/swift-performance-lite.php'
@@ -743,17 +772,10 @@ if (!function_exists('hws_base_tools\check_caching_source')) {
             }
         }
 
-        if (check_redis_active()['status']) {
-            return [
-                'status' => true,
-                'details' => 'Redis'
-            ];
-        }
-
         if (defined('LITESPEED_SERVER')) {
             return [
                 'status' => true,
-                'details' => 'LiteSpeed Cache'
+                'details' => 'LiteSpeed Server'
             ];
         }
 
@@ -762,7 +784,9 @@ if (!function_exists('hws_base_tools\check_caching_source')) {
             'details' => 'None'
         ];
     }
-} else write_log("Warning: hws_base_tools/check_caching_source function is already declared", true);
+} else {
+    write_log("Warning: hws_base_tools/check_caching_source function is already declared", true);
+}
 
 
 

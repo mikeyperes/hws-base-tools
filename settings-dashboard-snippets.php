@@ -122,9 +122,6 @@ return $settings_snippets;
         function acf_form_init() {
             acf_form_head();
         }
-    
-        // Start output buffering to manage where HTML and PHP content are sent
-        ob_start();
         ?>
     
 
@@ -248,34 +245,34 @@ return $settings_snippets;
 
 
 
-        <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        function toggleSnippet(snippetId) {
-            var isChecked = $('#' + snippetId).prop('checked');
+     <script type="text/javascript">
+    function toggleSnippet(snippetId) {
+        var isChecked = jQuery('#' + snippetId).prop('checked');
 
-            // Make an AJAX call to toggle the snippet
-            $.ajax({
-                url: ajaxurl,  // Ensure ajaxurl is set correctly
-                type: 'post',
-                data: {
-                    action: 'toggle_snippet',
-                    snippet_id: snippetId,
-                    enable: isChecked
-                },
-                success: function(response) {
-                    if(response.success) {
-                        alert(response.data);
-                    } else {
-                        alert('Error: ' + response.data);
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
-                    alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+        // Make an AJAX call to toggle the snippet
+        jQuery.ajax({
+            url: ajaxurl,  // Ensure ajaxurl is set correctly
+            type: 'post',
+            data: {
+                action: 'toggle_snippet',
+                snippet_id: snippetId,
+                enable: isChecked
+            },
+            success: function(response) {
+                if(response.success) {
+                    alert(response.data);
+                } else {
+                    alert('Error: ' + response.data);
                 }
-            });
-        }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+            }
+        });
+    }
 
+    jQuery(document).ready(function($) {
         // Handle "Enable Plugin Auto Updates" button click
         $('.modify-snippet-via-button').on('click', function() {
             var snippetId = $(this).data('constant') === 'auto_update_plugin' ? 'enable_auto_update_plugins' : 'enable_auto_update_themes';
@@ -286,12 +283,5 @@ return $settings_snippets;
             // Trigger the toggleSnippet function to update the setting
             toggleSnippet(snippetId);
         });
-
     });
-</script>
-        <?php
-        // End output buffering and flush the output
-        ob_end_flush();
-    }
-    ?>
-    
+    </script><? } ?>

@@ -208,23 +208,22 @@ function hws_ct_display_settings_system_checks()
         <div class="panel-content">
             <?php
             $system_checks = hws_ct_get_settings_system_checks();
-
-
-         foreach ($system_checks as $label => $setting): ?>
-                <p id="<?= $setting['id'] ?>"><strong><?= $label ?>:</strong> <?= $setting['value'] ?></p>
             
+            foreach ($system_checks as $label => $setting): ?>
+                <p id="<?= $setting['id'] ?>"><strong><?= $label ?>:</strong> <?= nl2br($setting['value']) ?></p>
+                
                 <?php if ($setting['id'] === 'wp-ram' && strpos($setting['value'], 'color: red') !== false): ?>
                     <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Fix RAM Issue</button>
                 <?php endif; ?>
-            
+                
                 <?php if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
                     <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="true" data-target="wp-auto-updates">Enable Auto Updates</button>
                 <?php endif; ?>
-            
+                
                 <?php if ($setting['id'] === 'plugin-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
                     <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-value="__return_true" data-target="plugin-auto-updates">Enable Plugin Auto Updates</button>
                 <?php endif; ?>
-            
+                
                 <?php if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
                     <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-value="__return_true" data-target="theme-auto-updates">Enable Theme Auto Updates</button>
                 <?php endif; ?>
