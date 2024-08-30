@@ -160,6 +160,8 @@ pre {
 <? hws_ct_display_settings_snippets();?>
 <? hws_ct_display_settings_wp_config();?>
 <? hws_ct_display_settings_php_ini();?>
+<? hws_ct_display_plugin_info();?>
+
 
 <?php
   // Get the buffer contents and clean (erase) the output buffer
