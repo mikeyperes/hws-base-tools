@@ -103,25 +103,26 @@ function hws_ct_get_settings_system_checks()
                 'id' => 'wf-email',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_wordfence_notification_email())
             ],
-            'WP_CACHE State' => [
-                'id' => 'wp-cache',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_CACHE"))
-            ],
+'WP_CACHE State' => [
+    'id' => 'wp-cache',
+    'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_CACHE")),
+],
+
 
             'LSCWP_OBJECT_CACHE State' => [
-                'id' => 'wp-cache',
+                'id' => 'wp-ls-cache',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"))
             ],
             'WP_DEBUG State' => [
-                'id' => 'wp-cache',
+                'id' => 'wp-debug',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG"))
             ],
             'WP_DEBUG_DISPLAY State' => [
-                'id' => 'wp-cache',
+                'id' => 'wp-debug-display',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG_DISPLAY"))
             ],
             'WP_DEBUG_LOG State' => [
-                'id' => 'wp-cache',
+                'id' => 'wp-debug-log',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG_LOG"))
             ],
       
@@ -176,10 +177,10 @@ function hws_ct_get_settings_system_checks()
                 'id' => 'php-version',
                 'value' => phpversion()
             ],
-            'WordPress RAM' => [
-                'id' => 'wp-ram',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wordpress_memory_limit())
-            ],
+   'WordPress RAM' => [
+    'id' => 'wp-ram',
+    'value' => hws_ct_highlight_if_essential_setting_failed(check_wordpress_memory_limit()),
+],
             'Server RAM' => [
                 'id' => 'server-ram',
                 'value' => hws_ct_highlight_if_essential_setting_failed(check_server_memory_limit())
@@ -204,16 +205,28 @@ function hws_ct_display_settings_system_checks()
     ?>
     <!-- System Checks Panel -->
     <div class="panel">
-        <h2 class="panel-title">System Checks</h2>
+     <h2 class="panel-title">System Checks</h2>
+     <small><a href="<?= admin_url('site-health.php') ?>" target="_blank">View WordPress Site Health</a></small>
         <div class="panel-content">
             <?php
             $system_checks = hws_ct_get_settings_system_checks();
             
-            foreach ($system_checks as $label => $setting): ?>
+             foreach ($system_checks as $label => $setting): ?>
                 <p id="<?= $setting['id'] ?>"><strong><?= $label ?>:</strong> <?= nl2br($setting['value']) ?></p>
                 
-                <?php if ($setting['id'] === 'wp-ram' && strpos($setting['value'], 'color: red') !== false): ?>
-                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Fix RAM Issue</button>
+                <?php if ($setting['id'] === 'wp-ram'): ?>
+                    <?php if (strpos($setting['value'], 'color: red') !== false): ?>
+                        <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Fix RAM Issue</button>
+                    <?php endif; ?>
+                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="__unset__" data-target="wp-ram">Remove WP_MEMORY_LIMIT</button>
+                <?php endif; ?>
+                
+                <?php if ($setting['id'] === 'wp-cache'): ?>
+                    <?php if (check_wp_config_constant_status('WP_CACHE')['status']): ?>
+                        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
+                    <?php else: ?>
+                        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="true" data-target="wp-cache">Enable WP_CACHE</button>
+                    <?php endif; ?>
                 <?php endif; ?>
                 
                 <?php if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
@@ -227,8 +240,7 @@ function hws_ct_display_settings_system_checks()
                 <?php if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
                     <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-value="__return_true" data-target="theme-auto-updates">Enable Theme Auto Updates</button>
                 <?php endif; ?>
-            <?php endforeach; 
-
+            <?php endforeach;
 
 /*
 
@@ -265,7 +277,7 @@ if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color:
 jQuery(document).ready(function($) {
     $('.modify-wp-config').on('click', function(e) {
         e.preventDefault();
-alert("hi");
+
         const constant = $(this).data('constant');
         const value = $(this).data('value');
         const target = $(this).data('target');
@@ -288,6 +300,9 @@ alert("hi");
         });
     });
 });
+
+
+
 
 </script>
 <? 

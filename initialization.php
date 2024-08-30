@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 2.3
+Version: 2.4
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main
@@ -56,7 +56,6 @@ if (!$acf_active && !$acf_pro_active) {
 }
 
 
-
 function hws_ct_get_settings_snippets()
 {
     $settings_snippets = [
@@ -76,18 +75,30 @@ function hws_ct_get_settings_snippets()
             'function' => 'enable_auto_update_plugins'
         ],
 
-     [
-    'id' => 'enable_auto_update_themes',
-    'name' => 'Enable Automatic Updates for Themes',
-    'description' => 'Enables automatic updates for all themes.',
-    'info' => 'Automatically keeps your themes up to date.',
-    'function' => 'enable_auto_update_themes'
-],
+        [
+            'id' => 'enable_auto_update_themes',
+            'name' => 'Enable Automatic Updates for Themes',
+            'description' => 'Enables automatic updates for all themes.',
+            'info' => 'Automatically keeps your themes up to date.',
+            'function' => 'enable_auto_update_themes'
+        ],
         [
             'id' => 'enable_wp_admin_logo',
             'name' => 'Enable WP Admin Logo',
             'description' => 'Enable a custom logo on the WP admin login screen using ACF.',
-            'info' => 'This will use the logo from the ACF field "login_logo".',
+            'info' => function() {
+                $logo_url = get_site_icon_url(); // Ensure the logo URL is retrieved
+                $thumbnail = $logo_url ? '<img src="' . esc_url($logo_url) . '" style="max-width:100px; display:block; margin-top:10px;" alt="Custom Logo Thumbnail" onclick="event.stopPropagation();">' : '';
+        
+                if ($logo_url) {
+                    return 'This will use the logo from the Site Icon.<br>' . 
+                           '<span onclick="event.stopPropagation();">' . $thumbnail . '</span><br>' .
+                           '<a href="' . esc_url($logo_url) . '" target="_blank">View Image</a><br>' . 
+                           '<a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">View in Site Identity Settings</a>';
+                } else {
+                    return 'No site icon is set. Please set a site icon in the Site Identity settings.';
+                }
+            },
             'function' => 'custom_wp_admin_logo'
         ],
         [
@@ -98,31 +109,31 @@ function hws_ct_get_settings_snippets()
             'function' => 'disable_litespeed_js_combine'
         ],
         [
-            'id' => 'custom_wp_admin_logo',
-            'name' => 'Custom WP Admin Logo',
-            'description' => 'Adds a custom logo to the WP admin login screen.',
-            'info' => 'Allows you to upload a custom logo via ACF and display it on the login page.',
-            'function' => 'custom_wp_admin_logo'
+            'name' => 'Enable Author Social ACFs',
+            'id' => 'hws_ct_snippets_author_social_acfs',
+            'function' => 'hws_ct_snippets_activate_author_social_acfs',
+            'description' => 'This will enable social media fields in author profiles.',
+            'info' => implode('<br>', array_map(function($field) {
+                if ($field['type'] === 'group') {
+                    $sub_fields = implode(', ', array_map(function($sub_field) {
+                        return "{$sub_field['name']}";
+                    }, $field['sub_fields']));
+                    return "{$field['name']}<br>&emsp;{$sub_fields}";
+                } else {
+                    return "{$field['name']}";
+                }
+            }, acf_get_fields('group_590d64c31db0a')))
         ],
-        
-    [
-        'name' => 'Enable Author Social ACFs',
-        'id' => 'hws_ct_snippets_author_social_acfs',
-         'function' => 'hws_ct_snippets_activate_author_social_acfs',
-        'description' => 'This will enable social media fields in author profiles.',
-        'info' => implode('<br>', array_map(function($field) {
-            if ($field['type'] === 'group') {
-                $sub_fields = implode(', ', array_map(function($sub_field) {
-                    return "{$sub_field['name']}";
-                }, $field['sub_fields']));
-                return "{$field['name']}<br>&emsp;{$sub_fields}";
-            } else {
-                return "{$field['name']}";
-            }
-        }, acf_get_fields('group_590d64c31db0a')))
-    ],
-];
-return $settings_snippets; 
+    ];
+
+    // Ensure closure results are handled
+    foreach ($settings_snippets as &$snippet) {
+        if (is_callable($snippet['info'])) {
+            $snippet['info'] = $snippet['info'](); // Execute closure and replace it with the returned value
+        }
+    }
+
+    return $settings_snippets;
 }
 
 
