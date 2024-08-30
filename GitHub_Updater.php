@@ -186,27 +186,31 @@ class WP_GitHub_Updater {
 	 */
     
      public function get_new_version() {
-    // Ensure the file path is correct
-    $file_path = WP_PLUGIN_DIR . '/' . $this->config['slug'];
+        // Clear any existing transient to ensure fresh data
+        delete_site_transient(md5($this->config['slug']).'_new_version');
+        
+        // Fetch new version directly from the main plugin file in the GitHub repo
+        $query = trailingslashit($this->config['raw_url']) . 'initialization.php';
+        $response = wp_remote_get($query);
     
-    // Load the file contents
-    $plugin_data = file_get_contents($file_path);
-
-    // Check if the file was loaded successfully
-    if ($plugin_data === false) {
-        write_log('WP_GitHub_Updater: Failed to read the plugin file.', true);
-        return false;
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
+            write_log("WP_GitHub_Updater: Error fetching version from GitHub.", "true");
+            return false;
+        }
+    
+        // Extract version from the plugin header
+        if (preg_match('/^Version:\s*(.*)$/mi', wp_remote_retrieve_body($response), $matches)) {
+            $version = trim($matches[1]);
+    
+            // Cache the version to reduce API calls
+            set_site_transient(md5($this->config['slug']).'_new_version', $version, 60*60*6);
+    
+            return $version;
+        } else {
+            write_log("WP_GitHub_Updater: No version found in the file.", "true");
+            return false;
+        }
     }
-
-    // Use a regular expression to extract the version number
-    if (preg_match('/Version:\s*(\S+)/', $plugin_data, $matches)) {
-        return $matches[1]; // Return the version number
-    } else {
-        write_log('WP_GitHub_Updater: No version found in the file.', true);
-        return false;
-    }
-}
-
 
 	/**
 	 * Interact with GitHub

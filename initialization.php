@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 2.5.7
+Version: 2.5.8
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main
@@ -30,7 +30,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "2.5.7";
+$plugin_version = "2.5.8";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools/";
@@ -187,8 +187,7 @@ if (is_admin()) { // Ensure this runs only i n the admin area
         'proper_folder_name' => dirname(plugin_basename(__FILE__)), // Proper folder name
         'sslverify' => true, // SSL verification for the download
         'api_url' => $api_url, // GitHub API URL
-        'raw_url' => $plugin_github_url . 'main', // Raw GitHub URL
-        'github_url' => $plugin_github_url, // GitHub repository URL
+'raw_url' => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',        'github_url' => $plugin_github_url, // GitHub repository URL
         'zip_url' => $plugin_zip_url, // Zip URL for the latest version
         'requires' => '5.0', // Minimum required WordPress version
         'tested' => $wordpress_version_tested, // Tested up to WordPress version
