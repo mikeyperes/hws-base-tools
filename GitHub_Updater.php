@@ -184,12 +184,7 @@ class WP_GitHub_Updater {
 	 * @since 1.0
 	 * @return int $version the version number
 	 */
-    
-     public function get_new_version() {
-        // Clear any existing transient to ensure fresh data
-        delete_site_transient(md5($this->config['slug']).'_new_version');
-        
-        // Fetch new version directly from the main plugin file in the GitHub repo
+    public function get_new_version() {
         $query = trailingslashit($this->config['raw_url']) . 'initialization.php';
         $response = wp_remote_get($query);
     
@@ -201,16 +196,15 @@ class WP_GitHub_Updater {
         // Extract version from the plugin header
         if (preg_match('/^Version:\s*(.*)$/mi', wp_remote_retrieve_body($response), $matches)) {
             $version = trim($matches[1]);
-    
-            // Cache the version to reduce API calls
             set_site_transient(md5($this->config['slug']).'_new_version', $version, 60*60*6);
-    
             return $version;
         } else {
             write_log("WP_GitHub_Updater: No version found in the file.", "true");
             return false;
         }
     }
+
+    
 
 	/**
 	 * Interact with GitHub
