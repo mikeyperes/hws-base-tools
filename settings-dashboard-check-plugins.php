@@ -20,13 +20,51 @@ use function hws_base_tools\check_wordpress_memory_limit;
 use function hws_base_tools\check_server_memory_limit;
 use function hws_base_tools\check_server_specs;
 
-function hws_ct_display_settings_check_plugins() { ?>
+function hws_ct_display_settings_check_plugins() {
+    // Get the last time WordPress checked for plugin updates
+    $update_plugins = get_site_transient('update_plugins');
+    $last_checked_timestamp = isset($update_plugins->last_checked) ? $update_plugins->last_checked : false;
+    $last_checked = $last_checked_timestamp ? date('Y-m-d H:i:s', $last_checked_timestamp) : 'Never';
+
+    // Initialize variables for plugins with updates
+    $plugins_with_updates = 0;
+    $plugins_list = [];
+
+    // Ensure we're dealing with an array of responses
+    if (!empty($update_plugins->response) && is_array($update_plugins->response)) {
+        foreach ($update_plugins->response as $plugin_file => $plugin_data) {
+            // Ensure $plugin_data is an object and has the property 'Name'
+            if (is_object($plugin_data) && isset($plugin_data->Name)) {
+                $plugin_name = $plugin_data->Name;
+                $plugins_list[] = $plugin_name;
+                $plugins_with_updates++;
+            } else {
+                $plugin_name = "Unknown Plugin";
+                $plugins_list[] = $plugin_name;
+            }
+        }
+    }
+
+    $cron_name = 'wp_version_check'; // The cron job responsible for updates
+   ?>
 
     <!-- Plugins Status Panel --> 
     <div class="panel">
         <h2 class="panel-title">Plugins Status</h2>
-        <small><a href="<?= admin_url('plugins.php') ?>" target="_blank">View all plugins</a></small>
-        <div class="panel-content">
+        <h3>Force WordPress to Check for Plugin Updates (Execute Cron)</h3>
+        <p>Last checked: <span id="last-checked"><?= esc_html($last_checked) ?></span></p>
+        <p>Number of plugins with available updates: <span id="plugins-with-updates"><?= esc_html($plugins_with_updates) ?></span></p>
+        <?php if ($plugins_with_updates > 0): ?>
+            <p>Plugins with updates available:</p>
+            <ul id="plugins-list">
+                <?php foreach ($plugins_list as $plugin_name): ?>
+                    <li><?= esc_html($plugin_name) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <p>Cron job name: <span id="cron-name"><?= esc_html($cron_name) ?></span></p>
+        <button id="force-update-check" class="button button-primary">Force WordPress to Check for Plugin Updates</button>
+         <div class="panel-content">
             <?php
             // Get the list of plugins
             $plugins = hws_ct_get_plugins_list();
@@ -85,6 +123,40 @@ function hws_ct_display_settings_check_plugins() { ?>
             } ?>
         </div>
     </div>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('#force-update-check').on('click', function() {
+            var $button = $(this);
+            $button.prop('disabled', true).text('Checking...');
+
+            $.post(
+                '<?= admin_url('admin-ajax.php') ?>', 
+                {
+                    action: 'hws_ct_force_update_check'
+                }, 
+                function(response) {
+                    var data = JSON.parse(response);
+                    $('#last-checked').text(data.last_checked);
+                    $('#plugins-with-updates').text(data.plugins_with_updates);
+
+                    // Update the plugins list
+                    var $pluginsList = $('#plugins-list');
+                    $pluginsList.empty();
+                    if (data.plugins_with_updates > 0) {
+                        $.each(data.plugins_list, function(index, pluginName) {
+                            $pluginsList.append('<li>' + pluginName + '</li>');
+                        });
+                    }
+
+                    $button.prop('disabled', false).text('Force WordPress to Check for Plugin Updates');
+                }
+            ).fail(function() {
+                $button.prop('disabled', false).text('Failed to Check');
+            });
+        });
+    });
+    </script>
+
 <?php }
 
 function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugin_name, $upload_manually = false) {
@@ -259,5 +331,48 @@ function hws_ct_get_plugins_list() {
         ]
     ];
 }
+
+
+
+
+
+// Handle the AJAX request to force the update check
+
+function hws_ct_force_update_check() {
+    // Force WordPress to check for plugin and theme updates
+    wp_clean_update_cache();
+    wp_update_plugins();
+    wp_update_themes();
+
+    // Get the updated last checked time and number of plugins with updates
+    $update_plugins = get_site_transient('update_plugins');
+    $last_checked_timestamp = isset($update_plugins->last_checked) ? $update_plugins->last_checked : time();
+    $last_checked = date('Y-m-d H:i:s', $last_checked_timestamp);
+    $plugins_with_updates = 0;
+    $plugins_list = [];
+
+    // Ensure we're dealing with an array of responses
+    if (!empty($update_plugins->response) && is_array($update_plugins->response)) {
+        foreach ($update_plugins->response as $plugin_file => $plugin_data) {
+            // Ensure $plugin_data is an object and has the property 'Name'
+            if (is_object($plugin_data) && isset($plugin_data->Name)) {
+                $plugin_name = $plugin_data->Name;
+                $plugins_list[] = $plugin_name;
+                $plugins_with_updates++;
+            } else {
+                $plugins_list[] = "Unknown Plugin";
+            }
+        }
+    }
+
+    // Send back the last checked time, number of plugins with updates, and their names
+    echo json_encode([
+        'last_checked' => $last_checked,
+        'plugins_with_updates' => $plugins_with_updates,
+        'plugins_list' => $plugins_list,
+    ]);
+    wp_die();
+}
+add_action('wp_ajax_hws_ct_force_update_check', 'hws_base_tools\hws_ct_force_update_check');
 
 ?>
