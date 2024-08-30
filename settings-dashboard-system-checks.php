@@ -216,7 +216,7 @@ function hws_ct_display_settings_system_checks()
                 
                 <?php if ($setting['id'] === 'wp-ram'): ?>
                     <?php if (strpos($setting['value'], 'color: red') !== false): ?>
-                        <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Fix RAM Issue</button>
+                        <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Add Memory Limit</button>
                     <?php endif; ?>
                     <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="__unset__" data-target="wp-ram">Remove WP_MEMORY_LIMIT</button>
                 <?php endif; ?>
