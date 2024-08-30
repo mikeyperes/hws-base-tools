@@ -30,7 +30,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "2.0";
+$plugin_version = "2.5.3";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools/";
@@ -194,5 +194,19 @@ if (is_admin()) { // Ensure this runs only i n the admin area
         'readme' => 'README.md', // Readme file for version checking
     );
 
-    $updater = new WP_GitHub_Updater($config);
+
+$updater = new \hws_base_tools\WP_GitHub_Updater($config);
+
+    // Trigger an update check for debugging
+add_action('init', function() {
+    if (is_admin() && isset($_GET['force-update-check'])) {
+        // Force WordPress to check for plugin updates
+        wp_clean_update_cache();
+        set_site_transient('update_plugins', null);
+        wp_update_plugins();
+
+        // Log to confirm the check has been triggered
+        error_log('WP_GitHub_Updater: Forced plugin update check triggered.');
+    }
+});
 }

@@ -26,10 +26,10 @@ function hws_ct_activate_snippets() {
                 call_user_func($function_to_call);
                 write_log("Snippet $snippet_id activated by calling $function_to_call.", false);
             } else {
-                write_log("Function $function_to_call does not exist for snippet $snippet_id.", true);
+                write_log("Function $function_to_call does not exist for snippet $snippet_id.", false);
             }
         } else {
-            write_log("Snippet $snippet_id is not enabled.", true);
+            write_log("Snippet $snippet_id is not enabled.", false);
         }
     }
 }

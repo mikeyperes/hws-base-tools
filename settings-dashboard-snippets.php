@@ -84,7 +84,7 @@ return $settings_snippets;
     function toggle_snippet() {
         $settings_snippets = hws_ct_get_settings_snippets();
     
-      write_log('AJAX Request received: ' . print_r($_POST, true)); // Log the incoming request
+      write_log('AJAX Request received: ' . print_r($_POST, false)); // Log the incoming request
     
         $snippet_id = sanitize_text_field($_POST['snippet_id']);
         $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);

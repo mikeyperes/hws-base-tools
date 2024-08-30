@@ -76,7 +76,7 @@ if (!function_exists('hws_base_tools\write_log')) {
         }
 
         // Log the final auto-update status for debugging
-        write_log("Plugin Slug: $plugin_slug - Installed: " . ($is_installed ? 'Yes' : 'No') . " - Auto-Update Enabled: " . ($is_auto_update_enabled ? 'Yes' : 'No'), true);
+        write_log("Plugin Slug: $plugin_slug - Installed: " . ($is_installed ? 'Yes' : 'No') . " - Auto-Update Enabled: " . ($is_auto_update_enabled ? 'Yes' : 'No'),false);
 
         return [$is_installed, $is_active, $is_auto_update_enabled];
     }
@@ -537,7 +537,7 @@ if (!function_exists('hws_base_tools\check_imagick_available')) {
     function check_imagick_available() {
         return extension_loaded('imagick');
     }
-} else write_log("Warning: hws_base_tools/check_imagick_available function is already declared",true);
+} else write_log("Warning: hws_base_tools/check_imagick_available function is already declared",false);
 
 
 if (!function_exists('hws_base_tools\check_query_monitor_status')) {
