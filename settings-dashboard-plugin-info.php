@@ -5,7 +5,7 @@ function hws_ct_display_plugin_info() {
 
     // Fetch current plugin data
     $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . $config['slug']);
-
+ 
     // Initialize the GitHub Updater to get the latest version and download URL
     $updater = new \hws_base_tools\WP_GitHub_Updater($config);
     $new_version = $updater->get_new_version();
