@@ -72,7 +72,16 @@ function hws_ct_display_plugin_info() {
             </div>
             <div style="margin-bottom: 15px;">
                 <strong>Latest Version:</strong> <?php echo esc_html($new_version); ?>
+                <?php
+// Generate the dynamic URL
+$update_check_url = admin_url('update-core.php?force-check=1');
+
+// Output the button with the dynamic URL
+echo '<br /><small><i><a href="' . esc_url($update_check_url) . '" target="_blank">Force WordPress to Perform an Update Check</a></i></small>';
+?>
             </div>
+
+            
             <div style="margin-bottom: 15px;">
                 <strong>Download URL:</strong> <a href="<?php echo esc_url($download_url); ?>" target="_blank"><?php echo esc_html($download_url); ?></a>
             </div>

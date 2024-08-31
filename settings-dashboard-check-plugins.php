@@ -45,6 +45,13 @@ function hws_ct_display_settings_check_plugins() {
     <div class="panel">
         <h2 class="panel-title">Plugins Status</h2>
         <h3>Force WordPress to Check for Plugin Updates (Execute Cron)</h3>
+       <?php
+// Generate the dynamic URL
+$update_check_url = admin_url('update-core.php?force-check=1');
+
+// Output the button with the dynamic URL
+echo '<a href="' . esc_url($update_check_url) . '" target="_blank" class="button">Force WordPress to Perform an Update Check</a>';
+?>
         <p>Last checked: <span id="last-checked"><?= esc_html($last_checked) ?></span></p>
         <p>Number of plugins with available updates: <span id="plugins-with-updates"><?= esc_html($plugins_with_updates) ?></span></p>
         <?php if ($plugins_with_updates > 0): ?>
