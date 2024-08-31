@@ -308,7 +308,7 @@ jQuery(document).ready(function($) {
             }).fail(function(jqXHR, textStatus, errorThrown) {
                 console.error('AJAX request failed:', textStatus, errorThrown);
                 alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-            });
+            }); 
         }   
  
         // Bind delete actions to buttons

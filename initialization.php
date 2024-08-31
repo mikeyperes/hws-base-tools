@@ -8,7 +8,7 @@ Version: 2.6.5
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main
-*/       
+*/        
 namespace hws_base_tools;
 echo "hi";
 // Generic functions import

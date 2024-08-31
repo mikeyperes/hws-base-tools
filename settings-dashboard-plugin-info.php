@@ -56,7 +56,7 @@ function hws_ct_display_plugin_info() {
     $author_name = strip_tags($plugin_data['Author']);
  
     // Display the plugin information
-    ?>
+    ?> 
     <!-- Plugin Info Panel -->
     <div class="panel">
         <h2 class="panel-title">HWS - Base Tools Plugin Info</h2>

@@ -274,7 +274,7 @@ function toggle_snippet() {
             }
         });
     }
- 
+  
     jQuery(document).ready(function($) {
     // Handle "Toggle Auto Updates" button click
     $('.modify-snippet-via-button').on('click', function() {

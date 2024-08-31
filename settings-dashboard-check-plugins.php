@@ -351,7 +351,7 @@ function hws_ct_force_update_check() {
     $last_checked = date('Y-m-d H:i:s', $last_checked_timestamp);
     $plugins_with_updates = count($plugin_updates);
     $plugins_list = [];
-
+ 
     if (!empty($plugin_updates)) {
         foreach ($plugin_updates as $plugin_file => $plugin_data) {
             $plugin_name = $plugin_data->Name;
