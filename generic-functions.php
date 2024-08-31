@@ -33,7 +33,7 @@ if (!function_exists('hws_base_tools\write_log')) {
  *               - Whether the plugin is active
  *               - Whether the plugin's auto-update is enabled
  */
-
+ 
  if (!function_exists('hws_base_tools\check_plugin_status')) {
     function check_plugin_status($plugin_slug) {
         $is_installed = file_exists(WP_PLUGIN_DIR . '/' . $plugin_slug);
@@ -294,6 +294,29 @@ if (!function_exists('hws_base_tools\get_smtp_sending_domain')) {
         return $sending_domain;
     }
 } else write_log("Warning: hws_base_tools/get_smtp_sending_domain function is already declared",true);
+
+
+
+
+
+if (!function_exists('hws_base_tools\hws_ct_highlight_based_on_criteria')) {
+    function hws_ct_highlight_based_on_criteria($check_result, $criteria = 'true') {
+        if ($check_result['status']) {
+            $value = $check_result['details'];
+
+            // Check if the value meets the criteria for highlighting in red
+            if ($value === $criteria) {
+                return "<span style='color: red;'>{$value}</span>";
+            } else {
+                return $value;
+            }
+        } else {
+            return "<span style='color: red;'>{$check_result['details']}</span>";
+        }
+    }
+} else {
+    write_log("Warning: hws_base_tools/hws_ct_highlight_based_on_criteria function is already declared", true);
+}
 
 
 
@@ -576,7 +599,7 @@ if (!function_exists('hws_base_tools\custom_wp_admin_logo')) {
             }
         }
     }
-    add_action('login_enqueue_scripts', 'custom_wp_admin_logo', 20); // Increased priority
+    add_action('login_enqueue_scripts', 'hws_base_tools\custom_wp_admin_logo', 20); // Increased priority
 } else write_log("Warning: hws_base_tools/custom_wp_admin_logo function is already declared",true);
 
 
@@ -584,7 +607,7 @@ if (!function_exists('hws_base_tools\custom_wp_admin_logo_link')) {
     function custom_wp_admin_logo_link() {
         return false;
     }
-    add_filter('login_headerurl', 'custom_wp_admin_logo_link');
+    add_filter('login_headerurl', 'hws_base_tools\custom_wp_admin_logo_link');
 } else write_log("Warning: hws_base_tools/custom_wp_admin_logo_link function is already declared",true);
 
 

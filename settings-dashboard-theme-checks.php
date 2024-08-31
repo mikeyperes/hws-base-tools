@@ -2,7 +2,7 @@
 function hws_ct_display_settings_theme_checks()
 {    ?>
     <!-- Theme Status Panel -->
-    <div class="panel">
+    <div class="panel"> 
         <h2 class="panel-title">Theme Checks</h2>
         <small><a href="<?= admin_url('themes.php') ?>" target="_blank">View all themes</a></small>
         <div class="panel-content">

@@ -1,28 +1,53 @@
 <?php namespace hws_base_tools;
 
+function hws_ct_get_plugin_data() {
+    // Determine the main plugin file
+    $plugin_file = __FILE__; // This should point to the current file
+
+    // Get the directory name
+    $plugin_dir = dirname($plugin_file);
+
+    // Define the main plugin file explicitly
+    $main_plugin_file = $plugin_dir . '/initialization.php'; // Update this to the correct main file
+
+    // Ensure the file exists, is a regular file, and is readable
+    if (!file_exists($main_plugin_file) || !is_file($main_plugin_file) || !is_readable($main_plugin_file)) {
+        write_log("Main plugin file does not exist, is a directory, or is not readable: $main_plugin_file", true);
+        return [
+            'Name' => 'Not Available',
+            'Version' => 'Not Available',
+            'PluginURI' => 'Not Available',
+            'Author' => 'Not Available',
+            'AuthorURI' => 'Not Available',
+        ];
+    }
+
+    // Fetch plugin data using WordPress' built-in function
+    $plugin_data = get_plugin_data($main_plugin_file);
+
+    // If any field is empty, set it to 'Not Available'
+    foreach ($plugin_data as $key => $value) {
+        if (empty($value)) {
+            $plugin_data[$key] = 'Not Available';
+        }
+    }
+
+    return $plugin_data;
+}
+
 function hws_ct_display_plugin_info() {
-    // Get the current plugin's file path
-    $plugin_file = plugin_basename(__FILE__);
-    $file_path = WP_PLUGIN_DIR . '/' . $plugin_file;
-
-    // Extract the plugin slug
-    $slug = dirname($plugin_file);
-
-    // Log the paths and slug for debugging
-    write_log('Attempting to read file: ' . $file_path, true);
-    write_log('Plugin File: ' . $plugin_file, true); // Logs the plugin file path
-    write_log('Plugin Slug: ' . $slug, true);        // Logs the plugin slug
-
-    // Fetch current plugin data
-    $plugin_data = get_plugin_data($file_path);
+    // Fetch the plugin data
+    $plugin_data = hws_ct_get_plugin_data();
 
     // Initialize the GitHub Updater to get the latest version and download URL
     global $config;
+    $slug = dirname(plugin_basename(__FILE__));
     $config['slug'] = $slug; // Update the slug in the config array
     $updater = new \hws_base_tools\WP_GitHub_Updater($config);
-    $new_version = $updater->get_new_version();
-    $download_url = $updater->config['zip_url'];
+    $new_version = $updater->get_new_version() ?: 'Not Available';
+    $download_url = $updater->config['zip_url'] ?: '#';
 
+    // Display the plugin information
     ?>
     <!-- Plugin Info Panel -->
     <div class="panel">
@@ -38,7 +63,7 @@ function hws_ct_display_plugin_info() {
                 <strong>Current Version:</strong> <?php echo esc_html($plugin_data['Version']); ?>
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Latest (Repository) Version:</strong> <?php echo esc_html($new_version); ?>
+                <strong>Latest Version:</strong> <?php echo esc_html($new_version); ?>
             </div>
             <div style="margin-bottom: 15px;">
                 <strong>Download URL:</strong> <a href="<?php echo esc_url($download_url); ?>" target="_blank"><?php echo esc_url($download_url); ?></a>

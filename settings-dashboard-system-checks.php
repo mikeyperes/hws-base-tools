@@ -2,6 +2,7 @@
 
 use function hws_base_tools\modify_wp_config_constants;
 use function hws_base_tools\modify_wp_config_constants_handler;
+use function hws_base_tools\hws_ct_highlight_based_on_criteria;
 
 
 
@@ -35,18 +36,18 @@ function hws_ct_get_settings_system_checks()
         $system_checks = [
             'Database Table Prefix' => [
     'id' => 'database-table-prefix',
-    'value' => hws_ct_highlight_if_essential_setting_failed(get_database_table_prefix())
+    'value' => hws_ct_highlight_based_on_criteria(get_database_table_prefix())
 ],
             'WordPress Admin Email' => [
                 'id' => 'wp-main-email',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wordpress_main_email()) . 
+                'value' => hws_ct_highlight_based_on_criteria(check_wordpress_main_email()) . 
                 ' <a target=_blank href="' . esc_url(admin_url('options-general.php')) . '">modify</a>'
   
 
             ],
             'Imagick Library Available' => [
                 'id' => 'imagick-available',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => check_imagick_available(),
                     'details' => check_imagick_available() ? 'Available' : 'Not Available'
                 ]),
@@ -61,27 +62,27 @@ function hws_ct_get_settings_system_checks()
             ],*/
             'WordPress Auto Updates Enabled' => [
                 'id' => 'wp-auto-updates',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE') === 'true',
                     'details' => get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE') === 'true' ? 'Enabled' : 'Disabled'
                 ]),
             ],
             'Cloudflare Active' => [
                 'id' => 'cloudflare-active',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_cloudflare_active())
+                'value' => hws_ct_highlight_based_on_criteria(check_cloudflare_active())
             ],
             'PHP Type' => [
                 'id' => 'php-type',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_php_type())
+                'value' => hws_ct_highlight_based_on_criteria(check_php_type())
             ],
             'PHP Handler' => [
                 'id' => 'php-handler',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_php_handler())
+                'value' => hws_ct_highlight_based_on_criteria(check_php_handler())
             ],
             // Add for plugin auto-updates
             'Plugin Auto Updates' => [
                 'id' => 'plugin-auto-updates',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => has_filter('auto_update_plugin', '__return_true'),
                     'details' => has_filter('auto_update_plugin', '__return_true') ? 'Enabled' : 'Disabled'
                 ]),
@@ -89,7 +90,7 @@ function hws_ct_get_settings_system_checks()
             // Add for theme auto-updates
 'Theme Auto Updates' => [
     'id' => 'theme-auto-updates',
-    'value' => hws_ct_highlight_if_essential_setting_failed([
+    'value' => hws_ct_highlight_based_on_criteria([
         'status' => has_filter('auto_update_theme', '__return_true'),
         'details' => has_filter('auto_update_theme', '__return_true') ? 'Enabled' : 'Disabled'
     ]),
@@ -97,33 +98,33 @@ function hws_ct_get_settings_system_checks()
   
             'MyISAM Tables' => [
     'id' => 'myisam-tables',
-    'value' => hws_ct_highlight_if_essential_setting_failed(check_myisam_tables())
+    'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables())
 ],
             'WordFence Notification Email' => [
                 'id' => 'wf-email',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wordfence_notification_email())
+                'value' => hws_ct_highlight_based_on_criteria(check_wordfence_notification_email())
             ],
 'WP_CACHE State' => [
     'id' => 'wp-cache',
-    'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_CACHE")),
+    'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_CACHE")),
 ],
 
 
             'LSCWP_OBJECT_CACHE State' => [
                 'id' => 'wp-ls-cache',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"))
+                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"))
             ],
             'WP_DEBUG State' => [
                 'id' => 'wp-debug',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG"))
+                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG"))
             ],
             'WP_DEBUG_DISPLAY State' => [
                 'id' => 'wp-debug-display',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG_DISPLAY"))
+                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG_DISPLAY"))
             ],
             'WP_DEBUG_LOG State' => [
                 'id' => 'wp-debug-log',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_wp_config_constant_status("WP_DEBUG_LOG"))
+                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG_LOG"))
             ],
       
          
@@ -133,7 +134,7 @@ function hws_ct_get_settings_system_checks()
     'value' => check_log_file_sizes()['debug_log']['details'] === 'Not Found' 
               ? 'Not Found' 
               : (check_log_file_sizes()['debug_log']['status'] 
-                 ? hws_ct_highlight_if_essential_setting_failed(check_log_file_sizes()['debug_log']) 
+                 ? hws_ct_highlight_based_on_criteria(check_log_file_sizes()['debug_log']) 
                  : check_log_file_sizes()['debug_log']['details'])
 ],
 'Error Log Size' => [
@@ -141,37 +142,37 @@ function hws_ct_get_settings_system_checks()
     'value' => check_log_file_sizes()['error_log']['details'] === 'Not Found' 
               ? 'Not Found' 
               : (check_log_file_sizes()['error_log']['status'] 
-                 ? hws_ct_highlight_if_essential_setting_failed(check_log_file_sizes()['error_log']) 
+                 ? hws_ct_highlight_based_on_criteria(check_log_file_sizes()['error_log']) 
                  : check_log_file_sizes()['error_log']['details'])
 ],
             'SMTP Authentication Enabled' => [
                 'id' => 'smtp-auth',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => check_smtp_auth_status_and_mailer()['status'],
                     'details' => check_smtp_auth_status_and_mailer()['status'] ? 'Yes' : 'No'
                 ])
             ],
             'SMTP Mailer Service' => [
                 'id' => 'smtp-mailer',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => !empty(check_smtp_auth_status_and_mailer()['mailer']),
                     'details' => check_smtp_auth_status_and_mailer()['mailer']
                 ])
             ],
             'SMTP Authenticated Domain' => [
                 'id' => 'smtp-domain',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => !empty(check_smtp_auth_status_and_mailer()['details']),
                     'details' => check_smtp_auth_status_and_mailer()['details']
                 ])
             ],
             'REDIS Active' => [
                 'id' => 'redis-active',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_redis_active())
+                'value' => hws_ct_highlight_based_on_criteria(check_redis_active())
             ],
             'Caching Source' => [
                 'id' => 'caching-source',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_caching_source())
+                'value' => hws_ct_highlight_based_on_criteria(check_caching_source())
             ],
             'PHP Version' => [
                 'id' => 'php-version',
@@ -179,15 +180,15 @@ function hws_ct_get_settings_system_checks()
             ],
    'WordPress RAM' => [
     'id' => 'wp-ram',
-    'value' => hws_ct_highlight_if_essential_setting_failed(check_wordpress_memory_limit()),
+    'value' => hws_ct_highlight_based_on_criteria(check_wordpress_memory_limit()),
 ],
             'Server RAM' => [
                 'id' => 'server-ram',
-                'value' => hws_ct_highlight_if_essential_setting_failed(check_server_memory_limit())
+                'value' => hws_ct_highlight_based_on_criteria(check_server_memory_limit())
             ],
             'Number of Processors' => [
                 'id' => 'num-processors',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
+                'value' => hws_ct_highlight_based_on_criteria([
                     'status' => check_server_specs()['num_processors'] !== 'Unknown',
                     'details' => check_server_specs()['num_processors'] . ' processors'
                 ]),

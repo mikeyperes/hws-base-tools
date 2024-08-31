@@ -11,7 +11,7 @@ function hws_ct_activate_snippets() {
 
         // Check if the snippet is enabled
         $is_enabled = get_option($snippet_id, false);
-
+ 
         // Log snippet information
         write_log("Processing snippet: {$snippet['name']} (ID: $snippet_id)", false);
 
