@@ -325,8 +325,15 @@ if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
     function check_wp_config_constant_status($constant_name) {
         if (defined($constant_name)) {
             $constant_value = constant($constant_name);
+
+            // Debug output to log the value
+            write_log("Constant {$constant_name} is defined with value: " . var_export($constant_value, true), true);
+
             $status = !empty($constant_value); // Check if the constant is not empty (covers boolean, string, number)
             $details = is_bool($constant_value) ? ($constant_value ? 'true' : 'false') : $constant_value;
+
+            // Debug output to log the status
+            write_log("Constant {$constant_name} has status: " . var_export($status, true), true);
 
             return [
                 'status' => $status,
@@ -339,7 +346,9 @@ if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
             ];
         }
     }
-} else write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
+} else {
+    write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
+}
 
 if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
     function check_wordpress_memory_limit() {
@@ -859,9 +868,6 @@ if (!function_exists('hws_base_tools\check_caching_source')) {
 
 
 /** CODE TO TOUCH UP ***/
-
-
-
 if (!function_exists('hws_base_tools\modify_wp_config_constants')) {
     function modify_wp_config_constants($constants_to_update) {
         $wp_config_path = ABSPATH . 'wp-config.php';
@@ -873,39 +879,33 @@ if (!function_exists('hws_base_tools\modify_wp_config_constants')) {
         $config_content = file_get_contents($wp_config_path);
 
         foreach ($constants_to_update as $constant => $value) {
-            // Prepare the constant definition
-            $value = is_bool($value) ? ($value ? 'true' : 'false') : "'$value'";
-            $new_constant = "define('$constant', $value); // Added/Modified by HWS Core Tools plugin";
+            // Convert string "true" and "false" to booleans
+            if (is_string($value)) {
+                if (strtolower($value) === 'true') {
+                    $value = true;
+                } elseif (strtolower($value) === 'false') {
+                    $value = false;
+                }
+            }
 
-            // Remove any existing definition of the constant, along with any existing comment
-            $config_content = preg_replace(
-                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*\/\/.*\n?/",
-                '',
-                $config_content
-            );
+            // Handle the boolean and string values appropriately
+            if (is_bool($value)) {
+                $new_constant = $value ? "define('$constant', true);" : "define('$constant', false);";
+            } elseif (is_numeric($value)) {
+                $new_constant = "define('$constant', $value);";
+            } else {
+                $new_constant = "define('$constant', '$value');";
+            }
 
-            // Also, check for any duplicate constants without comments and remove them
+            // Remove any existing definition of the constant
             $config_content = preg_replace(
                 "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*/",
                 '',
                 $config_content
             );
 
-            // Insert the new constant definition in the correct location
-            if ($constant === 'WP_DEBUG' || $constant === 'WP_DEBUG_DISPLAY' || $constant === 'WP_DEBUG_LOG') {
-                // Insert these debug-related constants after the 'WP_DEBUG' section
-                $debug_position = strpos($config_content, "define('WP_DEBUG',");
-                if ($debug_position !== false) {
-                    $end_of_debug_section = strpos($config_content, "\n", $debug_position) + 1;
-                    $config_content = substr_replace($config_content, "$new_constant\n", $end_of_debug_section, 0);
-                } else {
-                    // Fallback to inserting at the beginning if WP_DEBUG is not found
-                    $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
-                }
-            } else {
-                // Default behavior: insert at the beginning of the file
-                $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
-            }
+            // Insert the new constant definition at the beginning of the file
+            $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
         }
 
         // Write the updated content back to wp-config.php
@@ -916,15 +916,6 @@ if (!function_exists('hws_base_tools\modify_wp_config_constants')) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
 
 
 

@@ -33,6 +33,9 @@ function hws_ct_get_plugin_data() {
     }
 
     return $plugin_data;
+
+
+    
 }
 
 function hws_ct_display_plugin_info() {
@@ -46,6 +49,11 @@ function hws_ct_display_plugin_info() {
     $updater = new \hws_base_tools\WP_GitHub_Updater($config);
     $new_version = $updater->get_new_version() ?: 'Not Available';
     $download_url = $updater->config['zip_url'] ?: '#';
+
+    // Extract the URL and name from the author HTML
+    preg_match('/href=["\']([^"\']+)["\']/', $plugin_data['Author'], $matches);
+    $author_url = $matches[1] ?? '#';
+    $author_name = strip_tags($plugin_data['Author']);
 
     // Display the plugin information
     ?>
@@ -66,13 +74,14 @@ function hws_ct_display_plugin_info() {
                 <strong>Latest Version:</strong> <?php echo esc_html($new_version); ?>
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Download URL:</strong> <a href="<?php echo esc_url($download_url); ?>" target="_blank"><?php echo esc_url($download_url); ?></a>
+                <strong>Download URL:</strong> <a href="<?php echo esc_url($download_url); ?>" target="_blank"><?php echo esc_html($download_url); ?></a>
             </div>
             <div style="margin-bottom: 15px;">
                 <strong>Plugin URI:</strong> <a href="<?php echo esc_url($plugin_data['PluginURI']); ?>" target="_blank"><?php echo esc_html($plugin_data['PluginURI']); ?></a>
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Author:</strong> <a href="<?php echo esc_url($plugin_data['AuthorURI']); ?>" target="_blank"><?php echo esc_html($plugin_data['Author']); ?></a>
+                <strong>Author:</strong> 
+                <a href="<?php echo esc_url($author_url); ?>" target="_blank"><?php echo esc_html($author_name) . ' - ' . esc_html(parse_url($author_url, PHP_URL_HOST)); ?></a>
             </div>
         </div>
     </div>

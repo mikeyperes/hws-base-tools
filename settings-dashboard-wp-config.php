@@ -138,41 +138,40 @@ $wp_debug_log = get_constant_value_from_wp_config('WP_DEBUG_LOG');
 <script type="text/javascript">
 jQuery(document).ready(function($) {
     $('#debug-toggle, #debug-display-toggle, #debug-log-toggle').on('change', function() {
-        var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
-        var value = $(this).is(':checked') ? 'true' : 'false';
-        updateDebugSetting('WP_' + setting, value);
-    });
-
+    var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
+    var value = $(this).is(':checked'); // This now keeps the value as a boolean
+    updateDebugSetting('WP_' + setting, value);
+});
     function updateDebugSetting(setting, value) {
-        alert('Sending request to update ' + setting + ' to ' + value);
-        $.post(ajaxurl, {
-            action: 'modify_wp_config_constants',
-            constants: {
-                [setting]: value
-            }
-        },
-        function(response) {
-            console.log('Raw AJAX Response:', response);
+    alert('Sending request to update ' + setting + ' to ' + (value ? 'true' : 'false'));
+    $.post(ajaxurl, {
+        action: 'modify_wp_config_constants',
+        constants: {
+            [setting]: value // Send the boolean directly
+        }
+    },
+    function(response) {
+        console.log('Raw AJAX Response:', response);
 
-            try {
-                var jsonResponse = JSON.parse(response);
-                var message = jsonResponse.data ? jsonResponse.data.message : 'No message received';
+        try {
+            var jsonResponse = JSON.parse(response);
+            var message = jsonResponse.data ? jsonResponse.data.message : 'No message received';
 
-                if (jsonResponse.success) {
-                    alert(setting + ' set to ' + value);
-                    location.reload();
-                } else {
-                    alert('Failed to update ' + setting + ': ' + jsonResponse.data);
-                }
-            } catch (e) {
-                console.error('Response is not valid JSON:', response);
-                alert('Unexpected error: ' + response);
+            if (jsonResponse.success) {
+                alert(setting + ' set to ' + (value ? 'true' : 'false'));
+                location.reload();
+            } else {
+                alert('Failed to update ' + setting + ': ' + jsonResponse.data);
             }
-        }).fail(function(jqXHR, textStatus, errorThrown) {
-            alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-            console.error('AJAX Request Failed:', jqXHR, textStatus, errorThrown);
-        });
-    }
+        } catch (e) {
+            console.error('Response is not valid JSON:', response);
+            alert('Unexpected error: ' + response);
+        }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+        console.error('AJAX Request Failed:', jqXHR, textStatus, errorThrown);
+    });
+}
 });
 </script>
 

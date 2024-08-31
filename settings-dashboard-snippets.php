@@ -79,40 +79,43 @@ function hws_ct_get_settings_snippets()
 return $settings_snippets; 
 }
 */
+function toggle_snippet() {
+    $settings_snippets = hws_ct_get_settings_snippets();
 
+    write_log('AJAX Request received: ' . print_r($_POST, true)); // Log the incoming request
 
-    function toggle_snippet() {
-        $settings_snippets = hws_ct_get_settings_snippets();
-    
-      write_log('AJAX Request received: ' . print_r($_POST, false)); // Log the incoming request
-    
-        $snippet_id = sanitize_text_field($_POST['snippet_id']);
-        $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);
-    
-      write_log('Snippet ID: ' . $snippet_id . ', Enable: ' . $enable); // Log parsed values
-    
-        // Find the corresponding snippet and function
-        foreach ($settings_snippets as $snippet) {
-            if ($snippet['id'] === $snippet_id) {
-                // Update the option in the database
-                $updated = update_option($snippet_id, $enable);
-    
-                if ($updated) {
-                    wp_send_json_success('Option updated successfully.');
-                } else {
-                    write_log('Failed to update option.'); // Log failure
-                    wp_send_json_error('Failed to update option.');
-                }
-    
-                break;
+    $snippet_id = sanitize_text_field($_POST['snippet_id']);
+    $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);
+
+    write_log('Snippet ID: ' . $snippet_id . ', Enable: ' . ($enable ? 'true' : 'false')); // Log parsed values
+
+    // Find the corresponding snippet and function
+    foreach ($settings_snippets as $snippet) {
+        if ($snippet['id'] === $snippet_id) {
+            // Update the option in the database
+            $current_value = get_option($snippet_id);
+            write_log('Current value of ' . $snippet_id . ': ' . print_r($current_value, true)); // Log current value
+
+            $updated = update_option($snippet_id, $enable);
+
+            if ($updated) {
+                write_log('Option updated successfully for ' . $snippet_id); // Log success
+                wp_send_json_success('Option updated successfully.');
+            } else {
+                write_log('Failed to update option. Current value might be the same.'); // Log failure
+                wp_send_json_error('Failed to update option. Current value might be the same.');
             }
+
+            exit; // Stop further processing once the correct snippet is found
         }
-    
-        write_log('Invalid snippet ID: ' . $snippet_id); // Log invalid snippet ID
-        wp_send_json_error('Invalid snippet ID: ' . $snippet_id);
-    
-        wp_die(); // Ensure proper termination of the script
     }
+
+    write_log('Invalid snippet ID: ' . $snippet_id); // Log invalid snippet ID
+    wp_send_json_error('Invalid snippet ID: ' . $snippet_id);
+
+    wp_die(); // Ensure proper termination of the script
+}
+
 
     add_action('wp_ajax_toggle_snippet', 'hws_base_tools\toggle_snippet');
 
@@ -273,15 +276,32 @@ return $settings_snippets;
     }
 
     jQuery(document).ready(function($) {
-        // Handle "Enable Plugin Auto Updates" button click
-        $('.modify-snippet-via-button').on('click', function() {
-            var snippetId = $(this).data('constant') === 'auto_update_plugin' ? 'enable_auto_update_plugins' : 'enable_auto_update_themes';
+    // Handle "Toggle Auto Updates" button click
+    $('.modify-snippet-via-button').on('click', function() {
+        var constant = $(this).data('constant');
+        var action = $(this).data('action');
+        var snippetId = null;
 
-            // Automatically enable the checkbox for the corresponding snippet
-            $('#' + snippetId).prop('checked', true);
+        // Explicitly check for each constant and set the corresponding snippetId
+        if (constant === 'auto_update_plugin') {
+            snippetId = 'enable_auto_update_plugins';
+        } else if (constant === 'auto_update_theme') {
+            snippetId = 'enable_auto_update_themes';
+        }
 
-            // Trigger the toggleSnippet function to update the setting
-            toggleSnippet(snippetId);
-        });
+        // Do nothing if snippetId is not set (invalid constant)
+        if (snippetId === null) {
+            return;
+        }
+
+        // Toggle the checkbox state based on the action (enable or disable)
+        var checkbox = $('#' + snippetId);
+        var isChecked = (action === 'enable');
+        checkbox.prop('checked', isChecked);
+
+        // Trigger the toggleSnippet function to update the setting
+        toggleSnippet(snippetId);
     });
+});
+
     </script><? } ?>

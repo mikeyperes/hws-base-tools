@@ -96,9 +96,12 @@ function hws_ct_get_settings_system_checks()
     ]),
 ],
   
-            'MyISAM Tables' => [
+'MyISAM Tables' => [
     'id' => 'myisam-tables',
-    'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables())
+    'value' => hws_ct_highlight_based_on_criteria([
+        'status' => check_myisam_tables()['status'],
+        'details' => check_myisam_tables()['details'] . ' <a href="' . admin_url('admin.php?page=litespeed-db_optm') . '" target="_blank">View more</a>'
+    ])
 ],
             'WordFence Notification Email' => [
                 'id' => 'wf-email',
@@ -106,13 +109,12 @@ function hws_ct_get_settings_system_checks()
             ],
 'WP_CACHE State' => [
     'id' => 'wp-cache',
-    'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_CACHE")),
+    'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_CACHE"), 'false'),
 ],
-
 
             'LSCWP_OBJECT_CACHE State' => [
                 'id' => 'wp-ls-cache',
-                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"))
+                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"), 'false')
             ],
             'WP_DEBUG State' => [
                 'id' => 'wp-debug',
@@ -222,25 +224,38 @@ function hws_ct_display_settings_system_checks()
                     <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="__unset__" data-target="wp-ram">Remove WP_MEMORY_LIMIT</button>
                 <?php endif; ?>
                 
-                <?php if ($setting['id'] === 'wp-cache'): ?>
-                    <?php if (check_wp_config_constant_status('WP_CACHE')['status']): ?>
-                        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
-                    <?php else: ?>
-                        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="true" data-target="wp-cache">Enable WP_CACHE</button>
-                    <?php endif; ?>
-                <?php endif; ?>
+                <?php if ($setting['id'] === 'wp-cache'):
+
+    $wp_cache_status = check_wp_config_constant_status('WP_CACHE')['status']; 
+ if ($wp_cache_status): ?>
+        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
+    <?php else: ?>
+        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="true" data-target="wp-cache">Enable WP_CACHE</button>
+    <?php endif; ?>
+<?php endif; ?>
                 
                 <?php if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
                     <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="true" data-target="wp-auto-updates">Enable Auto Updates</button>
                 <?php endif; ?>
                 
-                <?php if ($setting['id'] === 'plugin-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
-                    <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-value="__return_true" data-target="plugin-auto-updates">Enable Plugin Auto Updates</button>
-                <?php endif; ?>
+            
+                <?php if ($setting['id'] === 'plugin-auto-updates'): ?>
+    <?php if (strpos($setting['value'], 'color: red') !== false): ?>
+        <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-action="enable">Enable Plugin Auto Updates</button>
+    <?php else: ?>
+        <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-action="disable">Disable Plugin Auto Updates</button>
+    <?php endif; ?>
+<?php endif; ?>
+
+<?php if ($setting['id'] === 'theme-auto-updates'): ?>
+    <?php if (strpos($setting['value'], 'color: red') !== false): ?>
+        <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-action="enable">Enable Theme Auto Updates</button>
+    <?php else: ?>
+        <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-action="disable">Disable Theme Auto Updates</button>
+    <?php endif; ?>
+<?php endif; ?>
                 
-                <?php if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color: red') !== false): ?>
-                    <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-value="__return_true" data-target="theme-auto-updates">Enable Theme Auto Updates</button>
-                <?php endif; ?>
+
             <?php endforeach;
 
 /*
