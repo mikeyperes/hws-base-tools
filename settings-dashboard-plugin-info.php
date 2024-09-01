@@ -75,7 +75,7 @@ function hws_ct_display_plugin_info() {
 </div>
 <div style="margin-bottom: 15px;">
     <strong>Latest Version:</strong> <?php echo esc_html($new_version); ?>
-    <br /><small>If the latest version has not yet been updated, please wait until the Git API reflects the correct version.</small>    <?php
+    <br /><small>If the latest version number does not reflect the version number on GitHub, please wait until the Git API reflects the correct version.</small>    <?php
     // Generate the dynamic URL for update check
     $update_check_url = admin_url('update-core.php?force-check=1');
     // Generate the dynamic URL for plugins page
