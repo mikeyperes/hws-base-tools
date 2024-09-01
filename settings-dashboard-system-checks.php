@@ -128,7 +128,7 @@ function hws_ct_get_settings_system_checks()
                 'id' => 'wp-debug-log',
                 'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG_LOG"))
             ],
-      
+       
          
 
       'Debug Log Size' => [
@@ -161,13 +161,13 @@ function hws_ct_get_settings_system_checks()
                     'details' => check_smtp_auth_status_and_mailer()['mailer']
                 ])
             ],
-            'SMTP Authenticated Domain' => [
-                'id' => 'smtp-domain',
-                'value' => hws_ct_highlight_based_on_criteria([
-                    'status' => !empty(check_smtp_auth_status_and_mailer()['details']),
-                    'details' => check_smtp_auth_status_and_mailer()['details']
-                ])
-            ],
+ 'SMTP Authenticated Domain' => [
+    'id' => 'smtp-domain',
+    'value' => hws_ct_highlight_based_on_criteria([
+        'status' => !empty(check_smtp_auth_status_and_mailer()['details']),
+        'details' => check_smtp_auth_status_and_mailer()['details']
+    ]) . (check_smtp_auth_status_and_mailer()['details'] ? ' <br /><a href="' . esc_url(admin_url('admin.php?page=wp-mail-smtp')) . '" target="_blank" class="button">Edit</a>' : '')
+],
             'REDIS Active' => [
                 'id' => 'redis-active',
                 'value' => hws_ct_highlight_based_on_criteria(check_redis_active())

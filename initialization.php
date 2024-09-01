@@ -7,7 +7,7 @@ Plugin URI: https://github.com/mikeyperes/hws-base-tools
 Version: 3.1.2.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
-GitHub Branch: main
+GitHub Branch: main 
 */          
 namespace hws_base_tools ;
 

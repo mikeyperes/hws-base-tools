@@ -9,7 +9,7 @@ use function hws_base_tools\hws_ct_snippets_activate_author_social_acfs;
 use function hws_base_tools\write_log;
 use function hws_base_tools\toggle_snippet;
 use function hws_base_tools\hws_ct_get_settings_snippets;
-
+ 
 /*
 function hws_ct_get_settings_snippets()
 {
@@ -262,7 +262,7 @@ function toggle_snippet() {
                 enable: isChecked
             },
             success: function(response) {
-                if(response.success) {
+                if(response.success) { 
                     alert(response.data);
                 } else {
                     alert('Error: ' + response.data);
@@ -274,11 +274,7 @@ function toggle_snippet() {
             }
         });
     }
-<<<<<<< HEAD
-
-=======
- 
->>>>>>> 4583631 (fixed GIT issue)
+  
     jQuery(document).ready(function($) {
     // Handle "Toggle Auto Updates" button click
     $('.modify-snippet-via-button').on('click', function() {

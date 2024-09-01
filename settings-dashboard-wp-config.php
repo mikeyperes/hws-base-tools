@@ -183,10 +183,7 @@ jQuery(document).ready(function($) {
 <p>Debug Log Size: <?php echo $debug_log_size; ?></p>
 <div>
     <button class="button" id="toggle-debug-log">View Last 100 Lines of debug.log</button>
-<<<<<<< HEAD
-=======
     <button class="button" id="copy-debug-log">Copy to Clipboard</button>
->>>>>>> 4583631 (fixed GIT issue)
   
     <a href="<?php echo WP_CONTENT_URL . '/debug.log'; ?>" target="_blank" class="button">View debug.log</a>
     <button class="button" id="delete-debug-log">Delete</button>
@@ -203,10 +200,7 @@ jQuery(document).ready(function($) {
 <p>Error Log Size: <?php echo $error_log_size; ?></p>
 <div>
     <button class="button" id="toggle-error-log">View Last 100 Lines of error_log</button>
-<<<<<<< HEAD
-=======
     <button class="button" id="copy-error-log">Copy to Clipboard</button>
->>>>>>> 4583631 (fixed GIT issue)
 
     <a href="<?php echo site_url('/error_log'); ?>" target="_blank" class="button">View error_log</a>
     <button class="button" id="delete-error-log">Delete</button>
@@ -314,14 +308,9 @@ jQuery(document).ready(function($) {
             }).fail(function(jqXHR, textStatus, errorThrown) {
                 console.error('AJAX request failed:', textStatus, errorThrown);
                 alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-            });
-<<<<<<< HEAD
-        }
-
-=======
+            }); 
         }   
  
->>>>>>> 4583631 (fixed GIT issue)
         // Bind delete actions to buttons
         $('#delete-debug-log').on('click', function(e) {
             e.preventDefault();
@@ -332,7 +321,7 @@ jQuery(document).ready(function($) {
             e.preventDefault();
             deleteLogFile('error');
         });
-
+ 
         // Handle the auto-delete toggle
         $('#auto-delete-toggle').on('change', function() {
             var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
@@ -374,8 +363,6 @@ jQuery(document).ready(function($) {
      });
  });
  </script>
-<<<<<<< HEAD
-=======
 
 <script type="text/javascript">
     jQuery(document).ready(function($) {
@@ -451,5 +438,4 @@ jQuery(document).ready(function($) {
         });
     });
 </script>
->>>>>>> 4583631 (fixed GIT issue)
 <? }?>

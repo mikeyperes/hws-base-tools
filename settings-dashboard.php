@@ -8,7 +8,7 @@ if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
 }
 
  
-
+ 
 
 // Abstract function to add a settings menu and page
 function hws_ct_add_wp_admin_settings_page() {
@@ -162,11 +162,7 @@ pre {
 <? hws_ct_display_settings_php_ini();?>
 <? hws_ct_display_plugin_info();?>
 
-<<<<<<< HEAD
 
-=======
- 
->>>>>>> 4583631 (fixed GIT issue)
 <?php
   // Get the buffer contents and clean (erase) the output buffer
   if (ob_get_level() != 0) echo ob_get_clean();

@@ -1,8 +1,12 @@
 <?php namespace hws_base_tools;
-function hws_ct_display_settings_theme_checks()
-{    ?>
+use function hws_base_tools\is_theme_auto_update_enabled;
+
+
+
+ 
+function hws_ct_display_settings_theme_checks() { ?>
     <!-- Theme Status Panel -->
-    <div class="panel"> 
+    <div class="panel">
         <h2 class="panel-title">Theme Checks</h2>
         <small><a href="<?= admin_url('themes.php') ?>" target="_blank">View all themes</a></small>
         <div class="panel-content">
@@ -16,7 +20,7 @@ function hws_ct_display_settings_theme_checks()
                     display_check_status($hello_elementor_active, 'Hello Elementor');
 
                     // Check if auto-updates are enabled for "Hello Elementor"
-                    $hello_elementor_auto_update = is_theme_auto_update_enabled('hello-elementor'); // Use correct theme slug
+                    $hello_elementor_auto_update = is_theme_auto_update_enabled('hello-elementor');
                     display_check_status($hello_elementor_auto_update, 'Auto-Updates Enabled');
                     ?>
                 </div>
@@ -38,9 +42,9 @@ function hws_ct_display_settings_theme_checks()
                         $status = $is_active ? 'Active' : 'Inactive';
                         $focus_style = $is_active ? 'font-weight: bold;' : 'color: #555;';
 
-                        // Check if auto-updates are enabled for the theme
+                        // Check if auto-updates are enabled for the theme using the new function
                         $theme_slug = $theme_data->get_stylesheet();
-                        $auto_update_enabled = wp_is_auto_update_enabled_for_type('theme', $theme_slug);
+                        $auto_update_enabled = is_theme_auto_update_enabled($theme_slug);
 
                         // Adjust the status display to include auto-update information
                         $auto_update_status = $auto_update_enabled ? 'Auto-Updates Enabled' : 'Auto-Updates Disabled';
@@ -61,6 +65,5 @@ function hws_ct_display_settings_theme_checks()
         </div>
     </div>
     <?php
-
 }
 ?>

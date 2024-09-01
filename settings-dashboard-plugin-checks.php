@@ -20,7 +20,7 @@ use function hws_base_tools\check_wordpress_memory_limit;
 use function hws_base_tools\check_server_memory_limit;
 use function hws_base_tools\check_server_specs;
 use function hws_base_tools\is_plugin_auto_update_enabled;
-
+ 
  
 function hws_ct_display_settings_check_plugins() {
    // Get the last time WordPress checked for plugin updates
@@ -113,7 +113,7 @@ foreach ($plugins as $plugin) {
                 echo "<p style='color: green;'>&#x2705; Enabled</p>";
             } else {
                 echo "<p style='color: red;'>&#x274C; Enabled (Should be Inactive)</p>";
-            }
+             }
         } else {
             if ($should_be_active) {
                 echo "<p style='color: red;'>&#x274C; Not Enabled (Should be Active)</p>";
