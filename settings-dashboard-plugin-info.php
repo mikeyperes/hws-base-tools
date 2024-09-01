@@ -54,7 +54,11 @@ function hws_ct_display_plugin_info() {
     preg_match('/href=["\']([^"\']+)["\']/', $plugin_data['Author'], $matches);
     $author_url = $matches[1] ?? '#';
     $author_name = strip_tags($plugin_data['Author']);
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 4583631 (fixed GIT issue)
     // Display the plugin information
     ?>
     <!-- Plugin Info Panel -->
@@ -68,6 +72,7 @@ function hws_ct_display_plugin_info() {
                 <strong>Plugin Slug:</strong> <?php echo esc_html($slug); ?>
             </div>
             <div style="margin-bottom: 15px;">
+<<<<<<< HEAD
                 <strong>Current Version:</strong> <?php echo esc_html($plugin_data['Version']); ?>
             </div>
             <div style="margin-bottom: 15px;">
@@ -80,6 +85,26 @@ $update_check_url = admin_url('update-core.php?force-check=1');
 echo '<br /><small><i><a href="' . esc_url($update_check_url) . '" target="_blank">Force WordPress to Perform an Update Check</a></i></small>';
 ?>
             </div>
+=======
+    <strong style="color: <?php echo ($plugin_data['Version'] !== $new_version) ? 'red' : 'inherit'; ?>;">Current Version:</strong> 
+    <span style="color: <?php echo ($plugin_data['Version'] !== $new_version) ? 'red' : 'inherit'; ?>;">
+        <?php echo esc_html($plugin_data['Version']); ?>
+    </span>
+</div>
+<div style="margin-bottom: 15px;">
+    <strong>Latest Version:</strong> <?php echo esc_html($new_version); ?>
+    <?php
+    // Generate the dynamic URL for update check
+    $update_check_url = admin_url('update-core.php?force-check=1');
+    // Generate the dynamic URL for plugins page
+    $plugins_page_url = admin_url('plugins.php');
+  
+    // Output the buttons with the dynamic URLs
+    echo '<br /><small><i><a href="' . esc_url($update_check_url) . '" target="_blank">Force WordPress to Perform an Update Check</a></i></small>';
+    echo '<br /><small><i><a href="' . esc_url($plugins_page_url) . '" target="_blank">View Plugins Page</a></i></small>';
+    ?>
+</div>
+>>>>>>> 4583631 (fixed GIT issue)
 
             
             <div style="margin-bottom: 15px;">

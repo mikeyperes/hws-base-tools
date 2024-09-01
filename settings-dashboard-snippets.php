@@ -274,7 +274,11 @@ function toggle_snippet() {
             }
         });
     }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 4583631 (fixed GIT issue)
     jQuery(document).ready(function($) {
     // Handle "Toggle Auto Updates" button click
     $('.modify-snippet-via-button').on('click', function() {

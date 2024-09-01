@@ -183,6 +183,10 @@ jQuery(document).ready(function($) {
 <p>Debug Log Size: <?php echo $debug_log_size; ?></p>
 <div>
     <button class="button" id="toggle-debug-log">View Last 100 Lines of debug.log</button>
+<<<<<<< HEAD
+=======
+    <button class="button" id="copy-debug-log">Copy to Clipboard</button>
+>>>>>>> 4583631 (fixed GIT issue)
   
     <a href="<?php echo WP_CONTENT_URL . '/debug.log'; ?>" target="_blank" class="button">View debug.log</a>
     <button class="button" id="delete-debug-log">Delete</button>
@@ -199,6 +203,10 @@ jQuery(document).ready(function($) {
 <p>Error Log Size: <?php echo $error_log_size; ?></p>
 <div>
     <button class="button" id="toggle-error-log">View Last 100 Lines of error_log</button>
+<<<<<<< HEAD
+=======
+    <button class="button" id="copy-error-log">Copy to Clipboard</button>
+>>>>>>> 4583631 (fixed GIT issue)
 
     <a href="<?php echo site_url('/error_log'); ?>" target="_blank" class="button">View error_log</a>
     <button class="button" id="delete-error-log">Delete</button>
@@ -307,8 +315,13 @@ jQuery(document).ready(function($) {
                 console.error('AJAX request failed:', textStatus, errorThrown);
                 alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
             });
+<<<<<<< HEAD
         }
 
+=======
+        }   
+ 
+>>>>>>> 4583631 (fixed GIT issue)
         // Bind delete actions to buttons
         $('#delete-debug-log').on('click', function(e) {
             e.preventDefault();
@@ -361,4 +374,82 @@ jQuery(document).ready(function($) {
      });
  });
  </script>
+<<<<<<< HEAD
+=======
+
+<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        // Copy debug log to clipboard
+        $('#copy-debug-log').on('click', function() {
+            var text = $('#debug-log-content').text();
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Debug log copied to clipboard.');
+            }, function(err) {
+                alert('Failed to copy debug log: ' + err);
+            });
+        });
+
+        // Copy error log to clipboard
+        $('#copy-error-log').on('click', function() {
+            var text = $('#error-log-content').text();
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Error log copied to clipboard.');
+            }, function(err) {
+                alert('Failed to copy error log: ' + err);
+            });
+        });
+
+        // Toggle WP-Config Constants section
+        $('.wp-config-toggle').on('click', function() {
+            $(this).next('.wp-config-content').slideToggle();
+        });
+
+        // Delete log files
+        function deleteLogFile(logType) {
+            const action = logType === 'debug' ? 'delete_debug_log' : 'delete_error_log';
+            $.post(ajaxurl, { action: action }, function(response) {
+                if (response.success) {
+                    console.log(logType + '.log deleted successfully');
+                    location.reload();
+                } else {
+                    console.error('Failed to delete ' + logType + '.log:', response.data);
+                    alert('Error: ' + response.data);
+                }
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX request failed:', textStatus, errorThrown);
+                alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+            });
+        }
+
+        // Bind delete actions to buttons
+        $('#delete-debug-log').on('click', function(e) {
+            e.preventDefault();
+            deleteLogFile('debug');
+        });
+
+        $('#delete-error-log').on('click', function(e) {
+            e.preventDefault();
+            deleteLogFile('error');
+        });
+
+        // Handle the auto-delete toggle
+        $('#auto-delete-toggle').on('change', function() {
+            var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
+            $.post(ajaxurl, {
+                action: 'hws_ct_toggle_auto_delete',
+                status: isEnabled
+            }, function(response) {
+                if (response.success) {
+                    alert('Auto delete is now ' + isEnabled + '. Last cron run: ' + response.data.last_run);
+                } else {
+                    alert('Failed to update auto delete setting.');
+                }
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX request failed:', textStatus, errorThrown);
+                alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+            });
+        });
+    });
+</script>
+>>>>>>> 4583631 (fixed GIT issue)
 <? }?>

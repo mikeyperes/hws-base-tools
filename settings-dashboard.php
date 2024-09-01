@@ -162,7 +162,11 @@ pre {
 <? hws_ct_display_settings_php_ini();?>
 <? hws_ct_display_plugin_info();?>
 
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 4583631 (fixed GIT issue)
 <?php
   // Get the buffer contents and clean (erase) the output buffer
   if (ob_get_level() != 0) echo ob_get_clean();

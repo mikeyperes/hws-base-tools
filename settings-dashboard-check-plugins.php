@@ -358,7 +358,11 @@ function hws_ct_force_update_check() {
             $plugins_list[] = $plugin_name;
         }
     }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 4583631 (fixed GIT issue)
     // Send back the last checked time, number of plugins with updates, and their names
     echo json_encode([
         'last_checked' => $last_checked,
