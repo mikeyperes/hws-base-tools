@@ -236,6 +236,16 @@ function hws_ct_get_plugins_list() {
             'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-smush-pro/wp-smush.php', 'Smush Pro', true)
         ],
         [
+            'id' => 'litespeed-cache/litespeed-cache.php',
+            'name' => 'LiteSpeed Cache',
+            'approved_constraints' => [
+                'is_installed' => true,
+                'is_active' => true,
+                'is_auto_update_enabled' => true
+            ],
+            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('litespeed-cache/litespeed-cache.php', 'LiteSpeed Cache')
+        ],
+        [
             'id' => 'wp-file-manager/file_folder_manager.php',
             'name' => 'WP File Manager',
             'approved_constraints' => [
