@@ -279,11 +279,6 @@ jQuery(document).ready(function($) {
 
 
 
-            </div>
-        </div>
-    </div>
-
-
 
 
 
@@ -438,4 +433,11 @@ jQuery(document).ready(function($) {
         });
     });
 </script>
+
+
+
+</div>
+        </div>
+
+
 <? }?>
