@@ -4,24 +4,14 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-<<<<<<< HEAD
-Version: 2.6.3
+Version: 3.1.2.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main
-*/  
-namespace hws_base_tools;
+*/          
+namespace hws_base_tools ;
 
-=======
-Version: 2.6.4 
-Author URI: https://michaelperes.com
-GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
-GitHub Branch: main
-*/      
-namespace hws_base_tools;
-echo "hi";
->>>>>>> 4583631 (fixed GIT issue)
-// Generic functions import
+// Generic functions import 
 include_once("generic-functions.php");
 
 // Use function for easy access without namespace prefix
@@ -37,7 +27,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "2.6.3";
+$plugin_version = "3.0";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -142,14 +132,14 @@ include_once("activate-snippets.php");
 
 // Import ACF Fields
 include_once("register-acf-fields-user.php");
-
+ 
 // Build Dashboard
 include_once("settings-dashboard.php");
 // Settings sub-pages
 include_once("settings-dashboard-wp-config.php");
 include_once("settings-dashboard-log-delete-cron.php");
 include_once("settings-dashboard-snippets.php");
-include_once("settings-dashboard-check-plugins.php");
+include_once("settings-dashboard-plugin-checks.php");
 include_once("settings-dashboard-system-checks.php");
 include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-php-ini.php");
