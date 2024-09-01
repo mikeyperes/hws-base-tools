@@ -123,18 +123,6 @@ if (!function_exists('hws_base_tools\is_theme_active')) {
 } else write_log("Warning: hws_base_tools/is_theme_active function is already declared",true);
 
 
-/**
- * Check if auto-updates are enabled for a specified theme.
- * 
- * @param string $theme_name The name of the theme.
- * @return bool True if auto-updates are enabled, false otherwise.
- */
-if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
-    function is_theme_auto_update_enabled($theme_name) {
-        $theme_updates = get_option('auto_update_themes', []);
-        return in_array($theme_name, $theme_updates);
-    }
-} else write_log("Warning: hws_base_tools/is_theme_auto_update_enabled function is already declared",true);
 
 /**
  * Display the status of a condition with a message and colored icon.
@@ -985,6 +973,52 @@ function check_wp_core_auto_update_status() {
     $wp_auto_update_status = get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE');
     return $wp_auto_update_status === 'true';
 }}
+
+
+if (!function_exists('hws_base_tools\is_plugin_auto_update_enabled')) {
+    function is_plugin_auto_update_enabled($plugin_id) {
+        // Check if site-wide auto-updates are enabled
+        if (has_filter('auto_update_plugin', '__return_true') !== false) {
+            return true;
+        }
+
+        // Get the list of plugins with auto-updates enabled
+        $auto_update_plugins = get_site_option('auto_update_plugins', []);
+
+        // Check if the specific plugin has auto-updates enabled
+        return in_array($plugin_id, $auto_update_plugins);
+    }
+} else {
+    write_log("Warning: hws_base_tools/is_plugin_auto_update_enabled function is already declared", true);
+}
+
+
+if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
+    function is_theme_auto_update_enabled($theme_slug) {
+        // Log entry into the function
+        write_log("Checking auto-update status for theme: {$theme_slug}", true);
+
+        // Check if site-wide theme auto-updates are enabled
+        if (has_filter('auto_update_theme', '__return_true') !== false) {
+            write_log("Site-wide theme auto-updates are enabled.", true);
+            return true;
+        }
+
+        // Get the list of themes with auto-updates enabled
+        $auto_update_themes = get_site_option('auto_update_themes', []);
+
+        // Log the retrieved list of themes with auto-updates enabled
+        write_log("Auto-update enabled themes: " . implode(', ', $auto_update_themes), true);
+
+        // Check if the specific theme has auto-updates enabled
+        $is_enabled = in_array($theme_slug, $auto_update_themes);
+        write_log("Auto-update status for {$theme_slug}: " . ($is_enabled ? 'Enabled' : 'Disabled'), true);
+
+        return $is_enabled;
+    }
+} else {
+    write_log("Warning: hws_base_tools/is_theme_auto_update_enabled function is already declared", true);
+}
 
 
 // Function to check if plugin auto-updates are enabled
