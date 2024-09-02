@@ -62,7 +62,7 @@ $update_check_url = admin_url('update-core.php?force-check=1');
             <p>Plugins with updates available:</p>
             <ul id="plugins-list">
                 <?php foreach ($plugins_list as $plugin_name): ?>
-                    <li><?= esc_html($plugin_name) ?></li>
+                    <li><span style="color:red"><?= esc_html($plugin_name) ?></span></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
