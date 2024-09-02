@@ -41,16 +41,21 @@ function hws_ct_display_settings_theme_checks() { ?>
                         $is_active = ($theme_name === $active_theme->get_stylesheet());
                         $status = $is_active ? 'Active' : 'Inactive';
                         $focus_style = $is_active ? 'font-weight: bold;' : 'color: #555;';
-
-                        // Check if auto-updates are enabled for the theme using the new function
+                    
+                        // Check if auto-updates are enabled for the theme
                         $theme_slug = $theme_data->get_stylesheet();
                         $auto_update_enabled = is_theme_auto_update_enabled($theme_slug);
-
-                        // Adjust the status display to include auto-update information
                         $auto_update_status = $auto_update_enabled ? 'Auto-Updates Enabled' : 'Auto-Updates Disabled';
                         $auto_update_style = $auto_update_enabled ? 'color: green;' : 'color: red;';
-
-                        echo "<div style='$focus_style'>{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status - <span style='$auto_update_style'>$auto_update_status</span></div>";
+                    
+                        // Check if updates are available for the theme
+                        $theme_updates = get_site_transient('update_themes');
+                        $updates_available = isset($theme_updates->response[$theme_slug]);
+                    
+                        // Adjust the updates status display
+                        $update_status = $updates_available ? '<span style="color: red;">Updates Available</span>' : '';
+                    
+                        echo "<div style='$focus_style'>{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status - <span style='$auto_update_style'>$auto_update_status</span> $update_status</div>";
                     }
                     ?>
                 </div>

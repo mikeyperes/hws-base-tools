@@ -368,13 +368,29 @@ if (!function_exists('hws_base_tools\get_database_table_prefix')) {
     }
 } else write_log("Warning: get_database_table_prefix function is already declared", true);
 
+
+
+
+
+
+
+
 if (!function_exists('hws_base_tools\check_myisam_tables')) {
     function check_myisam_tables() {
         global $wpdb;
 
         // Get the current database prefix
         $prefix_info = get_database_table_prefix();
-        $current_prefix = isset($prefix_info['details']) ? $prefix_info['details'] : '';
+        $current_prefix = isset($prefix_info['raw_value']) ? $prefix_info['raw_value'] : '';
+
+        // Check for valid prefix
+        if (empty($current_prefix)) {
+            return [
+                'function' => "check_myisam_tables",
+                'status' => false,
+                'raw_value' => 'Unable to determine current database prefix.'
+            ];
+        }
 
         // Get all MyISAM tables
         $myisam_tables = $wpdb->get_results("
@@ -396,30 +412,45 @@ if (!function_exists('hws_base_tools\check_myisam_tables')) {
                 $additional_prefixes[$prefix][] = $table_name;
             }
         }
-        
-        // Report on current database prefix tables
-        $status = empty($current_prefix_tables);
-        $details = $status 
-            ? '<p style="color: green;">No MyISAM tables found for current WordPress install</p>' 
-            : '<p style="color: red;">MyISAM tables found for current WordPress install: ' . implode(', ', $current_prefix_tables) . '</p>';
 
-        // Report on additional prefixes
+        // Determine status
+        $status = empty($current_prefix_tables) && empty($additional_prefixes);
+
+        // Prepare details
+        $details = '';
+        if (!empty($current_prefix_tables)) {
+            $details .= 'MyISAM tables found for current WordPress install: ' . implode(', ', $current_prefix_tables);
+        }
         if (!empty($additional_prefixes)) {
-            $details .= '<p style="color: red;">Additional database prefixes detected:</p>';
-            foreach ($additional_prefixes as $prefix => $tables) {
-                $details .= '<p style="color: red;">' . $prefix . '_ - MyISAM tables found: ' . implode(', ', $tables) . '</p>';
+            if (!empty($details)) {
+                $details .= ' | ';
             }
+            $details .= 'Additional database prefixes detected: ';
+            foreach ($additional_prefixes as $prefix => $tables) {
+                $details .= $prefix . '_ - MyISAM tables found: ' . implode(', ', $tables) . ' | ';
+            }
+            // Remove trailing ' | ' if any
+            $details = rtrim($details, ' | ');
+        }
+
+        // Check if details are still empty
+        if (empty($details)) {
+            $details = 'No MyISAM tables found.';
         }
 
         return [
             'function' => "check_myisam_tables",
-            'status' => $status,
+            'status' => $status, // True if no MyISAM tables are found
             'raw_value' => $details
         ];
     }
-} else {
-    write_log("Warning: hws_base_tools/check_myisam_tables function is already declared", true);
-}
+} else write_log("Warning: hws_base_tools/check_myisam_tables function is already declared", true);
+
+
+
+
+
+
 
 
 if (!function_exists('hws_base_tools\get_wp_version_from_file')) {
@@ -617,8 +648,8 @@ if (!function_exists('hws_base_tools\check_log_file_sizes')) {
         $error_log_size = file_exists($error_log_path) ? filesize($error_log_path) : 'Not Found';
 
         // Determine the status based on whether the log files exceed 10KB, while ensuring "Not Found" cases do not set status to false
-        $debug_log_status = ($debug_log_size === 'Not Found') ? null : (is_numeric($debug_log_size) && $debug_log_size <= 10 * 1024);
-        $error_log_status = ($error_log_size === 'Not Found') ? null : (is_numeric($error_log_size) && $error_log_size <= 10 * 1024);
+        $debug_log_status = ($debug_log_size === 'Not Found') ? null : (is_numeric($debug_log_size) && $debug_log_size <= 25 * 1000 * 1024);
+        $error_log_status = ($error_log_size === 'Not Found') ? null : (is_numeric($error_log_size) && $error_log_size <= 25 * 1000 * 1024);
 
         return [
             'debug_log' => [
@@ -828,16 +859,8 @@ if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
 
 if (!function_exists('hws_base_tools\check_wordpress_main_email')) {
     function check_wordpress_main_email() {
-        // Debugging output to confirm function execution
-        write_log("Debug: check_wordpress_main_email function called", true);
-
-        // For debugging purposes, comment out the next line
-        // return "hi";
 
         $admin_email = get_option('admin_email');
-
-        // Log the retrieved email for debugging
-        write_log("Admin email retrieved: " . print_r($admin_email, true), true);
 
         // Ensure the email is retrieved and is a valid email address
         $value = !empty($admin_email) && is_email($admin_email);

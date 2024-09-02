@@ -91,7 +91,8 @@ function hws_ct_get_settings_system_checks()
             ],
             'MyISAM Tables' => [
     'id' => 'myisam-tables',
-    'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables())
+'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables()) . ' - <a target=_blank href="' . esc_url(admin_url('admin.php?page=litespeed-db_optm')) . '">View More</a>'
+
 ],
 /*
 'Additional WordPress Installs Detected' => [
