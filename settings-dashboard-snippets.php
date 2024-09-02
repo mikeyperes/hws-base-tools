@@ -79,42 +79,61 @@ function hws_ct_get_settings_snippets()
 return $settings_snippets; 
 }
 */
-function toggle_snippet() {
-    $settings_snippets = hws_ct_get_settings_snippets();
+if (!function_exists('hws_base_tools\toggle_snippet')) {
+    function toggle_snippet() {
+        $settings_snippets = hws_ct_get_settings_snippets();
 
-    write_log('AJAX Request received: ' . print_r($_POST, true)); // Log the incoming request
+        // Retrieve the snippet ID and the enable/disable state from the AJAX request
+        $snippet_id = sanitize_text_field($_POST['snippet_id']);
+        $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);
 
-    $snippet_id = sanitize_text_field($_POST['snippet_id']);
-    $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);
+        write_log("Toggle snippet called with ID: {$snippet_id}, enable: " . ($enable ? 'true' : 'false'));
 
-    write_log('Snippet ID: ' . $snippet_id . ', Enable: ' . ($enable ? 'true' : 'false')); // Log parsed values
+        // Find the corresponding snippet and function
+        foreach ($settings_snippets as $snippet) {
+            if ($snippet['id'] === $snippet_id) {
+                // Get the current value from the database
+                $current_value = get_option($snippet_id);
+                write_log("Current value of '{$snippet_id}': " . var_export($current_value, true));
 
-    // Find the corresponding snippet and function
-    foreach ($settings_snippets as $snippet) {
-        if ($snippet['id'] === $snippet_id) {
-            // Update the option in the database
-            $current_value = get_option($snippet_id);
-            write_log('Current value of ' . $snippet_id . ': ' . print_r($current_value, true)); // Log current value
+                // Ensure both current and new values are booleans for accurate comparison
+                $current_value_bool = filter_var($current_value, FILTER_VALIDATE_BOOLEAN);
 
-            $updated = update_option($snippet_id, $enable);
+                // Only update if the value has actually changed
+                if ($current_value_bool !== $enable) {
+                    write_log("Attempting to update '{$snippet_id}' to " . ($enable ? 'true' : 'false'));
 
-            if ($updated) {
-                write_log('Option updated successfully for ' . $snippet_id); // Log success
-                wp_send_json_success('Option updated successfully.');
-            } else {
-                write_log('Failed to update option. Current value might be the same.'); // Log failure
-                wp_send_json_error('Failed to update option. Current value might be the same.');
+                    // Attempt the update
+                    $updated = update_option($snippet_id, $enable);
+
+                    // Log the result of the update attempt
+                    if ($updated) {
+                        write_log("Option '{$snippet_id}' updated successfully.");
+                        wp_send_json_success("Option '{$snippet_id}' updated successfully.");
+                    } else {
+                        global $wpdb;
+                        $db_error = $wpdb->last_error;
+                        write_log("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
+                        wp_send_json_error("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
+                    }
+                } else {
+                    write_log("No update required for '{$snippet_id}'. Current value is the same as the new value.");
+                    wp_send_json_error("No update required for '{$snippet_id}'. Current value is the same.");
+                }
+
+                exit; // Stop further processing once the correct snippet is found
             }
-
-            exit; // Stop further processing once the correct snippet is found
         }
+
+        write_log("Invalid snippet ID: {$snippet_id}");
+        wp_send_json_error("Invalid snippet ID: {$snippet_id}");
+
+        wp_die(); // Ensure proper termination of the script
     }
-
-    write_log('Invalid snippet ID: ' . $snippet_id); // Log invalid snippet ID
-    wp_send_json_error('Invalid snippet ID: ' . $snippet_id);
-
-    wp_die(); // Ensure proper termination of the script
+} else {
+    write_log("Warning: hws_base_tools/toggle_snippet function is already declared", true);
 }
+
 
 
     add_action('wp_ajax_toggle_snippet', 'hws_base_tools\toggle_snippet');
@@ -223,23 +242,28 @@ function toggle_snippet() {
                     <h3>Available Snippets:</h3>
                     <div style="margin-left: 15px;">
                         <?php
-                        // Loop through all snippets and display them with a checkbox
-                        foreach ($settings_snippets as $snippet) {
-                            $is_enabled = get_option($snippet['id'], false);
-    
-                            // Determine if the checkbox should be checked
-                            $checked = $is_enabled ? 'checked' : '';
-    
-                            // Display the checkbox and label with the info field included
-                            echo "<div style='color: #555; margin-bottom: 10px;'>
-                                    <input type='checkbox' id='{$snippet['id']}' onclick='toggleSnippet(\"{$snippet['id']}\")' $checked>
-                                    <label for='{$snippet['id']}'>
-                                        {$snippet['name']} - <em>{$snippet['description']}</em>
-                                        <br>
-                                        <small><strong>Details:</strong><br>{$snippet['info']}</small>
-                                    </label>
-                                  </div>";
-                        }
+// Loop through all snippets and display them with a checkbox
+foreach ($settings_snippets as $snippet) {
+    // Get the current state of the option from the database
+    $is_enabled = get_option($snippet['id'], false);
+
+    // Debug printout to screen
+  //  echo "<pre>Debug: Option '{$snippet['id']}' current value: " . var_export($is_enabled, true) . "</pre>";
+
+    // Determine if the checkbox should be checked
+    $checked = $is_enabled ? 'checked' : '';
+
+    // Display the checkbox and label with the info field included
+    echo "<div style='color: #555; margin-bottom: 10px;'>
+            <input type='checkbox' id='{$snippet['id']}' onclick='toggleSnippet(\"{$snippet['id']}\")' $checked>
+            <label for='{$snippet['id']}'>
+                {$snippet['name']} - <em>{$snippet['description']}</em>
+                <br>
+                <small><strong>Details:</strong><br>{$snippet['info']}</small>
+            </label>
+          </div>";
+}
+
                         ?>
                     </div>
                 </div>

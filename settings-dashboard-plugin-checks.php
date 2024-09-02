@@ -235,6 +235,7 @@ function hws_ct_get_plugins_list() {
             ],
             'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-smush-pro/wp-smush.php', 'Smush Pro', true)
         ],
+        
         [
             'id' => 'litespeed-cache/litespeed-cache.php',
             'name' => 'LiteSpeed Cache',

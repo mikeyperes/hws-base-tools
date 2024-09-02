@@ -32,133 +32,113 @@ add_action('wp_ajax_modify_wp_config_constants', 'hws_base_tools\modify_wp_confi
 function hws_ct_get_settings_system_checks()
 {
 
-        // Gather system checks settings
-        $system_checks = [
-            'Database Table Prefix' => [
-    'id' => 'database-table-prefix',
-    'value' => hws_ct_highlight_based_on_criteria(get_database_table_prefix())
-],
-            'WordPress Admin Email' => [
-                'id' => 'wp-main-email',
-                'value' => hws_ct_highlight_based_on_criteria(check_wordpress_main_email()) . 
-                ' <a target=_blank href="' . esc_url(admin_url('options-general.php')) . '">modify</a>'
-  
+    $system_checks = [
+        'WordPress Admin Email' => [
+            'id' => 'wp-main-email',
+            'value' => hws_ct_highlight_based_on_criteria(check_wordpress_main_email()) . 
+            ' <a target="_blank" href="' . esc_url(admin_url('options-general.php')) . '">modify</a>'
+        ],
+        'Imagick Library Available' => [
+            'id' => 'imagick-available',
+            'value' => hws_ct_highlight_based_on_criteria(check_imagick_available())
+        ],
+        /*
+        'CloudLinux Configurations Enabled' => [
+            'id' => 'cloudlinux-config',
+            'value' => hws_ct_highlight_if_essential_setting_failed([
+                'status' => check_cloudlinux_config(),
+                'details' => check_cloudlinux_config() ? 'Enabled' : 'Not Enabled'
+            ]),
+        ],*/
+        'WordPress Auto Updates Enabled' => [
+            'id' => 'wp-auto-updates',
+            'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_AUTO_UPDATE_CORE', check_wp_config_constant_status('WP_AUTO_UPDATE_CORE'), ['listed_values' => ['false', false]]))
 
-            ],
-            'Imagick Library Available' => [
-                'id' => 'imagick-available',
-                'value' => hws_ct_highlight_based_on_criteria([
-                    'status' => check_imagick_available(),
-                    'details' => check_imagick_available() ? 'Available' : 'Not Available'
-                ]),
-            ],
-            /*
-            'CloudLinux Configurations Enabled' => [
-                'id' => 'cloudlinux-config',
-                'value' => hws_ct_highlight_if_essential_setting_failed([
-                    'status' => check_cloudlinux_config(),
-                    'details' => check_cloudlinux_config() ? 'Enabled' : 'Not Enabled'
-                ]),
-            ],*/
-            'WordPress Auto Updates Enabled' => [
-                'id' => 'wp-auto-updates',
-                'value' => hws_ct_highlight_based_on_criteria([
-                    'status' => get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE') === 'true',
-                    'details' => get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE') === 'true' ? 'Enabled' : 'Disabled'
-                ]),
-            ],
-            'Cloudflare Active' => [
-                'id' => 'cloudflare-active',
-                'value' => hws_ct_highlight_based_on_criteria(check_cloudflare_active())
-            ],
-            'PHP Type' => [
-                'id' => 'php-type',
-                'value' => hws_ct_highlight_based_on_criteria(check_php_type())
-            ],
-            'PHP Handler' => [
-                'id' => 'php-handler',
-                'value' => hws_ct_highlight_based_on_criteria(check_php_handler())
-            ],
-            // Add for plugin auto-updates
-            'Plugin Auto Updates' => [
-                'id' => 'plugin-auto-updates',
-                'value' => hws_ct_highlight_based_on_criteria([
+        ],
+        'Cloudflare Active' => [
+            'id' => 'cloudflare-active',
+            'value' => hws_ct_highlight_based_on_criteria(check_cloudflare_active())
+        ],   
+        'PHP Type' => [
+            'id' => 'php-type',
+            'value' => hws_ct_highlight_based_on_criteria(check_php_type())
+        ],
+        'PHP Handler' => [
+            'id' => 'php-handler',
+            'value' => hws_ct_highlight_based_on_criteria(check_php_handler())
+        ],
+        'Plugin Auto Updates' => [
+            'id' => 'plugin-auto-updates',
+            'value' => hws_ct_highlight_based_on_criteria(
+                [
                     'status' => has_filter('auto_update_plugin', '__return_true'),
-                    'details' => has_filter('auto_update_plugin', '__return_true') ? 'Enabled' : 'Disabled'
-                ]),
+                    'raw_value' => has_filter('auto_update_plugin', '__return_true') ? 'Enabled' : 'Disabled'
+                ]
+            ),
+        ],
+                    // Add for theme auto-updates
+        'Theme Auto Updates' => [
+            'id' => 'theme-auto-updates',
+            'value' => hws_ct_highlight_based_on_criteria(
+                [
+                    'status' => has_filter('auto_update_theme', '__return_true'),
+                    'raw_value' => has_filter('auto_update_theme', '__return_true') ? 'Enabled' : 'Disabled'
+                ]  ),
+        ],
+        'Database Table Prefix' => [
+            'id' => 'database-table-prefix',
+            'value' => hws_ct_highlight_based_on_criteria(get_database_table_prefix())
             ],
-            // Add for theme auto-updates
-'Theme Auto Updates' => [
-    'id' => 'theme-auto-updates',
-    'value' => hws_ct_highlight_based_on_criteria([
-        'status' => has_filter('auto_update_theme', '__return_true'),
-        'details' => has_filter('auto_update_theme', '__return_true') ? 'Enabled' : 'Disabled'
-    ]),
-],
-  
-'MyISAM Tables' => [
+            'MyISAM Tables' => [
     'id' => 'myisam-tables',
-    'value' => hws_ct_highlight_based_on_criteria([
-        'status' => check_myisam_tables()['status'],
-        'details' => check_myisam_tables()['details'] . ' <a href="' . admin_url('admin.php?page=litespeed-db_optm') . '" target="_blank">View more</a>'
-    ])
+    'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables())
 ],
-            'WordFence Notification Email' => [
-                'id' => 'wf-email',
-                'value' => hws_ct_highlight_based_on_criteria(check_wordfence_notification_email())
-            ],
-'WP_CACHE State' => [
-    'id' => 'wp-cache',
-    'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_CACHE"), 'false'),
+/*
+'Additional WordPress Installs Detected' => [
+    'id' => 'additional-wp-installs',
+    'raw_value' => hws_ct_highlight_based_on_criteria(detect_additional_wp_installs())
+],*/
+
+'WordFence Notification Email' => [
+    'id' => 'wf-email',
+    'value' => hws_ct_highlight_based_on_criteria(check_wordfence_notification_email())
 ],
+'LSCWP_OBJECT_CACHE State' => [
+    'id' => 'wp-ls-cache',
+        'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('LSCWP_OBJECT_CACHE', check_wp_config_constant_status('LSCWP_OBJECT_CACHE'), ['listed_values' => ['false', false]]))
 
-            'LSCWP_OBJECT_CACHE State' => [
-                'id' => 'wp-ls-cache',
-                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("LSCWP_OBJECT_CACHE"), 'false')
-            ],
-            'WP_DEBUG State' => [
-                'id' => 'wp-debug',
-                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG"))
-            ],
-            'WP_DEBUG_DISPLAY State' => [
-                'id' => 'wp-debug-display',
-                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG_DISPLAY"))
-            ],
-            'WP_DEBUG_LOG State' => [
-                'id' => 'wp-debug-log',
-                'value' => hws_ct_highlight_based_on_criteria(check_wp_config_constant_status("WP_DEBUG_LOG"))
-            ],
-       
-         
+],
+'WP_DEBUG State' => [
+    'id' => 'wp-debug',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_DEBUG', check_wp_config_constant_status('WP_DEBUG'), ['listed_values' => ['true', true]]))
 
-      'Debug Log Size' => [
+],
+'WP_DEBUG_DISPLAY State' => [
+    'id' => 'wp-debug-display',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_DEBUG_DISPLAY', check_wp_config_constant_status('WP_DEBUG_DISPLAY'), ['listed_values' => ['true', true]]))
+],
+'WP_DEBUG_LOG State' => [
+    'id' => 'wp-debug-log',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_DEBUG_LOG', check_wp_config_constant_status('WP_DEBUG_LOG'), ['listed_values' => ['true', true]]))
+],
+'Debug Log Size' => [
     'id' => 'debug-log',
-    'value' => check_log_file_sizes()['debug_log']['details'] === 'Not Found' 
-              ? 'Not Found' 
-              : (check_log_file_sizes()['debug_log']['status'] 
-                 ? hws_ct_highlight_based_on_criteria(check_log_file_sizes()['debug_log']) 
-                 : check_log_file_sizes()['debug_log']['details'])
+    'value' => hws_ct_highlight_based_on_criteria(check_log_file_sizes()['debug_log'])
 ],
+
 'Error Log Size' => [
     'id' => 'error-log',
-    'value' => check_log_file_sizes()['error_log']['details'] === 'Not Found' 
-              ? 'Not Found' 
-              : (check_log_file_sizes()['error_log']['status'] 
-                 ? hws_ct_highlight_based_on_criteria(check_log_file_sizes()['error_log']) 
-                 : check_log_file_sizes()['error_log']['details'])
+    'value' => hws_ct_highlight_based_on_criteria(check_log_file_sizes()['error_log'])
 ],
             'SMTP Authentication Enabled' => [
                 'id' => 'smtp-auth',
-                'value' => hws_ct_highlight_based_on_criteria([
-                    'status' => check_smtp_auth_status_and_mailer()['status'],
-                    'details' => check_smtp_auth_status_and_mailer()['status'] ? 'Yes' : 'No'
-                ])
+                'value' => hws_ct_highlight_based_on_criteria(check_smtp_auth_status_and_mailer()).' <br /><a href="' . esc_url(admin_url('admin.php?page=wp-mail-smtp')) . '" target="_blank" class="button">Edit</a>'
             ],
-            'SMTP Mailer Service' => [
+          /* 'SMTP Mailer Service' => [
                 'id' => 'smtp-mailer',
                 'value' => hws_ct_highlight_based_on_criteria([
                     'status' => !empty(check_smtp_auth_status_and_mailer()['mailer']),
-                    'details' => check_smtp_auth_status_and_mailer()['mailer']
+                    'value' => check_smtp_auth_status_and_mailer()['mailer']
                 ])
             ],
  'SMTP Authenticated Domain' => [
@@ -166,41 +146,64 @@ function hws_ct_get_settings_system_checks()
     'value' => hws_ct_highlight_based_on_criteria([
         'status' => !empty(check_smtp_auth_status_and_mailer()['details']),
         'details' => check_smtp_auth_status_and_mailer()['details']
-    ]) . (check_smtp_auth_status_and_mailer()['details'] ? ' <br /><a href="' . esc_url(admin_url('admin.php?page=wp-mail-smtp')) . '" target="_blank" class="button">Edit</a>' : '')
+    ]) . (check_smtp_auth_status_and_mailer()['details'] ?  : '')
+],*/
+
+'REDIS Active' => [
+    'id' => 'redis-active',
+    'value' => hws_ct_highlight_based_on_criteria(check_redis_active())
 ],
-            'REDIS Active' => [
-                'id' => 'redis-active',
-                'value' => hws_ct_highlight_based_on_criteria(check_redis_active())
-            ],
-            'Caching Source' => [
+'Caching Source' => [
                 'id' => 'caching-source',
                 'value' => hws_ct_highlight_based_on_criteria(check_caching_source())
             ],
             'PHP Version' => [
                 'id' => 'php-version',
-                'value' => phpversion()
+                'value' => hws_ct_highlight_based_on_criteria(check_php_version())
+               
+                
             ],
-   'WordPress RAM' => [
+'WordPress RAM' => [
     'id' => 'wp-ram',
-    'value' => hws_ct_highlight_based_on_criteria(check_wordpress_memory_limit()),
+    'value' => hws_ct_highlight_based_on_criteria(
+        check_wordpress_memory_limit() ),
 ],
+
+'WP_CACHE State' => [
+    'id' => 'wp-cache',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_CACHE', check_wp_config_constant_status('WP_CACHE'), ['listed_values' => ['false', false]]))
+    ],
+
             'Server RAM' => [
                 'id' => 'server-ram',
                 'value' => hws_ct_highlight_based_on_criteria(check_server_memory_limit())
             ],
             'Number of Processors' => [
                 'id' => 'num-processors',
-                'value' => hws_ct_highlight_based_on_criteria([
-                    'status' => check_server_specs()['num_processors'] !== 'Unknown',
-                    'details' => check_server_specs()['num_processors'] . ' processors'
-                ]),
+                'value' => hws_ct_highlight_based_on_criteria(check_server_specs()),
             ]
-        ];
-        return $system_checks;
+    ];
+    return $system_checks;
 
 }
 
+/*,
+            
+         
+            // Add for plugin auto-updates
+    
 
+
+   
+  
+
+           
+        
+       
+         
+
+          
+            */
 
 function hws_ct_display_settings_system_checks()
 {
@@ -213,20 +216,30 @@ function hws_ct_display_settings_system_checks()
         <div class="panel-content">
             <?php
             $system_checks = hws_ct_get_settings_system_checks();
-            
+
+
+
+
+
+
+
+
+
+
              foreach ($system_checks as $label => $setting): ?>
-                <p id="<?= $setting['id'] ?>"><strong><?= $label ?>:</strong> <?= nl2br($setting['value']) ?></p>
+
+                <p id="<?= $setting['id'] ?>"><strong><?= $label ?>:</strong> <?php echo nl2br($setting['value']); ?></p>
                 
                 <?php if ($setting['id'] === 'wp-ram'): ?>
                     <?php if (strpos($setting['value'], 'color: red') !== false): ?>
                         <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4000M" data-target="wp-ram">Add Memory Limit</button>
                     <?php endif; ?>
-                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="__unset__" data-target="wp-ram">Remove WP_MEMORY_LIMIT</button>
+                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="512M" data-target="wp-ram">Remove WP_MEMORY_LIMIT</button>
                 <?php endif; ?>
                 
                 <?php if ($setting['id'] === 'wp-cache'):
 
-    $wp_cache_status = check_wp_config_constant_status('WP_CACHE')['status']; 
+    $wp_cache_status = check_wp_config_constant_status('WP_CACHE'); 
  if ($wp_cache_status): ?>
         <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
     <?php else: ?>
@@ -258,32 +271,9 @@ function hws_ct_display_settings_system_checks()
 
             <?php endforeach;
 
-/*
 
-            foreach ($system_checks as $label => $setting) {
-                echo "<p id='{$setting['id']}'><strong>$label:</strong> {$setting['value']}</p>";
 
-                // Add the "Fix Issue" button if the WordPress RAM is less than 4GB
-                if ($setting['id'] === 'wp-ram' && strpos($setting['value'], 'color: red') !== false) {
-                    echo "<button class='button fix-ram-issue' data-target='wp-ram'>Fix Issue</button>";
-                }
 
-                // Add the "Enable Auto Updates" button if WP core auto-updates are not enabled
-                if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()) {
-                    echo "<button class='button' id='enable-auto-updates'>Enable Auto Updates</button>";
-                }
-
-                // Add the "Enable Plugin Auto Updates" button if plugin auto-updates are not enabled
-                if ($setting['id'] === 'plugin-auto-updates' && strpos($setting['value'], 'color: red') !== false) {
-                    echo "<button id='enable-plugin-auto-updates' class='button'>Enable Plugin Auto Updates</button>";
-                }
-
-                // Add the "Enable Theme Auto Updates" button if theme auto-updates are not enabled
-if ($setting['id'] === 'theme-auto-updates' && strpos($setting['value'], 'color: red') !== false) {
-    echo "<button id='enable-theme-auto-updates' class='button'>Enable Theme Auto Updates</button>";
-}
-
-            }*/
             ?>
         </div>
     </div>

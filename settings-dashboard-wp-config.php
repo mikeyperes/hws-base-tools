@@ -97,9 +97,9 @@ function hws_ct_display_settings_wp_config()
                 $error_log_size = file_exists(ABSPATH . 'error_log') ? size_format(filesize(ABSPATH . 'error_log')) : 'Not found';
 
            // Usage examples:
-$wp_debug = get_constant_value_from_wp_config('WP_DEBUG');
-$wp_debug_display = get_constant_value_from_wp_config('WP_DEBUG_DISPLAY');
-$wp_debug_log = get_constant_value_from_wp_config('WP_DEBUG_LOG');
+$wp_debug = check_wp_config_constant_status('WP_DEBUG');
+$wp_debug_display = check_wp_config_constant_status('WP_DEBUG_DISPLAY');
+$wp_debug_log = check_wp_config_constant_status('WP_DEBUG_LOG');
 
             
                 // Define an array of constants to exclude (those already displayed)
@@ -380,12 +380,12 @@ jQuery(document).ready(function($) {
                 alert('Failed to copy error log: ' + err);
             });
         });
-
+/*
         // Toggle WP-Config Constants section
         $('.wp-config-toggle').on('click', function() {
             $(this).next('.wp-config-content').slideToggle();
         });
-
+*/
         // Delete log files
         function deleteLogFile(logType) {
             const action = logType === 'debug' ? 'delete_debug_log' : 'delete_error_log';

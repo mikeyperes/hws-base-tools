@@ -243,7 +243,7 @@ if (!function_exists('hws_base_tools\check_smtp_auth_status_and_mailer')) {
         return [
             'status' => $status,
             'mailer' => $mailer,
-            'details' => $details
+            'raw_value' => $details." - ".$mailer
         ];
     }
 } else write_log("Warning: hws_base_tools/check_smtp_auth_status_and_mailer function is already declared",true);
@@ -284,28 +284,26 @@ if (!function_exists('hws_base_tools\get_smtp_sending_domain')) {
 } else write_log("Warning: hws_base_tools/get_smtp_sending_domain function is already declared",true);
 
 
+function hws_ct_highlight_based_on_criteria($setting, $fail_criteria = null) {
 
-
-
-if (!function_exists('hws_base_tools\hws_ct_highlight_based_on_criteria')) {
-    function hws_ct_highlight_based_on_criteria($check_result, $criteria = 'true') {
-        if ($check_result['status']) {
-            $value = $check_result['details'];
-
-            // Check if the value meets the criteria for highlighting in red
-            if ($value === $criteria) {
-                return "<span style='color: red;'>{$value}</span>";
-            } else {
-                return $value;
-            }
-        } else {
-            return "<span style='color: red;'>{$check_result['details']}</span>";
-        }
-    }
-} else {
-    write_log("Warning: hws_base_tools/hws_ct_highlight_based_on_criteria function is already declared", true);
+// Initialize the value
+$raw_value = isset($setting['raw_value']) ? $setting['raw_value'] : null;
+// Log if 'value' is not set or null
+if ($raw_value === null) {
+    write_log($setting['function'].": a raw_value has not set a value yet", true);
 }
+$status = true;
 
+
+    if(isset($setting['status']))
+    $status = $setting['status'];
+    // Highlight the value based on the status
+    if ($status === false || $status === 0 || $status === 'false' || $status === '0') {
+        return "<span style='color: red;'>{$raw_value}</span>";
+    }
+
+    return $raw_value;
+}
 
 
 
@@ -314,44 +312,47 @@ if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
         if (defined($constant_name)) {
             $constant_value = constant($constant_name);
 
-            // Debug output to log the value
-            write_log("Constant {$constant_name} is defined with value: " . var_export($constant_value, true), true);
-
-            $status = !empty($constant_value); // Check if the constant is not empty (covers boolean, string, number)
-            $details = is_bool($constant_value) ? ($constant_value ? 'true' : 'false') : $constant_value;
-
-            // Debug output to log the status
-            write_log("Constant {$constant_name} has status: " . var_export($status, true), true);
-
-            return [
-                'status' => $status,
-                'details' => $details
-            ];
+            // Return 'true' or 'false' if the constant is a boolean, otherwise return its value
+            return is_bool($constant_value) ? ($constant_value ? 'true' : 'false') : $constant_value;
         } else {
-            return [
-                'status' => false,
-                'details' => 'Constant not defined'
-            ];
+            return 'undefined';
         }
     }
 } else {
     write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
 }
 
+
+
 if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
     function check_wordpress_memory_limit() {
-        $memory_limit = defined('WP_MEMORY_LIMIT') ? WP_MEMORY_LIMIT : 'Not defined';
-        $memory_limit_bytes = $memory_limit !== 'Not defined' ? wp_convert_hr_to_bytes($memory_limit) : 0;
+        // Check if WP_MEMORY_LIMIT is defined
+        if (defined('WP_MEMORY_LIMIT')) {
+            $memory_limit = WP_MEMORY_LIMIT;
+            $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
 
-        // Check if the memory limit is at least 1GB (1024M)
-        $status = $memory_limit_bytes >= 1 * 1024 * 1024 * 1024; 
+            // Check if the memory limit is greater than 10MB (10 * 1024 * 1024 bytes)
+            $status = $memory_limit_bytes > 1000 * 1024 * 1024;
 
-        return [
-            'status' => $status,
-            'details' => $memory_limit
-        ];
+            // Log for debugging
+            write_log("Memory limit: {$memory_limit}, Converted to bytes: {$memory_limit_bytes}, Status: " . ($status ? 'true' : 'false'));
+
+            return [
+                'status' => $status, // true if greater than 10MB, false otherwise
+                'raw_value' => $memory_limit
+            ];
+        } else {
+            // Log for debugging
+            write_log("Memory limit not defined.");
+
+            // Return false as the memory limit is not defined
+            return [
+                'status' => false, // false as memory limit is not defined
+                'raw_value' => 'Not defined'
+            ];
+        }
     }
-} else write_log("Warning: hws_base_tools/check_wordpress_memory_limit function is already declared",true);
+} else write_log("Warning: hws_base_tools/check_wordpress_memory_limit function is already declared", true);
 
 
 if (!function_exists('hws_base_tools\get_database_table_prefix')) {
@@ -362,26 +363,138 @@ if (!function_exists('hws_base_tools\get_database_table_prefix')) {
 
         return [
             'status' => $status,
-            'details' => $status ? $table_prefix : 'Not available'
+            'raw_value' => $status ? $table_prefix : 'Not available'
+        ];
+    }
+} else write_log("Warning: get_database_table_prefix function is already declared", true);
+
+if (!function_exists('hws_base_tools\check_myisam_tables')) {
+    function check_myisam_tables() {
+        global $wpdb;
+
+        // Get the current database prefix
+        $prefix_info = get_database_table_prefix();
+        $current_prefix = isset($prefix_info['details']) ? $prefix_info['details'] : '';
+
+        // Get all MyISAM tables
+        $myisam_tables = $wpdb->get_results("
+            SELECT TABLE_NAME 
+            FROM information_schema.TABLES 
+            WHERE TABLE_SCHEMA = '" . DB_NAME . "' 
+            AND ENGINE = 'MyISAM'
+        ");
+        
+        $current_prefix_tables = [];
+        $additional_prefixes = [];
+        
+        foreach ($myisam_tables as $table) {
+            $table_name = $table->TABLE_NAME;
+            if (strpos($table_name, $current_prefix) === 0) {
+                $current_prefix_tables[] = $table_name;
+            } else {
+                $prefix = explode('_', $table_name)[0];
+                $additional_prefixes[$prefix][] = $table_name;
+            }
+        }
+        
+        // Report on current database prefix tables
+        $status = empty($current_prefix_tables);
+        $details = $status 
+            ? '<p style="color: green;">No MyISAM tables found for current WordPress install</p>' 
+            : '<p style="color: red;">MyISAM tables found for current WordPress install: ' . implode(', ', $current_prefix_tables) . '</p>';
+
+        // Report on additional prefixes
+        if (!empty($additional_prefixes)) {
+            $details .= '<p style="color: red;">Additional database prefixes detected:</p>';
+            foreach ($additional_prefixes as $prefix => $tables) {
+                $details .= '<p style="color: red;">' . $prefix . '_ - MyISAM tables found: ' . implode(', ', $tables) . '</p>';
+            }
+        }
+
+        return [
+            'function' => "check_myisam_tables",
+            'status' => $status,
+            'raw_value' => $details
         ];
     }
 } else {
-    write_log("Warning: get_database_table_prefix function is already declared", true);
+    write_log("Warning: hws_base_tools/check_myisam_tables function is already declared", true);
 }
 
 
+if (!function_exists('hws_base_tools\get_wp_version_from_file')) {
+    function get_wp_version_from_file($file_path) {
+        $version = 'Unknown';
+        if (file_exists($file_path)) {
+            $file_content = file_get_contents($file_path);
+            if (preg_match('/\$wp_version = \'([^\']+)\'/', $file_content, $matches)) {
+                $version = $matches[1];
+            }
+        }
+        return $version;
+    }
+} else write_log("Warning: hws_base_tools/get_wp_version_from_file function is already declared", true);
 
-function check_myisam_tables() {
-    global $wpdb;
-    $myisam_tables = $wpdb->get_results("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME . "' AND ENGINE = 'MyISAM'");
-    
-    $status = empty($myisam_tables);
-    
-    return [
-        'status' => $status,
-        'details' => $status ? 'All tables are InnoDB' : 'There are MyISAM tables present: ' . implode(', ', array_column($myisam_tables, 'TABLE_NAME'))
-    ];
-}
+if (!function_exists('hws_base_tools\detect_additional_wp_installs')) {
+    function detect_additional_wp_installs() {
+        global $wpdb;
+
+        // Get the current database prefix
+        $current_prefix_info = get_database_table_prefix();
+        $current_prefix = $current_prefix_info['details'];
+
+        // Get all prefixes from the database
+        $prefixes = $wpdb->get_col("
+            SELECT DISTINCT LEFT(TABLE_NAME, LOCATE('_', TABLE_NAME) - 1) as prefix
+            FROM information_schema.TABLES 
+            WHERE TABLE_SCHEMA = '" . DB_NAME . "' AND LOCATE('_', TABLE_NAME) > 0
+        ");
+        
+        // Filter out the current prefix
+        $additional_prefixes = array_filter($prefixes, function($prefix) use ($current_prefix) {
+            return $prefix !== $current_prefix;
+        });
+
+        $installations = [];
+        
+        foreach ($additional_prefixes as $prefix) {
+            // Assume default WordPress paths for additional installations
+            $potential_paths = [
+                $_SERVER['DOCUMENT_ROOT'] . '/' . $prefix,
+                $_SERVER['DOCUMENT_ROOT'] . '/' . $prefix . '/public_html'
+            ];
+
+            foreach ($potential_paths as $path) {
+                if (file_exists($path . '/wp-includes/version.php')) {
+                    $version_file = $path . '/wp-includes/version.php';
+                    $version = get_wp_version_from_file($version_file);
+                    $installations[] = [
+                        'prefix' => $prefix,
+                        'url' => site_url(str_replace($_SERVER['DOCUMENT_ROOT'], '', $path)),
+                        'version' => $version
+                    ];
+                    break;  // Stop searching once we've found a valid installation path
+                }
+            }
+        }
+
+        $status = !empty($installations);
+
+        // Prepare the details string
+        $details = $status ? '<p style="color: red;">&#x274C; ' . count($installations) . ' additional WordPress installs detected:</p>' : '<p style="">&#x2705; No additional WordPress installs detected.</p>';
+
+        foreach ($installations as $install) {
+            $details .= '<p style="color: red;">' . $install['prefix'] . ' - <a href="' . esc_url($install['url']) . '" target="_blank">' . esc_html($install['url']) . '</a> - WordPress Version: ' . esc_html($install['version']) . '</p>';
+        }
+
+        return [
+            'function' => 'detect_additional_wp_installs',
+            'status' => $status,
+            'raw_value' => $details
+        ];
+    }
+} else write_log("Warning: hws_base_tools/detect_additional_wp_installs function is already declared", true);
+
 
 
 
@@ -397,7 +510,7 @@ if (!function_exists('hws_base_tools\check_server_memory_limit')) {
 
         return [
             'status' => $status,
-            'details' => $total_ram ? size_format($total_ram) : 'Not available'
+            'raw_value' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
 } else write_log("Warning: hws_base_tools/check_server_memory_limit function is already declared",true);
@@ -457,7 +570,7 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 
         return [
             'status' => $status,
-            'details' => $details
+            'raw_value' => $details
         ];
     }
 } else {
@@ -492,6 +605,8 @@ if (!function_exists('hws_base_tools\check_wp_debug_disabled')) {
 } else write_log("Warning: hws_base_tools/check_wp_debug_disabled function is already declared",true);
 
 
+
+
 if (!function_exists('hws_base_tools\check_log_file_sizes')) {
     function check_log_file_sizes() {
         $debug_log_path = WP_CONTENT_DIR . '/debug.log';
@@ -501,22 +616,22 @@ if (!function_exists('hws_base_tools\check_log_file_sizes')) {
         $debug_log_size = file_exists($debug_log_path) ? filesize($debug_log_path) : 'Not Found';
         $error_log_size = file_exists($error_log_path) ? filesize($error_log_path) : 'Not Found';
 
-        // Determine the status based on whether the log files exceed 20MB
-        $debug_log_status = is_numeric($debug_log_size) && $debug_log_size <= 20 * 1024 * 1024;
-        $error_log_status = is_numeric($error_log_size) && $error_log_size <= 20 * 1024 * 1024;
+        // Determine the status based on whether the log files exceed 10KB, while ensuring "Not Found" cases do not set status to false
+        $debug_log_status = ($debug_log_size === 'Not Found') ? null : (is_numeric($debug_log_size) && $debug_log_size <= 10 * 1024);
+        $error_log_status = ($error_log_size === 'Not Found') ? null : (is_numeric($error_log_size) && $error_log_size <= 10 * 1024);
 
         return [
             'debug_log' => [
                 'status' => $debug_log_status,
-                'details' => is_numeric($debug_log_size) ? size_format($debug_log_size) : 'Not Found'
+                'raw_value' => is_numeric($debug_log_size) ? size_format($debug_log_size) : 'Not Found'
             ],
             'error_log' => [
                 'status' => $error_log_status,
-                'details' => is_numeric($error_log_size) ? size_format($error_log_size) : 'Not Found'
+                'raw_value' => is_numeric($error_log_size) ? size_format($error_log_size) : 'Not Found'
             ]
         ];
     }
-} else write_log("Warning: hws_base_tools/check_log_file_sizes function is already declared",true);
+} else write_log("Warning: hws_base_tools/check_log_file_sizes function is already declared", true);
 
 
 
@@ -526,12 +641,6 @@ if (!function_exists('hws_base_tools\check_server_is_litespeed')) {
     }
 } else write_log("Warning: hws_base_tools/check_server_is_litespeed function is already declared",true);
 
-
-if (!function_exists('hws_base_tools\check_php_version')) {
-    function check_php_version() {
-        return version_compare(PHP_VERSION, '8.3', '>=');
-    }
-} else write_log("Warning: hws_base_tools/check_php_version function is already declared",true);
 
 
 if (!function_exists('hws_base_tools\check_php_sapi_is_litespeed')) {
@@ -552,12 +661,25 @@ if (!function_exists('hws_base_tools\display_precheck_result')) {
 
 
 
-
 if (!function_exists('hws_base_tools\check_imagick_available')) {
     function check_imagick_available() {
-        return extension_loaded('imagick');
+        // Check if the Imagick extension is loaded
+        $is_available = extension_loaded('imagick');
+        
+        // Set status and raw_value based on availability
+        $status = $is_available ? true : false;
+        $raw_value = $is_available ? 'true' : 'false';
+
+        // Return results in the required format
+        return [
+            'function' => 'check_imagick_available',
+            'status' =>  $status,
+            'raw_value' => $raw_value
+        ];
     }
-} else write_log("Warning: hws_base_tools/check_imagick_available function is already declared",false);
+} else 
+    write_log("Warning: hws_base_tools/check_imagick_available function is already declared", false);
+
 
 
 if (!function_exists('hws_base_tools\check_query_monitor_status')) {
@@ -614,20 +736,27 @@ if (!function_exists('hws_base_tools\custom_wp_admin_logo_link')) {
 
 
 
-if (!function_exists('hws_base_tools\check_server_specs')) {
+if(!function_exists('hws_base_tools\check_server_specs')) {
     function check_server_specs() {
+        // Initialize variables
         $num_processors = function_exists('shell_exec') ? shell_exec('nproc') : 'Unknown';
         $total_ram = function_exists('shell_exec') ? shell_exec("free -m | awk '/^Mem:/{print $2}'") : 'Unknown';
 
+        // Clean up the results
+        $num_processors = trim($num_processors);
+        $total_ram = trim($total_ram);
+
+        // Set the status
+        $status = ($num_processors !== 'Unknown' && $total_ram !== 'Unknown');
+
+        // Return the result in the expected structure
         return [
-            'num_processors' => trim($num_processors),
-            'total_ram' => trim($total_ram) . ' MB'
+            'function' => 'check_server_specs',
+            'status' => true,
+            'raw_value' => "Number of processors: $num_processors, Total RAM: $total_ram MB"
         ];
-    }
-} else write_log("Warning: hws_base_tools/check_server_specs function is already declared",true);
-
-
-
+    }}else 
+    write_log("Warning: hws_base_tools/check_server_specs function is already declared", true);
 
 
 
@@ -677,13 +806,13 @@ if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
             write_log('Valid single alert email found: ' . $decoded_result);
             return [
                 'status' => true,
-                'details' => $decoded_result
+                'raw_value' => $decoded_result
             ];
         } else {
             write_log('No valid alert emails found.');
             return [
                 'status' => false,
-                'details' => 'No valid alert emails found'
+                'raw_value' => 'No valid alert emails found'
             ];
         }
     }
@@ -697,32 +826,36 @@ if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
 
 
 
-
 if (!function_exists('hws_base_tools\check_wordpress_main_email')) {
     function check_wordpress_main_email() {
+        // Debugging output to confirm function execution
+        write_log("Debug: check_wordpress_main_email function called", true);
+
+        // For debugging purposes, comment out the next line
+        // return "hi";
+
         $admin_email = get_option('admin_email');
 
+        // Log the retrieved email for debugging
+        write_log("Admin email retrieved: " . print_r($admin_email, true), true);
+
         // Ensure the email is retrieved and is a valid email address
-        $status = !empty($admin_email) && is_email($admin_email);
+        $value = !empty($admin_email) && is_email($admin_email);
+
+        // Set the status based on the email presence and validity
+        $status = $value ? true : false;
 
         return [
+            'function' => "check_wordpress_main_email",
             'status' => $status,
-            'details' => $status ? $admin_email : 'Not set'
+
+
+            'raw_value' => $value ? $admin_email : 'Undefined'
         ];
     }
-} else write_log("Warning: hws_base_tools/check_wordpress_main_email function is already declared", true);
-
-
-if (!function_exists('hws_base_tools\check_cloudlinux_config')) {
-    function check_cloudlinux_config() {
-        $lve_enabled = function_exists('lve_get_limits');
-        if (!$lve_enabled) {
-            write_log('lve_get_limits function does not exist or is not accessible.', true);
-        }
-        return $lve_enabled;
-    }
-} else write_log("Warning: hws_base_tools/check_cloudlinux_config function is already declared", true);
-
+} else {
+    write_log("Warning: hws_base_tools/check_wordpress_main_email function is already declared", true);
+}
 /*
 if (!function_exists('hws_base_tools\check_redis_active')) {
     function check_redis_active() {
@@ -787,7 +920,7 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
             if (is_plugin_active($plugin_path)) {
                 return [
                     'status' => true,
-                    'details' => $name
+                    'raw_value' => $name
                 ];
             }
         }
@@ -795,13 +928,13 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
         if (defined('LITESPEED_SERVER')) {
             return [
                 'status' => true,
-                'details' => 'LiteSpeed Server'
+                'raw_value' => 'LiteSpeed Server'
             ];
         }
 
         return [
             'status' => false,
-            'details' => 'None'
+            'raw_value' => 'None'
         ];
     }
 } else {
@@ -809,7 +942,26 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 }
 
 
+if (!function_exists('hws_base_tools\check_php_version')) {
+    function check_php_version() {
+        // Get the current PHP version
+        $php_version = phpversion();
 
+        // Define the minimum required PHP version
+        $min_version = '8.3.0';
+
+        // Check if the current PHP version is less than the minimum required version
+        $status = version_compare($php_version, $min_version, '>=') ? true : false;
+
+        // Return the status and the PHP version with as much detail as possible
+        return [
+            'status' => $status,
+            'raw_value' => $php_version
+        ];
+    }
+} else {
+    write_log("Warning: hws_base_tools/check_php_version function is already declared", true);
+}
 
 if (!function_exists('hws_base_tools\check_caching_source')) {
     function check_caching_source() {
@@ -947,30 +1099,40 @@ function convert_to_bytes($value) {
     return (int) $value;
 }
 
-if (!function_exists('hws_base_tools\get_constant_value_from_wp_config')) {
-    function get_constant_value_from_wp_config($constant_name) {
-        $wp_config_path = ABSPATH . 'wp-config.php';
-        $constant_value = 'Not defined';
 
-        // Check if the wp-config.php file exists
-        if (file_exists($wp_config_path)) {
-            $config_content = file_get_contents($wp_config_path);
 
-            // Regex pattern to match the constant definition regardless of single or double quotes
-            $pattern = "/define\(\s*['\"]" . preg_quote($constant_name, '/') . "['\"]\s*,\s*['\"]?(true|false)['\"]?\s*\)\s*;/i";
+function hws_ct_package_constant_value_for_checks($constant_name, $constant_value, $fail_criteria = null) {
+    // Initialize the value and status
+    $status = true;
+    $value = $constant_value;
 
-            if (preg_match($pattern, $config_content, $matches)) {
-                $constant_value = $matches[1] === 'true' ? 'true' : 'false';
+    // Check if fail_criteria is provided and not null
+    if ($fail_criteria !== null) {
+        // Check for the data type of fail_criteria
+        if (isset($fail_criteria['listed_values']) && is_array($fail_criteria['listed_values'])) {
+            // Iterate through each listed value in fail_criteria
+            foreach ($fail_criteria['listed_values'] as $fail_value) {
+                // Convert both values to string for comparison
+                if (strtolower((string) $value) === strtolower((string) $fail_value)) {
+                    // If value matches any of the fail criteria, set status to false
+                    $status = false;
+                    break;
+                }
             }
         }
-
-        return $constant_value;
     }
+
+    return [
+        'function' => "hws_ct_package_constant_value_for_checks-{$constant_name}",
+        'status' => $status,
+        'raw_value' => $value
+    ];
 }
+
 
 if (!function_exists('hws_base_tools\check_wp_core_auto_update_status')) {
 function check_wp_core_auto_update_status() {
-    $wp_auto_update_status = get_constant_value_from_wp_config('WP_AUTO_UPDATE_CORE');
+    $wp_auto_update_status = check_wp_config_constant_status('WP_AUTO_UPDATE_CORE');
     return $wp_auto_update_status === 'true';
 }}
 
@@ -996,11 +1158,11 @@ if (!function_exists('hws_base_tools\is_plugin_auto_update_enabled')) {
 if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
     function is_theme_auto_update_enabled($theme_slug) {
         // Log entry into the function
-        write_log("Checking auto-update status for theme: {$theme_slug}", true);
+        write_log("Checking auto-update status for theme: {$theme_slug}");
 
         // Check if site-wide theme auto-updates are enabled
         if (has_filter('auto_update_theme', '__return_true') !== false) {
-            write_log("Site-wide theme auto-updates are enabled.", true);
+            write_log("Site-wide theme auto-updates are enabled.");
             return true;
         }
 
@@ -1008,17 +1170,16 @@ if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
         $auto_update_themes = get_site_option('auto_update_themes', []);
 
         // Log the retrieved list of themes with auto-updates enabled
-        write_log("Auto-update enabled themes: " . implode(', ', $auto_update_themes), true);
+        write_log("Auto-update enabled themes: " . implode(', ', $auto_update_themes));
 
         // Check if the specific theme has auto-updates enabled
         $is_enabled = in_array($theme_slug, $auto_update_themes);
-        write_log("Auto-update status for {$theme_slug}: " . ($is_enabled ? 'Enabled' : 'Disabled'), true);
+        write_log("Auto-update status for {$theme_slug}: " . ($is_enabled ? 'Enabled' : 'Disabled'));
 
         return $is_enabled;
     }
-} else {
-    write_log("Warning: hws_base_tools/is_theme_auto_update_enabled function is already declared", true);
-}
+} else  write_log("Warning: hws_base_tools/is_theme_auto_update_enabled function is already declared", true);
+
 
 
 // Function to check if plugin auto-updates are enabled
@@ -1105,7 +1266,7 @@ function check_cloudflare_active() {
 
     return [
         'status' => $is_active,
-        'details' => $is_active ? 'Cloudflare is active. Nameservers: ' . implode(', ', $nameserver_list) : 'Cloudflare is not active. Nameservers: ' . implode(', ', $nameserver_list)
+        'raw_value' => $is_active ? 'Cloudflare is active. Nameservers: ' . implode(', ', $nameserver_list) : 'Cloudflare is not active. Nameservers: ' . implode(', ', $nameserver_list)
     ];
 }
 // Check the type of PHP (CloudLinux or other)
@@ -1113,7 +1274,7 @@ function check_php_type() {
     $php_sapi = php_sapi_name();
     return [
         'status' => true, // This status would always be true since it's just informational
-        'details' => "PHP SAPI: $php_sapi"
+        'raw_value' => "PHP SAPI: $php_sapi"
     ];
 }
 
@@ -1168,7 +1329,7 @@ if (!function_exists('hws_base_tools\check_php_handler')) {
         // Return the status and details
         return [  
             'status' => $status,
-            'details' => $details
+            'raw_value' => $details
         ]; 
     }
 }    
