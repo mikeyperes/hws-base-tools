@@ -159,7 +159,7 @@ pre {
 <? hws_ct_display_settings_theme_checks();?>
 <? hws_ct_display_settings_snippets();?>
 <? hws_ct_display_settings_wp_config();?>
-<? hws_ct_display_settings_php_ini();?>
+<? //hws_ct_display_settings_php_ini();?>
 <? hws_ct_display_plugin_info();?>
 
 
