@@ -152,7 +152,8 @@ function hws_ct_get_settings_system_checks()
 
 'REDIS Active' => [
     'id' => 'redis-active',
-    'value' => hws_ct_highlight_based_on_criteria(check_redis_active())
+'value' => hws_ct_highlight_based_on_criteria(check_redis_active()) . ' <a href="' . esc_url(admin_url('admin.php?page=litespeed-cache')) . '" target="_blank">View More</a>'
+
 ],
 'Caching Source' => [
                 'id' => 'caching-source',
