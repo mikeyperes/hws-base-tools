@@ -99,6 +99,5 @@ function hws_ct_display_plugin_info() {
                 <a href="<?php echo esc_url($author_url); ?>" target="_blank"><?php echo esc_html($author_name) . ' - ' . esc_html(parse_url($author_url, PHP_URL_HOST)); ?></a>
             </div>
         </div>
-    </div>
     <?php
 }

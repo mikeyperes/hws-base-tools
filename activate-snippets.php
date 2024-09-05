@@ -3,6 +3,7 @@
 hws_ct_activate_snippets();
 
 function hws_ct_activate_snippets() {
+
     $settings_snippets = hws_ct_get_settings_snippets();
 
     foreach ($settings_snippets as $snippet) {
@@ -24,12 +25,12 @@ function hws_ct_activate_snippets() {
             if (function_exists($function_to_call)) {
                 // Call the function to activate the snippet
                 call_user_func($function_to_call);
-                write_log("Snippet $snippet_id activated by calling $function_to_call.", false);
+                write_log("✅ Snippet $snippet_id activated by calling $function_to_call.", false);
             } else {
-                write_log("Function $function_to_call does not exist for snippet $snippet_id.", false);
+                write_log("🚫 Function $function_to_call does not exist for snippet $snippet_id.", true);
             }
         } else {
-            write_log("Snippet $snippet_id is not enabled.", false);
+            write_log("🚫 Snippet $snippet_id is not enabled.", true);
         }
     }
 }

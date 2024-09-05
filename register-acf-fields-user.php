@@ -1,6 +1,6 @@
 <?php namespace hws_base_tools; 
-add_action( 'acf/include_fields', function() {} );
-	function hws_ct_snippets_activate_author_social_acfs(){
+
+function hws_ct_snippets_activate_author_social_acfs(){
 
 		if ( ! function_exists( 'acf_add_local_field_group' ) ) {
 			return;

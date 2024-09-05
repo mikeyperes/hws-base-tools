@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.4
+Version: 3.6.6
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -35,18 +35,31 @@ $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
 
-// Check if ACF or ACF Pro is installed and active using the generic function
-list($acf_installed, $acf_active) = check_plugin_status('advanced-custom-fields/acf.php');
-list($acf_pro_installed, $acf_pro_active) = check_plugin_status('advanced-custom-fields-pro/acf.php');
+// Array of plugins to check
+$plugins_to_check = [
+    'advanced-custom-fields/acf.php',
+    'advanced-custom-fields-pro/acf.php',
+    'advanced-custom-fields-pro-temp/acf.php'
+];
 
-// If neither ACF nor ACF Pro is active, display a warning and prevent the plugin from running
-if (!$acf_active && !$acf_pro_active) {
+// Initialize flags for active status
+$acf_active = false;
+
+// Check if any of the plugins is active
+foreach ($plugins_to_check as $plugin) {
+    list($installed, $active) = check_plugin_status($plugin);
+    if ($active) {
+        $acf_active = true;
+        break; // Stop checking once we find an active one
+    }
+}
+
+// If none of the ACF plugins are active, display a warning and prevent the plugin from running
+if (!$acf_active) {
     add_action('admin_notices', function() {
         echo '<div class="notice notice-error"><p><strong>HWS - Base Tools:</strong> The Advanced Custom Fields (ACF) or Advanced Custom Fields Pro (ACF Pro) plugin is required and must be active to use this plugin. Please activate ACF or ACF Pro.</p></div>';
     });
-
-    // Stop further execution of the plugin
-    return;
+    return; // Stop further execution of the plugin
 }
 
 function hws_ct_get_settings_snippets()
@@ -58,6 +71,13 @@ function hws_ct_get_settings_snippets()
             'description' => 'Disables caching for RankMath sitemaps.',
             'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
             'function' => 'disable_rankmath_sitemap_caching'
+        ],
+        [
+            'id' => 'activate_smp_pushads_functionality',
+            'name' => 'Activate SMP PushAds Functionality',
+            'description' => 'Activates the SMP PushAds functionality, including ad codes and shortcodes for ad display.',
+            'info' => 'Shortcodes Example: [smp_display_ad ad_type="banner"], [smp_display_ad ad_type="sidebar"]. <a href="' . esc_url(admin_url('admin.php?page=display-ads-smp')) . '" target="_blank">Click here to configure ACF fields</a>',
+            'function' => 'activate_snippet_smp_display_ads'
         ],
         [
             'id' => 'enable_auto_update_plugins',
@@ -127,12 +147,16 @@ function hws_ct_get_settings_snippets()
     return $settings_snippets;
 }
 
-// Build Dashboard
-include_once("activate-snippets.php");
-
+// add snippets
+include_once("snippet-smp-display-ads.php");
 // Import ACF Fields
 include_once("register-acf-fields-user.php");
  
+
+// Build Dashboard
+include_once("activate-snippets.php");
+
+
 // Build Dashboard
 include_once("settings-dashboard.php");
 // Settings sub-pages
@@ -144,6 +168,7 @@ include_once("settings-dashboard-system-checks.php");
 include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
+
 
 // Include the GitHub Updater class
 include_once("GitHub_Updater.php");
