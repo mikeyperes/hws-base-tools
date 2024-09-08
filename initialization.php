@@ -4,12 +4,14 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.6
+Version: 3.6.7
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
 */          
 namespace hws_base_tools ;
+
+
 
 // Generic functions import 
 include_once("generic-functions.php");
@@ -19,6 +21,24 @@ use function hws_base_tools\check_plugin_status;
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Define global variables
 global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
@@ -34,6 +54,86 @@ $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
 $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip";
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Include the GitHub Updater class
+include_once("GitHub_Updater.php");
+
+// Use the WP_GitHub_Updater class
+use hws_base_tools\WP_GitHub_Updater;
+
+// Initialize the updater
+if (is_admin()) { // Ensure this runs only in the admin area
+
+    $config = array(
+        'slug' => plugin_basename(__FILE__), // Plugin slug
+        'proper_folder_name' => 'hws-base-tools', // Proper folder name
+        'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools', // GitHub API URL
+        'raw_url' => 'https://raw.github.com/mikeyperes/hws-base-tools/main', // Raw GitHub URL
+        'github_url' => 'https://github.com/mikeyperes/hws-base-tools', // GitHub repository URL
+        'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip', // Zip URL for the latest version
+        'sslverify' => true, // SSL verification for the download
+        'requires' => '5.0', // Minimum required WordPress version
+        'tested' => $wordpress_version_tested, // Tested up to WordPress version
+        'readme' => 'README.md', // Readme file for version checking
+        'access_token' => '', // Access token if required
+    );
+/*
+    $config = array(
+        'slug' => plugin_basename(__FILE__),
+        'proper_folder_name' => 'hws-base-tools',
+        'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
+        'raw_url' => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',
+        'github_url' => 'https://github.com/mikeyperes/hws-base-tools',
+        'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip',
+        'sslverify' => true,
+        'requires' => '5.0',
+        'tested' => '6.0',
+        'readme' => 'README.md',
+        'access_token' => '',
+    );
+
+*/
+    $updater = new WP_GitHub_Updater($config);
+
+    // Trigger an update check for debugging
+    add_action('init', function() {
+        if (is_admin() && isset($_GET['force-update-check'])) {
+            // Force WordPress to check for plugin updates
+            wp_clean_update_cache();
+            set_site_transient('update_plugins', null);
+            wp_update_plugins();
+
+            // Log to confirm the check has been triggered
+            error_log('WP_GitHub_Updater: Forced plugin update check triggered.');
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Array of plugins to check
 $plugins_to_check = [
@@ -168,58 +268,3 @@ include_once("settings-dashboard-system-checks.php");
 include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
-
-
-// Include the GitHub Updater class
-include_once("GitHub_Updater.php");
-
-// Use the WP_GitHub_Updater class
-use hws_base_tools\WP_GitHub_Updater;
-
-// Initialize the updater
-if (is_admin()) { // Ensure this runs only in the admin area
-
-    $config = array(
-        'slug' => plugin_basename(__FILE__), // Plugin slug
-        'proper_folder_name' => 'hws-base-tools', // Proper folder name
-        'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools', // GitHub API URL
-        'raw_url' => 'https://raw.github.com/mikeyperes/hws-base-tools/main', // Raw GitHub URL
-        'github_url' => 'https://github.com/mikeyperes/hws-base-tools', // GitHub repository URL
-        'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip', // Zip URL for the latest version
-        'sslverify' => true, // SSL verification for the download
-        'requires' => '5.0', // Minimum required WordPress version
-        'tested' => $wordpress_version_tested, // Tested up to WordPress version
-        'readme' => 'README.md', // Readme file for version checking
-        'access_token' => '', // Access token if required
-    );
-/*
-    $config = array(
-        'slug' => plugin_basename(__FILE__),
-        'proper_folder_name' => 'hws-base-tools',
-        'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
-        'raw_url' => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',
-        'github_url' => 'https://github.com/mikeyperes/hws-base-tools',
-        'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip',
-        'sslverify' => true,
-        'requires' => '5.0',
-        'tested' => '6.0',
-        'readme' => 'README.md',
-        'access_token' => '',
-    );
-
-*/
-    $updater = new WP_GitHub_Updater($config);
-
-    // Trigger an update check for debugging
-    add_action('init', function() {
-        if (is_admin() && isset($_GET['force-update-check'])) {
-            // Force WordPress to check for plugin updates
-            wp_clean_update_cache();
-            set_site_transient('update_plugins', null);
-            wp_update_plugins();
-
-            // Log to confirm the check has been triggered
-            error_log('WP_GitHub_Updater: Forced plugin update check triggered.');
-        }
-    });
-}
