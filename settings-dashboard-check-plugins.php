@@ -52,13 +52,13 @@ $update_check_url = admin_url('update-core.php?force-check=1');
 // Output the button with the dynamic URL
 echo '<a href="' . esc_url($update_check_url) . '" target="_blank" class="button">Force WordPress to Perform an Update Check</a>';
 ?>
-        <p>Last checked: <span id="last-checked"><?= esc_html($last_checked) ?></span></p>
-        <p>Number of plugins with available updates: <span id="plugins-with-updates"><?= esc_html($plugins_with_updates) ?></span></p>
+        <p>Last checked: <span id="last-checked"><?php echo esc_html($last_checked); ?></span></p>
+        <p>Number of plugins with available updates: <span id="plugins-with-updates"><?php echo esc_html($plugins_with_updates); ?></span></p>
         <?php if ($plugins_with_updates > 0): ?>
             <p>Plugins with updates available:</p>
             <ul id="plugins-list">
                 <?php foreach ($plugins_list as $plugin_name): ?>
-                    <li><?= esc_html($plugin_name) ?></li>
+                    <li><?php echo esc_html($plugin_name); ?></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
@@ -130,7 +130,7 @@ echo '<a href="' . esc_url($update_check_url) . '" target="_blank" class="button
             $button.prop('disabled', true).text('Checking...');
 
             $.post(
-                '<?= admin_url('admin-ajax.php') ?>', 
+                '<?php echo admin_url('admin-ajax.php'); ?>', 
                 {
                     action: 'hws_ct_force_update_check'
                 }, 

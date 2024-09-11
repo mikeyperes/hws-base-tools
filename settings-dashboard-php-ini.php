@@ -1,4 +1,4 @@
-<? function hws_ct_display_settings_php_ini() {
+<?php function hws_ct_display_settings_php_ini() {
     ?>
     <style>
         .panel-settings-php-ini {

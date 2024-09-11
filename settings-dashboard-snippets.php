@@ -300,19 +300,32 @@ foreach ($settings_snippets as $snippet) {
     }
   
     jQuery(document).ready(function($) {
+
+
+          // Handle "Toggle Auto Updates" button click
     // Handle "Toggle Auto Updates" button click
     $('.modify-snippet-via-button').on('click', function() {
+        var snippetId = $(this).data('snippet-id');
+        var action = $(this).data('action');
+        
+     
+        // Now you can directly use snippetId without conditional checks
+        alert("Action: " + action + " | Snippet ID: " + snippetId);
         var constant = $(this).data('constant');
         var action = $(this).data('action');
         var snippetId = null;
+alert("d");
 
+
+
+/*
         // Explicitly check for each constant and set the corresponding snippetId
         if (constant === 'auto_update_plugin') {
             snippetId = 'enable_auto_update_plugins';
         } else if (constant === 'auto_update_theme') {
             snippetId = 'enable_auto_update_themes';
         }
-
+*/
         // Do nothing if snippetId is not set (invalid constant)
         if (snippetId === null) {
             return;
@@ -328,4 +341,45 @@ foreach ($settings_snippets as $snippet) {
     });
 });
 
-    </script><? } ?>
+    </script>
+    
+    <script type="text/javascript">
+     
+    $ = jQuery;
+  
+    $(document).ready(function($) {
+        // Handle click event and AJAX request all in one function
+        $('.execute-function').on('click', function() {
+            var methodName = $(this).data('method');  // Get the method name from the data attribute
+            var additionalData = $(this).data('additional-data') || {};  // Optional: Get any additional data
+
+            if (methodName) {
+                // Make the AJAX call to execute the function
+                jQuery.ajax({
+                    url: ajaxurl,  // WordPress automatically provides this for AJAX calls in admin
+                    type: 'post',
+                    data: {
+                        action: 'execute_function',  // The action to hook into on the server-side
+                        method: methodName,  // Pass the method name to the server
+                        data: additionalData  // Send any additional data as needed
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Function executed successfully: ' + response.data);
+                        } else {
+                            alert('Error: ' + response.data);
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                        alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+                    }
+                });
+            } else {
+                alert('No method name provided.');
+            }
+        });
+    });
+</script>
+    
+    <?php } ?>

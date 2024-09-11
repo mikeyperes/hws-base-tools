@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.8
+Version: 3.6.8.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -166,12 +166,20 @@ function hws_ct_get_settings_snippets()
 {
     $settings_snippets = [
         [
+            'id' => 'disable_wordpress_comments_forward',
+            'name' => 'Disable WordPress Comments',
+            'description' => 'Disable comments for all new posts and pages. This does not affect previously created content.',
+            'info' => 'Once this is selected, all new posts and pages will have comments disabled by default. To disable comments on existing posts and pages, please use the appropriate setting in the options.',
+            'function' => 'disable_wordpress_comments_forward'
+        ],
+        [
             'id' => 'disable_rankmath_sitemap_caching',
             'name' => 'Disable RankMath Sitemap Caching',
             'description' => 'Disables caching for RankMath sitemaps.',
             'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
             'function' => 'disable_rankmath_sitemap_caching'
         ],
+        
         [
             'id' => 'activate_smp_pushads_functionality',
             'name' => 'Activate SMP PushAds Functionality',

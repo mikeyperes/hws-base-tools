@@ -379,7 +379,7 @@ function activate_snippet_smp_display_ads() {
     // Add AdPushup script to the head
    //add_action('wp_head', 'hws_base_tools\smp_add_adpushup_script_to_head');
     // Hook into wp_enqueue_scripts with the same function name
-add_action('wp_enqueue_scripts', 'smp_add_adpushup_script_to_head2');
+add_action('wp_enqueue_scripts', 'hws_base_tools\smp_add_adpushup_script_to_head2');
 write_log('✅ hi3', true);  // Add this for debugging
 
 

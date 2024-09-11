@@ -154,13 +154,13 @@ pre {
     <div class="wrap">
         <h1>Hexa Core Tools - WP-Config Settings</h1>
 
-<? hws_ct_display_settings_system_checks();?>
-<? hws_ct_display_settings_check_plugins();?>
-<? hws_ct_display_settings_theme_checks();?>
-<? hws_ct_display_settings_snippets();?>
-<? hws_ct_display_settings_wp_config();?>
-<? //hws_ct_display_settings_php_ini();?>
-<? hws_ct_display_plugin_info();?>
+<?php hws_ct_display_settings_system_checks();?>
+<?php hws_ct_display_settings_check_plugins();?>
+<?php hws_ct_display_settings_theme_checks();?>
+<?php hws_ct_display_settings_snippets();?>
+<?php hws_ct_display_settings_wp_config();?>
+<?php //hws_ct_display_settings_php_ini();?>
+<?php hws_ct_display_plugin_info();?>
 
 
 <?php

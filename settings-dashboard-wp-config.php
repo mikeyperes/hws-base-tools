@@ -5,10 +5,6 @@
 function hws_ct_display_settings_wp_config()
 {?>
 
-
-
-
-        <!-- Debug Information Panel -->
         <div class="panel panel-setting-debug-information">
             <h2 class="panel-title">WP Config and Debug Settings</h2>
             <div class="panel-content">
@@ -440,4 +436,4 @@ jQuery(document).ready(function($) {
         </div>
 
 
-<? }?>
+<?php }?>
