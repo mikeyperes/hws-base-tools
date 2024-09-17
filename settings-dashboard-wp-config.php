@@ -82,11 +82,6 @@ function hws_ct_display_settings_wp_config()
                 </pre>
             </div>
         </div>
-
-<!-- START CRON SECTION -->
-
-        
-            
 <?php
                 // Get the sizes of debug.log and error_log
                 $debug_log_size = file_exists(WP_CONTENT_DIR . '/debug.log') ? size_format(filesize(WP_CONTENT_DIR . '/debug.log')) : 'Not found';
@@ -184,8 +179,14 @@ jQuery(document).ready(function($) {
     <a href="<?php echo WP_CONTENT_URL . '/debug.log'; ?>" target="_blank" class="button">View debug.log</a>
     <button class="button" id="delete-debug-log">Delete</button>
     <pre id="debug-log-content" style="display:none; background-color:#222;color:#ddd; padding:10px; border:1px solid #ccc; max-height:300px; overflow:auto;"><?php
-        if (file_exists(WP_CONTENT_DIR . '/debug.log')) {
-            echo htmlspecialchars(shell_exec("tail -n 200 " . WP_CONTENT_DIR . "/debug.log"));
+        // Check if debug.log exists
+        $log_file_path = WP_CONTENT_DIR . '/debug.log';
+
+        if (file_exists($log_file_path)) {
+            // Use file_get_contents to read the file's last 100 lines
+            $log_content = file($log_file_path);
+            $last_lines = array_slice($log_content, -100); // Get the last 100 lines
+            echo htmlspecialchars(implode("", $last_lines)); // Output the lines
         } else {
             echo "debug.log not found.";
         }

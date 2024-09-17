@@ -363,8 +363,6 @@ add_action('plugins_loaded', function() {
 
 
 function activate_snippet_smp_display_ads() {
-    write_log('✅ hi', true);  // Add this for debugging
-
 
     add_action('plugins_loaded', function() {
         add_action('wp_enqueue_scripts', function() {
@@ -374,15 +372,13 @@ function activate_snippet_smp_display_ads() {
     
     // Register ACF fields
     snippet_smp_display_ads_register_acfs();
-    write_log('✅ hi2', true);  // Add this for debugging
 
     // Add AdPushup script to the head
    //add_action('wp_head', 'hws_base_tools\smp_add_adpushup_script_to_head');
     // Hook into wp_enqueue_scripts with the same function name
 add_action('wp_enqueue_scripts', 'hws_base_tools\smp_add_adpushup_script_to_head2');
-write_log('✅ hi3', true);  // Add this for debugging
 
 
     // Register shortcode for dynamic ad display
     add_shortcode('smp_display_ad', 'hws_base_tools\display_dynamic_ad');
-}
+}?>

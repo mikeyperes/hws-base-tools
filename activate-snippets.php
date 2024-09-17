@@ -30,7 +30,7 @@ function hws_ct_activate_snippets() {
                 write_log("🚫 Function $function_to_call does not exist for snippet $snippet_id.", true);
             }
         } else {
-            write_log("🚫 Snippet $snippet_id is not enabled.", true);
+            write_log("🚫 Snippet $snippet_id is not enabled.", false);
         }
     }
 }

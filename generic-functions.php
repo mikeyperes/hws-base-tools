@@ -306,22 +306,77 @@ $status = true;
 }
 
 
+if (!function_exists('hws_base_tools\check_php_ini_status')) {
+    function check_php_ini_status($setting_name) {
+        $ini_value = ini_get($setting_name);
+
+        if ($ini_value !== false) {
+            // Check if it's a boolean-like setting (e.g., "Off", "On")
+            if (strtolower($ini_value) === 'off' || strtolower($ini_value) === 'on') {
+                return strtolower($ini_value) === 'on' ? 'true' : 'false';
+            }
+
+            // Check for known constants like E_ALL and return their names instead of the numeric value
+            if ($setting_name === 'error_reporting') {
+                switch ((int) $ini_value) {
+                    case E_ALL:
+                        return 'E_ALL';
+                    case E_ERROR:
+                        return 'E_ERROR';
+                    case E_WARNING:
+                        return 'E_WARNING';
+                    case E_PARSE:
+                        return 'E_PARSE';
+                    case E_NOTICE:
+                        return 'E_NOTICE';
+                    case E_STRICT:
+                        return 'E_STRICT';
+                    case E_RECOVERABLE_ERROR:
+                        return 'E_RECOVERABLE_ERROR';
+                    case E_DEPRECATED:
+                        return 'E_DEPRECATED';
+                    case E_USER_DEPRECATED:
+                        return 'E_USER_DEPRECATED';
+                    default:
+                        return $ini_value; // Return the numerical value if it's not a known constant
+                }
+            }
+
+            // Return the actual ini value for other settings
+            return $ini_value;
+        } else {
+            return 'undefined';
+        }
+    }
+} else write_log("Warning: hws_base_tools/check_php_ini_status function is already declared", true);
+
+
 
 if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
     function check_wp_config_constant_status($constant_name) {
         if (defined($constant_name)) {
             $constant_value = constant($constant_name);
 
+            // Check for booleans and handle them explicitly
+            if (is_bool($constant_value)) {
+                $log_value = $constant_value ? 'true' : 'false';
+            } else {
+                $log_value = $constant_value;
+            }
+
+            // Log the constant value
+            write_log("XXXXX: ".$constant_name.":".$log_value, true);
+
             // Return 'true' or 'false' if the constant is a boolean, otherwise return its value
-            return is_bool($constant_value) ? ($constant_value ? 'true' : 'false') : $constant_value;
+            return $log_value;
         } else {
+            write_log("XXXXX: ".$constant_name." is undefined", true);
             return 'undefined';
         }
     }
 } else {
     write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
 }
-
 
 
 if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
@@ -1135,8 +1190,8 @@ function hws_ct_package_constant_value_for_checks($constant_name, $constant_valu
         if (isset($fail_criteria['listed_values']) && is_array($fail_criteria['listed_values'])) {
             // Iterate through each listed value in fail_criteria
             foreach ($fail_criteria['listed_values'] as $fail_value) {
-                // Convert both values to string for comparison
-                if (strtolower((string) $value) === strtolower((string) $fail_value)) {
+                // Compare values directly without converting to strings
+                if ($value === $fail_value) {
                     // If value matches any of the fail criteria, set status to false
                     $status = false;
                     break;
@@ -1377,3 +1432,492 @@ if (!function_exists('hws_base_tools\disable_rankmath_sitemap_caching')) {
     }
 }
 
+
+
+
+
+
+
+if (!function_exists('hws_base_tools\toggle_wordpress_comments')) {
+    function toggle_wordpress_comments($state) {
+        if (!is_string($state)) {
+            write_log("Invalid state type passed: Expected string, received " . gettype($state), true);
+            return false;  // Return early if state is not a valid string
+        }
+
+        write_log("Entered toggle_wordpress_comments with state: $state", true);
+
+        // Determine the comment status based on the state
+        $comment_status = ($state === 'enable') ? 'open' : 'closed';
+        $ping_status = ($state === 'enable') ? 'open' : 'closed';
+
+        // Log the comment and ping status that will be applied
+        write_log("Setting future comment_status: $comment_status, ping_status: $ping_status", true);
+
+        // Update the option for default comment status for future posts
+        update_option('default_comment_status', $comment_status);
+        update_option('default_ping_status', $ping_status);
+
+        // Log the update to default comment and ping status for future posts
+       // write_log("Updated default_comment_status to: " . get_option('default_comment_status'), true);
+     //   write_log("Updated default_ping_status to: " . get_option('default_ping_status'), true);
+
+        // Toggle comments for prior posts
+        $posts = get_posts([
+            'post_status' => 'publish',
+            'numberposts' => -1 // Fetch all posts
+        ]);
+
+        write_log("Found " . count($posts) . " posts to update.", true);
+
+        if (!empty($posts)) {
+            foreach ($posts as $post) {
+                wp_update_post([
+                    'ID' => $post->ID,
+                    'comment_status' => $comment_status,
+                    'ping_status' => $ping_status
+                ]);
+            //    write_log("Updated post ID {$post->ID} with comment_status: $comment_status, ping_status: $ping_status", true);
+            }
+       //     write_log("Comments successfully {$state}d on prior posts.", true);
+        } else {
+       //     write_log("No published posts found to {$state} comments.", true);
+        }
+
+        return true; // Return true to indicate success
+    }
+} else {
+    write_log("Warning: toggle_wordpress_comments function is already declared", true);
+}
+
+
+
+
+
+
+// Function to perform the PHP INI check and return the result
+function perform_php_ini_check($setting_name, $on_values = [1, '1', 'On', 'on', true], $off_values = [0, '0', 'Off', 'off', false], $fail_criteria = []) {
+    write_log("Performing PHP INI check for $setting_name", false);
+
+    // Use the helper function to get the ini value or constant
+    $current_value = get_php_ini_value($setting_name);
+
+    // Handle unknown values (when ini_get fails)
+    if ($current_value === 'unknown') {
+        write_log("Warning: $setting_name is not found via ini_get or defined constants", false);
+        $current_status = 'Unknown';  // More user-friendly message for unknown values
+    } else {
+        // Convert the current value to an integer or string for comparison
+        $normalized_value = is_numeric($current_value) ? (int) $current_value : strtolower($current_value);
+
+        // Handle both ON/ENABLED and OFF/DISABLED states
+        if (in_array($normalized_value, $on_values, true)) {
+            $current_status = 'ENABLED';
+        } elseif (in_array($normalized_value, $off_values, true)) {
+            $current_status = 'DISABLED';
+        } else {
+            $current_status = 'Unknown'; // If the value doesn't match any expected states
+        }
+
+        write_log("Current status for $setting_name: $current_status", false);
+    }
+
+    // Check if the current value matches any fail criteria
+    $fail_status = false;
+    if (in_array($normalized_value, $fail_criteria, true)) {
+        write_log("Fail criteria matched for $setting_name: $current_value", false);
+        $fail_status = true;
+    }
+
+    // Combine the actual value and the status (e.g., '1 (DISABLED)')
+    $display_value = ($current_value !== 'unknown') ? "$current_value ($current_status)" : "Unknown value ($current_status)";
+
+    // Determine the status for highlighting (red for enabled, per your requirement)
+    $status_display = $fail_status 
+        ? "<span>$display_value</span>" 
+        : "<span>$display_value</span>";
+
+    // Create a toggle button for the setting
+    $toggle_button = ($current_status === 'DISABLED')
+        ? "<button class='button execute-function block' data-method='toggle_php_ini_value' data-setting='$setting_name' data-state='1' data-loader='true'>Enable $setting_name</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_php_ini_value' data-setting='$setting_name' data-state='0' data-loader='true'>Disable $setting_name</button><br>";
+
+    // Generate the report with the current status, the actual value, and the toggle button
+    $report = "<br />-----<br /><strong>$setting_name Status:</strong> $status_display<br>$toggle_button";
+
+    // Return the final report and status
+    return [
+        'function' => 'perform_php_ini_check',
+        'status' => !$fail_status, // Return false if fail criteria matched, otherwise true
+        'raw_value' => $report, // The full report with HTML formatting for buttons
+        'variables' => [
+            'setting_name' => $setting_name,
+            'current_value' => $current_value,
+            'current_status' => $current_status,
+            'on_value' => $on_values,
+            'off_value' => $off_values,
+            'fail_status' => $fail_status
+        ]
+    ];
+}
+
+
+
+// Helper function to get the value of a PHP setting, considering wp-config.php overrides
+function get_php_ini_value($setting_name) {
+    // Step 1: Try getting the value from ini_get
+    $value = ini_get($setting_name);
+
+    // Log the value from ini_get
+    write_log("ini_get value for $setting_name: " . var_export($value, true), true);
+
+    // Step 2: Try reading wp-config.php for ini_set() overrides
+    $wp_config_path = ABSPATH . 'wp-config.php';
+    if (file_exists($wp_config_path)) {
+        $config_content = file_get_contents($wp_config_path);
+
+        // Check if there's an ini_set line for this setting in wp-config.php
+        $pattern = "/ini_set\(\s*['\"]{$setting_name}['\"]\s*,\s*['\"](.*?)['\"]\s*\);/";
+        if (preg_match($pattern, $config_content, $matches)) {
+            $value = $matches[1]; // Override the value with what's found in wp-config.php
+            write_log("Overriding ini_get with value from wp-config.php for $setting_name: " . var_export($value, true), true);
+        }
+    }
+
+    return $value !== false ? $value : 'unknown'; // Return 'unknown' if nothing works
+}
+
+
+function perform_comments_system_check() {
+    write_log("Performing comments system check", false);
+
+    // Check the status of future comments and pingbacks (via the default comment status)
+    $future_comments_status = (get_option('default_comment_status') === 'closed') ? 'DISABLED' : 'ENABLED';
+    $future_pingbacks_status = (get_option('default_ping_status') === 'closed') ? 'DISABLED' : 'ENABLED';
+    write_log("Future posts - comment status: $future_comments_status, pingback status: $future_pingbacks_status", false);
+
+    // Check the status of prior comments and pingbacks (checking all posts)
+    $prior_comments_disabled = true;
+    $prior_pingbacks_disabled = true;
+    $posts = get_posts([
+        'post_status' => 'publish',
+        'numberposts' => -1 // Fetch all posts
+    ]);
+    write_log("Found " . count($posts) . " posts for prior comments/pingbacks status check.",  false);
+
+    foreach ($posts as $post) {
+        write_log("Checking post ID {$post->ID} for comments and pingbacks.", false);
+        if ($post->comment_status !== 'closed') {
+            $prior_comments_disabled = false;
+            write_log("Post ID {$post->ID} has comments enabled", false);
+        }
+        if ($post->ping_status !== 'closed') {
+            $prior_pingbacks_disabled = false;
+            write_log("Post ID {$post->ID} has pingbacks enabled", false);
+        }
+        if (!$prior_comments_disabled && !$prior_pingbacks_disabled) {
+            write_log("Comments and pingbacks are enabled on at least one post. Stopping further checks.", false);
+            break; // Stop checking once we know both are enabled
+        }
+    }
+
+    $prior_comments_status = $prior_comments_disabled ? 'DISABLED' : 'ENABLED';
+    $prior_pingbacks_status = $prior_pingbacks_disabled ? 'DISABLED' : 'ENABLED';
+    write_log("Prior posts - comment status: $prior_comments_status, pingback status: $prior_pingbacks_status",  false);
+
+    // Check if users must be registered to comment
+    $users_must_be_registered = check_users_must_be_registered_to_comment() ? 'REQUIRED' : 'NOT REQUIRED';
+    write_log("Users must be registered to comment: $users_must_be_registered", false);
+
+    // Check if comments are allowed on new posts (Allow people to submit comments on new posts)
+    $comments_allowed_on_new_posts = (get_option('default_comment_status') === 'open') ? 'ALLOWED' : 'NOT ALLOWED';
+    write_log("Comments allowed on new posts: $comments_allowed_on_new_posts", false);
+
+    // Get the number of approved, pending, total, and spam comments
+    $approved_comments = get_comments(['status' => 'approve', 'count' => true]);
+    $pending_comments = get_comments(['status' => 'hold', 'count' => true]);
+    $spam_comments = get_comments(['status' => 'spam', 'count' => true]);
+    $total_comments = wp_count_comments()->total_comments;
+    write_log("Approved: $approved_comments, Pending: $pending_comments, Spam: $spam_comments, Total: $total_comments",false);
+
+    // Determine the status for highlighting (fail if there are pending, spam, or approved comments)
+    $status = ($approved_comments > 0 || $pending_comments > 0 || $spam_comments > 0) ? 'fail' : 'pass';
+
+    // Generate the report and determine the overall constraint status
+    $overall_status = ($prior_comments_status === 'DISABLED' && $future_comments_status === 'DISABLED') ? 'true' : 'false';
+    write_log("Overall comments system check status: $overall_status", false);
+
+    // Report for prior posts
+    $report = "<br />-----<br /><strong>Prior Posts Comments Status:</strong> " . ($prior_comments_status === 'DISABLED' 
+        ? "<span>DISABLED</span><br>" 
+        : "<span style='color:red;'>ENABLED</span><br>");
+    $report .= "<strong>Prior Posts Pingbacks Status:</strong> " . ($prior_pingbacks_status === 'DISABLED' 
+        ? "<span>DISABLED</span><br>" 
+        : "<span style='color:red;'>ENABLED</span><br>");
+    $report .= ($prior_comments_status === 'DISABLED'
+        ? "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='enable' data-loader='true'>Enable Comments on Prior Posts</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='disable' data-loader='true'>Disable Comments on Prior Posts</button><br>");
+
+    // Report for future posts
+    $report .= "<strong>Future Posts Comments Status:</strong> " . ($future_comments_status === 'DISABLED'
+        ? "<span>DISABLED</span><br>"
+        : "<span style='color:red;'>ENABLED</span><br>");
+    $report .= "<strong>Future Posts Pingbacks Status:</strong> " . ($future_pingbacks_status === 'DISABLED'
+        ? "<span>DISABLED</span><br>"
+        : "<span style='color:red;'>ENABLED</span><br>");
+    $report .= ($future_comments_status === 'DISABLED'
+        ? "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='enable' data-loader='true'>Enable Comments on Future Posts</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='disable' data-loader='true'>Disable Comments on Future Posts</button><br>");
+
+    // Report for user registration requirement to comment
+    $report .= "<strong>Users Must Be Registered to Comment:</strong> " . ($users_must_be_registered === 'REQUIRED'
+        ? "<span>REQUIRED</span><br>"
+        : "<span style='color:red;'>NOT REQUIRED</span><br>");
+    $report .= ($users_must_be_registered === 'REQUIRED'
+        ? "<button class='button execute-function block' data-method='toggle_user_registration_requirement' data-state='disable' data-loader='true'>Disable User Registration Requirement</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_user_registration_requirement' data-state='enable' data-loader='true'>Require User Registration to Comment</button><br>");
+
+    // Report for allowing people to submit comments on new posts
+    $report .= "<strong>Allow People to Submit Comments on New Posts:</strong> " . ($comments_allowed_on_new_posts === 'ALLOWED'
+        ? "<span style='color:red;'>ALLOWED</span><br>"
+        : "<span>NOT ALLOWED</span><br>");
+    $report .= ($comments_allowed_on_new_posts === 'ALLOWED'
+        ? "<button class='button execute-function block' data-method='toggle_comments_allowed_on_new_posts' data-state='disable' data-loader='true'>Disallow Comments on New Posts</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_comments_allowed_on_new_posts' data-state='enable' data-loader='true'>Allow Comments on New Posts</button><br>");
+
+    // Add pending and spam comment sections with delete buttons
+    $report .= "<strong>Pending Comments:</strong> " . ($pending_comments > 0 
+        ? "<span style='color:red;'>$pending_comments</span>
+           <button class='button execute-function block' data-method='delete_pending_comments' data-loader='true'>Delete Pending Comments</button><br>"
+        : "$pending_comments (none)<br>");
+    $report .= "<strong>Spam Comments:</strong> " . ($spam_comments > 0
+        ? "<span style='color:red;'>$spam_comments</span>
+           <button class='button execute-function block' data-method='delete_spam_comments' data-loader='true'>Delete Spam Comments</button><br>"
+        : "$spam_comments (none)<br>");
+    
+    // Add total comments section
+    $report .= "<strong>Total Comments:</strong> $total_comments<br>-----";
+
+    // Log the report without HTML tags for clarity
+    write_log(strip_tags($report), false);
+
+    // Return the final report and status
+    return [
+        'function' => 'perform_comments_system_check',
+        'status' => $overall_status, // If both prior and future comments are disabled, it is 'true', otherwise 'false'
+        'raw_value' => $report, // The full report with HTML formatting for buttons
+        'variables' => [
+            'future_comments_status' => $future_comments_status,
+            'future_pingbacks_status' => $future_pingbacks_status,
+            'prior_comments_status' => $prior_comments_status,
+            'prior_pingbacks_status' => $prior_pingbacks_status,
+            'users_must_be_registered' => $users_must_be_registered,
+            'comments_allowed_on_new_posts' => $comments_allowed_on_new_posts,
+            'pending_comments' => $pending_comments,
+            'spam_comments' => $spam_comments,
+            'total_comments' => $total_comments
+        ]
+    ];
+}
+
+
+
+if (!function_exists('check_users_must_be_registered_to_comment')) {
+    function check_users_must_be_registered_to_comment() {
+        return get_option('comment_registration') ? true : false;
+    }
+} else write_log("Warning: check_users_must_be_registered_to_comment function is already declared", true);
+
+if (!function_exists('toggle_user_registration_requirement')) {
+    function toggle_user_registration_requirement($state) {
+        $new_value = ($state === 'enable') ? 1 : 0;
+        update_option('comment_registration', $new_value);
+        return true;
+    }
+} else write_log("Warning: toggle_user_registration_requirement function is already declared", true);
+
+if (!function_exists('toggle_comments_allowed_on_new_posts')) {
+    function toggle_comments_allowed_on_new_posts($state) {
+        $new_value = ($state === 'enable') ? 'open' : 'closed';
+        update_option('default_comment_status', $new_value);
+        return true;
+    }
+} else write_log("Warning: toggle_comments_allowed_on_new_posts function is already declared", true);
+
+
+
+
+
+
+
+// Function to delete pending comments
+if (!function_exists('hws_base_tools\delete_pending_comments')) {
+    function delete_pending_comments() {
+        $pending_comments = get_comments(['status' => 'hold']);
+        foreach ($pending_comments as $comment) {
+            wp_delete_comment($comment->comment_ID, true);
+        }
+        
+        // Check if all pending comments are deleted
+        $remaining_pending = get_comments(['status' => 'hold', 'count' => true]);
+        $status = $remaining_pending > 0 ? false : true;
+        $raw_value = $status ? 'true' : 'false';
+
+        return [
+            'function' => 'delete_pending_comments',
+            'status' => $status,
+            'raw_value' => $raw_value
+        ];
+    }
+} else write_log("Warning: delete_pending_comments function is already declared", true);
+
+
+// Function to delete spam comments
+if (!function_exists('hws_base_tools\delete_spam_comments')) {
+    function delete_spam_comments() {
+        $spam_comments = get_comments(['status' => 'spam']);
+        foreach ($spam_comments as $comment) {
+            wp_delete_comment($comment->comment_ID, true);
+        }
+
+        // Check if all spam comments are deleted
+        $remaining_spam = get_comments(['status' => 'spam', 'count' => true]);
+        $status = $remaining_spam > 0 ? false : true;
+        $raw_value = $status ? 'true' : 'false';
+
+        return [
+            'function' => 'delete_spam_comments',
+            'status' => $status,
+            'raw_value' => $raw_value
+        ];
+    }
+} else write_log("Warning: delete_spam_comments function is already declared", true);
+
+
+// Function to delete all comments
+if (!function_exists('hws_base_tools\delete_all_comments')) {
+    function delete_all_comments() {
+        $all_comments = get_comments(['status' => 'all']);
+        foreach ($all_comments as $comment) {
+            wp_delete_comment($comment->comment_ID, true);
+        }
+
+        // Check if all comments are deleted
+        $remaining_comments = wp_count_comments()->total_comments;
+        $status = $remaining_comments > 0 ? false : true;
+        $raw_value = $status ? 'true' : 'false';
+
+        return [
+            'function' => 'delete_all_comments',
+            'status' => $status,
+            'raw_value' => $raw_value
+        ];
+    }
+} else write_log("Warning: delete_all_comments function is already declared", true);
+
+
+
+if (!function_exists('hws_base_tools\toggle_php_ini_value')) {
+    function toggle_php_ini_value($setting_name, $new_value) {
+        // Attempt to set the ini value dynamically
+        $result = ini_set($setting_name, $new_value);
+
+        // Log whether the dynamic ini_set succeeded or failed
+        if ($result === false) {
+            write_log("Error: Failed to update {$setting_name} to {$new_value}.", true);
+            return 'fail';
+        }
+
+        // Proceed to update wp-config.php for persistence
+        $wp_config_path = ABSPATH . 'wp-config.php';
+
+        if (!file_exists($wp_config_path) || !is_writable($wp_config_path)) {
+            write_log("Error: wp-config.php is either missing or not writable.", true);
+            return 'fail';
+        }
+
+        // Read the current content of wp-config.php
+        $config_content = file_get_contents($wp_config_path);
+
+        // Check if the ini_set already exists and update or append the setting
+        if (strpos($config_content, "ini_set('{$setting_name}'") !== false) {
+            // Update the existing ini_set line
+            $config_content = preg_replace(
+                "/ini_set\('{$setting_name}',\s*'(.*)'\);/",
+                "ini_set('{$setting_name}', '{$new_value}');",
+                $config_content
+            );
+            write_log("Info: Updated existing {$setting_name} to {$new_value} in wp-config.php.", true);
+        } else {
+            // Append the new ini_set line before the final comment line
+            $new_line = "ini_set('{$setting_name}', '{$new_value}');\n";
+            $config_content = preg_replace('/(\/\* That\'s all, stop editing! Happy publishing\. \*\/)/', $new_line . "$1", $config_content);
+            write_log("Info: Added new ini_set for {$setting_name} with value {$new_value} in wp-config.php.", true);
+        }
+
+        // Write the updated content back to wp-config.php
+        if (file_put_contents($wp_config_path, $config_content)) {
+            write_log("Success: Changes to {$setting_name} have been persisted in wp-config.php.", true);
+            return 'success';
+        } else {
+            write_log("Error: Failed to write changes  {$setting_name} with value {$new_value} to wp-config.php.", true);
+            return 'fail';
+        }
+    }
+} else {
+    write_log("Warning: hws_base_tools\toggle_php_ini_value is already declared.", true);
+}
+
+
+
+
+
+/* AJAX LISTENERS AND HANDLERS */ 
+
+ 
+    
+    
+add_action('wp_ajax_execute_function', 'hws_base_tools\handle_execute_function_ajax');
+add_action('wp_ajax_nopriv_execute_function', 'hws_base_tools\handle_execute_function_ajax');  // For non-logged in users (optional)
+function handle_execute_function_ajax() {
+    write_log("entered handle_execute_function_ajax", true);
+
+    // Verify if the method parameter is passed and is not empty
+    if (isset($_POST['method']) && !empty($_POST['method'])) {
+        $method_name = sanitize_text_field($_POST['method']);
+        write_log("Method name passed: " . $method_name, false);
+
+        // Determine the correct namespace
+        $namespace = 'hws_base_tools';
+        $fully_qualified_function_name = $namespace . '\\' . $method_name;
+
+  
+        // Get the state if passed
+        $state = isset($_POST['state']) ? sanitize_text_field($_POST['state']) : null;
+        $setting = isset($_POST['setting']) ? sanitize_text_field($_POST['setting']) : null;
+
+        if ($state !== null && $setting !== null) {
+            write_log("State passed: " . $state . " Setting passed: " . $setting, false);  // Log the state and setting to confirm
+        } else {
+            write_log("No state or setting provided in the request, exiting.", false);
+            wp_send_json_error('No state or setting provided.');
+            wp_die();
+        }
+
+        // Check if the function exists with the namespace
+        if (function_exists($fully_qualified_function_name)) {
+            // Execute the function with both the setting and state
+            $response = call_user_func($fully_qualified_function_name, $setting, $state);
+
+            // Send a success response with the result of the function execution
+            wp_send_json_success($response);
+        } else {
+            write_log("The function does not exist: " . $fully_qualified_function_name, true);
+            wp_send_json_error('The function does not exist.');
+        }
+    } else {
+        wp_send_json_error('No method name provided.');
+    }
+
+    wp_die();  // This is required to properly terminate the script when doing AJAX in WordPress
+}

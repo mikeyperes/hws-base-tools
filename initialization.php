@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.8.1
+Version: 3.6.9
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -276,3 +276,5 @@ include_once("settings-dashboard-system-checks.php");
 include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
+// Set up event handling (click listeners and handlers)
+include_once("settings-event-handling.php");

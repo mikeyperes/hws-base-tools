@@ -10,75 +10,14 @@ use function hws_base_tools\write_log;
 use function hws_base_tools\toggle_snippet;
 use function hws_base_tools\hws_ct_get_settings_snippets;
  
-/*
-function hws_ct_get_settings_snippets()
-{
-    $settings_snippets = [
 
-        [
-            'id' => 'disable_rankmath_sitemap_caching',
-            'name' => 'Disable RankMath Sitemap Caching',
-            'description' => 'Disables caching for RankMath sitemaps.',
-            'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
-            'function' => 'disable_rankmath_sitemap_caching'
-        ],
-        [
-            'id' => 'enable_auto_update_plugins',
-            'name' => 'Enable Automatic Updates for Plugins',
-            'description' => 'Enables automatic updates for all plugins.',
-            'info' => 'Automatically keeps your plugins up to date.',
-            'function' => 'enable_auto_update_plugins'
-        ],
 
-     [
-    'id' => 'enable_auto_update_themes',
-    'name' => 'Enable Automatic Updates for Themes',
-    'description' => 'Enables automatic updates for all themes.',
-    'info' => 'Automatically keeps your themes up to date.',
-    'function' => 'enable_auto_update_themes'
-],
-        [
-            'id' => 'enable_wp_admin_logo',
-            'name' => 'Enable WP Admin Logo',
-            'description' => 'Enable a custom logo on the WP admin login screen using ACF.',
-            'info' => 'This will use the logo from the ACF field "login_logo".',
-            'function' => 'custom_wp_admin_logo'
-        ],
-        [
-            'id' => 'disable_litespeed_js_combine',
-            'name' => 'Disable JS Combine in LiteSpeed Cache',
-            'description' => 'Disables JS combining in LiteSpeed Cache.',
-            'info' => 'Prevents LiteSpeed from combining JavaScript files, which can be useful for resolving issues with script loading.',
-            'function' => 'disable_litespeed_js_combine'
-        ],
-        [
-            'id' => 'custom_wp_admin_logo',
-            'name' => 'Custom WP Admin Logo',
-            'description' => 'Adds a custom logo to the WP admin login screen.',
-            'info' => 'Allows you to upload a custom logo via ACF and display it on the login page.',
-            'function' => 'custom_wp_admin_logo'
-        ],
-        
-    [
-        'name' => 'Enable Author Social ACFs',
-        'id' => 'hws_ct_snippets_author_social_acfs',
-         'function' => 'hws_ct_snippets_activate_author_social_acfs',
-        'description' => 'This will enable social media fields in author profiles.',
-        'info' => implode('<br>', array_map(function($field) {
-            if ($field['type'] === 'group') {
-                $sub_fields = implode(', ', array_map(function($sub_field) {
-                    return "{$sub_field['name']}";
-                }, $field['sub_fields']));
-                return "{$field['name']}<br>&emsp;{$sub_fields}";
-            } else {
-                return "{$field['name']}";
-            }
-        }, acf_get_fields('group_590d64c31db0a')))
-    ],
-];
-return $settings_snippets; 
-}
-*/
+
+
+
+
+
+
 if (!function_exists('hws_base_tools\toggle_snippet')) {
     function toggle_snippet() {
         $settings_snippets = hws_ct_get_settings_snippets();
@@ -311,21 +250,8 @@ foreach ($settings_snippets as $snippet) {
      
         // Now you can directly use snippetId without conditional checks
         alert("Action: " + action + " | Snippet ID: " + snippetId);
-        var constant = $(this).data('constant');
-        var action = $(this).data('action');
-        var snippetId = null;
-alert("d");
+  
 
-
-
-/*
-        // Explicitly check for each constant and set the corresponding snippetId
-        if (constant === 'auto_update_plugin') {
-            snippetId = 'enable_auto_update_plugins';
-        } else if (constant === 'auto_update_theme') {
-            snippetId = 'enable_auto_update_themes';
-        }
-*/
         // Do nothing if snippetId is not set (invalid constant)
         if (snippetId === null) {
             return;
@@ -341,45 +267,51 @@ alert("d");
     });
 });
 
-    </script>
-    
-    <script type="text/javascript">
-     
-    $ = jQuery;
-  
-    $(document).ready(function($) {
-        // Handle click event and AJAX request all in one function
-        $('.execute-function').on('click', function() {
-            var methodName = $(this).data('method');  // Get the method name from the data attribute
-            var additionalData = $(this).data('additional-data') || {};  // Optional: Get any additional data
 
-            if (methodName) {
-                // Make the AJAX call to execute the function
-                jQuery.ajax({
-                    url: ajaxurl,  // WordPress automatically provides this for AJAX calls in admin
-                    type: 'post',
-                    data: {
-                        action: 'execute_function',  // The action to hook into on the server-side
-                        method: methodName,  // Pass the method name to the server
-                        data: additionalData  // Send any additional data as needed
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert('Function executed successfully: ' + response.data);
-                        } else {
-                            alert('Error: ' + response.data);
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
-                        alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+$ = jQuery;
+$(document).ready(function($) {
+    // Handle click event and AJAX request all in one function
+    $('.execute-function').on('click', function() {
+        var methodName = $(this).data('method');  // Get the method name
+        var state = $(this).data('state');  // Get the state
+        var setting = $(this).data('setting');  // Get the setting name
+
+        // Ensure methodName and setting are available
+        if (methodName && setting) {
+            console.log('State passed:', state);  // Log the state for debugging
+            console.log('Setting passed:', setting);  // Log the setting for debugging
+
+            // Make the AJAX call to execute the function
+            var dataToSend = {
+                action: 'execute_function',  // The action to hook into on the server-side
+                method: methodName,          // Pass the method name
+                setting: setting,            // Pass the setting name
+                state: state                 // Pass the state
+            };
+
+            jQuery.ajax({
+                url: ajaxurl,  // WordPress provides this for AJAX calls in the admin area
+                type: 'post',
+                data: dataToSend,
+                success: function(response) {
+                    if (response.success) {
+                        alert('Function executed successfully: ' + response.data);
+                    } else {
+                        alert('Error: ' + response.data);
                     }
-                });
-            } else {
-                alert('No method name provided.');
-            }
-        });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                    alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+                }
+            });
+        } else {
+            alert('No method or setting provided.');
+        }
     });
+});
 </script>
     
-    <?php } ?>
+    <?php }
+    
+?>

@@ -116,7 +116,37 @@ function hws_ct_get_settings_system_checks()
         'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('LSCWP_OBJECT_CACHE', check_wp_config_constant_status('LSCWP_OBJECT_CACHE'), ['listed_values' => ['false', false]]))
 
 ],
-'WP_DEBUG State' => [
+'display_errors State 222' => [
+    'id' => 'display-errors',
+    'value' => hws_ct_highlight_based_on_criteria(
+            perform_php_ini_check('display_errors',  // Call perform_php_ini_check to get the current status
+            [1, "1", "On", "on"],  // ON values passed directly
+            [0, "0", "Off", "off"],  // OFF values passed directly
+            [true,1, "1", "On", "on"] // mark as fail (red text) if these value
+        ))
+],
+/*
+'display_errors State' => [
+    'id' => 'display-errors-delete',
+    'value' => hws_ct_highlight_based_on_criteria(
+        hws_ct_package_constant_value_for_checks(
+            'display_errors', 
+            check_php_ini_status('display_errors'), 
+            ['listed_values' => ['Off', 'On']]
+        )
+    )
+],*/
+'error_reporting State' => [
+    'id' => 'error-reporting',
+    'value' => hws_ct_highlight_based_on_criteria(
+        hws_ct_package_constant_value_for_checks(
+            'error_reporting', 
+            check_php_ini_status('error_reporting'), 
+            ['listed_values' => [E_ALL]]
+        )
+    )
+        ],
+        'WP_DEBUG State' => [
     'id' => 'wp-debug',
     'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_DEBUG', check_wp_config_constant_status('WP_DEBUG'), ['listed_values' => ['true', true]]))
 
@@ -180,7 +210,7 @@ function hws_ct_get_settings_system_checks()
 
 'WP_CACHE State' => [
     'id' => 'wp-cache',
-    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_CACHE', check_wp_config_constant_status('WP_CACHE'), ['listed_values' => ['false', false]]))
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('WP_CACHE', check_wp_config_constant_status('WP_CACHE'), ['listed_values' => ['false', false,1]]))
     ],
 
             'Server RAM' => [
@@ -190,7 +220,28 @@ function hws_ct_get_settings_system_checks()
             'Number of Processors' => [
                 'id' => 'num-processors',
                 'value' => hws_ct_highlight_based_on_criteria(check_server_specs()),
-            ]
+            ],
+'post_max_size' => [
+    'id' => 'php-post-max-size',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('post_max_size', check_php_ini_status('post_max_size'), ['listed_values' => ['false', false]]))
+],
+'upload_max_filesize' => [
+    'id' => 'php-upload-max-filesize',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('upload_max_filesize', check_php_ini_status('upload_max_filesize'), ['listed_values' => ['false', false]]))
+],
+/*,
+'php_version' => [
+    'id' => 'php-version',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('php_version', phpversion(), ['listed_values' => ['false', false]]))
+]
+
+
+
+'cloud_linux_info' => [
+    'id' => 'cloud-linux-info',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('cloud_linux_info', (defined('CLOUDLINUX_VERSION') ? CLOUDLINUX_VERSION : 'Not CloudLinux'), ['listed_values' => ['false', false]]))
+],
+*/
     ];
     return $system_checks;
 
@@ -252,12 +303,13 @@ function hws_ct_display_settings_system_checks()
                 
                 <?php if ($setting['id'] === 'wp-cache'):
 
-    $wp_cache_status = check_wp_config_constant_status('WP_CACHE'); 
- if ($wp_cache_status): ?>
-        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
-    <?php else: ?>
-        <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="true" data-target="wp-cache">Enable WP_CACHE</button>
-    <?php endif; ?>
+$wp_cache_status = check_wp_config_constant_status('WP_CACHE'); 
+if ($wp_cache_status === 'true' || $wp_cache_status === true): ?>
+    <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="false" data-target="wp-cache">Disable WP_CACHE</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="WP_CACHE" data-value="true" data-target="wp-cache">Enable WP_CACHE</button>
+<?php endif; ?>
+
 <?php endif; ?>
 
 
@@ -270,17 +322,17 @@ function hws_ct_display_settings_system_checks()
             
                 <?php if ($setting['id'] === 'plugin-auto-updates'): ?>
     <?php if (strpos($setting['value'], 'color: red') !== false): ?>
-        <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-action="enable">Enable Plugin Auto Updates</button>
+        <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_plugins" data-action="enable">Enable Plugin Auto Updates</button>
     <?php else: ?>
-        <button class="button modify-snippet-via-button" data-constant="auto_update_plugin" data-action="disable">Disable Plugin Auto Updates</button>
+        <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_plugins" data-action="disable">Disable Plugin Auto Updates</button>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if ($setting['id'] === 'theme-auto-updates'): ?>
     <?php if (strpos($setting['value'], 'color: red') !== false): ?>
-        <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-action="enable">Enable Theme Auto Updates</button>
+        <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_themes" data-action="enable">Enable Theme Auto Updates</button>
     <?php else: ?>
-        <button class="button modify-snippet-via-button" data-constant="auto_update_theme" data-action="disable">Disable Theme Auto Updates</button>
+        <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_themes" data-action="disable">Disable Theme Auto Updates</button>
     <?php endif; ?>
 <?php endif; ?>
                 
@@ -421,22 +473,50 @@ jQuery(document).ready(function($) {
 
 
 
+/*
+if (!function_exists('toggle_wordpress_comments')) {
+    function toggle_wordpress_comments($state) {
+        // Determine the comment status based on the state
+        $comment_status = ($state === 'enable') ? 'open' : 'closed';
+        $ping_status = ($state === 'enable') ? 'open' : 'closed';
 
-
-
-// Disable Comments for Future Posts
-if (!function_exists('disable_wordpress_comments_forward')) {
-    function disable_wordpress_comments_forward() {
-        add_filter('wp_insert_post_data', function($data) {
+        // Toggle comments for future posts
+        add_filter('wp_insert_post_data', function($data) use ($comment_status, $ping_status) {
             if ($data['post_type'] === 'post' || $data['post_type'] === 'page') {
-                $data['comment_status'] = 'closed';
-                $data['ping_status'] = 'closed';
+                $data['comment_status'] = $comment_status;
+                $data['ping_status'] = $ping_status;
             }
             return $data;
         });
+
+        // Toggle comments for prior posts
+        $posts = get_posts([
+            'post_status' => 'publish',
+            'numberposts' => -1 // Fetch all posts
+        ]);
+
+        if (!empty($posts)) {
+            foreach ($posts as $post) {
+                wp_update_post([
+                    'ID' => $post->ID,
+                    'comment_status' => $comment_status,
+                    'ping_status' => $ping_status
+                ]);
+            }
+            write_log("Comments successfully {$state}d on prior posts.", true);
+        } else {
+            write_log("No published posts found to {$state} comments.", true);
+        }
+
         return true; // Return true to indicate success
     }
-} else write_log("Warning: disable_wordpress_comments_forward function is already declared", true);
+} else {
+    write_log("Warning: toggle_wordpress_comments function is already declared", true);
+}
+
+
+
+
 
 
 
@@ -455,35 +535,6 @@ if (!function_exists('are_comments_disabled_for_prior_posts')) {
     }
 } else write_log("Warning: are_comments_disabled_for_prior_posts function is already declared", true);
 
-
-// Disable Comments for Prior Posts
-if (!function_exists('disable_comments_on_prior_posts')) {
-    function disable_comments_on_prior_posts() {
-        // Fetch all published posts
-        $posts = get_posts([
-            'post_status' => 'publish',
-            'numberposts' => -1 // Fetch all posts
-        ]);
-
-        // Check if any posts exist
-        if (!empty($posts)) {
-            // Loop through each post and disable comments
-            foreach ($posts as $post) {
-                wp_update_post([
-                    'ID' => $post->ID,
-                    'comment_status' => 'closed',  // Disable comments
-                    'ping_status' => 'closed'      // Disable pingbacks
-                ]);
-            }
-        } else {
-            write_log("No published posts found to disable comments.", true);
-            return false; // No posts found, return false to indicate no changes were made
-        }
-
-        write_log("Comments successfully disabled on prior posts.", true);
-        return true; // Return true to indicate success
-    }
-} else write_log("Warning: disable_comments_on_prior_posts function is already declared", true);
 
 
 // Check if Users Must Be Registered to Comment
@@ -513,19 +564,8 @@ if (!function_exists('are_comments_disabled_for_future_posts')) {
         return $default_comment_status === 'closed';
     }
 } else write_log("Warning: are_comments_disabled_for_future_posts function is already declared", true);
+*/
 
-
-// Toggle Comments for Future Posts
-if (!function_exists('toggle_comments_for_future_posts')) {
-    function toggle_comments_for_future_posts($action) {
-        if ($action === 'disable') {
-            update_option('default_comment_status', 'closed'); // Disable comments for future posts
-        } else if ($action === 'enable') {
-            update_option('default_comment_status', 'open'); // Enable comments for future posts
-        }
-        return true; // Return true to indicate success
-    }
-} else write_log("Warning: toggle_comments_for_future_posts function is already declared", true);
 
 // Toggle Users Must Be Registered to Comment
 if (!function_exists('toggle_users_must_be_registered_to_comment')) {
@@ -540,6 +580,7 @@ if (!function_exists('toggle_users_must_be_registered_to_comment')) {
 } else write_log("Warning: toggle_users_must_be_registered_to_comment function is already declared", true);
 
 
+/*
 if (!function_exists('perform_comments_system_check')) {
     function perform_comments_system_check() {
         // Step 1: Perform the checks and get values
@@ -563,45 +604,44 @@ if (!function_exists('perform_comments_system_check')) {
         // Approved comments (no condition to make this red)
         $report .= "Approved Comments: $approved_comments<br>";
 
-        // Pending comments, red if pending
-        $report .= ($pending_comments > 0 
-                    ? "<span style='color:red;'>Pending Comments: $pending_comments</span>
-                       <button class='button modify-snippet-via-button block' data-action='delete_pending_comments' data-loader='true'>Delete Pending Comments</button>"
-                    : "Pending Comments: $pending_comments<br>");
+// Pending comments, red if pending
+$report .= ($pending_comments > 0 
+            ? "<span style='color:red;'>Pending Comments: $pending_comments</span>
+               <button class='button execute-function block' data-method='delete_pending_comments' data-loader='true'>Delete Pending Comments</button>"
+            : "Pending Comments: $pending_comments<br>");
 
-        // Spam comments, red if spam exists
-        $report .= ($spam_comments > 0 
-                    ? "<span style='color:red;'>Spam Comments: $spam_comments</span>
-                       <button class='button modify-snippet-via-button block' data-action='delete_spam_comments' data-loader='true'>Delete Spam Comments</button>"
-                    : "Spam Comments: $spam_comments<br>");
+// Spam comments, red if spam exists
+$report .= ($spam_comments > 0 
+            ? "<span style='color:red;'>Spam Comments: $spam_comments</span>
+               <button class='button execute-function block' data-method='delete_spam_comments' data-loader='true'>Delete Spam Comments</button>"
+            : "Spam Comments: $spam_comments<br>");
 
-        // Total comments (no condition to make this red)
-        $report .= "Total Comments: $total_comments
-                    <button class='button modify-snippet-via-button block' data-action='delete_all_comments' data-loader='true'>Delete All Comments</button>";
+// Total comments (no condition to make this red)
+$report .= "Total Comments: $total_comments
+            <button class='button execute-function block' data-method='delete_all_comments' data-loader='true'>Delete All Comments</button>";
 
-        // Comments Disabled for Future Posts, red if false
-        $report .= ($future_comments_status === 'false' 
-                    ? "<span style='color:red;'>Comments Disabled for Future Posts: false</span>
-                       <button class='button execute-function block' data-action='enable_comments_future' data-loader='true'>Enable Comments on Future Posts</button>"
-                    : "Comments Disabled for Future Posts: true
-                       <button class='button modify-snippet-via-button block' data-action='disable_comments_future' data-loader='true'>Disable Comments on Future Posts</button>");
+// Comments Disabled for Future Posts, red if false
+$report .= ($future_comments_status === 'false' 
+            ? "<span style='color:red;'>Comments Disabled for Future Posts: false</span>
+               <button class='button execute-function block' data-method='enable_comments_future' data-loader='true'>Enable Comments on Future Posts</button>"
+            : "Comments Disabled for Future Posts: true
+               <button class='button execute-function block' data-method='disable_comments_future' data-loader='true'>Disable Comments on Future Posts</button>");
 
-        // Comments Disabled for Prior Posts, red if false
-        $report .= ($prior_comments_status === 'false' 
-                    ? "<span style='color:red;'>Comments Disabled for Prior Posts: false</span>
-                       <button class='button execute-function block' data-action='disable_comments_prior' data-loader='true'>Disable Comments on Prior Posts</button>"
-                    : "Comments Disabled for Prior Posts: true
-                       <button class='button modify-snippet-via-button block' data-action='enable_comments_prior' data-loader='true'>Enable Comments on Prior Posts</button>");
+// Comments Disabled for Prior Posts, red if false
+$report .= ($prior_comments_status === 'false' 
+            ? "<span style='color:red;'>Comments Disabled for Prior Posts: false</span>
+               <button class='button execute-function block' data-method='disable_comments_prior' data-loader='true'>Disable Comments on Prior Posts</button>"
+            : "Comments Disabled for Prior Posts: true
+               <button class='button execute-function block' data-method='enable_comments_prior' data-loader='true'>Enable Comments on Prior Posts</button>");
 
-        // Users Must Be Registered to Comment, red if false
-        $report .= ($users_must_be_registered === 'false' 
-                    ? "<span style='color:red;'>Users Must Be Registered to Comment: false</span>
-                       <button class='button execute-function block' data-action='enable_user_registration' data-loader='true'>Require User Registration to Comment</button>"
-                    : "Users Must Be Registered to Comment: true
-                       <button class='button modify-snippet-via-button block' data-action='disable_user_registration' data-loader='true'>Disable User Registration for Comments</button>");
-
+// Users Must Be Registered to Comment, red if false
+$report .= ($users_must_be_registered === 'false' 
+            ? "<span style='color:red;'>Users Must Be Registered to Comment: false</span>
+               <button class='button execute-function block' data-method='enable_user_registration' data-loader='true'>Require User Registration to Comment</button>"
+            : "Users Must Be Registered to Comment: true
+               <button class='button execute-function block' data-method='disable_user_registration' data-loader='true'>Disable User Registration for Comments</button>");
         // Step 5: Log the report (without the HTML tags for logging purposes)
-        write_log(strip_tags($report), true);
+        write_log(strip_tags($report), false);
 
         // Step 6: Return an array with the report, variables, and the overall status
         return [
@@ -616,4 +656,6 @@ if (!function_exists('perform_comments_system_check')) {
             ]
         ];
     }
-} else write_log("Warning: perform_comments_system_check function is already declared", true);?>
+} else write_log("Warning: perform_comments_system_check function is already declared", true);
+*/
+
