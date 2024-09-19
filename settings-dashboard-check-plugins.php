@@ -20,7 +20,7 @@ use function hws_base_tools\check_wordpress_memory_limit;
 use function hws_base_tools\check_server_memory_limit;
 use function hws_base_tools\check_server_specs;
 
-function hws_ct_display_settings_check_plugins() {
+function display_settings_check_plugins() {
    // Get the last time WordPress checked for plugin updates
    $update_plugins = get_site_transient('update_plugins');
    $last_checked_timestamp = isset($update_plugins->last_checked) ? $update_plugins->last_checked : false;

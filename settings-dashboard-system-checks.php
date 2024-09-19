@@ -31,14 +31,15 @@ add_action('wp_ajax_modify_wp_config_constants', 'hws_base_tools\modify_wp_confi
 
 function hws_ct_get_settings_system_checks()
 {
-
+   
     $system_checks = [
+        /*
         'WordPress Comments' => [
     'id' => 'wp-comments',
     'value' => hws_ct_highlight_based_on_criteria(
         perform_comments_system_check() // Calls the function that checks the comment statuses
     ),
-],
+],*/
 
         'WordPress Admin Email' => [
             'id' => 'wp-main-email',
@@ -265,7 +266,7 @@ function hws_ct_get_settings_system_checks()
           
             */
 
-function hws_ct_display_settings_system_checks()
+function display_settings_system_checks()
 {
 
     ?>

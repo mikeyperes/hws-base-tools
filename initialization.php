@@ -4,14 +4,12 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.9
+Version: 3.6.9.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
 */          
 namespace hws_base_tools ;
-
-
 
 // Generic functions import 
 include_once("generic-functions.php");
@@ -21,24 +19,6 @@ use function hws_base_tools\check_plugin_status;
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Define global variables
 global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
@@ -55,23 +35,13 @@ $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
 
-
-
-
-
-
-
-
-
-
-
-
-
 // Include the GitHub Updater class
 include_once("GitHub_Updater.php");
 
 // Use the WP_GitHub_Updater class
 use hws_base_tools\WP_GitHub_Updater;
+
+
 
 // Initialize the updater
 if (is_admin()) { // Ensure this runs only in the admin area
@@ -121,20 +91,6 @@ if (is_admin()) { // Ensure this runs only in the admin area
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Array of plugins to check
 $plugins_to_check = [
     'advanced-custom-fields/acf.php',
@@ -166,12 +122,27 @@ function hws_ct_get_settings_snippets()
 {
     $settings_snippets = [
         [
+            'id' => 'enable_comments_management',
+            'name' => 'Enable Comments Functionality',
+            'description' => '',
+            'info' => '',
+            'function' => 'enable_comments_management'
+        ],
+        [
+            'id' => 'enable_custom_rss_functionality',
+            'name' => 'Enable Custom RSS Functionality',
+            'description' => 'Enable the custom RSS feed functionality based on registered post types and categories.',
+            'info' => 'Once this is selected, custom RSS feeds will be generated for the specified post types and categories defined in the ACF settings.',
+            'function' => 'enable_custom_rss_functionality'
+        ],
+        /*
+        [
             'id' => 'disable_wordpress_comments_forward',
             'name' => 'Disable WordPress Comments',
             'description' => 'Disable comments for all new posts and pages. This does not affect previously created content.',
             'info' => 'Once this is selected, all new posts and pages will have comments disabled by default. To disable comments on existing posts and pages, please use the appropriate setting in the options.',
             'function' => 'disable_wordpress_comments_forward'
-        ],
+        ],*/
         [
             'id' => 'disable_rankmath_sitemap_caching',
             'name' => 'Disable RankMath Sitemap Caching',
@@ -255,14 +226,15 @@ function hws_ct_get_settings_snippets()
     return $settings_snippets;
 }
 
-// add snippets
-include_once("snippet-smp-display-ads.php");
+
+// Hook to acf/init to ensure ACF is initialized before running any ACF-related code
+add_action('acf/init', function() {
+
+
 // Import ACF Fields
 include_once("register-acf-fields-user.php");
- 
-
-// Build Dashboard
-include_once("activate-snippets.php");
+include_once("register-acf-fields-rss.php");
+//register_acf_rss();
 
 
 // Build Dashboard
@@ -278,3 +250,13 @@ include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
 // Set up event handling (click listeners and handlers)
 include_once("settings-event-handling.php");
+
+
+// add snippets
+include_once("snippet-smp-display-ads.php");
+include_once("snippet-rss.php");
+include_once("snippet-comments.php");
+
+// Build Dashboard
+include_once("activate-snippets.php");
+});

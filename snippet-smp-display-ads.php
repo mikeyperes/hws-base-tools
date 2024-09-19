@@ -1,9 +1,7 @@
 <?php namespace hws_base_tools;
 
-
-
 function smp_add_adpushup_script_to_head2() {
-    write_log('✅ Function smp_add_adpushup_script_to_head is called.', true);  // Add this for debugging
+    write_log('✅ Function smp_add_adpushup_script_to_head is called.', false);  // Add this for debugging
     
       // Since 'account_ad_code' is within the 'ad_codes' group, access it like this:
       $ad_codes = get_field('ad_codes', 'option'); // Retrieve the group field
@@ -14,8 +12,7 @@ function smp_add_adpushup_script_to_head2() {
         write_log('🚨 Error: Ad account code not set in ACF fields.', true);
         return;
     }*/
-    write_log('✅ DONE', true);  // Add this for debugging
-
+  
     // Use wp_add_inline_script to add the script in the head
     wp_add_inline_script('jquery', "
         (function(w, d) {
@@ -34,12 +31,12 @@ function smp_add_adpushup_script_to_head2() {
 
 
 function smp_add_adpushup_script_to_head() {
-    write_log('✅ Function smp_add_adpushup_script_to_head is called.', true);  // Add this for debugging
+    write_log('✅ Function smp_add_adpushup_script_to_head is called.', false);  // Add this for debugging
     
     $ad_account_code = get_field('account_ad_code', 'option');
     
     if (!$ad_account_code) {
-        write_log('🚨 Error: Ad account code not set in ACF fields.', true);
+        write_log('🚨 Error: Ad account code not set in ACF fields.',false);
         return;
     }
 

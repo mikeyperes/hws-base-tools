@@ -4,7 +4,7 @@ use function hws_base_tools\is_theme_auto_update_enabled;
 
 
  
-function hws_ct_display_settings_theme_checks() { ?>
+function display_settings_theme_checks() { ?>
     <!-- Theme Status Panel -->
     <div class="panel">
         <h2 class="panel-title">Theme Checks</h2>

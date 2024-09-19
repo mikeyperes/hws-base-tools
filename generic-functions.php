@@ -364,19 +364,13 @@ if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
                 $log_value = $constant_value;
             }
 
-            // Log the constant value
-            write_log("XXXXX: ".$constant_name.":".$log_value, true);
-
+    
             // Return 'true' or 'false' if the constant is a boolean, otherwise return its value
             return $log_value;
-        } else {
-            write_log("XXXXX: ".$constant_name." is undefined", true);
-            return 'undefined';
-        }
+        } else return 'undefined';  
     }
-} else {
-    write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
-}
+} else write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
+
 
 
 if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
@@ -1438,65 +1432,11 @@ if (!function_exists('hws_base_tools\disable_rankmath_sitemap_caching')) {
 
 
 
-if (!function_exists('hws_base_tools\toggle_wordpress_comments')) {
-    function toggle_wordpress_comments($state) {
-        if (!is_string($state)) {
-            write_log("Invalid state type passed: Expected string, received " . gettype($state), true);
-            return false;  // Return early if state is not a valid string
-        }
-
-        write_log("Entered toggle_wordpress_comments with state: $state", true);
-
-        // Determine the comment status based on the state
-        $comment_status = ($state === 'enable') ? 'open' : 'closed';
-        $ping_status = ($state === 'enable') ? 'open' : 'closed';
-
-        // Log the comment and ping status that will be applied
-        write_log("Setting future comment_status: $comment_status, ping_status: $ping_status", true);
-
-        // Update the option for default comment status for future posts
-        update_option('default_comment_status', $comment_status);
-        update_option('default_ping_status', $ping_status);
-
-        // Log the update to default comment and ping status for future posts
-       // write_log("Updated default_comment_status to: " . get_option('default_comment_status'), true);
-     //   write_log("Updated default_ping_status to: " . get_option('default_ping_status'), true);
-
-        // Toggle comments for prior posts
-        $posts = get_posts([
-            'post_status' => 'publish',
-            'numberposts' => -1 // Fetch all posts
-        ]);
-
-        write_log("Found " . count($posts) . " posts to update.", true);
-
-        if (!empty($posts)) {
-            foreach ($posts as $post) {
-                wp_update_post([
-                    'ID' => $post->ID,
-                    'comment_status' => $comment_status,
-                    'ping_status' => $ping_status
-                ]);
-            //    write_log("Updated post ID {$post->ID} with comment_status: $comment_status, ping_status: $ping_status", true);
-            }
-       //     write_log("Comments successfully {$state}d on prior posts.", true);
-        } else {
-       //     write_log("No published posts found to {$state} comments.", true);
-        }
-
-        return true; // Return true to indicate success
-    }
-} else {
-    write_log("Warning: toggle_wordpress_comments function is already declared", true);
-}
-
-
-
 
 
 
 // Function to perform the PHP INI check and return the result
-function perform_php_ini_check($setting_name, $on_values = [1, '1', 'On', 'on', true], $off_values = [0, '0', 'Off', 'off', false], $fail_criteria = []) {
+function perform_php_ini_check($setting_name, $on_values = [1, '1', 'On', 'on', true,"true"], $off_values = [0, '0', 'Off', 'off', false,"false"], $fail_criteria = []) {
     write_log("Performing PHP INI check for $setting_name", false);
 
     // Use the helper function to get the ini value or constant
@@ -1569,7 +1509,7 @@ function get_php_ini_value($setting_name) {
     $value = ini_get($setting_name);
 
     // Log the value from ini_get
-    write_log("ini_get value for $setting_name: " . var_export($value, true), true);
+   // write_log("ini_get value for $setting_name: " . var_export($value, true), true);
 
     // Step 2: Try reading wp-config.php for ini_set() overrides
     $wp_config_path = ABSPATH . 'wp-config.php';
@@ -1580,7 +1520,7 @@ function get_php_ini_value($setting_name) {
         $pattern = "/ini_set\(\s*['\"]{$setting_name}['\"]\s*,\s*['\"](.*?)['\"]\s*\);/";
         if (preg_match($pattern, $config_content, $matches)) {
             $value = $matches[1]; // Override the value with what's found in wp-config.php
-            write_log("Overriding ini_get with value from wp-config.php for $setting_name: " . var_export($value, true), true);
+            write_log("Overriding ini_get with value from wp-config.php for $setting_name: " . var_export($value, true), false);
         }
     }
 
@@ -1588,232 +1528,7 @@ function get_php_ini_value($setting_name) {
 }
 
 
-function perform_comments_system_check() {
-    write_log("Performing comments system check", false);
 
-    // Check the status of future comments and pingbacks (via the default comment status)
-    $future_comments_status = (get_option('default_comment_status') === 'closed') ? 'DISABLED' : 'ENABLED';
-    $future_pingbacks_status = (get_option('default_ping_status') === 'closed') ? 'DISABLED' : 'ENABLED';
-    write_log("Future posts - comment status: $future_comments_status, pingback status: $future_pingbacks_status", false);
-
-    // Check the status of prior comments and pingbacks (checking all posts)
-    $prior_comments_disabled = true;
-    $prior_pingbacks_disabled = true;
-    $posts = get_posts([
-        'post_status' => 'publish',
-        'numberposts' => -1 // Fetch all posts
-    ]);
-    write_log("Found " . count($posts) . " posts for prior comments/pingbacks status check.",  false);
-
-    foreach ($posts as $post) {
-        write_log("Checking post ID {$post->ID} for comments and pingbacks.", false);
-        if ($post->comment_status !== 'closed') {
-            $prior_comments_disabled = false;
-            write_log("Post ID {$post->ID} has comments enabled", false);
-        }
-        if ($post->ping_status !== 'closed') {
-            $prior_pingbacks_disabled = false;
-            write_log("Post ID {$post->ID} has pingbacks enabled", false);
-        }
-        if (!$prior_comments_disabled && !$prior_pingbacks_disabled) {
-            write_log("Comments and pingbacks are enabled on at least one post. Stopping further checks.", false);
-            break; // Stop checking once we know both are enabled
-        }
-    }
-
-    $prior_comments_status = $prior_comments_disabled ? 'DISABLED' : 'ENABLED';
-    $prior_pingbacks_status = $prior_pingbacks_disabled ? 'DISABLED' : 'ENABLED';
-    write_log("Prior posts - comment status: $prior_comments_status, pingback status: $prior_pingbacks_status",  false);
-
-    // Check if users must be registered to comment
-    $users_must_be_registered = check_users_must_be_registered_to_comment() ? 'REQUIRED' : 'NOT REQUIRED';
-    write_log("Users must be registered to comment: $users_must_be_registered", false);
-
-    // Check if comments are allowed on new posts (Allow people to submit comments on new posts)
-    $comments_allowed_on_new_posts = (get_option('default_comment_status') === 'open') ? 'ALLOWED' : 'NOT ALLOWED';
-    write_log("Comments allowed on new posts: $comments_allowed_on_new_posts", false);
-
-    // Get the number of approved, pending, total, and spam comments
-    $approved_comments = get_comments(['status' => 'approve', 'count' => true]);
-    $pending_comments = get_comments(['status' => 'hold', 'count' => true]);
-    $spam_comments = get_comments(['status' => 'spam', 'count' => true]);
-    $total_comments = wp_count_comments()->total_comments;
-    write_log("Approved: $approved_comments, Pending: $pending_comments, Spam: $spam_comments, Total: $total_comments",false);
-
-    // Determine the status for highlighting (fail if there are pending, spam, or approved comments)
-    $status = ($approved_comments > 0 || $pending_comments > 0 || $spam_comments > 0) ? 'fail' : 'pass';
-
-    // Generate the report and determine the overall constraint status
-    $overall_status = ($prior_comments_status === 'DISABLED' && $future_comments_status === 'DISABLED') ? 'true' : 'false';
-    write_log("Overall comments system check status: $overall_status", false);
-
-    // Report for prior posts
-    $report = "<br />-----<br /><strong>Prior Posts Comments Status:</strong> " . ($prior_comments_status === 'DISABLED' 
-        ? "<span>DISABLED</span><br>" 
-        : "<span style='color:red;'>ENABLED</span><br>");
-    $report .= "<strong>Prior Posts Pingbacks Status:</strong> " . ($prior_pingbacks_status === 'DISABLED' 
-        ? "<span>DISABLED</span><br>" 
-        : "<span style='color:red;'>ENABLED</span><br>");
-    $report .= ($prior_comments_status === 'DISABLED'
-        ? "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='enable' data-loader='true'>Enable Comments on Prior Posts</button><br>"
-        : "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='disable' data-loader='true'>Disable Comments on Prior Posts</button><br>");
-
-    // Report for future posts
-    $report .= "<strong>Future Posts Comments Status:</strong> " . ($future_comments_status === 'DISABLED'
-        ? "<span>DISABLED</span><br>"
-        : "<span style='color:red;'>ENABLED</span><br>");
-    $report .= "<strong>Future Posts Pingbacks Status:</strong> " . ($future_pingbacks_status === 'DISABLED'
-        ? "<span>DISABLED</span><br>"
-        : "<span style='color:red;'>ENABLED</span><br>");
-    $report .= ($future_comments_status === 'DISABLED'
-        ? "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='enable' data-loader='true'>Enable Comments on Future Posts</button><br>"
-        : "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='disable' data-loader='true'>Disable Comments on Future Posts</button><br>");
-
-    // Report for user registration requirement to comment
-    $report .= "<strong>Users Must Be Registered to Comment:</strong> " . ($users_must_be_registered === 'REQUIRED'
-        ? "<span>REQUIRED</span><br>"
-        : "<span style='color:red;'>NOT REQUIRED</span><br>");
-    $report .= ($users_must_be_registered === 'REQUIRED'
-        ? "<button class='button execute-function block' data-method='toggle_user_registration_requirement' data-state='disable' data-loader='true'>Disable User Registration Requirement</button><br>"
-        : "<button class='button execute-function block' data-method='toggle_user_registration_requirement' data-state='enable' data-loader='true'>Require User Registration to Comment</button><br>");
-
-    // Report for allowing people to submit comments on new posts
-    $report .= "<strong>Allow People to Submit Comments on New Posts:</strong> " . ($comments_allowed_on_new_posts === 'ALLOWED'
-        ? "<span style='color:red;'>ALLOWED</span><br>"
-        : "<span>NOT ALLOWED</span><br>");
-    $report .= ($comments_allowed_on_new_posts === 'ALLOWED'
-        ? "<button class='button execute-function block' data-method='toggle_comments_allowed_on_new_posts' data-state='disable' data-loader='true'>Disallow Comments on New Posts</button><br>"
-        : "<button class='button execute-function block' data-method='toggle_comments_allowed_on_new_posts' data-state='enable' data-loader='true'>Allow Comments on New Posts</button><br>");
-
-    // Add pending and spam comment sections with delete buttons
-    $report .= "<strong>Pending Comments:</strong> " . ($pending_comments > 0 
-        ? "<span style='color:red;'>$pending_comments</span>
-           <button class='button execute-function block' data-method='delete_pending_comments' data-loader='true'>Delete Pending Comments</button><br>"
-        : "$pending_comments (none)<br>");
-    $report .= "<strong>Spam Comments:</strong> " . ($spam_comments > 0
-        ? "<span style='color:red;'>$spam_comments</span>
-           <button class='button execute-function block' data-method='delete_spam_comments' data-loader='true'>Delete Spam Comments</button><br>"
-        : "$spam_comments (none)<br>");
-    
-    // Add total comments section
-    $report .= "<strong>Total Comments:</strong> $total_comments<br>-----";
-
-    // Log the report without HTML tags for clarity
-    write_log(strip_tags($report), false);
-
-    // Return the final report and status
-    return [
-        'function' => 'perform_comments_system_check',
-        'status' => $overall_status, // If both prior and future comments are disabled, it is 'true', otherwise 'false'
-        'raw_value' => $report, // The full report with HTML formatting for buttons
-        'variables' => [
-            'future_comments_status' => $future_comments_status,
-            'future_pingbacks_status' => $future_pingbacks_status,
-            'prior_comments_status' => $prior_comments_status,
-            'prior_pingbacks_status' => $prior_pingbacks_status,
-            'users_must_be_registered' => $users_must_be_registered,
-            'comments_allowed_on_new_posts' => $comments_allowed_on_new_posts,
-            'pending_comments' => $pending_comments,
-            'spam_comments' => $spam_comments,
-            'total_comments' => $total_comments
-        ]
-    ];
-}
-
-
-
-if (!function_exists('check_users_must_be_registered_to_comment')) {
-    function check_users_must_be_registered_to_comment() {
-        return get_option('comment_registration') ? true : false;
-    }
-} else write_log("Warning: check_users_must_be_registered_to_comment function is already declared", true);
-
-if (!function_exists('toggle_user_registration_requirement')) {
-    function toggle_user_registration_requirement($state) {
-        $new_value = ($state === 'enable') ? 1 : 0;
-        update_option('comment_registration', $new_value);
-        return true;
-    }
-} else write_log("Warning: toggle_user_registration_requirement function is already declared", true);
-
-if (!function_exists('toggle_comments_allowed_on_new_posts')) {
-    function toggle_comments_allowed_on_new_posts($state) {
-        $new_value = ($state === 'enable') ? 'open' : 'closed';
-        update_option('default_comment_status', $new_value);
-        return true;
-    }
-} else write_log("Warning: toggle_comments_allowed_on_new_posts function is already declared", true);
-
-
-
-
-
-
-
-// Function to delete pending comments
-if (!function_exists('hws_base_tools\delete_pending_comments')) {
-    function delete_pending_comments() {
-        $pending_comments = get_comments(['status' => 'hold']);
-        foreach ($pending_comments as $comment) {
-            wp_delete_comment($comment->comment_ID, true);
-        }
-        
-        // Check if all pending comments are deleted
-        $remaining_pending = get_comments(['status' => 'hold', 'count' => true]);
-        $status = $remaining_pending > 0 ? false : true;
-        $raw_value = $status ? 'true' : 'false';
-
-        return [
-            'function' => 'delete_pending_comments',
-            'status' => $status,
-            'raw_value' => $raw_value
-        ];
-    }
-} else write_log("Warning: delete_pending_comments function is already declared", true);
-
-
-// Function to delete spam comments
-if (!function_exists('hws_base_tools\delete_spam_comments')) {
-    function delete_spam_comments() {
-        $spam_comments = get_comments(['status' => 'spam']);
-        foreach ($spam_comments as $comment) {
-            wp_delete_comment($comment->comment_ID, true);
-        }
-
-        // Check if all spam comments are deleted
-        $remaining_spam = get_comments(['status' => 'spam', 'count' => true]);
-        $status = $remaining_spam > 0 ? false : true;
-        $raw_value = $status ? 'true' : 'false';
-
-        return [
-            'function' => 'delete_spam_comments',
-            'status' => $status,
-            'raw_value' => $raw_value
-        ];
-    }
-} else write_log("Warning: delete_spam_comments function is already declared", true);
-
-
-// Function to delete all comments
-if (!function_exists('hws_base_tools\delete_all_comments')) {
-    function delete_all_comments() {
-        $all_comments = get_comments(['status' => 'all']);
-        foreach ($all_comments as $comment) {
-            wp_delete_comment($comment->comment_ID, true);
-        }
-
-        // Check if all comments are deleted
-        $remaining_comments = wp_count_comments()->total_comments;
-        $status = $remaining_comments > 0 ? false : true;
-        $raw_value = $status ? 'true' : 'false';
-
-        return [
-            'function' => 'delete_all_comments',
-            'status' => $status,
-            'raw_value' => $raw_value
-        ];
-    }
-} else write_log("Warning: delete_all_comments function is already declared", true);
 
 
 
@@ -1866,58 +1581,4 @@ if (!function_exists('hws_base_tools\toggle_php_ini_value')) {
     }
 } else {
     write_log("Warning: hws_base_tools\toggle_php_ini_value is already declared.", true);
-}
-
-
-
-
-
-/* AJAX LISTENERS AND HANDLERS */ 
-
- 
-    
-    
-add_action('wp_ajax_execute_function', 'hws_base_tools\handle_execute_function_ajax');
-add_action('wp_ajax_nopriv_execute_function', 'hws_base_tools\handle_execute_function_ajax');  // For non-logged in users (optional)
-function handle_execute_function_ajax() {
-    write_log("entered handle_execute_function_ajax", true);
-
-    // Verify if the method parameter is passed and is not empty
-    if (isset($_POST['method']) && !empty($_POST['method'])) {
-        $method_name = sanitize_text_field($_POST['method']);
-        write_log("Method name passed: " . $method_name, false);
-
-        // Determine the correct namespace
-        $namespace = 'hws_base_tools';
-        $fully_qualified_function_name = $namespace . '\\' . $method_name;
-
-  
-        // Get the state if passed
-        $state = isset($_POST['state']) ? sanitize_text_field($_POST['state']) : null;
-        $setting = isset($_POST['setting']) ? sanitize_text_field($_POST['setting']) : null;
-
-        if ($state !== null && $setting !== null) {
-            write_log("State passed: " . $state . " Setting passed: " . $setting, false);  // Log the state and setting to confirm
-        } else {
-            write_log("No state or setting provided in the request, exiting.", false);
-            wp_send_json_error('No state or setting provided.');
-            wp_die();
-        }
-
-        // Check if the function exists with the namespace
-        if (function_exists($fully_qualified_function_name)) {
-            // Execute the function with both the setting and state
-            $response = call_user_func($fully_qualified_function_name, $setting, $state);
-
-            // Send a success response with the result of the function execution
-            wp_send_json_success($response);
-        } else {
-            write_log("The function does not exist: " . $fully_qualified_function_name, true);
-            wp_send_json_error('The function does not exist.');
-        }
-    } else {
-        wp_send_json_error('No method name provided.');
-    }
-
-    wp_die();  // This is required to properly terminate the script when doing AJAX in WordPress
 }

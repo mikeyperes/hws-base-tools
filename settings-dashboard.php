@@ -1,31 +1,27 @@
 <?php namespace hws_base_tools;
-
-  
+ 
 if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
     function hws_ct_highlight_if_essential_setting_failed($result) {
         return $result['status'] ? $result['details'] : '<span style="color: red;">' . $result['details'] . '</span>';
     }
 }
 
- 
- 
-
 // Abstract function to add a settings menu and page
-function hws_ct_add_wp_admin_settings_page() {
+function add_wp_admin_settings_page() {
     hws_add_wp_admin_settings_page(
         'Hexa Core Tools',       // Page title
         'Hexa Core Tools',       // Menu title
         'manage_options',        // Capability
         'hws-core-tools',        // Menu slug
-        'hws_base_tools\hws_ct_display_wp_admin_settings_page'    // Callback function
+        'hws_base_tools\display_wp_admin_settings_page'    // Callback function
     );
 }
 
 // Add settings menu and page
-add_action('admin_menu', 'hws_base_tools\hws_ct_add_wp_admin_settings_page');
+add_action('admin_menu', 'hws_base_tools\add_wp_admin_settings_page');
 
 
-function hws_ct_display_wp_admin_settings_page() {
+function display_wp_admin_settings_page() {
     
     if (ob_get_level() == 0) ob_start();
     
@@ -94,11 +90,9 @@ function hws_ct_display_wp_admin_settings_page() {
     border-radius: 5px;
     transition: background-color 0.3s ease;
 }
-
 .wp-config-toggle:hover {
     background-color: #bfdbfe;
 }
-
 .wp-config-content {
     display: none;
     margin-top: 15px;
@@ -107,7 +101,6 @@ function hws_ct_display_wp_admin_settings_page() {
     border: 1px solid #d1d5db;
     border-radius: 8px;
 }
-
 .wp-config-content ul {
     list-style: none;
     padding-left: 0;
@@ -147,22 +140,19 @@ pre {
 .button:hover {
     background-color: #2563eb;
 }
+</style>
 
-
-    </style>
-
-    <div class="wrap">
-        <h1>Hexa Core Tools - WP-Config Settings</h1>
-
-<?php hws_ct_display_settings_system_checks();?>
-<?php hws_ct_display_settings_check_plugins();?>
-<?php hws_ct_display_settings_theme_checks();?>
+<div class="wrap">
+<h1>Hexa Core Tools - WP-Config Settings</h1>
+<?php display_settings_system_checks();?>
+<?php display_settings_check_plugins();?>
+<?php display_settings_theme_checks();?>
 <?php hws_ct_display_settings_snippets();?>
 <?php hws_ct_display_settings_wp_config();?>
 <?php //hws_ct_display_settings_php_ini();?>
+<?php if(get_option('enable_custom_rss_functionality', false)) display_settings_rss_dashboard();?>
+<?php if(get_option('enable_comments_management', false)) display_settings_comments_dashboard();?>
 <?php hws_ct_display_plugin_info();?>
-
-
 <?php
   // Get the buffer contents and clean (erase) the output buffer
   if (ob_get_level() != 0) echo ob_get_clean();
