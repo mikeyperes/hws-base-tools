@@ -156,7 +156,13 @@ function perform_comments_system_check() {
 
  // Add total comments section
  $report .= "<strong>Total Comments:</strong> $total_comments<br>-----";
- 
+ $report .= ($total_comments > 0
+ ? "<span>$total_comments</span>
+    <button class='button execute-function block' data-method='delete_all_comments' data-loader='true'>Delete All Comments</button><br>"
+ : "$total_comments (none)<br>");
+
+
+
     // Log and return the final report
     write_log(strip_tags($report), false);
     return [
