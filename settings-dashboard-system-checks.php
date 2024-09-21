@@ -117,7 +117,7 @@ function hws_ct_get_settings_system_checks()
         'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('LSCWP_OBJECT_CACHE', check_wp_config_constant_status('LSCWP_OBJECT_CACHE'), ['listed_values' => ['false', false]]))
 
 ],
-'display_errors State 222' => [
+'display_errors State' => [
     'id' => 'display-errors',
     'value' => hws_ct_highlight_based_on_criteria(
             perform_php_ini_check('display_errors',  // Call perform_php_ini_check to get the current status
@@ -315,10 +315,17 @@ if ($wp_cache_status === 'true' || $wp_cache_status === true): ?>
 
 
 
-                
-                <?php if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
+               
+                <?php /* if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
                     <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="true" data-target="wp-auto-updates">Enable Auto Updates</button>
-                <?php endif; ?>
+                    <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="false" data-target="wp-auto-updates">Disable Auto Updates</button>
+                <?php endif */ ?>
+
+                <?php if ($setting['id'] === 'wp-auto-updates' && !check_wp_core_auto_update_status()): ?>
+    <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="true" data-target="wp-auto-updates">Enable Auto Updates</button>
+<?php elseif ($setting['id'] === 'wp-auto-updates' && check_wp_core_auto_update_status()): ?>
+    <button class="button modify-wp-config" data-constant="WP_AUTO_UPDATE_CORE" data-value="false" data-target="wp-auto-updates">Disable Auto Updates</button>
+<?php endif; ?>
                 
             
                 <?php if ($setting['id'] === 'plugin-auto-updates'): ?>
@@ -328,6 +335,14 @@ if ($wp_cache_status === 'true' || $wp_cache_status === true): ?>
         <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_plugins" data-action="disable">Disable Plugin Auto Updates</button>
     <?php endif; ?>
 <?php endif; ?>
+
+<?php if ($setting['id'] === 'wf-email'):
+    $wordfence_url = admin_url('admin.php?page=WordfenceOptions'); 
+?>
+    <a target=_blank href="<?php echo esc_url($wordfence_url); ?>" class="button">Go to Wordfence Options</a>
+<?php endif; ?>
+
+
 
 <?php if ($setting['id'] === 'theme-auto-updates'): ?>
     <?php if (strpos($setting['value'], 'color: red') !== false): ?>

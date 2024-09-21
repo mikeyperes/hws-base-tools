@@ -185,23 +185,23 @@ function get_comment_support_status() {
     $post_types = get_post_types();
     $all_disabled = true; // Assume all post types have comments disabled initially
 
-    write_log("Checking comment support status for post types: " . implode(", ", $post_types), true); // Log all post types
+    write_log("Checking comment support status for post types: " . implode(", ", $post_types),false); // Log all post types
 
     foreach ($post_types as $post_type) {
         if (post_type_supports($post_type, 'comments')) {
             // Log which post type has comment support enabled
-            write_log("xxx: Comments are enabled for post type: " . $post_type, true);
+            write_log("xxx: Comments are enabled for post type: " . $post_type, false);
 
             // Return "ENABLED" as soon as we find one post type that supports comments
             return "<span style='color:red;'>ENABLED</span><br>";
         } else {
             // Log if comment support is not enabled for this post type
-            write_log("xxx: Comments are disabled for post type: " . $post_type, true);
+            write_log("xxx: Comments are disabled for post type: " . $post_type, false);
         }
     }
 
     // If we loop through all post types and none support comments, return "DISABLED"
-    write_log("No post types have comments enabled.", true);
+    write_log("No post types have comments enabled.", false);
     return "<span>DISABLED</span><br>";
 }
 
@@ -210,15 +210,15 @@ function get_comment_support_status() {
 
 function toggle_comment_support() {
     $post_types = get_post_types(['public' => true]); // Filter only public post types
-    write_log("Post types: " . implode(", ", $post_types), true);  // Log relevant post types
+    write_log("Post types: " . implode(", ", $post_types), false);  // Log relevant post types
 
     // Get current status from options table
-    $comments_enabled = get_option('comment_support_enabled', true);
+    $comments_enabled = get_option('comment_support_enabled',false);
 
     // Now toggle the support for comments based on the current state
     if ($comments_enabled) {
         foreach ($post_types as $post_type) {
-            write_log("Removing comments support from: " . $post_type, true);
+            write_log("Removing comments support from: " . $post_type, false);
             remove_post_type_support($post_type, 'comments');
         }
         update_option('comment_support_enabled', false); // Save the state
@@ -226,10 +226,10 @@ function toggle_comment_support() {
         return "Comments have been disabled for all public post types.";
     } else {
         foreach ($post_types as $post_type) {
-            write_log("Adding comments support to: " . $post_type, true);
+            write_log("Adding comments support to: " . $post_type, false);
             add_post_type_support($post_type, 'comments');
         }
-        update_option('comment_support_enabled', true); // Save the state
+        update_option('comment_support_enabled', false); // Save the state
         wp_cache_flush(); // Clear cache to apply changes
         return "Comments have been enabled for all public post types.";
     }

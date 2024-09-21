@@ -1400,7 +1400,7 @@ if (!function_exists('hws_base_tools\check_php_handler')) {
  
         // Return the status and details
         return [  
-            'status' => $status,
+            'status' => true,
             'raw_value' => $details
         ]; 
     }
@@ -1479,11 +1479,11 @@ function perform_php_ini_check($setting_name, $on_values = [1, '1', 'On', 'on', 
 
     // Create a toggle button for the setting
     $toggle_button = ($current_status === 'DISABLED')
-        ? "<button class='button execute-function block' data-method='toggle_php_ini_value' data-setting='$setting_name' data-state='1' data-loader='true'>Enable $setting_name</button><br>"
-        : "<button class='button execute-function block' data-method='toggle_php_ini_value' data-setting='$setting_name' data-state='0' data-loader='true'>Disable $setting_name</button><br>";
+        ? "<button class='button execute-function block' data-method='toggle_php_ini_value' data-variable='$setting_name' data-setting='$setting_name' data-state='1' data-loader='true'>Enable $setting_name</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_php_ini_value' data-variable='$setting_name' data-setting='$setting_name' data-state='0' data-loader='true'>Disable $setting_name</button><br>";
 
     // Generate the report with the current status, the actual value, and the toggle button
-    $report = "<br />-----<br /><strong>$setting_name Status:</strong> $status_display<br>$toggle_button";
+    $report = "$status_display<br>$toggle_button";
 
     // Return the final report and status
     return [
