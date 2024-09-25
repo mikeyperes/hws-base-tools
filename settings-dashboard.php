@@ -1,24 +1,20 @@
 <?php namespace hws_base_tools;
  
-if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
-    function hws_ct_highlight_if_essential_setting_failed($result) {
-        return $result['status'] ? $result['details'] : '<span style="color: red;">' . $result['details'] . '</span>';
-    }
-}
+
 
 // Abstract function to add a settings menu and page
 function add_wp_admin_settings_page() {
-    hws_add_wp_admin_settings_page(
-        'Hexa Core Tools',       // Page title
-        'Hexa Core Tools',       // Menu title
-        'manage_options',        // Capability
-        'hws-core-tools',        // Menu slug
-        'hws_base_tools\display_wp_admin_settings_page'    // Callback function
+    add_options_page(
+        Config::$settings_page_name,       // Page title
+        Config::$settings_page_name,       // Menu title
+        Config::$settings_page_capability,        // Capability
+        Config::$settings_page_slug,        // Menu slug
+        __NAMESPACE__ . '\\display_wp_admin_settings_page'    // Callback function
     );
 }
 
 // Add settings menu and page
-add_action('admin_menu', 'hws_base_tools\add_wp_admin_settings_page');
+add_action('admin_menu', __NAMESPACE__ . '\\add_wp_admin_settings_page');
 
 
 function display_wp_admin_settings_page() {
@@ -142,8 +138,8 @@ pre {
 }
 </style>
 
-<div class="wrap">
-<h1>Hexa Core Tools - WP-Config Settings</h1>
+<div class="wrap" id="hws-base-tools">
+<h1><?php echo Config::$settings_page_display_title;?></h1>
 <?php display_settings_system_checks();?>
 <?php display_settings_check_plugins();?>
 <?php display_settings_theme_checks();?>

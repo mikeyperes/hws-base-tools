@@ -154,39 +154,7 @@ foreach ($plugins as $plugin) {
 ?>
         </div>
     </div>
-    <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('#force-update-check').on('click', function() {
-            var $button = $(this);
-            $button.prop('disabled', true).text('Checking...');
 
-            $.post(
-                '<?= admin_url('admin-ajax.php') ?>', 
-                {
-                    action: 'hws_ct_force_update_check'
-                }, 
-                function(response) {
-                    var data = JSON.parse(response);
-                    $('#last-checked').text(data.last_checked);
-                    $('#plugins-with-updates').text(data.plugins_with_updates);
-
-                    // Update the plugins list
-                    var $pluginsList = $('#plugins-list');
-                    $pluginsList.empty();
-                    if (data.plugins_with_updates > 0) {
-                        $.each(data.plugins_list, function(index, pluginName) {
-                            $pluginsList.append('<li>' + pluginName + '</li>');
-                        });
-                    }
-
-                    $button.prop('disabled', false).text('Force WordPress to Check for Plugin Updates');
-                }
-            ).fail(function() {
-                $button.prop('disabled', false).text('Failed to Check');
-            });
-        });
-    });
-    </script>
 
 <?php }
 

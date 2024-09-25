@@ -1,4 +1,4 @@
-<?php
+<?php namespace hws_base_tools;
 /*
 Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
@@ -9,16 +9,22 @@ Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
 */          
-namespace hws_base_tools ;
-
-// Generic functions import 
-include_once("generic-functions.php");
-
-// Use function for easy access without namespace prefix
-use function hws_base_tools\check_plugin_status;
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
+
+
+
+class Config {
+    public static $settings_page_name = "HWS Base Tools";
+    public static $settings_page_capability = "manage_options";
+    public static $settings_page_slug = "hws-core-tools";
+    public static $settings_page_display_title = "Hexa Core Tools - WP-Config Settings";
+}
+
+
+// Generic functions import 
+include_once("generic-functions.php");
 
 // Define global variables
 global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
@@ -41,8 +47,6 @@ include_once("GitHub_Updater.php");
 // Use the WP_GitHub_Updater class
 use hws_base_tools\WP_GitHub_Updater;
 
-
-
 // Initialize the updater
 if (is_admin()) { // Ensure this runs only in the admin area
 
@@ -59,26 +63,12 @@ if (is_admin()) { // Ensure this runs only in the admin area
         'readme' => 'README.md', // Readme file for version checking
         'access_token' => '', // Access token if required
     );
-/*
-    $config = array(
-        'slug' => plugin_basename(__FILE__),
-        'proper_folder_name' => 'hws-base-tools',
-        'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
-        'raw_url' => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',
-        'github_url' => 'https://github.com/mikeyperes/hws-base-tools',
-        'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip',
-        'sslverify' => true,
-        'requires' => '5.0',
-        'tested' => '6.0',
-        'readme' => 'README.md',
-        'access_token' => '',
-    );
 
-*/
-    $updater = new WP_GitHub_Updater($config);
+   // $updater = new WP_GitHub_Updater($config);
 
     // Trigger an update check for debugging
-    add_action('init', function() {
+   /* add_action('init', function() {
+
         if (is_admin() && isset($_GET['force-update-check'])) {
             // Force WordPress to check for plugin updates
             wp_clean_update_cache();
@@ -89,6 +79,7 @@ if (is_admin()) { // Ensure this runs only in the admin area
             error_log('WP_GitHub_Updater: Forced plugin update check triggered.');
         }
     });
+    */
 }
 
 // Array of plugins to check
@@ -200,8 +191,8 @@ function hws_ct_get_settings_snippets()
         ],
         [
             'name' => 'Enable Author Social ACFs',
-            'id' => 'hws_ct_snippets_author_social_acfs',
-            'function' => 'hws_ct_snippets_activate_author_social_acfs',
+            'id' => 'register_user_custom_fields',
+            'function' => 'register_user_custom_fields',
             'description' => 'This will enable social media fields in author profiles.',
             'info' => implode('<br>', array_map(function($field) {
                 if ($field['type'] === 'group') {

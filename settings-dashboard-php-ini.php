@@ -73,12 +73,6 @@
         </div>
     </div>
 
-    <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('#php-ini-toggle').on('click', function() {
-                $('#php-ini-details').slideToggle();
-            });
-        });
-    </script>
+
     <?php
 }

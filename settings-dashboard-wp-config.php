@@ -126,45 +126,6 @@ $wp_debug_log = check_wp_config_constant_status('WP_DEBUG_LOG');
     <input type="checkbox" id="debug-log-toggle" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
 </div>
                 
-<script type="text/javascript">
-jQuery(document).ready(function($) {
-    $('#debug-toggle, #debug-display-toggle, #debug-log-toggle').on('change', function() {
-    var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
-    var value = $(this).is(':checked'); // This now keeps the value as a boolean
-    updateDebugSetting('WP_' + setting, value);
-});
-    function updateDebugSetting(setting, value) {
-    alert('Sending request to update ' + setting + ' to ' + (value ? 'true' : 'false'));
-    $.post(ajaxurl, {
-        action: 'modify_wp_config_constants',
-        constants: {
-            [setting]: value // Send the boolean directly
-        }
-    },
-    function(response) {
-        console.log('Raw AJAX Response:', response);
-
-        try {
-            var jsonResponse = JSON.parse(response);
-            var message = jsonResponse.data ? jsonResponse.data.message : 'No message received';
-
-            if (jsonResponse.success) {
-                alert(setting + ' set to ' + (value ? 'true' : 'false'));
-                location.reload();
-            } else {
-                alert('Failed to update ' + setting + ': ' + jsonResponse.data);
-            }
-        } catch (e) {
-            console.error('Response is not valid JSON:', response);
-            alert('Unexpected error: ' + response);
-        }
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-        console.error('AJAX Request Failed:', jqXHR, textStatus, errorThrown);
-    });
-}
-});
-</script>
 
                 
 
@@ -185,7 +146,7 @@ jQuery(document).ready(function($) {
         if (file_exists($log_file_path)) {
             // Use file_get_contents to read the file's last 100 lines
             $log_content = file($log_file_path);
-            $last_lines = array_slice($log_content, -100); // Get the last 100 lines
+            $last_lines = array_slice($log_content, -200); // Get the last 100 lines
             echo htmlspecialchars(implode("", $last_lines)); // Output the lines
         } else {
             echo "debug.log not found.";
@@ -203,26 +164,14 @@ jQuery(document).ready(function($) {
     <button class="button" id="delete-error-log">Delete</button>
     <pre id="error-log-content" style="display:none; background-color:#222;color:#ddd; padding:10px; border:1px solid #ccc; max-height:300px; overflow:auto;"><?php
         if (file_exists(ABSPATH . 'error_log')) {
-            echo htmlspecialchars(shell_exec("tail -n 200 " . ABSPATH . "error_log"));
+            echo htmlspecialchars(shell_exec("tail -n 300 " . ABSPATH . "error_log"));
         } else {
             echo "error_log not found.";
         }
     ?></pre>
 </div>
 
-<script type="text/javascript">
-jQuery(document).ready(function($) {
-    $('#toggle-debug-log').on('click', function() {
-        $('#debug-log-content').toggle();
-        $(this).text($(this).text() === 'View Last 100 Lines of debug.log' ? 'Hide Last 100 Lines of debug.log' : 'View Last 100 Lines of debug.log');
-    });
 
-    $('#toggle-error-log').on('click', function() {
-        $('#error-log-content').toggle();
-        $(this).text($(this).text() === 'View Last 100 Lines of error_log' ? 'Hide Last 100 Lines of error_log' : 'View Last 100 Lines of error_log');
-    });
-});
-</script>
 
 
      

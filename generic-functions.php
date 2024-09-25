@@ -1,7 +1,7 @@
 <?php namespace hws_base_tools;
 
 // Define the write_log function only if it isn't already defined
-if (!function_exists('hws_base_tools\write_log')) {
+if (!function_exists(__NAMESPACE__ . '\\write_log')) {
     function write_log($log, $full_debug = false) {
         if (WP_DEBUG && WP_DEBUG_LOG && $full_debug) {
             // Get the backtrace
@@ -16,13 +16,20 @@ if (!function_exists('hws_base_tools\write_log')) {
             
             // Prepare the log message
             $log_message = is_array($log) || is_object($log) ? print_r($log, true) : $log;
-            $log_message .= "\n[Called by: $caller]\n[In file: $caller_file at line $caller_line]";
+            $log_message .= "\n\n[Called by: $caller]\n[In file: $caller_file at line $caller_line]\n---";
             
             // Write to the log
             error_log($log_message);
         }
+    } 
+}
+
+if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
+    function hws_ct_highlight_if_essential_setting_failed($result) {
+        return $result['status'] ? $result['details'] : '<span style="color: red;">' . $result['details'] . '</span>';
     }
 }
+
 
 /**
  * Check if the given plugin is installed, active, and auto-update is enabled.
@@ -34,7 +41,11 @@ if (!function_exists('hws_base_tools\write_log')) {
  *               - Whether the plugin's auto-update is enabled
  */
  
- if (!function_exists('hws_base_tools\check_plugin_status')) {
+
+
+
+
+ if (!function_exists(__NAMESPACE__ . '\\check_plugin_status')) {
     function check_plugin_status($plugin_slug) {
         $is_installed = file_exists(WP_PLUGIN_DIR . '/' . $plugin_slug);
         $is_active = $is_installed && is_plugin_active($plugin_slug);
@@ -80,9 +91,7 @@ if (!function_exists('hws_base_tools\write_log')) {
 
         return [$is_installed, $is_active, $is_auto_update_enabled];
     }
-} else {
-    write_log("Warning: hws_base_tools/check_plugin_status function is already declared", true);
-}
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_plugin_status function is already declared", true);
 
 
 /**
@@ -91,11 +100,11 @@ if (!function_exists('hws_base_tools\write_log')) {
  * @param string $login The login name of the user.
  * @return bool True if the user exists, false otherwise.
  */
-if (!function_exists('hws_base_tools\does_user_exist')) {
+if (!function_exists(__NAMESPACE__ . '\\does_user_exist')) {
     function does_user_exist($login) {
         return get_user_by('login', $login) !== false;
     }
-} else write_log("Warning: hws_base_tools/does_user_exist function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\does_user_exist function is already declared",true);
 
 /**
  * Check if a custom post type exists.
@@ -103,11 +112,11 @@ if (!function_exists('hws_base_tools\does_user_exist')) {
  * @param string $post_type The custom post type name.
  * @return bool True if the post type exists, false otherwise.
  */
-if (!function_exists('hws_base_tools\does_post_type_exist')) {
+if (!function_exists(__NAMESPACE__ . '\\does_post_type_exist')) {
     function does_post_type_exist($post_type) {
         return post_type_exists($post_type);
     }
-} else write_log("Warning: hws_base_tools/does_post_type_exist function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\does_post_type_exist function is already declared",true);
 
 
 /**
@@ -116,11 +125,11 @@ if (!function_exists('hws_base_tools\does_post_type_exist')) {
  * @param string $theme_name The name of the theme.
  * @return bool True if the theme is active, false otherwise.
  */
-if (!function_exists('hws_base_tools\is_theme_active')) {
+if (!function_exists(__NAMESPACE__ . '\\is_theme_active')) {
     function is_theme_active($theme_name) {
         return wp_get_theme()->get('Name') === $theme_name;
     }
-} else write_log("Warning: hws_base_tools/is_theme_active function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\is_theme_active function is already declared",true);
 
   
 
@@ -130,13 +139,13 @@ if (!function_exists('hws_base_tools\is_theme_active')) {
  * @param bool $condition The condition to evaluate.
  * @param string $message The message to display.
  */
-if (!function_exists('hws_base_tools\display_check_status')) {
+if (!function_exists(__NAMESPACE__ . '\\display_check_status')) {
     function display_check_status($condition, $message) {
         $color = $condition ? 'green' : 'red';
         $icon = $condition ? '&#x2705;' : '&#x274C;';
         echo "<div style='color: $color;'>$icon $message</div>";
     }
-} else write_log("Warning: hws_base_tools/display_check_status function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\display_check_status function is already declared",true);
 
 
 /**
@@ -145,11 +154,11 @@ if (!function_exists('hws_base_tools\display_check_status')) {
  * @param string $taxonomy The taxonomy name.
  * @return bool True if the taxonomy exists, false otherwise.
  */
-if (!function_exists('hws_base_tools\does_taxonomy_exist')) {
+if (!function_exists(__NAMESPACE__ . '\\does_taxonomy_exist')) {
     function does_taxonomy_exist($taxonomy) {
         return taxonomy_exists($taxonomy);
     }
-} else write_log("Warning: hws_base_tools/does_taxonomy_exist function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\does_taxonomy_exist function is already declared",true);
 
 
 /**
@@ -159,12 +168,12 @@ if (!function_exists('hws_base_tools\does_taxonomy_exist')) {
  * @param string $taxonomy The taxonomy name.
  * @return bool True if the term exists in the taxonomy, false otherwise.
  */
-if (!function_exists('hws_base_tools\does_term_exist')) {
+if (!function_exists(__NAMESPACE__ . '\\does_term_exist')) {
     function does_term_exist($term, $taxonomy) {
         $term_exists = term_exists($term, $taxonomy);
         return $term_exists !== 0 && $term_exists !== null;
     }
-} else write_log("Warning: hws_base_tools/does_term_exist function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\does_term_exist function is already declared",true);
 
 
 
@@ -184,7 +193,7 @@ if (function_exists('acf_form_head')) {
  * @param string $key The key of the ACF field group.
  * @return bool True if the field group is imported, false otherwise.
  */
-if (!function_exists('hws_base_tools\is_acf_field_group_imported')) {
+if (!function_exists(__NAMESPACE__ . '\\is_acf_field_group_imported')) {
     function is_acf_field_group_imported($key) {
         $groups = acf_get_local_field_groups();
         foreach ($groups as $group) {
@@ -197,7 +206,7 @@ if (!function_exists('hws_base_tools\is_acf_field_group_imported')) {
 }
 
 // Generic function to add a settings page under "Settings"
-if (!function_exists('hws_base_tools\add_settings_menu')) {
+if (!function_exists(__NAMESPACE__ . '\\add_settings_menu')) {
     function add_settings_menu($page_title, $menu_title, $capability, $menu_slug, $callback_function) {
         add_options_page(
             $page_title,      // Page title
@@ -207,7 +216,7 @@ if (!function_exists('hws_base_tools\add_settings_menu')) {
             $callback_function // Callback function to display the page content
         );
     }
-} else write_log("Warning: hws_base_tools/add_settings_menu function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\add_settings_menu function is already declared",true);
 
 
 
@@ -221,7 +230,7 @@ if (!function_exists('hws_base_tools\add_settings_menu')) {
 
 
 
-if (!function_exists('hws_base_tools\check_smtp_auth_status_and_mailer')) {
+if (!function_exists(__NAMESPACE__ . '\\check_smtp_auth_status_and_mailer')) {
     function check_smtp_auth_status_and_mailer() {
         $status = false;
         $mailer = '';
@@ -246,10 +255,9 @@ if (!function_exists('hws_base_tools\check_smtp_auth_status_and_mailer')) {
             'raw_value' => $details." - ".$mailer
         ];
     }
-} else write_log("Warning: hws_base_tools/check_smtp_auth_status_and_mailer function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_smtp_auth_status_and_mailer function is already declared",true);
 
-
-if (!function_exists('hws_base_tools\enable_auto_update_themes')) {
+if (!function_exists(__NAMESPACE__ . '\\enable_auto_update_themes')) {
     function enable_auto_update_themes() {
         add_filter('auto_update_theme', '__return_true');
         return [
@@ -258,12 +266,12 @@ if (!function_exists('hws_base_tools\enable_auto_update_themes')) {
         ];
     }
 } else {
-    write_log("Warning: enable_auto_update_themes function is already declared", true);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\enable_auto_update_themes function is already declared", true);
 }
 
 
 
-if (!function_exists('hws_base_tools\get_smtp_sending_domain')) {
+if (!function_exists(__NAMESPACE__ . '\\get_smtp_sending_domain')) {
     function get_smtp_sending_domain() {
         $sending_domain = '';
 
@@ -281,7 +289,7 @@ if (!function_exists('hws_base_tools\get_smtp_sending_domain')) {
 
         return $sending_domain;
     }
-} else write_log("Warning: hws_base_tools/get_smtp_sending_domain function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\get_smtp_sending_domain function is already declared",true);
 
 
 function hws_ct_highlight_based_on_criteria($setting, $fail_criteria = null) {
@@ -306,7 +314,7 @@ $status = true;
 }
 
 
-if (!function_exists('hws_base_tools\check_php_ini_status')) {
+if (!function_exists(__NAMESPACE__ . '\\check_php_ini_status')) {
     function check_php_ini_status($setting_name) {
         $ini_value = ini_get($setting_name);
 
@@ -348,11 +356,11 @@ if (!function_exists('hws_base_tools\check_php_ini_status')) {
             return 'undefined';
         }
     }
-} else write_log("Warning: hws_base_tools/check_php_ini_status function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_php_ini_status function is already declared", true);
 
 
 
-if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wp_config_constant_status')) {
     function check_wp_config_constant_status($constant_name) {
         if (defined($constant_name)) {
             $constant_value = constant($constant_name);
@@ -369,11 +377,11 @@ if (!function_exists('hws_base_tools\check_wp_config_constant_status')) {
             return $log_value;
         } else return 'undefined';  
     }
-} else write_log("Warning: hws_base_tools/check_wp_config_constant_status function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wp_config_constant_status function is already declared", true);
 
 
 
-if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wordpress_memory_limit')) {
     function check_wordpress_memory_limit() {
         // Check if WP_MEMORY_LIMIT is defined
         if (defined('WP_MEMORY_LIMIT')) {
@@ -401,10 +409,10 @@ if (!function_exists('hws_base_tools\check_wordpress_memory_limit')) {
             ];
         }
     }
-} else write_log("Warning: hws_base_tools/check_wordpress_memory_limit function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wordpress_memory_limit function is already declared", true);
 
 
-if (!function_exists('hws_base_tools\get_database_table_prefix')) {
+if (!function_exists(__NAMESPACE__ . '\\get_database_table_prefix')) {
     function get_database_table_prefix() {
         global $table_prefix;
 
@@ -415,7 +423,7 @@ if (!function_exists('hws_base_tools\get_database_table_prefix')) {
             'raw_value' => $status ? $table_prefix : 'Not available'
         ];
     }
-} else write_log("Warning: get_database_table_prefix function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\get_database_table_prefix function is already declared", true);
 
 
 
@@ -424,7 +432,7 @@ if (!function_exists('hws_base_tools\get_database_table_prefix')) {
 
 
 
-if (!function_exists('hws_base_tools\check_myisam_tables')) {
+if (!function_exists(__NAMESPACE__ . '\\check_myisam_tables')) {
     function check_myisam_tables() {
         global $wpdb;
 
@@ -493,7 +501,7 @@ if (!function_exists('hws_base_tools\check_myisam_tables')) {
             'raw_value' => $details
         ];
     }
-} else write_log("Warning: hws_base_tools/check_myisam_tables function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_myisam_tables function is already declared", true);
 
 
 
@@ -502,7 +510,7 @@ if (!function_exists('hws_base_tools\check_myisam_tables')) {
 
 
 
-if (!function_exists('hws_base_tools\get_wp_version_from_file')) {
+if (!function_exists(__NAMESPACE__ . '\\get_wp_version_from_file')) {
     function get_wp_version_from_file($file_path) {
         $version = 'Unknown';
         if (file_exists($file_path)) {
@@ -513,9 +521,9 @@ if (!function_exists('hws_base_tools\get_wp_version_from_file')) {
         }
         return $version;
     }
-} else write_log("Warning: hws_base_tools/get_wp_version_from_file function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\get_wp_version_from_file function is already declared", true);
 
-if (!function_exists('hws_base_tools\detect_additional_wp_installs')) {
+if (!function_exists(__NAMESPACE__ . '\\detect_additional_wp_installs')) {
     function detect_additional_wp_installs() {
         global $wpdb;
 
@@ -573,12 +581,12 @@ if (!function_exists('hws_base_tools\detect_additional_wp_installs')) {
             'raw_value' => $details
         ];
     }
-} else write_log("Warning: hws_base_tools/detect_additional_wp_installs function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\detect_additional_wp_installs function is already declared", true);
 
 
 
 
-if (!function_exists('hws_base_tools\check_server_memory_limit')) {
+if (!function_exists(__NAMESPACE__ . '\\check_server_memory_limit')) {
     function check_server_memory_limit() {
         $total_ram = 0;
 
@@ -593,12 +601,12 @@ if (!function_exists('hws_base_tools\check_server_memory_limit')) {
             'raw_value' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
-} else write_log("Warning: hws_base_tools/check_server_memory_limit function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_memory_limit function is already declared",true);
 
 
 
 
-if (!function_exists('hws_base_tools\check_redis_active')) {
+if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
     function check_redis_active() {
         $status = false;
         $details = 'Redis extension is not installed or not enabled';
@@ -660,7 +668,7 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 
 
 
-if (!function_exists('hws_base_tools\check_server_ram')) {
+if (!function_exists(__NAMESPACE__ . '\\check_server_ram')) {
     function check_server_ram() {
         $total_ram = 0;
 
@@ -675,19 +683,19 @@ if (!function_exists('hws_base_tools\check_server_ram')) {
             'details' => $total_ram ? size_format($total_ram) : 'Not available'
         ];
     }
-} else write_log("Warning: hws_base_tools/check_server_ram function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_ram function is already declared",true);
 
 
-if (!function_exists('hws_base_tools\check_wp_debug_disabled')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wp_debug_disabled')) {
     function check_wp_debug_disabled() {
         return defined('WP_DEBUG') && !WP_DEBUG;
     }
-} else write_log("Warning: hws_base_tools/check_wp_debug_disabled function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wp_debug_disabled function is already declared",true);
 
 
 
 
-if (!function_exists('hws_base_tools\check_log_file_sizes')) {
+if (!function_exists(__NAMESPACE__ . '\\check_log_file_sizes')) {
     function check_log_file_sizes() {
         $debug_log_path = WP_CONTENT_DIR . '/debug.log';
         $error_log_path = ABSPATH . 'error_log';
@@ -711,37 +719,37 @@ if (!function_exists('hws_base_tools\check_log_file_sizes')) {
             ]
         ];
     }
-} else write_log("Warning: hws_base_tools/check_log_file_sizes function is already declared", true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_log_file_sizes function is already declared", true);
 
 
 
-if (!function_exists('hws_base_tools\check_server_is_litespeed')) {
+if (!function_exists(__NAMESPACE__ . '\\check_server_is_litespeed')) {
     function check_server_is_litespeed() {
         return strpos($_SERVER['SERVER_SOFTWARE'], 'LiteSpeed') !== false;
     }
-} else write_log("Warning: hws_base_tools/check_server_is_litespeed function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_is_litespeed function is already declared",true);
 
 
 
-if (!function_exists('hws_base_tools\check_php_sapi_is_litespeed')) {
+if (!function_exists(__NAMESPACE__ . '\\check_php_sapi_is_litespeed')) {
     function check_php_sapi_is_litespeed() {
         return strpos(php_sapi_name(), 'litespeed') !== false;
     }
-} else write_log("Warning: hws_base_tools/check_php_sapi_is_litespeed function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_php_sapi_is_litespeed function is already declared",true);
 
 
-if (!function_exists('hws_base_tools\display_precheck_result')) {
+if (!function_exists(__NAMESPACE__ . '\\display_precheck_result')) {
     function display_precheck_result($label, $status, $details = '') {
         $color = $status ? 'green' : 'red';
         $icon = $status ? '&#x2705;' : '&#x274C;';
         $details_html = $details ? "<span style='color: gray; font-size: 12px;'>$details</span>" : '';
         echo "<div style='color: $color; margin-bottom: 10px;'><strong>$label:</strong> $icon $details_html</div>";
     }
-} else write_log("Warning: hws_base_tools/display_precheck_result function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\display_precheck_result function is already declared",true);
 
 
 
-if (!function_exists('hws_base_tools\check_imagick_available')) {
+if (!function_exists(__NAMESPACE__ . '\\check_imagick_available')) {
     function check_imagick_available() {
         // Check if the Imagick extension is loaded
         $is_available = extension_loaded('imagick');
@@ -758,11 +766,11 @@ if (!function_exists('hws_base_tools\check_imagick_available')) {
         ];
     }
 } else 
-    write_log("Warning: hws_base_tools/check_imagick_available function is already declared", false);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_imagick_available function is already declared", false);
 
 
 
-if (!function_exists('hws_base_tools\check_query_monitor_status')) {
+if (!function_exists(__NAMESPACE__ . '\\check_query_monitor_status')) {
     function check_query_monitor_status() {
         // Check the status of Query Monitor plugin using the generic function
         list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status('query-monitor/query-monitor.php');
@@ -771,12 +779,12 @@ if (!function_exists('hws_base_tools\check_query_monitor_status')) {
             'is_active' => $is_active,
         ];
     }
-} else write_log("Warning: hws_base_tools/check_query_monitor_status function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_query_monitor_status function is already declared",true);
 
 
 
 
-if (!function_exists('hws_base_tools\custom_wp_admin_logo')) {
+if (!function_exists(__NAMESPACE__ . '\\custom_wp_admin_logo')) {
     function custom_wp_admin_logo() {
         // Check if this is being called in the correct context (login page)
         if (did_action('login_enqueue_scripts')) {
@@ -799,15 +807,15 @@ if (!function_exists('hws_base_tools\custom_wp_admin_logo')) {
         }
     }
     add_action('login_enqueue_scripts', 'hws_base_tools\custom_wp_admin_logo', 20); // Increased priority
-} else write_log("Warning: hws_base_tools/custom_wp_admin_logo function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\custom_wp_admin_logo function is already declared",true);
 
 
-if (!function_exists('hws_base_tools\custom_wp_admin_logo_link')) {
+if (!function_exists(__NAMESPACE__ . '\\custom_wp_admin_logo_link')) {
     function custom_wp_admin_logo_link() {
         return false;
     }
     add_filter('login_headerurl', 'hws_base_tools\custom_wp_admin_logo_link');
-} else write_log("Warning: hws_base_tools/custom_wp_admin_logo_link function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\custom_wp_admin_logo_link function is already declared",true);
 
 
 
@@ -836,7 +844,7 @@ if(!function_exists('hws_base_tools\check_server_specs')) {
             'raw_value' => "Number of processors: $num_processors, Total RAM: $total_ram MB"
         ];
     }}else 
-    write_log("Warning: hws_base_tools/check_server_specs function is already declared", true);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_specs function is already declared", true);
 
 
 
@@ -846,7 +854,7 @@ if(!function_exists('hws_base_tools\check_server_specs')) {
 
 
 
-if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wordfence_notification_email')) {
     function check_wordfence_notification_email() {
         global $wpdb;
 
@@ -896,7 +904,7 @@ if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
             ];
         }
     }
-} else write_log("Warning: hws_base_tools/check_wordfence_notification_email function is already declared",true);
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wordfence_notification_email function is already declared",true);
 
 
 
@@ -906,7 +914,7 @@ if (!function_exists('hws_base_tools\check_wordfence_notification_email')) {
 
 
 
-if (!function_exists('hws_base_tools\check_wordpress_main_email')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wordpress_main_email')) {
     function check_wordpress_main_email() {
 
         $admin_email = get_option('admin_email');
@@ -926,10 +934,10 @@ if (!function_exists('hws_base_tools\check_wordpress_main_email')) {
         ];
     }
 } else {
-    write_log("Warning: hws_base_tools/check_wordpress_main_email function is already declared", true);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wordpress_main_email function is already declared", true);
 }
 /*
-if (!function_exists('hws_base_tools\check_redis_active')) {
+if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
     function check_redis_active() {
         // Check if the Redis PHP extension is loaded
         $redis_extension_loaded = extension_loaded('redis');
@@ -976,7 +984,7 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
 } else {
     write_log("Warning: check_redis_active function is already declared", true);
 }
-*/if (!function_exists('hws_base_tools\check_caching_source')) {
+*/if (!function_exists(__NAMESPACE__ . '\\check_caching_source')) {
     function check_caching_source() {
         $caching_plugins = [
             'LiteSpeed Cache' => 'litespeed-cache/litespeed-cache.php',
@@ -1010,11 +1018,11 @@ if (!function_exists('hws_base_tools\check_redis_active')) {
         ];
     }
 } else {
-    write_log("Warning: hws_base_tools/check_caching_source function is already declared", true);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_caching_source function is already declared", true);
 }
 
 
-if (!function_exists('hws_base_tools\check_php_version')) {
+if (!function_exists(__NAMESPACE__ . '\\check_php_version')) {
     function check_php_version() {
         // Get the current PHP version
         $php_version = phpversion();
@@ -1032,10 +1040,10 @@ if (!function_exists('hws_base_tools\check_php_version')) {
         ];
     }
 } else {
-    write_log("Warning: hws_base_tools/check_php_version function is already declared", true);
+    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_php_version function is already declared", true);
 }
 
-if (!function_exists('hws_base_tools\check_caching_source')) {
+if (!function_exists(__NAMESPACE__ . '\\check_caching_source')) {
     function check_caching_source() {
         $caching_plugins = [
             'LiteSpeed Cache' => 'litespeed-cache/litespeed-cache.php',
@@ -1080,7 +1088,7 @@ if (!function_exists('hws_base_tools\check_caching_source')) {
 
 
 /** CODE TO TOUCH UP ***/
-if (!function_exists('hws_base_tools\modify_wp_config_constants')) {
+if (!function_exists(__NAMESPACE__ . '\\modify_wp_config_constants')) {
     function modify_wp_config_constants($constants_to_update) {
         $wp_config_path = ABSPATH . 'wp-config.php';
 
@@ -1202,32 +1210,30 @@ function hws_ct_package_constant_value_for_checks($constant_name, $constant_valu
 }
 
 
-if (!function_exists('hws_base_tools\check_wp_core_auto_update_status')) {
+if (!function_exists(__NAMESPACE__ . '\\check_wp_core_auto_update_status')) {
 function check_wp_core_auto_update_status() {
     $wp_auto_update_status = check_wp_config_constant_status('WP_AUTO_UPDATE_CORE');
     return $wp_auto_update_status === 'true';
 }}
 
 
-if (!function_exists('hws_base_tools\is_plugin_auto_update_enabled')) {
+if (!function_exists(__NAMESPACE__ . '\\is_plugin_auto_update_enabled')) {
     function is_plugin_auto_update_enabled($plugin_id) {
         // Check if site-wide auto-updates are enabled
         if (has_filter('auto_update_plugin', '__return_true') !== false) {
             return true;
         }
-
+ 
         // Get the list of plugins with auto-updates enabled
         $auto_update_plugins = get_site_option('auto_update_plugins', []);
 
         // Check if the specific plugin has auto-updates enabled
         return in_array($plugin_id, $auto_update_plugins);
     }
-} else {
-    write_log("Warning: hws_base_tools/is_plugin_auto_update_enabled function is already declared", true);
-}
+} else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\is_plugin_auto_update_enabled function is already declared", true);
 
 
-if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
+if (!function_exists(__NAMESPACE__ . '\\is_theme_auto_update_enabled')) {
     function is_theme_auto_update_enabled($theme_slug) {
         // Log entry into the function
         write_log("Checking auto-update status for theme: {$theme_slug}");
@@ -1250,7 +1256,7 @@ if (!function_exists('hws_base_tools\is_theme_auto_update_enabled')) {
 
         return $is_enabled;
     }
-} else  write_log("Warning: hws_base_tools/is_theme_auto_update_enabled function is already declared", true);
+} else  write_log("⚠️ Warning: " . __NAMESPACE__ . "\\is_theme_auto_update_enabled function is already declared", true);
 
 
 
@@ -1270,19 +1276,9 @@ function render_enable_plugin_auto_updates_button() {
 }
 
 
-if (!function_exists('hws_base_tools\hws_add_wp_admin_settings_page')) {
-function hws_add_wp_admin_settings_page($page_title, $menu_title, $capability, $menu_slug, $callback_function) {
-    add_options_page(
-        $page_title,
-        $menu_title,
-        $capability,
-        $menu_slug,
-        $callback_function
-    );
-}}
 
 
-    if (!function_exists('hws_base_tools\get_wp_config_defined_constants')) {
+    if (!function_exists(__NAMESPACE__ . '\\get_wp_config_defined_constants')) {
     function get_wp_config_defined_constants() {
         // List of constants to exclude (security-sensitive)
         $exclude_constants = [
@@ -1350,7 +1346,7 @@ function check_php_type() {
     ];
 }
 
-if (!function_exists('hws_base_tools\check_php_handler')) {
+if (!function_exists(__NAMESPACE__ . '\\check_php_handler')) {
     function check_php_handler() {
         // Initialize variables
         $php_handler = 'Unknown';
@@ -1406,13 +1402,13 @@ if (!function_exists('hws_base_tools\check_php_handler')) {
     }
 }    
  
-if (!function_exists('hws_base_tools\enable_auto_update_plugins')) {
+if (!function_exists(__NAMESPACE__ . '\\enable_auto_update_plugins')) {
     function enable_auto_update_plugins() {
         add_filter('auto_update_plugin', '__return_true');
     } 
 }
 
-if (!function_exists('hws_base_tools\disable_litespeed_js_combine')) {
+if (!function_exists(__NAMESPACE__ . '\\disable_litespeed_js_combine')) {
     function disable_litespeed_js_combine() {
         add_filter('litespeed_optm_js_comb_ext_inl', '__return_false');
     }
@@ -1420,7 +1416,7 @@ if (!function_exists('hws_base_tools\disable_litespeed_js_combine')) {
 
 
 
-if (!function_exists('hws_base_tools\disable_rankmath_sitemap_caching')) {
+if (!function_exists(__NAMESPACE__ . '\\disable_rankmath_sitemap_caching')) {
     function disable_rankmath_sitemap_caching() {
         add_filter('rank_math/sitemap/enable_caching', '__return_false');
     }
@@ -1532,7 +1528,7 @@ function get_php_ini_value($setting_name) {
 
 
 
-if (!function_exists('hws_base_tools\toggle_php_ini_value')) {
+if (!function_exists(__NAMESPACE__ . '\\toggle_php_ini_value')) {
     function toggle_php_ini_value($setting_name, $new_value) {
         // Attempt to set the ini value dynamically
         $result = ini_set($setting_name, $new_value);

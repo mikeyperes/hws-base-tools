@@ -1,17 +1,17 @@
 <?php namespace hws_base_tools;
 
 // Hook to load custom JavaScript in wp-admin head
-add_action('admin_head', 'hws_base_tools\active_listeners');
+add_action('admin_head', 'hws_base_tools\activate_listeners');
 
-function active_listeners()
+function activate_listeners()
 {?>
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
         // Toggle WP-Config Constants section
-        $('.wp-config-toggle').on('click', function() {
+      /*  $('.wp-config-toggle').on('click', function() {
             $(this).next('.wp-config-content').slideToggle();
-        });
+        });*/
 
         // Delete log files
         function deleteLogFile(logType) {
@@ -32,18 +32,18 @@ jQuery(document).ready(function($) {
         }   
  
         // Bind delete actions to buttons
-        $('#delete-debug-log').on('click', function(e) {
+        $('#hws-base-tools #delete-debug-log').on('click', function(e) {
             e.preventDefault();
             deleteLogFile('debug');
         });
 
-        $('#delete-error-log').on('click', function(e) {
+        $('#hws-base-tools #delete-error-log').on('click', function(e) {
             e.preventDefault();
             deleteLogFile('error');
         });
  
         // Handle the auto-delete toggle
-        $('#auto-delete-toggle').on('change', function() {
+        $('#hws-base-tools #auto-delete-toggle').on('change', function() {
             var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
             $.post(ajaxurl, {
                 action: 'hws_ct_toggle_auto_delete',
@@ -65,7 +65,7 @@ jQuery(document).ready(function($) {
     jQuery(document).ready(function($) {
  
      // Handle the auto-delete toggle
-     $('#auto-delete-toggle').on('change', function() {
+     $('#hws-base-tools #auto-delete-toggle').on('change', function() {
          var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
          alert('Toggling auto delete to ' + isEnabled);
          $.post(ajaxurl, {
@@ -87,7 +87,7 @@ jQuery(document).ready(function($) {
 <script type="text/javascript">
     jQuery(document).ready(function($) {
         // Copy debug log to clipboard
-        $('#copy-debug-log').on('click', function() {
+        $('#hws-base-tools #copy-debug-log').on('click', function() {
             var text = $('#debug-log-content').text();
             navigator.clipboard.writeText(text).then(function() {
                 alert('Debug log copied to clipboard.');
@@ -97,7 +97,7 @@ jQuery(document).ready(function($) {
         });
 
         // Copy error log to clipboard
-        $('#copy-error-log').on('click', function() {
+        $('#hws-base-tools #copy-error-log').on('click', function() {
             var text = $('#error-log-content').text();
             navigator.clipboard.writeText(text).then(function() {
                 alert('Error log copied to clipboard.');
@@ -107,7 +107,7 @@ jQuery(document).ready(function($) {
         });
 
     });
-    
+
 /*
         // Toggle WP-Config Constants section
         $('.wp-config-toggle').on('click', function() {
@@ -203,7 +203,7 @@ jQuery(document).ready(function($) {
 
           // Handle "Toggle Auto Updates" button click
     // Handle "Toggle Auto Updates" button click
-    $('.modify-snippet-via-button').on('click', function() {
+    $('#hws-base-tools .modify-snippet-via-button').on('click', function() {
         var snippetId = $(this).data('snippet-id');
         var action = $(this).data('action');
         
@@ -231,7 +231,7 @@ jQuery(document).ready(function($) {
 $ = jQuery;
 $(document).ready(function($) {
     // Handle click event and AJAX request all in one function
-    $('.execute-function').on('click', function() {
+    $('#hws-base-tools .execute-function').on('click', function() {
         var methodName = $(this).data('method');  // Get the method name
         var state = $(this).data('state');  // Get the state
         var setting = $(this).data('setting');  // Get the setting name
@@ -272,7 +272,213 @@ $(document).ready(function($) {
         }
     });
 });
-</script><?php }
+</script>
+
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    $('#hws-base-tools #toggle-debug-log').on('click', function() {
+        $('#debug-log-content').toggle();
+        $(this).text($(this).text() === 'View Last 200 Lines of debug.log' ? 'Hide Last 200 Lines of debug.log' : 'View Last 100 Lines of debug.log');
+    });
+
+    $('#hws-base-tools #toggle-error-log').on('click', function() {
+        $('#error-log-content').toggle();
+        $(this).text($(this).text() === 'View Last 200 Lines of error_log' ? 'Hide Last 200 Lines of error_log' : 'View Last 100 Lines of error_log');
+    });
+});
+</script><script>
+jQuery(document).ready(function($) {
+    $('#hws-base-tools .modify-wp-config').on('click', function(e) {
+        e.preventDefault();
+        const constant = $(this).data('constant');
+        const value = $(this).data('value');
+        const target = $(this).data('target');
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'hws_modify_wp_config_constants',
+                constants: { [constant]: value }
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message || 'Configuration updated successfully.');
+                    location.reload();
+                } else {
+                    alert(response.data.message || 'Failed to update configuration.');
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Request Failed:', jqXHR, textStatus, errorThrown);
+                alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+            }
+        });
+    });
+});
+</script>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    $('#hws-base-tools #debug-toggle, #hws-base-tools #debug-display-toggle, #hws-base-tools #debug-log-toggle').on('change', function() {
+    var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
+    var value = $(this).is(':checked'); // This now keeps the value as a boolean
+    updateDebugSetting('WP_' + setting, value);
+});
+    function updateDebugSetting(setting, value) {
+    alert('Sending request to update ' + setting + ' to ' + (value ? 'true' : 'false'));
+    $.post(ajaxurl, {
+        action: 'modify_wp_config_constants',
+        constants: {
+            [setting]: value // Send the boolean directly
+        }
+    },
+    
+    function(response) {
+        console.log('Raw AJAX Response:', response);
+
+        try {
+            var jsonResponse = JSON.parse(response);
+            var message = jsonResponse.data ? jsonResponse.data.message : 'No message received';
+
+            if (jsonResponse.success) {
+                alert(setting + ' set to ' + (value ? 'true' : 'false'));
+                location.reload();
+            } else {
+                alert('Failed to update ' + setting + ': ' + jsonResponse.data);
+            }
+        } catch (e) {
+            console.error('Response is not valid JSON:', response);
+            alert('Unexpected error: ' + response);
+        }
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+        console.error('AJAX Request Failed:', jqXHR, textStatus, errorThrown);
+    });
+}
+});
+</script>
+<script type="text/javascript">
+        jQuery(document).ready(function($) {
+            $('#php-ini-toggle').on('click', function() {
+                $('#php-ini-details').slideToggle();
+            });
+        });
+    </script>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('#hws-base-tools #force-update-check').on('click', function() {
+            var $button = $(this);
+            $button.prop('disabled', true).text('Checking...');
+
+            $.post(
+                '<?= admin_url('admin-ajax.php') ?>', 
+                {
+                    action: 'hws_ct_force_update_check'
+                }, 
+                function(response) {
+                    var data = JSON.parse(response);
+                    $('#last-checked').text(data.last_checked);
+                    $('#plugins-with-updates').text(data.plugins_with_updates);
+
+                    // Update the plugins list
+                    var $pluginsList = $('#plugins-list');
+                    $pluginsList.empty();
+                    if (data.plugins_with_updates > 0) {
+                        $.each(data.plugins_list, function(index, pluginName) {
+                            $pluginsList.append('<li>' + pluginName + '</li>');
+                        });
+                    }
+
+                    $button.prop('disabled', false).text('Force WordPress to Check for Plugin Updates');
+                }
+            ).fail(function() {
+                $button.prop('disabled', false).text('Failed to Check');
+            });
+        });
+    });
+    </script>
+        <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $('#hws-base-tools #force-update-check').on('click', function() {
+            var $button = $(this);
+            $button.prop('disabled', true).text('Checking...');
+
+            $.post(
+                '<?php echo admin_url('admin-ajax.php'); ?>', 
+                {
+                    action: 'hws_ct_force_update_check'
+                }, 
+                function(response) {
+                    var data = JSON.parse(response);
+                    $('#last-checked').text(data.last_checked);
+                    $('#plugins-with-updates').text(data.plugins_with_updates);
+
+                    // Update the plugins list
+                    var $pluginsList = $('#plugins-list');
+                    $pluginsList.empty();
+                    if (data.plugins_with_updates > 0) {
+                        $.each(data.plugins_list, function(index, pluginName) {
+                            $pluginsList.append('<li>' + pluginName + '</li>');
+                        });
+                    }
+
+                    $button.prop('disabled', false).text('Force WordPress to Check for Plugin Updates');
+                }
+            ).fail(function() {
+                $button.prop('disabled', false).text('Failed to Check');
+            });
+        });
+    });
+    </script>
+       <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Event handler for enabling auto-updates for all plugins
+            $('#hws-base-tools #enable-plugin-auto-updates').on('click', function(e) {
+                e.preventDefault();
+
+                $.post(ajaxurl, {
+                    action: 'enable_plugin_auto_updates'
+                }, function(response) {
+                    if (response.success) {
+                        alert('Auto updates for all plugins have been enabled.');
+                        location.reload();
+                    } else {
+                        alert('Failed to enable auto updates for plugins: ' + response.data.message);
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+                });
+            });
+        });
+    </script>
+
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Event handler for enabling WP Core auto-updates
+            $('#hws-base-tools #enable-auto-updates').on('click', function(e) {
+                e.preventDefault();
+
+                $.post(ajaxurl, {
+                    action: 'modify_wp_config_constants',
+                    constants: {
+                        'WP_AUTO_UPDATE_CORE': 'true'
+                    }
+                }, function(response) {
+                    if (response.success) {
+                        alert('Auto updates have been enabled.');
+                        location.reload();
+                    } else {
+                        alert('Failed to enable auto updates: ' + response.data.message);
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+                });
+            });
+        });
+    </script>
+<?php }
 
     
 add_action('wp_ajax_execute_function', 'hws_base_tools\handle_execute_function_ajax');
@@ -316,4 +522,29 @@ function handle_execute_function_ajax() {
 
     wp_die();  // This is required to properly terminate the script when doing AJAX in WordPress
 }
+
+
+
+function modify_wp_config_constants_handler() {
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'Unauthorized']);
+    }
+
+    $constants = isset($_POST['constants']) ? $_POST['constants'] : [];
+    if (empty($constants)) {
+        wp_send_json_error(['message' => 'No constants provided']);
+    }
+
+    $result = modify_wp_config_constants($constants);
+
+    if ($result['status']) {
+        wp_send_json_success(['message' => $result['message']]);
+    } else {
+        wp_send_json_error(['message' => $result['message']]);
+    }
+}
+
+add_action('wp_ajax_hws_modify_wp_config_constants', 'hws_base_tools\modify_wp_config_constants_handler');
+
+
 ?>

@@ -10,14 +10,6 @@ use function hws_base_tools\write_log;
 use function hws_base_tools\toggle_snippet;
 use function hws_base_tools\hws_ct_get_settings_snippets;
  
-
-
-
-
-
-
-
-
 if (!function_exists('hws_base_tools\toggle_snippet')) {
     function toggle_snippet() {
         $settings_snippets = hws_ct_get_settings_snippets();

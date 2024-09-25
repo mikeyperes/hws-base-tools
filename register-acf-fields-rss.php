@@ -168,5 +168,8 @@ function register_acf_rss(){
 	'page_title' => 'RSS Structures',
 	'menu_slug' => 'rss-structures',
 	'redirect' => false,
-) );}
+) );
+
+
+}
 ?>
