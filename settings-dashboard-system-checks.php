@@ -17,6 +17,12 @@ function hws_ct_get_settings_system_checks()
     ),
 ],*/
 
+
+
+'Check wp-migrate-all Backups' => [
+    'id' => 'wp-backups-migrate-all',
+    'value' => hws_ct_highlight_based_on_criteria(check_wp_backup_status()) 
+],
         'WordPress Admin Email' => [
             'id' => 'wp-main-email',
             'value' => hws_ct_highlight_based_on_criteria(check_wordpress_main_email()) . 
@@ -185,16 +191,19 @@ function hws_ct_get_settings_system_checks()
             ],
 'post_max_size' => [
     'id' => 'php-post-max-size',
-    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('post_max_size', check_php_ini_status('post_max_size'), ['listed_values' => ['false', false]]))
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('post_max_size', check_php_ini_status('post_max_size'), ['min_value' => 300000]))
 ],
 'upload_max_filesize' => [
     'id' => 'php-upload-max-filesize',
-    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('upload_max_filesize', check_php_ini_status('upload_max_filesize'), ['listed_values' => ['false', false]]))
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('upload_max_filesize', check_php_ini_status('upload_max_filesize'), ['min_value' => 300000]))
 ],
     ];
     return $system_checks;
-
 }
+
+
+
+
 
 function display_settings_system_checks()
 {

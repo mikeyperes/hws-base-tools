@@ -244,26 +244,8 @@ function hws_ct_get_plugins_list() {
             ],
             'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro', true)
         ],
-     [
-    'id' => 'elementor-pro/elementor-pro.php',
-    'name' => 'Elementor Pro',
-    'approved_constraints' => [
-        'is_installed' => true,
-        'is_active' => true,
-        'is_auto_update_enabled' => true
-    ],
-    'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro', true)
-],
-[
-    'id' => 'elementor-pro/elementor-pro.php',
-    'name' => 'Elementor Pro',
-    'approved_constraints' => [
-        'is_installed' => true,
-        'is_active' => true,
-        'is_auto_update_enabled' => true
-    ],
-    'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro', true)
-],
+
+
         [
             'id' => 'classic-editor/classic-editor.php',
             'name' => 'Classic Editor',

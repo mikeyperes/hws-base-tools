@@ -1139,20 +1139,7 @@ if (!function_exists(__NAMESPACE__ . '\\modify_wp_config_constants')) {
 
 
 
-function hws_ct_update_wp_config() {
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error('Unauthorized user');
-    }
 
-    $constants_to_update = isset($_POST['constants']) ? $_POST['constants'] : [];
-    $result = hws_ct_modify_wp_config_constants($constants_to_update);
-
-    if ($result['status']) {
-        wp_send_json_success($result['message']);
-    } else {
-        wp_send_json_error($result['message']);
-    }
-}
 
 
 /** CODE TO TOUCH UP END ***/
@@ -1179,28 +1166,62 @@ function convert_to_bytes($value) {
     return (int) $value;
 }
 
+    // Helper function to convert various units to kilobytes (KB)
+    function convert_to_kb($input_value) {
+        $value = floatval($input_value); // Extract the numeric part
+        $unit = strtolower(preg_replace('/[^a-zA-Z]/', '', $input_value)); // Extract the unit and make it case-insensitive
 
+        switch ($unit) {
+            case 'b':   // Bytes
+                return $value / 1024;
+            case 'kb':  // Kilobytes
+            case 'k':   // Kilobytes
+                return $value;
+            case 'mb':  // Megabytes
+            case 'm':   // Megabytes
+                return $value * 1024;
+            case 'gb':  // Gigabytes
+            case 'g':   // G (short form for GB)
+                return $value * 1024 * 1024;
+            default:    // If no unit or an unrecognized unit is provided, assume KB
+                return $value;
+        }
+    }
 
 function hws_ct_package_constant_value_for_checks($constant_name, $constant_value, $fail_criteria = null) {
     // Initialize the value and status
     $status = true;
     $value = $constant_value;
 
-    // Check if fail_criteria is provided and not null
-    if ($fail_criteria !== null) {
-        // Check for the data type of fail_criteria
-        if (isset($fail_criteria['listed_values']) && is_array($fail_criteria['listed_values'])) {
-            // Iterate through each listed value in fail_criteria
-            foreach ($fail_criteria['listed_values'] as $fail_value) {
-                // Compare values directly without converting to strings
-                if ($value === $fail_value) {
-                    // If value matches any of the fail criteria, set status to false
-                    $status = false;
-                    break;
-                }
+    // Convert constant value to KB for comparison
+    $converted_value = convert_to_kb($value);
+// Check if fail_criteria is provided and not null
+if ($fail_criteria !== null) {
+    // Check for listed values
+    if (isset($fail_criteria['listed_values']) && is_array($fail_criteria['listed_values'])) {
+        foreach ($fail_criteria['listed_values'] as $fail_value) {
+            if ($value === $fail_value) {
+                $status = false;
+                break;
             }
         }
     }
+}
+
+        // Check for min or max values, where constraints are in KB (numbers only)
+        if (isset($fail_criteria['min_value'])) {
+            $min_value = floatval($fail_criteria['min_value']); // Directly use KB number
+            if ($converted_value < $min_value) {
+                $status = false;
+            }
+        }
+        if (isset($fail_criteria['max_value'])) {
+            $max_value = floatval($fail_criteria['max_value']); // Directly use KB number
+            if ($converted_value > $max_value) {
+                $status = false;
+            }
+        }
+
 
     return [
         'function' => "hws_ct_package_constant_value_for_checks-{$constant_name}",
@@ -1423,6 +1444,82 @@ if (!function_exists(__NAMESPACE__ . '\\disable_rankmath_sitemap_caching')) {
 }
 
 
+
+
+
+
+function check_wp_backup_status($backup_directory = 'wp-content/ai1wm-backups/') {
+    // Log the start of the function
+    write_log("Checking for WP All-in-One backups in $backup_directory", false);
+
+    // Get the absolute path to ensure correct directory handling
+    $absolute_backup_directory = ABSPATH . $backup_directory;
+    write_log("Checking directory: $absolute_backup_directory", false);
+
+    // Initialize the variables for result
+    $has_backup = false;
+    $backup_report = '';
+    $backup_files = [];
+
+    // Check if the backup directory exists and is readable
+    if (is_dir($absolute_backup_directory) && is_readable($absolute_backup_directory)) {
+        // Scan the directory for .wpress files
+        $backup_files = glob($absolute_backup_directory . '*.wpress');
+    } else {
+        write_log("Directory not found or unreadable: $absolute_backup_directory", false);
+        $backup_status = 'Directory not found or unreadable';
+        return [
+            'function' => 'check_wp_backup_status',
+            'status' => true, // Return true if no backups or the directory is missing
+            'raw_value' => "<span>No backups found or directory inaccessible: $backup_directory</span>",
+            'variables' => [
+                'backup_directory' => $absolute_backup_directory,
+                'backup_status' => 'Directory not found',
+                'fail_status' => true,
+                'backup_files' => []
+            ]
+        ];
+    }
+
+    // Handle cases where there are no backup files
+    if (empty($backup_files)) {
+        write_log("No backups found in $absolute_backup_directory", false);
+        $backup_status = 'No Backups';
+        $status_display = "<span>No backups found in $backup_directory</span>";
+        $fail_status = true;
+    } else {
+        // Backups found, prepare the report
+        $backup_status = '<br />Backups Found<br/>';
+        $fail_status = false;
+        write_log("Backups found in $absolute_backup_directory", false);
+
+        // Generate the report with backup filenames, file sizes, and dates
+        foreach ($backup_files as $backup_file) {
+            $file_size = filesize($backup_file) / 1024 / 1024; // Size in MB
+            $file_size = round($file_size, 2); // Round to 2 decimal places
+            $file_date = date("F d Y H:i:s", filemtime($backup_file)); // Get file creation time
+            $file_url = site_url(str_replace(ABSPATH, '', $backup_file)); // Generate the file URL
+
+            // Add the file info to the report (filename, URL, size, and date)
+            $backup_report .= "- ".basename($backup_file) . " | URL: <a href='$file_url'>$file_url</a> | Size: $file_size MB | Created: $file_date<br>";
+        }
+
+        $status_display = "<span>$backup_status: <br>$backup_report</span>";
+    }
+
+    // Return the final report and status
+    return [
+        'function' => 'check_wp_backup_status',
+        'status' => $fail_status, // If no backups, return true; if backups found, return false
+        'raw_value' => $status_display, // The full report with HTML formatting for backups
+        'variables' => [
+            'backup_directory' => $absolute_backup_directory,
+            'backup_status' => $backup_status,
+            'fail_status' => $fail_status,
+            'backup_files' => $backup_files
+        ]
+    ];
+}
 
 
 
