@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 3.6.9.8
+Version: 3.6.9.9.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -84,7 +84,6 @@ if (is_admin()) { // Ensure this runs only in the admin area
 
 // Array of plugins to check
 $plugins_to_check = [
-    'advanced-custom-fields/acf.php',
     'advanced-custom-fields-pro/acf.php',
     'advanced-custom-fields-pro-temp/acf.php'
 ];

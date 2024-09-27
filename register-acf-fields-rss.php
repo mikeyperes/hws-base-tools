@@ -5,7 +5,7 @@ function register_acf_rss(){
 		return;
 	}
 
-	acf_add_local_field_group( array(
+	\acf_add_local_field_group( array(
 	'key' => 'group_66e9ebd79f8e0',
 	'title' => 'RSS Structures',
 	'fields' => array(
@@ -164,7 +164,7 @@ function register_acf_rss(){
 
 
 
-	acf_add_options_page( array(
+	\acf_add_options_page( array(
 	'page_title' => 'RSS Structures',
 	'menu_slug' => 'rss-structures',
 	'redirect' => false,
