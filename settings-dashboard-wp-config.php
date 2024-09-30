@@ -106,24 +106,32 @@ $wp_debug_log = check_wp_config_constant_status('WP_DEBUG_LOG');
                 ?>
 
 <div>
+
+
+
+
+
     <label for="debug-toggle" style="color: <?php echo $wp_debug === 'true' ? 'red' : 'inherit'; ?>;">
         Enable WP_DEBUG (Current: <?php echo $wp_debug; ?>)
     </label>
-    <input type="checkbox" id="debug-toggle" <?php echo $wp_debug === 'true' ? 'checked' : ''; ?>>
+    <input type="checkbox" id="debug-toggle" class="modify-wp-config" data-constant="WP_DEBUG" data-target="wp-debug" data-value="<?php echo $wp_debug === 'true' ? 'false' : 'true'; ?>" <?php echo $wp_debug === 'true' ? 'checked' : ''; ?>>
+
 </div>
 
 <div>
     <label for="debug-display-toggle" style="color: <?php echo $wp_debug_display === 'true' ? 'red' : 'inherit'; ?>;">
         Enable WP_DEBUG_DISPLAY (Current: <?php echo $wp_debug_display; ?>)
     </label>
-    <input type="checkbox" id="debug-display-toggle" <?php echo $wp_debug_display === 'true' ? 'checked' : ''; ?>>
+    <input type="checkbox" id="debug-display-toggle" class="modify-wp-config" data-constant="WP_DEBUG_DISPLAY" data-target="wp-debug-display" data-value="<?php echo $wp_debug_display === 'true' ? 'false' : 'true'; ?>" <?php echo $wp_debug_display === 'true' ? 'checked' : ''; ?>>
+
 </div>
 
 <div>
     <label for="debug-log-toggle" style="color: <?php echo $wp_debug_log === 'true' ? 'red' : 'inherit'; ?>;">
         Enable WP_DEBUG_LOG (Current: <?php echo $wp_debug_log; ?>)
     </label>
-    <input type="checkbox" id="debug-log-toggle" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
+    <input type="checkbox" id="debug-log-toggle" class="modify-wp-config" data-constant="WP_DEBUG_LOG" data-target="wp-debug-log" data-value="<?php echo $wp_debug_log === 'true' ? 'false' : 'true'; ?>" <?php echo $wp_debug_log === 'true' ? 'checked' : ''; ?>>
+
 </div>
                 
 
@@ -171,13 +179,6 @@ $wp_debug_log = check_wp_config_constant_status('WP_DEBUG_LOG');
     ?></pre>
 </div>
 
-
-
-
-     
-
-
-
         <h3>Auto Delete Log Files</h3>
         <form method="post" action="options.php">
             <?php settings_fields('hws_ct_auto_delete_group'); ?>
@@ -214,10 +215,6 @@ $wp_debug_log = check_wp_config_constant_status('WP_DEBUG_LOG');
         ?>
 
         <!-- END CRON SECTION -->
-        
-
 </div>
         </div>
-
-
 <?php }?>

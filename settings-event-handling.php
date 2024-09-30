@@ -325,6 +325,7 @@ jQuery(document).ready(function($) {
     var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
     var value = $(this).is(':checked'); // This now keeps the value as a boolean
     updateDebugSetting('WP_' + setting, value);
+    alert("hihihi");
 });
     function updateDebugSetting(setting, value) {
     alert('Sending request to update ' + setting + ' to ' + (value ? 'true' : 'false'));

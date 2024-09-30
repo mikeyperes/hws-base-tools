@@ -47,6 +47,11 @@ if (!function_exists('hws_ct_highlight_if_essential_setting_failed')) {
 
  if (!function_exists(__NAMESPACE__ . '\\check_plugin_status')) {
     function check_plugin_status($plugin_slug) {
+        
+        if (!function_exists('is_plugin_active')) {
+            require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+        }
+        
         $is_installed = file_exists(WP_PLUGIN_DIR . '/' . $plugin_slug);
         $is_active = $is_installed && is_plugin_active($plugin_slug);
 
