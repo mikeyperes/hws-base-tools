@@ -9,9 +9,6 @@ function activate_listeners()
 <script type="text/javascript">
 jQuery(document).ready(function($) {
         // Toggle WP-Config Constants section
-      /*  $('.wp-config-toggle').on('click', function() {
-            $(this).next('.wp-config-content').slideToggle();
-        });*/
 
         // Delete log files
         function deleteLogFile(logType) {
@@ -108,65 +105,7 @@ jQuery(document).ready(function($) {
 
     });
 
-/*
-        // Toggle WP-Config Constants section
-        $('.wp-config-toggle').on('click', function() {
-            $(this).next('.wp-config-content').slideToggle();
-        });
-*/
-        // Delete log files
-    /*    function deleteLogFile(logType) {
-            const action = logType === 'debug' ? 'delete_debug_log' : 'delete_error_log';
-            $.post(ajaxurl, { action: action }, function(response) {
-                if (response.success) {
-                    console.log(logType + '.log deleted successfully');
-                    location.reload();
-                } else {
-                    console.error('Failed to delete ' + logType + '.log:', response.data);
-                    alert('Error: ' + response.data);
-                }
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                console.error('AJAX request failed:', textStatus, errorThrown);
-                alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-            });
-        }
 
-        // Bind delete actions to buttons
-        $('#delete-debug-log').on('click', function(e) {
-            e.preventDefault();
-            deleteLogFile('debug');
-        });
-
-        $('#delete-error-log').on('click', function(e) {
-            e.preventDefault();
-            deleteLogFile('error');
-        });
-
-        // Handle the auto-delete toggle
-        $('#auto-delete-toggle').on('change', function() {
-            var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
-            $.post(ajaxurl, {
-                action: 'hws_ct_toggle_auto_delete',
-                status: isEnabled
-            }, function(response) {
-                if (response.success) {
-                    alert('Auto delete is now ' + isEnabled + '. Last cron run: ' + response.data.last_run);
-                } else {
-                    alert('Failed to update auto delete setting.');
-                }
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                console.error('AJAX request failed:', textStatus, errorThrown);
-                alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
-            });
-        });
-
-
-
-        */
-
-
-
-    
     </script>
 
 
@@ -325,7 +264,6 @@ jQuery(document).ready(function($) {
     var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
     var value = $(this).is(':checked'); // This now keeps the value as a boolean
     updateDebugSetting('WP_' + setting, value);
-    alert("hihihi");
 });
     function updateDebugSetting(setting, value) {
     alert('Sending request to update ' + setting + ' to ' + (value ? 'true' : 'false'));
