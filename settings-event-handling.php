@@ -8,7 +8,13 @@ function activate_listeners()
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
-        // Toggle WP-Config Constants section
+
+         // Toggle WP-Config Constants section
+         $('.wp-config-toggle').on('click', function() {
+            $(this).next('.wp-config-content').slideToggle();
+        });
+
+
 
         // Delete log files
         function deleteLogFile(logType) {

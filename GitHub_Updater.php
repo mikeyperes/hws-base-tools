@@ -189,17 +189,17 @@ class WP_GitHub_Updater {
         $response = wp_remote_get($query);
     
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
-            write_log("WP_GitHub_Updater: Error fetching version from GitHub.", "true");
+            write_log("🚫 WP_GitHub_Updater: Error fetching version from GitHub.", true);
             return false;
         }
     
         // Extract version from the plugin header
         if (preg_match('/^Version:\s*(.*)$/mi', wp_remote_retrieve_body($response), $matches)) {
             $version = trim($matches[1]);
-            set_site_transient(md5($this->config['slug']).'_new_version', $version, 60*60*6);
+            set_site_transient(md5($this->config['slug']).'_new_version', $version, 3*60*6);
             return $version;
         } else {
-            write_log("WP_GitHub_Updater: No version found in the file.", "true");
+            write_log("🚫 WP_GitHub_Updater: No version found in the file.", true);
             return false;
         }
     }
