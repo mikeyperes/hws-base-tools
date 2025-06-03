@@ -11,6 +11,217 @@ add_action('wp_ajax_'.__NAMESPACE__.'_toggle_snippet',  __NAMESPACE__ . '\\toggl
 function activate_listeners()
 {?>
 
+
+
+
+<script>
+jQuery(document).ready(function($) {
+    // 1) Bind to all <button class="execute-function"> inside #hws-base-tools
+    $('#hws-base-tools .execute-function').on('click', function(e) {
+        e.preventDefault();
+
+        var $btn       = $(this);
+        var methodName = $btn.data('method');   // e.g. "toggle_wordpress_comments_new"
+        var state      = $btn.data('state');    // e.g. "enable" or "disable"
+        var reportDiv  = $('#hws-base-tools .comments-report');
+
+        if ( methodName === 'toggle_wordpress_comments_new' ) {
+            // 2) First, call the generic AJAX handler to get total_posts & batch_size
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action:  'hws_base_tools_execute_function',
+                    method:  methodName,
+                    state:   state
+                },
+                success: function(response) {
+                    if ( ! response.success ) {
+                        alert('Error: ' + (response.data || 'Unknown error'));
+                        return;
+                    }
+
+                    var data       = response.data;
+                    var totalPosts = parseInt(data.total_posts, 10)  || 0;
+                    var batchSize  = parseInt(data.batch_size, 10)   || 20;
+                    var message    = data.message || '';
+
+                    // Show initial message
+                    reportDiv.text( message );
+
+                    // Kick off the first batch (offset=0)
+                    processCommentsBatch(0, totalPosts, batchSize, state, reportDiv);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Initial AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                    alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+                }
+            });
+
+        } else {
+            // 3) Fallback: any other methodName just calls the generic handler unchanged
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action:   'hws_base_tools_execute_function',
+                    method:   methodName,
+                    state:    state,
+                    variable: $btn.data('variable') || ''
+                },
+                success: function(response) {
+                    if ( response.success ) {
+                        alert(methodName + ' executed successfully:\n' + JSON.stringify(response.data,null,2));
+                        // Optionally reload or update DOM
+                    } else {
+                        alert('Error for ' + methodName + ':\n' + (response.data || 'No message'));
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+                    alert('AJAX request failed: ' + textStatus + ', ' + errorThrown);
+                }
+            });
+        }
+    });
+
+    /**
+     * Recursively process comments in batches.
+     *
+     * @param {number} offset      The offset of posts already handled
+     * @param {number} totalPosts  Total published posts
+     * @param {number} batchSize   How many posts per AJAX call
+     * @param {string} state       'enable' or 'disable'
+     * @param {jQuery} reportDiv   The DIV where we show progress
+     */
+    function processCommentsBatch(offset, totalPosts, batchSize, state, reportDiv) {
+    $.ajax({
+        url: ajaxurl,
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            action:     'hws_base_tools_toggle_wordpress_comments_batch',
+            state:      state,
+            offset:     offset,
+            batch_size: batchSize
+        },
+        success: function(response) {
+            if (!response.success) {
+                reportDiv.html(
+                    '<span style="color:red;">Error: ' +
+                    (response.data && response.data.message ? response.data.message : 'Unknown error') +
+                    '</span>'
+                );
+                return;
+            }
+            var data       = response.data;
+            var processed  = data.processed;
+            var nextOffset = data.next_offset;
+            var total      = data.total_posts;
+
+            reportDiv.text('Processed ' + nextOffset + ' of ' + total + ' posts…');
+
+            if (nextOffset < total && processed > 0) {
+                setTimeout(function() {
+                    processCommentsBatch(nextOffset, total, batchSize, state, reportDiv);
+                }, 200);
+            } else {
+                reportDiv.html(
+                    '<span style="color:green;">All ' + total +
+                    ' posts have had comments ' + (state === 'enable' ? 'enabled' : 'disabled') +
+                    '.</span>'
+                );
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // Log raw info to console
+            console.error('Batch AJAX Error:', {
+                httpStatus:   jqXHR.status + ' ' + jqXHR.statusText,
+                textStatus:   textStatus,
+                errorThrown:  errorThrown,
+                responseText: jqXHR.responseText,
+                responseJSON: jqXHR.responseJSON
+            });
+
+            // Build a more helpful message for "0" or other errors
+            var responseText = (jqXHR.responseText || '').trim();
+            var explanation  = '';
+
+            if (responseText === '0') {
+                explanation = 
+                  '<br><strong>Note:</strong> WordPress responded with "0". ' +
+                  'That usually means one of two things:<br>' +
+                  '• The AJAX “action” (hws_base_tools_toggle_wordpress_comments_batch) was not registered.<br>' +
+                  '• You are not logged in or lack the required capability (manage_options).<br>';
+            }
+
+            var messageHtml = 
+                '<span style="color:red;">' +
+                '<strong>AJAX Error</strong><br>' +
+                'HTTP Status: ' + jqXHR.status + ' ' + jqXHR.statusText + '<br>' +
+                'textStatus: ' + textStatus + '<br>' +
+                'errorThrown: ' + errorThrown + '<br>' +
+                'Response Text:<br>' +
+                '<code style="white-space: pre-wrap; display:block; max-height:200px; overflow-y:auto; ' +
+                'background:#f9f9f9; padding:8px; border:1px solid #ddd;">' +
+                ( responseText
+                    ? responseText.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    : '(empty response)' ) +
+                '</code>' +
+                explanation +
+                '</span>';
+
+            reportDiv.html(messageHtml);
+        }
+    });
+}
+
+
+
+
+
+
+
+
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <script type="text/javascript">
 jQuery(document).ready(function($) {
 
@@ -125,10 +336,48 @@ jQuery(document).ready(function($) {
 <script type="text/javascript">
     console.log("hws_base_tools: Listeners activated");
 
-    /*
+
+
+      // 1) Create (or reuse) the global namespace object
+  window.hws_base_tools = window.hws_base_tools || {};
+
+// 2) Move toggleSnippet() into our namespace
+window.hws_base_tools.toggleSnippet = function(snippetId) {
+  var isChecked = jQuery('#' + snippetId).prop('checked');
+  alert("snippet ID: " + snippetId);
+
+  // Make the AJAX call under our namespace
+  jQuery.ajax({
+    url: ajaxurl,
+    type: 'post',
+    data: {
+      action: '<?php echo __NAMESPACE__; ?>_toggle_snippet',
+      snippet_id: snippetId,
+      enable: isChecked
+    },
+    success: function(response) {
+      if (response.success) {
+        alert(response.data);
+      } else {
+        alert('Error: ' + response.data);
+      }
+    },
+    error: function(jqXHR, textStatus, errorThrown) {
+      console.log('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
+      alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
+    }
+  });
+};
+
+
+
+
+
+
+/*
     function toggleSnippet(snippetId) {
         var isChecked = jQuery('#' + snippetId).prop('checked');
-
+alert("snippet ID: "+snippetId+"::: is checked"+isChecked);
         // Make an AJAX call to toggle the snippet
         jQuery.ajax({
             url: ajaxurl,  // Ensure ajaxurl is set correctly
@@ -153,8 +402,7 @@ jQuery(document).ready(function($) {
             }
         });
     }
-        */
-
+*/
 // assets/js/hws-base-tools-listeners.js
 ;(function($){
   'use strict';
@@ -163,13 +411,8 @@ jQuery(document).ready(function($) {
   var ns = 'hws_base_tools';
   window[ns] = window[ns] || {};
 
-  /**
-   * Toggle a snippet on/off via AJAX, namespaced to avoid conflicts.
-   * @param {string} snippetId The ID of the snippet checkbox.
-   */
   window[ns].toggleSnippet = function(snippetId) {
     var isChecked = $('#'+snippetId).prop('checked');
-
     $.ajax({
       url: ajaxurl,
       type: 'post',
@@ -189,13 +432,10 @@ jQuery(document).ready(function($) {
         console.error('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
         alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
       }
-    });
+    });  
   };
 
 })(jQuery);
-
-
-
 
 
 
@@ -223,7 +463,7 @@ jQuery(document).ready(function($) {
         
      
         // Now you can directly use snippetId without conditional checks
-        alert("Action: " + action + " | Snippet ID: " + snippetId);
+        alert(action + " | Snippet ID: " + snippetId);
   
 
         // Do nothing if snippetId is not set (invalid constant)
@@ -237,10 +477,26 @@ jQuery(document).ready(function($) {
         checkbox.prop('checked', isChecked);
 
         // Trigger the toggleSnippet function to update the setting
-        toggleSnippet(snippetId);
+        window.hws_base_tools.toggleSnippet(snippetId);
+    
     });
-});
+});A
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 
 $ = jQuery;
 $(document).ready(function($) {
@@ -323,6 +579,156 @@ $(document).ready(function($) {
         }
     });
 });
+*/
+
+
+
+
+
+
+
+$ = jQuery;
+$(document).ready(function($) {
+
+  // assets/js/hws-base-tools-listeners.js
+  ;(function($){
+    'use strict';
+
+    var ns = 'hws_base_tools';
+    window[ns] = window[ns] || {};
+
+    /**
+     * Execute a PHP function via AJAX, namespaced to avoid conflicts.
+     * If a button has data-type="ini", we send an object { type:"ini", value: ... }.
+     * Otherwise, we send the raw value for a DEFINE.
+     *
+     * @param {jQuery} $btn  The <button> that was clicked
+     */
+    window[ns].executeFunction = function($btn) {
+      // 1) Read all possible data-attributes from the button
+      var methodName = $btn.data('method');            // e.g. "modify_wp_config_constants"
+      var setting    = $btn.data('setting')  || '';    // existing behavior
+      var state      = $btn.data('state')    || '';    // existing behavior
+      var variable   = $btn.data('variable') || '';    // existing behavior
+
+      // NEW for "ini" support:
+      var type      = $btn.data('type')      || '';    // either "ini" or ""
+      var constant  = $btn.data('constant')  || '';    // e.g. "display_errors" or "WP_MEMORY_LIMIT"
+      var value     = $btn.data('value')     || '';    // e.g. "Off" or "4000M"
+      var target    = $btn.data('target')    || '';    // (if you still need data-target)
+
+      // 2) Make sure methodName is provided
+      if ( ! methodName ) {
+        alert('No data-method provided on this button.');
+        return;
+      }
+
+      // 3) Build the payload object we will send in "constants"
+      //    We always send a "constants" key (so PHP sees $_POST['constants'])
+      var constantsPayload = {};
+
+      if ( type === 'ini' && constant ) {
+        // If data-type="ini", create nested object:
+        //    constantsPayload[ constant ] = { type:"ini", value: "Off" };
+        constantsPayload[ constant ] = {
+          type:  'ini',
+          value: value
+        };
+      } else if ( constant ) {
+        // No "ini" type: just send a simple string, which triggers define(...)
+        //    constantsPayload[ constant ] = "4000M"  (or any raw value)
+        constantsPayload[ constant ] = value;
+      }
+
+      // 4) If no "constant" is provided, fall back to old behavior (method/setting/state/variable)
+      var postData;
+      if ( constant ) {
+        // We are updating wp-config via modify_wp_config_constants
+        postData = {
+          action:    'modify_wp_config_constants',
+          constants: constantsPayload
+        };
+      } else {
+        // No "constant" key: use the legacy execute_function path
+        postData = {
+          action:   ns + '_execute_function',
+          method:   methodName,
+          setting:  setting,
+          state:    state,
+          variable: variable
+        };
+      }
+
+      // 5) Send the AJAX request
+      var originalText = $btn.text();
+      $btn.prop('disabled', true).text('Working…');
+
+      $.ajax({
+        url: ajaxurl,
+        type: 'post',
+        dataType: 'json',
+        data: postData
+      })
+      .done(function(response, textStatus, jqXHR) {
+        if ( response.success ) {
+          // If we went the wp-config route, response.data may contain "inserted_lines"
+          // or a simple message string. We just alert whatever response.data is.
+          alert(methodName + ' executed successfully:\n' + JSON.stringify(response.data, null, 2));
+        } else {
+          console.error('AJAX Logical Error:', response);
+          alert('Error for ' + methodName + ':\n' + (response.data || 'No message'));
+        }
+      })
+      .fail(function(jqXHR, textStatus, errorThrown) {
+        var info = {
+          method:        methodName,
+          setting:       setting,
+          state:         state,
+          constant:      constant,
+          value:         value,
+          type:          type,
+          httpStatus:    jqXHR.status + ' ' + jqXHR.statusText,
+          textStatus:    textStatus,
+          errorThrown:   errorThrown,
+          responseText:  jqXHR.responseText,
+          responseJSON:  jqXHR.responseJSON
+        };
+        console.error('AJAX Request Failed:', info);
+
+        var message =
+          'AJAX Error (' + methodName + ')\n' +
+          'HTTP: ' + info.httpStatus + '\n' +
+          'Status: ' + info.textStatus + '\n' +
+          'Error: ' + info.errorThrown + '\n\n' +
+          'Response:\n' + jqXHR.responseText;
+        alert(message);
+      })
+      .always(function() {
+        $btn.prop('disabled', false).text(originalText);
+      });
+    };
+
+    // 6) Bind click handler to any <button class="execute-function"> inside #hws-base-tools
+    $(document).ready(function() {
+      $('#hws-base-tools .execute-function').on('click', function(e) {
+        e.preventDefault();
+        window[ns].executeFunction( $(this) );
+      });
+    });
+
+  })(jQuery);
+
+});
+
+
+
+
+
+
+
+
+
+
 </script>
 
 
@@ -338,20 +744,36 @@ jQuery(document).ready(function($) {
         $(this).text($(this).text() === 'View Last 200 Lines of error_log' ? 'Hide Last 200 Lines of error_log' : 'View Last 100 Lines of error_log');
     });
 });
-</script><script>
+</script>
+
+
+
+<script>
+
+
 jQuery(document).ready(function($) {
     $('#hws-base-tools .modify-wp-config').on('click', function(e) {
+
         e.preventDefault();
-        const constant = $(this).data('constant');
-        const value = $(this).data('value');
-        const target = $(this).data('target');
+
+        var constant = $(this).data('constant');
+        var value    = $(this).data('value');
+        var type     = $(this).data('type') || '';
+        var payload  = {};
+
+        if (type === 'ini' && constant) {
+            payload[constant] = { type: 'ini', value: value };
+        } else if (constant) {
+            payload[constant] = value;
+        }
 
         $.ajax({
             url: ajaxurl,
             type: 'POST',
+            dataType: 'json',
             data: {
                 action: '<?php echo __NAMESPACE__; ?>_modify_wp_config_constants',
-                constants: { [constant]: value }
+                constants: payload
             },
             success: function(response) {
                 if (response.success) {
@@ -367,7 +789,13 @@ jQuery(document).ready(function($) {
             }
         });
     });
-});
+
+
+
+})(jQuery);
+</script>
+
+
 </script>
 
 <script type="text/javascript">

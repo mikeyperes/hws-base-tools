@@ -1092,53 +1092,124 @@ if (!function_exists(__NAMESPACE__ . '\\check_caching_source')) {
 }
 
 
-/** CODE TO TOUCH UP ***/
-if (!function_exists(__NAMESPACE__ . '\\modify_wp_config_constants')) {
-    function modify_wp_config_constants($constants_to_update) {
+
+
+
+
+
+
+
+/**
+ * Modify or insert DEFINE-style constants in wp-config.php,
+ * but if a constant is marked as type "ini", insert ini_set(name, value) instead.
+ *
+ * @param array $constants_to_update  Associative array of constants to update.
+ *                                    Each value can be either:
+ *                                      - A scalar (string/number/bool) → treated as a define(...)
+ *                                      - An array with keys:
+ *                                          'value' => scalar,
+ *                                          'type'  => 'ini' (to use ini_set)
+ *
+ * @return array ['status' => bool, 'message' => string]
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
+    function modify_wp_config_constants( $constants_to_update ) {
         $wp_config_path = ABSPATH . 'wp-config.php';
 
-        if (!file_exists($wp_config_path) || !is_writable($wp_config_path)) {
-            return ['status' => false, 'message' => 'wp-config.php does not exist or is not writable.'];
+        if ( ! file_exists( $wp_config_path ) || ! is_writable( $wp_config_path ) ) {
+            return [
+                'status'  => false,
+                'message' => 'wp-config.php does not exist or is not writable.',
+            ];
         }
 
-        $config_content = file_get_contents($wp_config_path);
+        $config_content = file_get_contents( $wp_config_path );
+        if ( false === $config_content ) {
+            return [
+                'status'  => false,
+                'message' => 'Failed to read wp-config.php.',
+            ];
+        }
 
-        foreach ($constants_to_update as $constant => $value) {
-            // Convert string "true" and "false" to booleans
-            if (is_string($value)) {
-                if (strtolower($value) === 'true') {
+        foreach ( $constants_to_update as $constant => $raw_value ) {
+            $type  = 'define';
+            $value = $raw_value;
+
+            // If value is an array with a 'type' key, extract it
+            if ( is_array( $raw_value ) && isset( $raw_value['type'], $raw_value['value'] ) ) {
+                $type  = $raw_value['type'];
+                $value = $raw_value['value'];
+            }
+
+            // Also allow shorthand: constant name prefixed with "ini_" implies type=ini
+            if ( 0 === stripos( $constant, 'ini_' ) ) {
+                $type       = 'ini';
+                $constant   = substr( $constant, 4 ); // remove "ini_" prefix
+            }
+
+            // Convert string "true"/"false" to boolean if needed
+            if ( is_string( $value ) ) {
+                if ( 'true' === strtolower( $value ) ) {
                     $value = true;
-                } elseif (strtolower($value) === 'false') {
+                } elseif ( 'false' === strtolower( $value ) ) {
                     $value = false;
                 }
             }
 
-            // Handle the boolean and string values appropriately
-            if (is_bool($value)) {
-                $new_constant = $value ? "define('$constant', true);" : "define('$constant', false);";
-            } elseif (is_numeric($value)) {
-                $new_constant = "define('$constant', $value);";
+            if ( 'ini' === $type ) {
+                // Build ini_set(...) line (always quote the value)
+                $escaped_value = str_replace( "'", "\\'", (string) $value );
+                $new_line      = "ini_set( '{$constant}', '{$escaped_value}' );";
+
+                // Remove any existing ini_set('constant', ...) lines
+                $pattern = "/ini_set\s*\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;\s*/i";
+                $config_content = preg_replace( $pattern, '', $config_content );
+
+                // Insert the new ini_set(...) immediately after "<?php"
+                $config_content = preg_replace(
+                    "/^\s*<\?php\s*/",
+                    "<?php\n{$new_line}\n",
+                    $config_content
+                );
             } else {
-                $new_constant = "define('$constant', '$value');";
+                // FALLBACK to define(...) logic
+                if ( is_bool( $value ) ) {
+                    $new_constant = $value
+                        ? "define( '{$constant}', true );"
+                        : "define( '{$constant}', false );";
+                } elseif ( is_numeric( $value ) ) {
+                    $new_constant = "define( '{$constant}', {$value} );";
+                } else {
+                    // Escape single quotes in string values
+                    $escaped = str_replace( "'", "\\'", (string) $value );
+                    $new_constant = "define( '{$constant}', '{$escaped}' );";
+                }
+
+                // Remove existing define(...) for this constant
+                $pattern = "/define\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*.*?\)\s*;\s*/i";
+                $config_content = preg_replace( $pattern, '', $config_content );
+
+                // Insert the new define(...) immediately after "<?php"
+                $config_content = preg_replace(
+                    "/^\s*<\?php\s*/",
+                    "<?php\n{$new_constant}\n",
+                    $config_content
+                );
             }
-
-            // Remove any existing definition of the constant
-            $config_content = preg_replace(
-                "/define\(\s*['\"]" . preg_quote($constant, '/') . "['\"]\s*,\s*.*?\);\s*/",
-                '',
-                $config_content
-            );
-
-            // Insert the new constant definition at the beginning of the file
-            $config_content = "<?php\n$new_constant\n" . ltrim($config_content, "<?php\n");
         }
 
-        // Write the updated content back to wp-config.php
-        if (file_put_contents($wp_config_path, $config_content)) {
-            return ['status' => true, 'message' => 'Constants updated successfully.'];
-        } else {
-            return ['status' => false, 'message' => 'Failed to update wp-config.php.'];
+        // Write updated content back to wp-config.php
+        if ( false === file_put_contents( $wp_config_path, $config_content ) ) {
+            return [
+                'status'  => false,
+                'message' => 'Failed to update wp-config.php.',
+            ];
         }
+
+        return [
+            'status'  => true,
+            'message' => 'Constants updated successfully.',
+        ];
     }
 }
 
@@ -1574,11 +1645,22 @@ function perform_php_ini_check($setting_name, $on_values = [1, '1', 'On', 'on', 
     $status_display = $fail_status 
         ? "<span>$display_value</span>" 
         : "<span>$display_value</span>";
-
+/*
     // Create a toggle button for the setting
     $toggle_button = ($current_status === 'DISABLED')
         ? "<button class='button execute-function block' data-method='toggle_php_ini_value' data-variable='$setting_name' data-setting='$setting_name' data-state='1' data-loader='true'>Enable $setting_name</button><br>"
         : "<button class='button execute-function block' data-method='toggle_php_ini_value' data-variable='$setting_name' data-setting='$setting_name' data-state='0' data-loader='true'>Disable $setting_name</button><br>";
+*/
+
+// Assume $current_status is already set to 'ENABLED', 'DISABLED', or 'Unknown'
+//
+// Output a real <button> element (not just text) to toggle display_errors
+$toggle_button = ($current_status === 'DISABLED')
+    ? "<button class='button modify-wp-config' data-type='ini' data-constant='display_errors' data-value='On' data-target='ini-error-reporting'>Enable display_errors</button><br>"
+    : "<button class='button modify-wp-config' data-type='ini' data-constant='display_errors' data-value='Off' data-target='ini-error-reporting'>Disable display_errors</button><br>";
+
+// Make sure you echo it so that the browser sees the <button> tag:
+
 
     // Generate the report with the current status, the actual value, and the toggle button
     $report = "$status_display<br>$toggle_button";

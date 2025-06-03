@@ -3,7 +3,10 @@
 function enable_comments_management()
 {
     add_action('admin_head', 'hws_base_tools\custom_admin_menu_css');
-
+    add_action(
+        'wp_ajax_hws_base_tools_toggle_wordpress_comments_batch',
+        __NAMESPACE__ . '\\toggle_wordpress_comments_batch'
+    );
 }
 function display_settings_comments_dashboard() { 
     // Perform the system check to get the report data
@@ -13,8 +16,9 @@ function display_settings_comments_dashboard() {
     <!-- Comments Dashboard Panel -->
     <div class="panel">
         <h2 class="panel-title">Comments Reporting Dashboard</h2>
-        <div class="panel-content">
 
+        <div class="panel-content">
+<div class="comments-report">hi</div>
             <!-- Comments Status Section -->
             <section style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 10px;">WordPress Comments Overview</h3>
@@ -106,6 +110,13 @@ function perform_comments_system_check() {
     $report .= ($comments_status === 'DISABLED'
         ? "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='enable' data-loader='true'>Enable Comments</button><br>"
         : "<button class='button execute-function block' data-method='toggle_wordpress_comments' data-state='disable' data-loader='true'>Disable Comments</button><br>");
+
+
+        $report .= ($comments_status === 'DISABLED'
+        ? "<button class='button execute-function block' data-method='toggle_wordpress_comments_new' data-state='enable' data-loader='true'>Enable Comments NEW</button><br>"
+        : "<button class='button execute-function block' data-method='toggle_wordpress_comments_new' data-state='disable' data-loader='true'>Disable Comments NEW</button><br>");
+
+
 
     // Pingbacks Status
     $report .= "<strong>Pingbacks Status (prior and future):</strong> " . ($pingbacks_status === 'DISABLED'
@@ -454,3 +465,56 @@ if (!function_exists('hws_base_tools\toggle_wordpress_pingbacks')) {
     write_log("Warning: toggle_wordpress_pingbacks function is already declared", true);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* NEW CODE, Dont forget to remove old */
+
+
+
+// Register no new AJAX hook here—this function is called via handle_execute_function_ajax().
+// handle_execute_function_ajax() will do: call_user_func( 'hws_base_tools\toggle_wordpress_comments_new', $state );
+
+function toggle_wordpress_comments_new( $state ) {
+    // 1) Security: only admins (manage_options)
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return [
+            'status'  => false,
+            'message' => 'Unauthorized.',
+        ];
+    }
+
+    // 2) Sanitize/validate $state
+    $state = sanitize_text_field( $state );
+    if ( $state !== 'enable' && $state !== 'disable' ) {
+        return [
+            'status'  => false,
+            'message' => 'Invalid state. Must be "enable" or "disable".',
+        ];
+    }
+
+    // 3) Determine total number of published posts
+    $total_posts = wp_count_posts( 'post' )->publish;
+
+    // 4) Decide on a default batch size
+    $batch_size = 25; // you can tweak this number
+
+    // 5) Return just enough info for JS to begin batch processing
+    return [
+        'status'      => true,
+        'total_posts' => $total_posts,
+        'batch_size'  => $batch_size,
+        'message'     => "Starting to {$state} comments on {$total_posts} posts in batches of {$batch_size}."
+    ];
+}

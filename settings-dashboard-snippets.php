@@ -121,13 +121,14 @@ foreach ($settings_snippets as $snippet) {
     <input 
         type="checkbox" 
         id="' . $snippet['id'] . '" 
-        onclick="hws_base_tools.toggleSnippet(\'' . $snippet['id'] . '\')" 
+        onclick="window.' . __NAMESPACE__ . '.toggleSnippet(\'' . $snippet['id'] . '\')" 
         ' . $checked . '>
     <label for="' . $snippet['id'] . '">
         ' . $snippet['name'] . ' - <em>' . $snippet['description'] . '</em><br>
         <small><strong>Details:</strong><br>' . $snippet['info'] . '</small>
     </label>
-  </div>';
+</div>';
+
 
 }
 
