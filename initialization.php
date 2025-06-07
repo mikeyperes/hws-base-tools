@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 5.6
+Version: 5.7
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -120,6 +120,30 @@ function hws_ct_get_settings_snippets()
 {
     $settings_snippets = [
 
+
+
+        
+    
+        [
+            'id' => 'register_acf_website_settings',
+            'name' => 'Register Website Settings Page (theme options and acf structures)',
+            'description' => '',
+            'info' => display_acf_structure('group_6842076add7ad'),
+            'function' => 'register_acf_website_settings'
+        ],
+
+
+    
+        [
+            'id' => 'enable_website_settings_functionality',
+            'name' => 'Website Theme Settings Functionality',
+            'description' => '',
+            'info' => '',
+            'function' => 'enable_website_settings_functionality'
+        ],
+
+
+        
 
         [
             'id' => 'smp_enable_cpt_teammember',
@@ -313,6 +337,8 @@ add_action('acf/init', function() {
 include_once("register-acf-fields-user.php");
 include_once("register-acf-fields-rss.php");
 include_once("register-acf-sponsored-functionality.php");
+include_once("register-acf-website-settings.php");
+
 
 //register_acf_rss();
 
@@ -340,7 +366,6 @@ include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-php-libraries.php");
 
-
 // Set up event handling (click listeners and handlers)
 include_once("settings-event-handling.php");
 
@@ -352,6 +377,9 @@ include_once("snippet-smp-display-ads.php");
 include_once("snippet-rss.php");
 include_once("snippet-comments.php");
 include_once("snippet-acf-migration-structures.php");
+include_once("snippet-website-settings-functionality.php");
+
+
 // Build Dashboard
 include_once("activate-snippets.php");
 });
