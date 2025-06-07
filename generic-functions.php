@@ -1096,9 +1096,6 @@ if (!function_exists(__NAMESPACE__ . '\\check_caching_source')) {
 
 
 
-
-
-
 /**
  * Modify or insert DEFINE-style constants in wp-config.php,
  * but if a constant is marked as type "ini", insert ini_set(name, value) instead.
@@ -1141,7 +1138,7 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
                 $value = $raw_value['value'];
             }
 
-            // Also allow shorthand: constant name prefixed with "ini_" implies type=ini
+            // Allow shorthand: constant name prefixed with "ini_" implies type=ini
             if ( 0 === stripos( $constant, 'ini_' ) ) {
                 $type       = 'ini';
                 $constant   = substr( $constant, 4 ); // remove "ini_" prefix
@@ -1157,22 +1154,22 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
             }
 
             if ( 'ini' === $type ) {
-                // Build ini_set(...) line (always quote the value)
+                // ini_set – preserve original casing
                 $escaped_value = str_replace( "'", "\\'", (string) $value );
                 $new_line      = "ini_set( '{$constant}', '{$escaped_value}' );";
 
-                // Remove any existing ini_set('constant', ...) lines
                 $pattern = "/ini_set\s*\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;\s*/i";
                 $config_content = preg_replace( $pattern, '', $config_content );
 
-                // Insert the new ini_set(...) immediately after "<?php"
                 $config_content = preg_replace(
                     "/^\s*<\?php\s*/",
                     "<?php\n{$new_line}\n",
                     $config_content
                 );
             } else {
-                // FALLBACK to define(...) logic
+                // FORCE constant name to uppercase for define(...)
+                $constant = strtoupper( $constant );
+
                 if ( is_bool( $value ) ) {
                     $new_constant = $value
                         ? "define( '{$constant}', true );"
@@ -1180,16 +1177,13 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
                 } elseif ( is_numeric( $value ) ) {
                     $new_constant = "define( '{$constant}', {$value} );";
                 } else {
-                    // Escape single quotes in string values
                     $escaped = str_replace( "'", "\\'", (string) $value );
                     $new_constant = "define( '{$constant}', '{$escaped}' );";
                 }
 
-                // Remove existing define(...) for this constant
                 $pattern = "/define\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*.*?\)\s*;\s*/i";
                 $config_content = preg_replace( $pattern, '', $config_content );
 
-                // Insert the new define(...) immediately after "<?php"
                 $config_content = preg_replace(
                     "/^\s*<\?php\s*/",
                     "<?php\n{$new_constant}\n",
@@ -1198,7 +1192,6 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
             }
         }
 
-        // Write updated content back to wp-config.php
         if ( false === file_put_contents( $wp_config_path, $config_content ) ) {
             return [
                 'status'  => false,
@@ -1212,7 +1205,6 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
         ];
     }
 }
-
 
 
 
@@ -1762,3 +1754,358 @@ if (!function_exists(__NAMESPACE__ . '\\toggle_php_ini_value')) {
 } else {
     write_log("Warning: hws_base_tools\toggle_php_ini_value is already declared.", true);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Generate a nicely styled HTML output for one or more ACF field groups,
+ * listing each field (with nested sub-fields if it’s a “group”) and then
+ * the display conditions, all wrapped in semantic tags and inline CSS.
+ *
+ * @param string|array $group_keys A single ACF group key (e.g., 'group_65a8b18d98147')
+ *                                 or an array of keys.
+ * @return string HTML string with improved styling:
+ *                • <div> wrapper per group
+ *                • <h2> for group title/key
+ *                • <ul> for fields, <li> for each field
+ *                • Nested <ul> for sub-fields
+ *                • <h3> for “Display Conditions”
+ *                • <ul> for condition sets, nested <ul> for individual rules
+ */
+function display_acf_structure( $group_keys, $deprecated = false ) {
+    // If ACF isn’t active, bail early.
+    if ( ! function_exists( 'acf_get_field_groups' ) ) {
+        return '';
+    }
+
+    // Normalize into an array
+    $keys   = is_array( $group_keys ) ? $group_keys : [ $group_keys ];
+    $output = '';
+
+    foreach ( $keys as $group_key ) {
+        // 1) Fetch the group object (title, location, etc.)
+        $groups = acf_get_field_groups( [ 'key' => $group_key ] );
+        if ( empty( $groups ) ) {
+            continue;
+        }
+        $group = reset( $groups );
+
+        // Determine background color based on deprecation flag
+        $bg_color = $deprecated ? 'rgba(255,0,0,0.5)' : '#f9f9f9';
+
+        // 2) Open group container
+        $output .= '<div style="'
+                 . 'border:1px solid #ccc;'
+                 . 'border-radius:4px;'
+                 . 'padding:16px;'
+                 . 'margin-bottom:24px;'
+                 . 'font-family:Arial, sans-serif;'
+                 . 'background-color:' . $bg_color . ';'
+                 . '">';
+
+                 
+        // 3) Group title and key
+        $output .= '<h2 style="'
+                 . 'margin:0 0 12px;'
+                 . 'font-size:1.25em;'
+                 . 'color:#333;'
+                 . '">'
+                 . esc_html( $group['title'] )
+                 . ' <code style="'
+                 . 'background:#eaeaea;'
+                 . 'padding:2px 4px;'
+                 . 'border-radius:3px;'
+                 . 'font-size:0.9em;'
+                 . 'color:#555;'
+                 . '">'
+                 . esc_html( $group_key )
+                 . '</code>'
+                 . '</h2>';
+
+        // 4) List all fields
+        $fields = acf_get_fields( $group_key );
+        if ( ! empty( $fields ) ) {
+            $output .= '<ul style="'
+                     . 'list-style-type:disc;'
+                     . 'margin:0 0 16px 20px;'
+                     . 'padding:0;'
+                     . '">';
+            foreach ( $fields as $field ) {
+                // Top-level field: “name – Label (type)”
+                $output .= '<li style="margin-bottom:6px;">'
+                         . '<span style="font-weight:bold; color:#222;">'
+                         . esc_html( $field['name'] )
+                         . '</span> – '
+                         . '<span style="color:#555;">'
+                         . esc_html( $field['label'] )
+                         . '</span> '
+                         . '<em style="color:#999;">('
+                         . esc_html( $field['type'] )
+                         . ')</em>';
+
+                // 4a) If this field is a “group,” show its sub_fields indented
+                if ( isset( $field['type'], $field['sub_fields'] ) 
+                     && $field['type'] === 'group' 
+                     && ! empty( $field['sub_fields'] ) ) {
+                    $output .= '<ul style="'
+                             . 'list-style-type:circle;'
+                             . 'margin:8px 0 0 20px;'
+                             . 'padding:0;'
+                             . '">';
+                    foreach ( $field['sub_fields'] as $sub_field ) {
+                        $output .= '<li style="margin-bottom:4px;">'
+                                 . '<span style="font-weight:bold; color:#222;">'
+                                 . esc_html( $sub_field['name'] )
+                                 . '</span> – '
+                                 . '<span style="color:#555;">'
+                                 . esc_html( $sub_field['label'] )
+                                 . '</span> '
+                                 . '<em style="color:#999;">('
+                                 . esc_html( $sub_field['type'] )
+                                 . ')</em>'
+                                 . '</li>';
+                    }
+                    $output .= '</ul>';
+                }
+
+                $output .= '</li>';
+            }
+            $output .= '</ul>';
+        }
+
+        // 5) Display Conditions heading
+        if ( isset( $group['location'] ) && is_array( $group['location'] ) ) {
+            $output .= '<h3 style="'
+                     . 'margin:0 0 8px;'
+                     . 'font-size:1.1em;'
+                     . 'color:#333;'
+                     . '">'
+                     . 'Display Conditions'
+                     . '</h3>';
+
+            $output .= '<ul style="'
+                     . 'list-style-type:disc;'
+                     . 'margin:0 0 0 20px;'
+                     . 'padding:0;'
+                     . '">';
+            foreach ( $group['location'] as $set_index => $rules ) {
+                $set_num = $set_index + 1;
+                $output .= '<li style="margin-bottom:6px;">'
+                         . '<strong style="color:#444;">Condition Set '
+                         . esc_html( $set_num )
+                         . '</strong>'
+                         . '<ul style="'
+                         . 'list-style-type:circle;'
+                         . 'margin:4px 0 0 20px;'
+                         . 'padding:0;'
+                         . '">';
+                foreach ( $rules as $rule ) {
+                    $param    = $rule['param']    ?? '';
+                    $operator = $rule['operator'] ?? '';
+                    $value    = $rule['value']    ?? '';
+                    $output  .= '<li style="margin-bottom:4px; color:#555;">'
+                              . esc_html( "{$param} {$operator} {$value}" )
+                              . '</li>';
+                }
+                $output .= '</ul></li>';
+            }
+            $output .= '</ul>';
+        }
+
+        // 6) Close group container
+        $output .= '</div>';
+    }
+
+    return $output;
+}
+
+
+
+/**
+ * Generate a styled HTML output for a registered custom post type (CPT),
+ * listing its main arguments (labels, supports, taxonomies, and flags)
+ * in a clear, nested format with inline CSS.
+ *
+ * @param string $cpt_slug The slug of the registered CPT (e.g., 'organization').
+ * @return string HTML string with improved styling:
+ *                • <div> wrapper per CPT
+ *                • <h2> for CPT name and slug
+ *                • <h3> and <ul> for Labels, Supports, Taxonomies, and Flags
+ */
+
+ 
+function display_cpt_structure( string $cpt_slug ): string {
+    // Get the post type object; if not registered, return empty string
+    $pt_obj = get_post_type_object( $cpt_slug );
+    if ( ! $pt_obj ) {
+        return '';
+    }
+
+    $output = '';
+
+    // Open CPT container
+    $output .= '<div style="'
+             . 'border:1px solid #666;'
+             . 'border-radius:4px;'
+             . 'padding:16px;'
+             . 'margin-bottom:24px;'
+             . 'font-family:Arial, sans-serif;'
+             . 'background-color:#f5f5f5;'
+             . '">';
+
+    // CPT title and slug
+    $output .= '<h2 style="'
+             . 'margin:0 0 12px;'
+             . 'font-size:1.25em;'
+             . 'color:#222;'
+             . '">'
+             . esc_html( $pt_obj->labels->name )
+             . ' <code style="'
+             . 'background:#e0e0e0;'
+             . 'padding:2px 4px;'
+             . 'border-radius:3px;'
+             . 'font-size:0.9em;'
+             . 'color:#444;'
+             . '">'
+             . esc_html( $cpt_slug )
+             . '</code>'
+             . '</h2>';
+
+    // 1) Labels Section
+    $output .= '<h3 style="'
+             . 'margin:12px 0 6px;'
+             . 'font-size:1.1em;'
+             . 'color:#333;'
+             . '">'
+             . 'Labels'
+             . '</h3>';
+    $output .= '<ul style="'
+             . 'list-style-type:disc;'
+             . 'margin:0 0 16px 20px;'
+             . 'padding:0;'
+             . '">';
+    $label_props = [
+        'singular_name', 'add_new_item', 'edit_item', 'view_item',
+        'all_items', 'menu_name', 'archives', 'attributes',
+        'insert_into_item', 'uploaded_to_this_item', 'filter_items_list',
+        'search_items', 'not_found', 'not_found_in_trash',
+        'items_list', 'items_list_navigation'
+    ];
+    foreach ( $label_props as $prop ) {
+        if ( isset( $pt_obj->labels->$prop ) && $pt_obj->labels->$prop !== '' ) {
+            $output .= '<li style="margin-bottom:6px;">'
+                     . '<span style="font-weight:bold; color:#222;">'
+                     . esc_html( $prop )
+                     . '</span>: '
+                     . '<span style="color:#555;">'
+                     . esc_html( $pt_obj->labels->$prop )
+                     . '</span>'
+                     . '</li>';
+        }
+    }
+    $output .= '</ul>';
+
+    // 2) Supports Section
+    if ( ! empty( $pt_obj->supports ) ) {
+        $output .= '<h3 style="'
+                 . 'margin:12px 0 6px;'
+                 . 'font-size:1.1em;'
+                 . 'color:#333;'
+                 . '">'
+                 . 'Supported Features'
+                 . '</h3>';
+        $output .= '<ul style="'
+                 . 'list-style-type:disc;'
+                 . 'margin:0 0 16px 20px;'
+                 . 'padding:0;'
+                 . '">';
+        foreach ( $pt_obj->supports as $support ) {
+            $output .= '<li style="margin-bottom:6px; color:#555;">'
+                     . esc_html( $support )
+                     . '</li>';
+        }
+        $output .= '</ul>';
+    }
+
+    // 3) Taxonomies Section
+    if ( ! empty( $pt_obj->taxonomies ) ) {
+        $output .= '<h3 style="'
+                 . 'margin:12px 0 6px;'
+                 . 'font-size:1.1em;'
+                 . 'color:#333;'
+                 . '">'
+                 . 'Attached Taxonomies'
+                 . '</h3>';
+        $output .= '<ul style="'
+                 . 'list-style-type:disc;'
+                 . 'margin:0 0 16px 20px;'
+                 . 'padding:0;'
+                 . '">';
+        foreach ( $pt_obj->taxonomies as $tax ) {
+            $output .= '<li style="margin-bottom:6px; color:#555;">'
+                     . esc_html( $tax )
+                     . '</li>';
+        }
+        $output .= '</ul>';
+    }
+
+    // 4) Flags & Arguments Section
+    $output .= '<h3 style="'
+             . 'margin:12px 0 6px;'
+             . 'font-size:1.1em;'
+             . 'color:#333;'
+             . '">'
+             . 'Settings & Flags'
+             . '</h3>';
+    $output .= '<ul style="'
+             . 'list-style-type:disc;'
+             . 'margin:0 0 0 20px;'
+             . 'padding:0;'
+             . '">';
+    // Public
+    $output .= '<li style="margin-bottom:6px; color:#555;">'
+             . '<strong>public</strong>: '
+             . ( $pt_obj->public ? 'true' : 'false' )
+             . '</li>';
+    // Show in REST
+    $show_in_rest = isset( $pt_obj->show_in_rest ) ? $pt_obj->show_in_rest : false;
+    $output     .= '<li style="margin-bottom:6px; color:#555;">'
+                 . '<strong>show_in_rest</strong>: '
+                 . ( $show_in_rest ? 'true' : 'false' )
+                 . '</li>';
+    // Menu Icon
+    $menu_icon = isset( $pt_obj->menu_icon ) && $pt_obj->menu_icon !== '' 
+                 ? esc_html( $pt_obj->menu_icon ) 
+                 : '—';
+    $output  .= '<li style="margin-bottom:6px; color:#555;">'
+              . '<strong>menu_icon</strong>: '
+              . $menu_icon
+              . '</li>';
+    // Delete with user (if registered via args)
+    $del_with_user = isset( $pt_obj->delete_with_user ) && $pt_obj->delete_with_user 
+                     ? 'true' 
+                     : 'false';
+    $output     .= '<li style="margin-bottom:6px; color:#555;">'
+                 . '<strong>delete_with_user</strong>: '
+                 . $del_with_user
+                 . '</li>';
+    $output .= '</ul>';
+
+    // Close CPT container
+    $output .= '</div>';
+
+    return $output;
+}
+

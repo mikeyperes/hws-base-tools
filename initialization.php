@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 5.3
+Version: 5.5
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -125,7 +125,7 @@ function hws_ct_get_settings_snippets()
             'id' => 'smp_enable_cpt_teammember',
             'name' => 'SMP: Enable Team Member CPT',
             'description' => '',
-            'info' => '',
+            'info' => display_cpt_structure('team-member'),
             'function' => 'enable_smp_cpt_teammember'
         ],
         [
@@ -141,22 +141,29 @@ function hws_ct_get_settings_snippets()
             'id' => 'smp_enable_cpt_organization',
             'name' => 'SMP: Enable Organizations CPT',
             'description' => '',
-            'info' => '',
+            'info' => display_cpt_structure('organization'),
             'function' => 'enable_smp_cpt_organization'
         ],
         [
             'id' => 'smp_enable_acf_user',
-            'name' => 'SMP: Enable User ACFs',
+            'name' => 'OLD DELETE - SMP: Enable User ACFs',
             'description' => '',
-            'info' => '',
-            'function' => 'enable_smp_acf_user'
+            'function' => 'enable_smp_acf_user',
+            'info'        =>  display_acf_structure(['group_65a8b18d98147','group_6419bc02b6e93'],true),
+
+
         ],
+
+
+        
+
 
         [
             'id' => 'smp_enable_acf_organization',
             'name' => 'SMP: Enable Organizations ACFs',
             'description' => '',
-            'info' => '',
+  
+            'info'        =>  display_acf_structure('group_64bc3b458d863'),
             'function' => 'enable_smp_acf_organization'
         ],
         
@@ -167,9 +174,23 @@ function hws_ct_get_settings_snippets()
             'name' => 'SMP: Enable Team Member ACFs',
             'description' => '',
             'info' => '',
+            'info'        =>  display_acf_structure('group_64b3a05760b1a'),
             'function' => 'enable_smp_acf_teammember'
         ],
  
+        
+        
+
+        [
+            'id' => 'register_user_custom_fields_2025',
+            'name' => 'Enable user.php acf fields - 2025',
+            'description' => '',
+            'info' => '',
+            'info'        =>  display_acf_structure('group_684252fd99081'),
+            'function' => 'register_user_custom_fields_2025'
+        ],
+ 
+
 
         [
             'id' => 'enable_comments_management',
@@ -259,21 +280,18 @@ function hws_ct_get_settings_snippets()
 
         
         [
-            'name' => 'Enable Author Social ACFs',
-            'id' => 'register_user_custom_fields',
-            'function' => 'register_user_custom_fields',
+            'name'        => 'Enable Author Social ACFs',
+            'id'          => 'register_user_custom_fields',
+            'function'    => 'register_user_custom_fields',
             'description' => 'This will enable social media fields in author profiles.',
-            'info' => implode('<br>', array_map(function($field) {
-                if ($field['type'] === 'group') {
-                    $sub_fields = implode(', ', array_map(function($sub_field) {
-                        return "{$sub_field['name']}";
-                    }, $field['sub_fields']));
-                    return "{$field['name']}<br>&emsp;{$sub_fields}";
-                } else {
-                    return "{$field['name']}";
-                }
-            }, acf_get_fields('group_590d64c31db0a')))
+            'info'        =>  display_acf_structure('group_590d64c31db0a',true),
         ],
+
+
+       
+
+
+
     ];
 
     // Ensure closure results are handled
