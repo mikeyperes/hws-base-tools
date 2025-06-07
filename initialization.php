@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 5.8
+Version: 5.8.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -64,10 +64,10 @@ $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
 $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip";
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
-
+if (is_admin()) {
 // Include the GitHub Updater class
 include_once("GitHub_Updater.php");
-
+}
 // Use the WP_GitHub_Updater class
 use hws_base_tools\WP_GitHub_Updater;
 
@@ -109,7 +109,7 @@ foreach ($plugins_to_check as $plugin) {
 }
 
 // If none of the ACF plugins are active, display a warning and prevent the plugin from running
-if (!$acf_active) {
+if (!$acf_active && is_admin()) {
     add_action('admin_notices', function() {
         echo '<div class="notice notice-error"><p><strong>HWS - Base Tools:</strong> The Advanced Custom Fields (ACF) or Advanced Custom Fields Pro (ACF Pro) plugin is required and must be active to use this plugin. Please activate ACF or ACF Pro.</p></div>';
     });
