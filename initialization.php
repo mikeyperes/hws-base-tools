@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 5.7
+Version: 5.8
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -350,6 +350,10 @@ include_once("smp-core/register-post-type-team-member.php");
 include_once("smp-core/register-acf-user.php");
 include_once("smp-core/register-acf-organization.php");
 include_once("smp-core/register-acf-team-member.php");
+
+
+if (!is_admin()) return;
+
 
 include_once("helper.php");
 
