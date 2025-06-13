@@ -5,10 +5,15 @@ Description: Basic tools for optimization, performance, and debugging on Hexa-ba
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
 Version: 5.9.1
+Text Domain: hws-base-tools
+Domain Path: /languages
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
-*/          
+*/  
+
+
+
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
