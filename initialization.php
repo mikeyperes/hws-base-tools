@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 5.8.1
+Version: 5.9.1
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
@@ -64,6 +64,8 @@ $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
 $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip";
 $wordpress_version_tested = "6.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
+
+
 if (is_admin()) {
 // Include the GitHub Updater class
 include_once("GitHub_Updater.php");
@@ -71,23 +73,25 @@ include_once("GitHub_Updater.php");
 // Use the WP_GitHub_Updater class
 use hws_base_tools\WP_GitHub_Updater;
 
-$config = null;
-// Initialize the updater
-if (is_admin()) { // Ensure this runs only in the admin area
- $updater = new WP_GitHub_Updater(Config::get_github_config());
-    // Trigger an update check for debugging
-    add_action('init', function() {
-        if (is_admin() && isset($_GET['force-update-check'])) {
-            // Force WordPress to check for plugin updates
-            wp_clean_update_cache();
-            set_site_transient('update_plugins', null);
-            wp_update_plugins();
 
-            // Log to confirm the check has been triggered
-            error_log('WP_GitHub_Updater: Forced plugin update check triggered.');
-        }
-    });
-}
+
+/**
+ * Initialize GitHub Updater only after plugins have loaded and i18n is ready.
+ */
+add_action( 'admin_init', function() {
+    $updater = new WP_GitHub_Updater( Config::get_github_config() );
+
+    // if you still want your “force‐update‐check” debug hook:
+    if ( isset( $_GET['force-update-check'] ) ) {
+        wp_clean_update_cache();
+        set_site_transient( 'update_plugins', null );
+        wp_update_plugins();
+        error_log( 'WP_GitHub_Updater: Forced plugin update check triggered.' );
+    }
+} );
+
+
+
 
 
 // Array of plugins to check
@@ -120,9 +124,16 @@ function hws_ct_get_settings_snippets()
 {
     $settings_snippets = [
 
+        [
+            'id' => 'regsiter_acf_post_podcast',
+            'name' => 'Scale My Podcast: Register Post Podcast ACFs ',
+            'description' => '',
+            'info' => display_acf_structure('group_6844c5d5cf57f'),
+            'function' => 'regsiter_acf_post_podcast'
+        ],
 
 
-        
+
     
         [
             'id' => 'register_acf_website_settings',
@@ -340,6 +351,7 @@ include_once("register-acf-sponsored-functionality.php");
 include_once("register-acf-website-settings.php");
 
 
+
 //register_acf_rss();
 
 
@@ -350,6 +362,8 @@ include_once("smp-core/register-post-type-team-member.php");
 include_once("smp-core/register-acf-user.php");
 include_once("smp-core/register-acf-organization.php");
 include_once("smp-core/register-acf-team-member.php");
+
+include_once("scale-my-podcast/register-acf-post-podcast.php");
 
 
 if (!is_admin()) return;

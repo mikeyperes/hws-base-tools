@@ -339,7 +339,7 @@ jQuery(document).ready(function($) {
 
 
       // 1) Create (or reuse) the global namespace object
-  window.hws_base_tools = window.hws_base_tools || {};
+  window.hws_base_tools = window.hws_bases_tools || {};
 
 // 2) Move toggleSnippet() into our namespace
 window.hws_base_tools.toggleSnippet = function(snippetId) {
@@ -480,7 +480,7 @@ alert("snippet ID: "+snippetId+"::: is checked"+isChecked);
         window.hws_base_tools.toggleSnippet(snippetId);
     
     });
-});A
+});
 
 
 
