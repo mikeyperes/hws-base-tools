@@ -153,6 +153,6 @@ pre {
 <?php hws_ct_display_plugin_info();?>
 <?php
   // Get the buffer contents and clean (erase) the output buffer
-  if (ob_get_level() != 0) echo ob_get_clean();
+  //if (ob_get_level() != 0) echo ob_get_clean();
 }
 ?>
