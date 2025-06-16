@@ -244,6 +244,7 @@ function register_acf_website_settings()
 
 	acf_add_options_page( array(
 	'page_title' => 'Website Settings',
+    'post_id'    => 'option', 
 	'menu_slug' => 'website-settings',
 	'redirect' => false,
 ) );

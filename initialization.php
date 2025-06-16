@@ -18,7 +18,7 @@ GitHub Branch: main
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
 
-if (!is_admin()) return;
+//if (!is_admin()) return;
 
 class Config {
     public static $settings_page_name = "HWS Base Tools";
@@ -84,10 +84,11 @@ $github_access_token = ''; // Leave empty if not required for private repositori
 if (is_admin()) {
 // Include the GitHub Updater class
 include_once("GitHub_Updater.php");
-}
 // Use the WP_GitHub_Updater class
 use hws_base_tools\WP_GitHub_Updater;
 
+
+}
 
 
 /**
@@ -381,7 +382,7 @@ include_once("smp-core/register-acf-team-member.php");
 include_once("scale-my-podcast/register-acf-post-podcast.php");
 
 
-if (!is_admin()) return;
+if (is_admin()){
 
 
 include_once("helper.php");
@@ -412,7 +413,10 @@ include_once("snippet-comments.php");
 include_once("snippet-acf-migration-structures.php");
 include_once("snippet-website-settings-functionality.php");
 
-
+}
 // Build Dashboard
 include_once("activate-snippets.php");
-},10);
+
+
+include_once("shortcodes.php");
+},5);
