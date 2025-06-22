@@ -105,8 +105,18 @@
                     <h3>Available Snippets:</h3>
                     <div style="margin-left: 15px;">
                         <?php
+
+$settings_snippets=[];
+$snippets_acf = get_snippets("acf");
+$snippets_admin = get_snippets("admin");
+$snippets_non_admin = get_snippets("non_admin");
+
+// Merge all three arrays into one
+$all_snippets = array_merge($snippets_acf, $snippets_admin, $snippets_non_admin);
+
+
 // Loop through all snippets and display them with a checkbox
-foreach ($settings_snippets as $snippet) {
+foreach ($all_snippets as $snippet) {
     // Get the current state of the option from the database
     $is_enabled = get_option($snippet['id'], false);
 
