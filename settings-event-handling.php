@@ -1030,8 +1030,8 @@ function modify_wp_config_constants_handler() {
  
 if (!function_exists(__NAMESPACE__.'\toggle_snippet')) {
     function toggle_snippet() {
-        $settings_snippets = hws_ct_get_settings_snippets();
-
+       // $settings_snippets = hws_ct_get_settings_snippets();
+        $settings_snippets = [];
         // Retrieve the snippet ID and the enable/disable state from the AJAX request
         $snippet_id = sanitize_text_field($_POST['snippet_id']);
         $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);

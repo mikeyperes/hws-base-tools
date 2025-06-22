@@ -12,7 +12,6 @@ function enable_website_settings_functionality() {
         1
     );
 }
-add_action( 'acf/init', __NAMESPACE__ . '\\enable_website_settings_functionality' );
 
 /**
  * Render avatar, basic info, buttons, *and* ACF “urls” sub-fields as clickable links.

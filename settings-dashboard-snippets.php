@@ -77,8 +77,8 @@
                     <?php
                     // Initialize an array to store active snippets
                     $active_snippets = [];
-                    $settings_snippets = hws_ct_get_settings_snippets();
-    
+                   // $settings_snippets = hws_ct_get_settings_snippets();
+                   $settings_snippets = [];
                     // Iterate through the snippets and check which ones are active
                     foreach ($settings_snippets as $snippet) {
                         $is_enabled = get_option($snippet['id'], false);
