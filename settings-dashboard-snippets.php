@@ -125,6 +125,11 @@ foreach ($all_snippets as $snippet) {
 
     // Determine if the checkbox should be checked
     $checked = $is_enabled ? 'checked' : '';
+       // Ensure info is a string (fallback to empty)
+       $info_text = '';
+       if ( isset( $snippet['info'] ) && is_string( $snippet['info'] ) ) {
+           $info_text = $snippet['info'];
+       }
 
     // Display the checkbox and label with the info field included
     echo '<div style="color: #555; margin-bottom: 10px;">
@@ -135,7 +140,7 @@ foreach ($all_snippets as $snippet) {
         ' . $checked . '>
     <label for="' . $snippet['id'] . '">
         ' . $snippet['name'] . ' - <em>' . $snippet['description'] . '</em><br>
-        <small><strong>Details:</strong><br>' . $snippet['info'] . '</small>
+        <small><strong>Details:</strong><br>' . $info_text . '</small>
     </label>
 </div>';
 
