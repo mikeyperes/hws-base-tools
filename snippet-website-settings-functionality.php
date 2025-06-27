@@ -1,6 +1,14 @@
 <?php
 namespace hws_base_tools;
 
+// register the shortcode
+add_action( 'init', function() {
+    add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
+    add_shortcode( 'website_content', __NAMESPACE__ . '\\website_content_shortcode' );
+
+} );
+
+
 /**
  * Hook into ACF’s user‐select field to render extra info.
  */
@@ -137,3 +145,61 @@ function hf_render_user_info_once( $field ) {
     // Close main wrapper
     echo '</div>';
 }
+
+
+
+
+
+/* shortcode declarations */
+
+/**
+ * Shortcode: [website_url social="facebook"]
+ * Returns the requested social-URL from the “Website” user picked in Website Settings.
+ */
+function website_url_shortcode( $atts ) {
+
+    $atts = shortcode_atts( [
+        'social' => '',
+    ], $atts, 'website_url' );
+
+    $key = sanitize_key( $atts['social'] );
+    if ( ! $key ) {
+        return '';
+    }
+
+    // load Website Settings group (options page)
+    $website = get_field( 'website', 'option' );
+    if ( ! ( is_array( $website ) && ! empty( $website['user']['ID'] ) ) ) {
+        return '';
+    }
+
+    // pull that user’s “urls” repeater/array
+    $user_id   = $website['user']['ID'];
+    $user_urls = get_field( 'urls', 'user_' . $user_id );
+
+    if ( is_array( $user_urls ) && ! empty( $user_urls[ $key ] ) ) {
+        return esc_url( $user_urls[ $key ] );
+    }
+
+    return '';
+}
+
+
+
+/**
+ * Shortcode: [website_content field="FIELD_NAME"]
+ * Returns the raw ACF option field value from the Website Settings page.
+ */
+function website_content_shortcode( $atts ) {
+    $atts = shortcode_atts( [
+        'field' => '',
+    ], $atts, 'website_content' );
+
+    if ( empty( $atts['field'] ) ) {
+        return '';
+    }
+
+    return get_field( $atts['field'], 'option' ) ?: '';
+}
+
+
