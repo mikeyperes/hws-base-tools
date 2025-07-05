@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 7.3
+Version: 7.4
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -204,8 +204,12 @@ activate_snippets("admin");
 }
 
 
+include_once("snippet-seo-rss.php");
+include_once("snippet-seo-amp.php");
+
 include_once("shortcodes.php");
 add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
+
 activate_snippets("non_admin");
 
 
@@ -384,6 +388,28 @@ function get_snippets($type = "")
 
 
     $snippet_non_admin = [
+
+        
+
+[
+    'id' => 'enable_seo_amp_no_index',
+    'name' => 'enable_seo_amp_no_index',
+    'description' => 'enable_seo_amp_no_index',
+    'info' => 'enable_seo_amp_no_index',
+    'function' => 'enable_seo_amp_no_index',
+    'scope_admin_only' => false
+],    
+
+[
+    'id' => 'enable_seo_feeds_no_index',
+    'name' => 'enable_seo_feeds_no_index',
+    'description' => 'enable_seo_feeds_no_index',
+    'info' => 'enable_seo_feeds_no_index',
+    'function' => 'enable_seo_feeds_no_index',
+    'scope_admin_only' => false
+],
+
+
     [
         'id' => 'disable_rankmath_sitemap_caching',
         'name' => 'Disable RankMath Sitemap Caching',
