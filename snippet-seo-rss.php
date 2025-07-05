@@ -5,7 +5,7 @@
 function enable_seo_feeds_no_index()
 {
 
-    add_action( 'send_headers', 'seo_feeds_no_index' );
+    add_action( 'send_headers', __NAMESPACE__ . '\\seo_feeds_no_index' );
 }
 
 function seo_feeds_no_index() {
