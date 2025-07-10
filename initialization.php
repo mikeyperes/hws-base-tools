@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 7.4.1
+Version: 7.5
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -31,26 +31,42 @@ class Config {
 public static $plugin_slug =  "hws-core-tools";
 
 
-        // Add this method to return the GitHub config dynamically
-        public static function get_github_config() {
-            return array(
-                'slug' => plugin_basename(__FILE__), // Plugin slug
-                'proper_folder_name' => 'hws-base-tools', // Proper folder name
-                'api_url' => 'https://api.github.com/repos/mikeyperes/hws-base-tools', // GitHub API URL
-                'raw_url' => 'https://raw.github.com/mikeyperes/hws-base-tools/main', // Raw GitHub URL
-                'github_url' => 'https://github.com/mikeyperes/hws-base-tools', // GitHub repository URL
-                'zip_url' => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip', // Zip URL for the latest version
-                'sslverify' => true, // SSL verification for the download
-                'requires' => '5.0', // Minimum required WordPress version
-                'tested' => '1.1', // Tested up to WordPress version
-                'readme' => 'README.md', // Readme file for version checking
-                'access_token' => '', // Access token if required
-            );
-        }
+public static function get_github_config() {
+    return [
+        // 1) The plugin’s WP-slug (must point to your initialization.php)
+        'slug'               => 'hws-base-tools/initialization.php',
 
+        // 2) Your folder name on disk
+        'proper_folder_name' => 'hws-base-tools',
 
+        // 3) GitHub API endpoints & download URLs
+        'api_url'            => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
+        'raw_url'            => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',
+        'github_url'         => 'https://github.com/mikeyperes/hws-base-tools',
+        'zip_url'            => 'https://github.com/mikeyperes/hws-base-tools/archive/main.zip',
+
+        // 4) HTTP settings
+        'sslverify'          => true,
+        'access_token'       => '',
+
+        // 5) WP compatibility info
+        'requires'           => '5.0',    // minimum WP version required
+        'tested'             => '6.0',    // tested up to this WP version
+        'readme'             => 'README.md',
+
+        // 6) Which file to pull “Version:” from
+        'plugin_starter_file'=> 'initialization.php',
+
+        // 7) Explicit plugin metadata (so we never scan PHP headers)
+        'plugin_name'        => 'Hexa Web Systems - Website Base Tool',
+        'version'            => '7.4.1',
+        'author'             => 'Michael Peres',
+        'homepage'           => 'https://github.com/mikeyperes/hws-base-tools',
+        'description'        => 'Basic tools for optimization, performance, and debugging on Hexa-based web systems.',
+    ];
 }
 
+}
 
 
 
