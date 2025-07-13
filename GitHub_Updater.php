@@ -37,8 +37,8 @@ class WP_GitHub_Updater {
     public function __construct( $config = array() ) {
 
         $defaults = array(
-            'slug'               => plugin_basename( __FILE__ ),
-            'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
+        //   'slug'               => plugin_basename( __FILE__ ),
+         //   'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
             'sslverify'          => true,
             'access_token'       => '',
             // you must pass in all of the following via your Config::get_github_config():
@@ -153,9 +153,8 @@ class WP_GitHub_Updater {
 
     /**
      * Fetch the “new” version number from GitHub by reading the Version header in your starter file.
-     *
-     * @return string|false
-     */
+
+   
     public function get_new_version() {
         // Determine which file to fetch for the Version: header
         $starter_file = isset( $this->config['plugin_starter_file'] )
@@ -187,6 +186,38 @@ class WP_GitHub_Updater {
         write_log( "WP_GitHub_Updater: No Version header found in $url", true );
         return false;
     }
+  */
+
+
+	/**
+	 * Get New Version from GitHub
+	 *
+	 * @since 1.0
+	 * @return int $version the version number
+	 */
+    public function get_new_version() {
+        $query = trailingslashit($this->config['raw_url']) . Config::$plugin_starter_file;
+        $response = wp_remote_get($query);
+    
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
+            write_log("WP_GitHub_Updater: Error fetching version from GitHub.<br />URL: ".$query , "true");
+            return false;
+        }
+    
+        // Extract version from the plugin header
+        if (preg_match('/^Version:\s*(.*)$/mi', wp_remote_retrieve_body($response), $matches)) {
+            $version = trim($matches[1]);
+            set_site_transient(md5($this->config['slug']).'_new_version', $version, 60*60*6);
+            return $version;
+        } else {
+            write_log("WP_GitHub_Updater: No version found in the file.", "true");
+            return false;
+        }
+    }
+
+
+
+
     
     /**
      * Low‐level GET with optional access token.
