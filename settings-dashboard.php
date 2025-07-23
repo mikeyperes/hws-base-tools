@@ -143,6 +143,8 @@ pre {
 <?php display_settings_system_checks();?>
 <?php display_settings_check_plugins();?>
 <?php display_settings_theme_checks();?>
+<?php display_settings_seo_reporting();?>
+
 <?php display_settings_snippets();?>
 <?php display_settings_wp_config();?>
 <?php hws_ct_display_php_info();?>

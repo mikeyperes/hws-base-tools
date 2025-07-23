@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 7.6
+Version: 8.0
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -31,15 +31,25 @@ class Config {
 public static $plugin_slug =  "hws-core-tools";
 
 
+
 public static function get_github_config() {
+    // Ensure we can read plugin headers
+    if ( ! function_exists( 'get_plugin_data' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    // Pull header info from this very file (it contains your Plugin Name, Version, etc.)
+    $plugin_data = get_plugin_data( __FILE__ );
+
+    // Build and return the updater config
     return [
-        // 1) The plugin’s WP-slug (must point to your initialization.php)
-        'slug'               => 'hws-base-tools/initialization.php',
+        // 1) Plugin’s WP slug (folder/file path under wp‑content/plugins)
+        'slug'               => plugin_basename( __FILE__ ),
 
-        // 2) Your folder name on disk
-        'proper_folder_name' => 'hws-base-tools',
+        // 2) Folder name on disk
+        'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
 
-        // 3) GitHub API endpoints & download URLs
+        // 3) GitHub endpoints & download URL
         'api_url'            => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
         'raw_url'            => 'https://raw.githubusercontent.com/mikeyperes/hws-base-tools/main',
         'github_url'         => 'https://github.com/mikeyperes/hws-base-tools',
@@ -49,24 +59,22 @@ public static function get_github_config() {
         'sslverify'          => true,
         'access_token'       => '',
 
-        // 5) WP compatibility info
-        'requires'           => '5.0',    // minimum WP version required
-        'tested'             => '6.0',    // tested up to this WP version
+        // 5) WP compatibility
+        'requires'           => '5.0',
+        'tested'             => '6.0',
         'readme'             => 'README.md',
 
-        // 6) Which file to pull “Version:” from
-        'plugin_starter_file'=> 'initialization.php',
+        // 6) Which file to read “Version:” from
+        'plugin_starter_file'=> basename( __FILE__ ),
 
-        // 7) Explicit plugin metadata (so we never scan PHP headers)
-        'plugin_name'        => 'Hexa Web Systems - Website Base Tool',
-        'author'             => 'Michael Peres',
-        'homepage'           => 'https://github.com/mikeyperes/hws-base-tools',
-        'description'        => 'Basic tools for optimization, performance, and debugging on Hexa-based web systems.',
-      //  'slug'               => plugin_basename( __FILE__ ),
-        'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
+        // 7) Metadata pulled straight from the plugin header
+        'plugin_name'        => $plugin_data['Name'],
+        'version'            => $plugin_data['Version'],
+        'author'             => $plugin_data['Author'],
+        'homepage'           => $plugin_data['PluginURI'],
+        'description'        => $plugin_data['Description'],
     ];
 }
-
 }
 
 
@@ -204,6 +212,7 @@ include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-php-libraries.php");
+include_once("settings-dashboard-rank-math-settings.php");
 
 // Set up event handling (click listeners and handlers)
 include_once("settings-event-handling.php");
