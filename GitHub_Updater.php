@@ -1,6 +1,6 @@
 <?php namespace hws_base_tools;
 
-// Prevent loading this file directly and/or if the class is already defined
+// Prevent loading this file directly or if the class already exists
 if ( ! defined( 'ABSPATH' ) || class_exists( 'WPGitHubUpdater' ) || class_exists( 'WP_GitHub_Updater' ) ) {
     return;
 }
@@ -12,53 +12,46 @@ class WP_GitHub_Updater {
      */
     const VERSION = 1.6;
 
-    /**
-     * @var array $config the config for the updater
-     */
+    /** @var array $config The full set of config values, passed in via get_github_config() */
     public $config;
 
-    /**
-     * @var array $missing_config any config that is missing from the initialization of this instance
-     */
+    /** @var array $missing_config List of required config keys that were not supplied */
     public $missing_config;
 
-    /**
-     * @var object $github_data temporary store the data fetched from GitHub, allows us to only load the data once per class instance
-     */
+    /** @var object $github_data Cached GitHub API response */
     private $github_data;
 
     /**
-     * Class Constructor
+     * Constructor.
      *
-     * @since 1.0
-     * @param array $config the configuration required for the updater to work
-     * @see has_minimum_config()
+     * @param array $config Must include:
+     *   - slug, proper_folder_name,
+     *   - api_url, raw_url, github_url, zip_url,
+     *   - requires, tested, readme,
+     *   - plugin_starter_file,
+     *   - plugin_name, version, author, homepage, description,
+     *   - (optional) sslverify, access_token
      */
-    public function __construct( $config = array() ) {
-
-        $defaults = array(
-        //   'slug'               => plugin_basename( __FILE__ ),
-         //   'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
-            'sslverify'          => true,
-            'access_token'       => '',
-            // you must pass in all of the following via your Config::get_github_config():
-            // 'api_url', 'raw_url', 'github_url', 'zip_url', 
-            // 'requires', 'tested', 'readme', 
-            // plus plugin metadata: 'plugin_name','version','author','homepage','description'
-        );
-
+    public function __construct( $config = [] ) {
+        // Only sslverify & access_token get defaults here:
+        $defaults = [
+            'sslverify'    => true,
+            'access_token' => '',
+        ];
         $this->config = wp_parse_args( $config, $defaults );
 
-        // if the minimum config isn't set, issue a warning and bail
+        // Ensure absolutely every required key was passed in:
         if ( ! $this->has_minimum_config() ) {
-            $message  = 'The GitHub Updater was initialized without the minimum required configuration. Missing: ';
-            $message .= implode( ',', $this->missing_config );
-            _doing_it_wrong( __CLASS__, $message, self::VERSION );
+            $msg = 'The GitHub Updater was initialized without the minimum required configuration. Missing: '
+                 . implode( ',', $this->missing_config );
+            _doing_it_wrong( __CLASS__, $msg, self::VERSION );
             return;
         }
 
+        // Prepare zip_url (with token), new_version, last_updated, description
         $this->set_defaults();
 
+        // Hook into WP updater
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'api_check' ] );
         add_filter( 'plugins_api',                     [ $this, 'get_plugin_info' ], 10, 3 );
         add_filter( 'upgrader_post_install',           [ $this, 'upgrader_post_install' ], 10, 3 );
@@ -67,19 +60,30 @@ class WP_GitHub_Updater {
     }
 
     /**
-     * Ensure required config keys are present.
+     * Make sure all required config keys exist.
      *
      * @return bool
      */
     public function has_minimum_config() {
-        $this->missing_config = [];
-
         $required = [
-            'api_url', 'raw_url', 'github_url', 'zip_url',
-            'requires', 'tested', 'readme',
-            'plugin_name', 'version', 'author', 'homepage', 'description',
+            'slug',
+            'proper_folder_name',
+            'api_url',
+            'raw_url',
+            'github_url',
+            'zip_url',
+            'requires',
+            'tested',
+            'readme',
+            'plugin_starter_file',
+            'plugin_name',
+            'version',
+            'author',
+            'homepage',
+            'description',
         ];
 
+        $this->missing_config = [];
         foreach ( $required as $key ) {
             if ( empty( $this->config[ $key ] ) ) {
                 $this->missing_config[] = $key;
@@ -90,46 +94,31 @@ class WP_GitHub_Updater {
     }
 
     /**
-     * Override transients if constant is defined.
-     *
-     * @return bool
-     */
-    public function overrule_transients() {
-        return defined( 'WP_GITHUB_FORCE_UPDATE' ) && WP_GITHUB_FORCE_UPDATE;
-    }
-
-    /**
-     * Set defaults: only ZIP URL, new_version, last_updated, description.
-     *
-     * @since 1.2
+     * Populate any runtime defaults:
+     * - Attach access_token to zip_url
+     * - Fetch new_version, last_updated, description if missing
      */
     public function set_defaults() {
-        // If we have an access token, adjust the zip URL to include it
         if ( ! empty( $this->config['access_token'] ) ) {
-            extract( parse_url( $this->config['zip_url'] ) ); // $scheme, $host, $path
-            $zip_url = $scheme . '://api.github.com/repos' . $path;
-            $zip_url = add_query_arg( [ 'access_token' => $this->config['access_token'] ], $zip_url );
-            $this->config['zip_url'] = $zip_url;
+            extract( parse_url( $this->config['zip_url'] ) ); // gives $scheme, $host, $path
+            $zip = $scheme . '://api.github.com/repos' . $path;
+            $zip = add_query_arg( [ 'access_token' => $this->config['access_token'] ], $zip );
+            $this->config['zip_url'] = $zip;
         }
 
-        // Always fetch new version from raw GitHub
         if ( ! isset( $this->config['new_version'] ) ) {
             $this->config['new_version'] = $this->get_new_version();
         }
-
-        // Always fetch last_updated date from GitHub API
         if ( ! isset( $this->config['last_updated'] ) ) {
             $this->config['last_updated'] = $this->get_date();
         }
-
-        // Populate description from GitHub repo if not set
         if ( ! isset( $this->config['description'] ) ) {
             $this->config['description'] = $this->get_description();
         }
     }
 
     /**
-     * Timeout for HTTP requests.
+     * Short HTTP timeout for GitHub calls.
      *
      * @return int
      */
@@ -138,92 +127,40 @@ class WP_GitHub_Updater {
     }
 
     /**
-     * SSL verify override for zip downloads.
-     *
-     * @param array  $args
-     * @param string $url
-     * @return array
+     * Enforce our sslverify setting on zip_url requests.
      */
     public function http_request_sslverify( $args, $url ) {
-        if ( isset( $this->config['zip_url'] ) && $this->config['zip_url'] === $url ) {
+        if ( isset( $this->config['zip_url'] ) && $url === $this->config['zip_url'] ) {
             $args['sslverify'] = $this->config['sslverify'];
         }
         return $args;
     }
 
     /**
-     * Fetch the “new” version number from GitHub by reading the Version header in your starter file.
-
-   
+     * Fetch the “Version:” header from your plugin starter file on GitHub.
+     *
+     * @return string|false
+     */
     public function get_new_version() {
-        // Determine which file to fetch for the Version: header
-        $starter_file = isset( $this->config['plugin_starter_file'] )
-            ? $this->config['plugin_starter_file']
-            : Config::$plugin_starter_file;
-    
-        // Build the raw GitHub URL to that file
-        $url = trailingslashit( $this->config['raw_url'] ) . ltrim( $starter_file, '/' );
-    
-        // Fetch it, respecting SSL settings
-        $response = wp_remote_get( $url, [
-            'sslverify' => $this->config['sslverify']
-        ] );
-    
-        if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
-            write_log( "WP_GitHub_Updater: Error fetching version from GitHub. URL: $url", true );
+        $file = ltrim( $this->config['plugin_starter_file'], '/' );
+        $url  = trailingslashit( $this->config['raw_url'] ) . $file;
+        $resp = wp_remote_get( $url, [ 'sslverify' => $this->config['sslverify'] ] );
+
+        if ( is_wp_error( $resp ) || wp_remote_retrieve_response_code( $resp ) !== 200 ) {
             return false;
         }
-    
-        $body = wp_remote_retrieve_body( $response );
-    
-        // Parse the Version: header
-        if ( preg_match( '/^Version:\s*(.+)$/mi', $body, $matches ) ) {
-            $version = trim( $matches[1] );
-            set_site_transient( md5( $this->config['slug'] ) . '_new_version', $version, HOUR_IN_SECONDS * 6 );
-            return $version;
+
+        if ( preg_match( '/^Version:\s*(.+)$/mi', wp_remote_retrieve_body( $resp ), $m ) ) {
+            $ver = trim( $m[1] );
+            set_site_transient( md5( $this->config['slug'] ) . '_new_version', $ver, HOUR_IN_SECONDS * 6 );
+            return $ver;
         }
-    
-        write_log( "WP_GitHub_Updater: No Version header found in $url", true );
+
         return false;
     }
-  */
 
-
-	/**
-	 * Get New Version from GitHub
-	 *
-	 * @since 1.0
-	 * @return int $version the version number
-	 */
-    public function get_new_version() {
-        $query = trailingslashit($this->config['raw_url']) . Config::$plugin_starter_file;
-        $response = wp_remote_get($query);
-    
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
-            write_log("WP_GitHub_Updater: Error fetching version from GitHub.<br />URL: ".$query , "true");
-            return false;
-        }
-    
-        // Extract version from the plugin header
-        if (preg_match('/^Version:\s*(.*)$/mi', wp_remote_retrieve_body($response), $matches)) {
-            $version = trim($matches[1]);
-            set_site_transient(md5($this->config['slug']).'_new_version', $version, 60*60*6);
-            return $version;
-        } else {
-            write_log("WP_GitHub_Updater: No version found in the file.", "true");
-            return false;
-        }
-    }
-
-
-
-
-    
     /**
-     * Low‐level GET with optional access token.
-     *
-     * @param string $query
-     * @return array|WP_Error
+     * Simple wrapper to GET with optional token.
      */
     public function remote_get( $query ) {
         if ( ! empty( $this->config['access_token'] ) ) {
@@ -233,89 +170,74 @@ class WP_GitHub_Updater {
     }
 
     /**
-     * Get full GitHub repo data (cached 6h).
-     *
-     * @return object|false
+     * Retrieve and cache GitHub repository metadata.
      */
     public function get_github_data() {
         if ( ! empty( $this->github_data ) ) {
             return $this->github_data;
         }
-        $cache_key = md5( $this->config['slug'] ) . '_github_data';
-        $github_data = get_site_transient( $cache_key );
-        if ( $this->overrule_transients() || ! $github_data ) {
-            $response = $this->remote_get( $this->config['api_url'] );
-            if ( is_wp_error( $response ) ) {
+
+        $key = md5( $this->config['slug'] ) . '_github_data';
+        $data = get_site_transient( $key );
+
+        if ( defined( 'WP_GITHUB_FORCE_UPDATE' ) && WP_GITHUB_FORCE_UPDATE || ! $data ) {
+            $resp = $this->remote_get( $this->config['api_url'] );
+            if ( is_wp_error( $resp ) ) {
                 return false;
             }
-            $github_data = json_decode( $response['body'] );
-            set_site_transient( $cache_key, $github_data, 60 * 60 * 6 );
+            $data = json_decode( $resp['body'] );
+            set_site_transient( $key, $data, HOUR_IN_SECONDS * 6 );
         }
-        $this->github_data = $github_data;
-        return $github_data;
+
+        $this->github_data = $data;
+        return $data;
     }
 
     /**
-     * Get the repo’s last updated date.
-     *
-     * @return string|false
+     * Get last‐updated date from GitHub data.
      */
     public function get_date() {
-        $data = $this->get_github_data();
-        return ! empty( $data->updated_at ) ? date( 'Y-m-d', strtotime( $data->updated_at ) ) : false;
+        $d = $this->get_github_data();
+        return ! empty( $d->updated_at ) ? date( 'Y-m-d', strtotime( $d->updated_at ) ) : false;
     }
 
     /**
-     * Get the repo’s description.
-     *
-     * @return string|false
+     * Get repository description from GitHub data.
      */
     public function get_description() {
-        $data = $this->get_github_data();
-        return ! empty( $data->description ) ? $data->description : false;
+        $d = $this->get_github_data();
+        return ! empty( $d->description ) ? $d->description : false;
     }
 
     /**
-     * Intercept WP’s update check and inject GitHub info if a newer version exists.
-     *
-     * @param object $transient
-     * @return object
+     * Hook into WP’s update check and inject GitHub update if available.
      */
     public function api_check( $transient ) {
-        write_log( 'WP_GitHub_Updater: api_check called.', true );
         if ( empty( $transient->checked ) ) {
-            write_log( 'WP_GitHub_Updater: No checked info in transient.', true );
             return $transient;
         }
-        $compare = version_compare( $this->config['new_version'], $this->config['version'] );
-        write_log( "WP_GitHub_Updater: Comparing versions. New: {$this->config['new_version']}, Current: {$this->config['version']}", true );
-        if ( $compare === 1 ) {
-            $response = (object) [
+
+        if ( version_compare( $this->config['new_version'], $this->config['version'], '>' ) ) {
+            $r = (object) [
                 'new_version' => $this->config['new_version'],
                 'slug'        => $this->config['proper_folder_name'],
                 'url'         => add_query_arg( [ 'access_token' => $this->config['access_token'] ], $this->config['github_url'] ),
                 'package'     => $this->config['zip_url'],
             ];
-            write_log( "WP_GitHub_Updater: Update available: {$this->config['new_version']}", true );
-            $transient->response[ $this->config['slug'] ] = $response;
-        } else {
-            write_log( 'WP_GitHub_Updater: No update found.', true );
+            $transient->response[ $this->config['slug'] ] = $r;
         }
+
         return $transient;
     }
 
     /**
-     * Provide plugin details on the “View version details” screen.
-     *
-     * @param bool   $false
-     * @param string $action
-     * @param object $response
-     * @return object|false
+     * Provide plugin details for the “View version details” screen.
      */
     public function get_plugin_info( $false, $action, $response ) {
         if ( empty( $response->slug ) || $response->slug !== $this->config['slug'] ) {
             return false;
         }
+
         $response->slug          = $this->config['slug'];
         $response->plugin_name   = $this->config['plugin_name'];
         $response->version       = $this->config['new_version'];
@@ -327,26 +249,20 @@ class WP_GitHub_Updater {
         $response->last_updated  = $this->config['last_updated'];
         $response->sections      = [ 'description' => $this->config['description'] ];
         $response->download_link = $this->config['zip_url'];
+
         return $response;
     }
 
     /**
-     * After the ZIP is downloaded, move & reactivate the plugin.
-     *
-     * @param bool  $true
-     * @param mixed $hook_extra
-     * @param array $result
-     * @return array
+     * After ZIP download: move into place and reactivate.
      */
     public function upgrader_post_install( $true, $hook_extra, $result ) {
         global $wp_filesystem;
         $dest = WP_PLUGIN_DIR . '/' . $this->config['proper_folder_name'];
         $wp_filesystem->move( $result['destination'], $dest );
         $result['destination'] = $dest;
-        $activate = activate_plugin( WP_PLUGIN_DIR . '/' . $this->config['slug'] );
-        $fail    = __( 'The plugin was updated but could not be reactivated. Please reactivate manually.', 'github_plugin_updater' );
-        $success = __( 'Plugin reactivated successfully.', 'github_plugin_updater' );
-        echo is_wp_error( $activate ) ? $fail : $success;
+        activate_plugin( WP_PLUGIN_DIR . '/' . $this->config['slug'] );
         return $result;
     }
+
 }
