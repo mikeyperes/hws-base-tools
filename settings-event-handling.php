@@ -733,6 +733,7 @@ $(document).ready(function($) {
 
 
 <script type="text/javascript">
+    $ = jQuery;
 jQuery(document).ready(function($) {
     $('#hws-base-tools #toggle-debug-log').on('click', function() {
         $('#debug-log-content').toggle();
@@ -750,8 +751,9 @@ jQuery(document).ready(function($) {
 
 <script>
 
-
-jQuery(document).ready(function($) {
+$ = jQuery;
+$(document).ready(function($) {
+ 
     $('#hws-base-tools .modify-wp-config').on('click', function(e) {
 
         e.preventDefault();
@@ -792,14 +794,15 @@ jQuery(document).ready(function($) {
 
 
 
-})(jQuery);
+});
 </script>
 
 
 </script>
 
 <script type="text/javascript">
-jQuery(document).ready(function($) {
+    $ = jQuery;
+$(document).ready(function($) {
     $('#hws-base-tools #debug-toggle, #hws-base-tools #debug-display-toggle, #hws-base-tools #debug-log-toggle').on('change', function() {
     var setting = $(this).attr('id').replace('-toggle', '').replace(/-/, '_').toUpperCase();
     var value = $(this).is(':checked'); // This now keeps the value as a boolean
