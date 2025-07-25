@@ -3,8 +3,7 @@
     if ( ! function_exists( 'acf_add_local_field_group' ) ) {
 		return;
 	}
-
-	acf_add_local_field_group( array(
+acf_add_local_field_group( array(
 	'key' => 'group_64bc3b458d863',
 	'title' => 'Organization',
 	'fields' => array(
@@ -355,5 +354,4 @@
 	'show_in_rest' => 0,
 ) );
 }
-
 ?>

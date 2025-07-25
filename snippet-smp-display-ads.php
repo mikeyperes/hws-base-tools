@@ -27,9 +27,6 @@ function smp_add_adpushup_script_to_head2() {
     ");
 }
 
-
-
-
 function smp_add_adpushup_script_to_head() {
     write_log('✅ Function smp_add_adpushup_script_to_head is called.', false);  // Add this for debugging
     

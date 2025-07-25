@@ -68,4 +68,4 @@ function enable_smp_acf_teammember(){
 	'active' => true,
 	'description' => '',
 	'show_in_rest' => 0,
-) );}
+) );}?>
