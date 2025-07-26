@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 8.2
+Version: 8.2.1
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -178,7 +178,7 @@ include_once("smp-core/register-acf-user.php");
 include_once("smp-core/register-acf-organization.php");
 include_once("smp-core/register-acf-team-member.php");
 
-include_once("scale-my-podcast/register-acf-post-podcast.php");
+//include_once("scale-my-podcast/register-acf-post-podcast.php");
 
 
 
@@ -258,14 +258,6 @@ function get_snippets($type = "")
 {
 
     $snippets_acf = [
-        [
-            'id' => 'regsiter_acf_post_podcast',
-            'name' => 'Scale My Podcast: Register Post Podcast ACFs ',
-            'description' => '',
-            'info' => display_acf_structure('group_6844c5d5cf57f'),
-            'function' => 'regsiter_acf_post_podcast',
-            'scope_admin_only' => false
-        ],   
         [
             'id' => 'register_acf_website_settings',
             'name' => 'Register Website Settings Page (theme options and acf structures)',
