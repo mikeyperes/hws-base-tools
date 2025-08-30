@@ -11,9 +11,8 @@ final class Login_Masking {
      *                         CONSTANTS
      * ============================================================ */
 
-    /** Masked login slug. */
-    const FIXED_SLUG = 'hexa-admin';
-
+/** Default masked login slug (can be changed in Settings). */
+const DEFAULT_SLUG = 'hexa-admin';
     /** Options key (single array). */
     const OPT_KEY = 'hws_login_mask_options';
 
@@ -83,10 +82,11 @@ final class Login_Masking {
      *                     OPTIONS & HELPERS
      * ============================================================ */
 
-    public static function defaults(): array {
+     public static function defaults(): array {
         return [
+            'legacy_slugs'     => [],
             'enabled'          => self::DEFAULT_ENABLED,
-            'slug'             => self::FIXED_SLUG, // shown in UI; runtime always uses FIXED_SLUG
+            'slug'             => self::DEFAULT_SLUG, // user-editable
             'hide_wp_admin'    => self::DEFAULT_HIDE_WP_ADMIN,
             'compat_wptoolkit' => self::DEFAULT_COMPAT_WP_TOOL,
             'allowlist_ips'    => self::DEFAULT_ALLOWLIST_IPS,
@@ -100,7 +100,9 @@ final class Login_Masking {
     }
 
     public static function slug(): string {
-        return self::FIXED_SLUG;
+        $o = self::opts();
+        $s = isset($o['slug']) ? sanitize_title_with_dashes($o['slug']) : self::FIXED_SLUG;
+        return $s ?: self::FIXED_SLUG;
     }
 
     public static function login_url(string $redirect = '', bool $reauth = false): string {
@@ -223,6 +225,25 @@ final class Login_Masking {
     }
 
 
+    /** Keep slug safe: lowercase, dashes, not reserved, no slashes. */
+private static function sanitize_slug_value(string $slug): string {
+    if (!function_exists('sanitize_title')) {
+        // very early edge case; be conservative
+        $slug = strtolower(preg_replace('~[^a-z0-9\-]+~', '-', $slug));
+    } else {
+        $slug = sanitize_title($slug);
+    }
+    $slug = trim($slug, '/');
+    if ($slug === '') { $slug = self::DEFAULT_SLUG; }
+
+    // Disallow reserved/problematic paths
+    $reserved = ['wp-admin','wp-login','wp-login.php','.well-known'];
+    if (in_array($slug, $reserved, true)) {
+        $slug = self::DEFAULT_SLUG;
+    }
+    return $slug;
+}
+
     /* ============================================================
      *                     REWRITES & ROUTING
      * ============================================================ */
@@ -325,6 +346,25 @@ private static function serve_core_login_now(): void {
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         $path = rtrim($path ?? '/', '/');
     
+        // Kill/redirect old slugs so they stop working once slug changes.
+$legacy = isset(self::opts()['legacy_slugs']) ? (array) self::opts()['legacy_slugs'] : [];
+$req    = ltrim($path, '/');
+if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true)) {
+    $is_tool  = self::is_tool_request();
+    $is_allow = self::ip_allowed($_SERVER['REMOTE_ADDR'] ?? '');
+
+    if ($is_tool || $is_allow) {
+        // Let tooling discover the new URL
+        header('X-Redirect-By: hws_base_tools');
+        wp_safe_redirect(self::login_url());
+        exit;
+    }
+    status_header(404);
+    nocache_headers();
+    exit;
+}
+
+
         // Always allow admin-ajax.php and async-upload.php
         if (preg_match('~^/wp-admin/(admin-ajax\.php|async-upload\.php)$~i', $path)) {
             return;
@@ -491,24 +531,49 @@ if (!is_user_logged_in()) {
     }
 
     public static function sanitize($input) {
-        $d = self::defaults();
+        $d   = self::defaults();
+        $prev = self::opts();
+    
+        // Sanitize slug from settings (fallback to default)
+        $raw  = isset($input['slug']) ? (string)$input['slug'] : $d['slug'];
+        $slug = sanitize_title_with_dashes($raw);
+        if ($slug === '' || in_array($slug, ['wp-admin','wp-login','wp-login.php'], true)) {
+            $slug = $d['slug']; // safety
+        }
+    
         $out = [];
         $out['enabled']          = !empty($input['enabled']);
-        $out['slug']             = self::FIXED_SLUG; // immutable by design
+        $out['slug']             = $slug;                       // <— allow changing
         $out['hide_wp_admin']    = !empty($input['hide_wp_admin']);
         $out['compat_wptoolkit'] = !empty($input['compat_wptoolkit']);
         $out['allowlist_ips']    = sanitize_text_field($input['allowlist_ips'] ?? $d['allowlist_ips']);
         $out['well_known']       = !empty($input['well_known']);
-
-        // If routing-affecting toggles changed, flush rewrites after update_option completes.
-        $prev = self::opts();
-        if ($prev['enabled'] !== $out['enabled'] || $prev['well_known'] !== $out['well_known']) {
-            add_action('updated_option', function($opt, $old, $new){
-                if ($opt === self::OPT_KEY) self::flush_rewrites();
-            }, 10, 3);
+    
+        // Track legacy slugs so we can kill/redirect them
+        $legacy = isset($prev['legacy_slugs']) && is_array($prev['legacy_slugs']) ? $prev['legacy_slugs'] : [];
+        if (!empty($prev['slug']) && $prev['slug'] !== $slug) {
+            $legacy[] = $prev['slug'];
+            $legacy = array_values(array_unique(array_filter($legacy)));
         }
+        $out['legacy_slugs'] = $legacy;
+    
+        // If routing-affecting toggles OR the slug changed → flush & purge
+        if ($prev['enabled'] !== $out['enabled']
+            || $prev['well_known'] !== $out['well_known']
+            || $prev['slug'] !== $out['slug']) {
+    
+            add_action('updated_option', function($opt) {
+                if ($opt === self::OPT_KEY) {
+                    self::flush_rewrites();
+                    self::purge_cache_best_effort();
+                }
+            }, 10, 1);
+        }
+    
         return $out;
     }
+    
+
     private static function login_help_text(): string {
         $o     = self::opts();
         $url   = esc_url(self::login_url());
@@ -565,16 +630,20 @@ if (!is_user_logged_in()) {
                     </tr>
 
                     <tr>
-                        <th scope="row">Masked Slug</th>
-                        <td>
-                            <input type="text"
-                                   class="regular-text"
-                                   value="<?php echo esc_attr(self::slug()); ?>"
-                                   xreadonly
-                                   disabled>
-                            <p class="description">Slug is fixed in code to ensure consistent behavior across environments.</p>
-                        </td>
-                    </tr>
+    <th scope="row">Masked Slug</th>
+    <td>
+        <input type="text"
+               name="<?php echo esc_attr(self::OPT_KEY); ?>[slug]"
+               class="regular-text"
+               value="<?php echo esc_attr(self::slug()); ?>"
+               pattern="[a-z0-9\-]+"
+               title="Lowercase letters, numbers, and dashes only">
+        <p class="description">
+            The URL segment used for login (default <code>hexa-admin</code>). Example:
+            <code><?php echo esc_html( home_url('/') ); ?><span id="hws-slug-preview"><?php echo esc_html(self::slug()); ?></span>/</code>
+        </p>
+    </td>
+</tr>
 
                     <tr>
                         <th scope="row">Hide /wp-admin/ for guests</th>
