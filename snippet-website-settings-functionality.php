@@ -193,7 +193,9 @@ function website_url_shortcode( $atts ) {
 function website_content_shortcode( $atts ) {
     $atts = shortcode_atts( [
         'field' => '',
-    ], $atts, 'website_content' );
+    ], 
+    $atts, 
+    'website_content' );
 
     if ( empty( $atts['field'] ) ) {
         return '';

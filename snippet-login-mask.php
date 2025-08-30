@@ -288,12 +288,30 @@ final class Login_Masking {
         ], JSON_UNESCAPED_SLASHES);
         exit;
     }
-
-    /** Include the native login file and exit. */
-    private static function serve_core_login_now(): void {
-        require_once ABSPATH . 'wp-login.php';
-        exit;
+/** Include the native login file safely (PHP8/Xdebug friendly) and exit. */
+private static function serve_core_login_now(): void {
+    // Make sure debug output never leaks onto the login page in production.
+    if (!headers_sent()) {
+        @ini_set('display_errors', '0');
+        @ini_set('display_startup_errors', '0');
+        @ini_set('html_errors', '0');
     }
+
+    // PHP 8: preseed variables wp-login.php may read before setting.
+    // (Because we're including it early in our own function scope.)
+    $user_login = '';
+    $user_pass  = '';
+    $error      = '';
+    $errors     = class_exists('\WP_Error') ? new \WP_Error() : null;
+
+    // Also mark as a non-cacheable response.
+    if (!defined('DONOTCACHEPAGE'))   define('DONOTCACHEPAGE', true);
+    if (!defined('DONOTCACHEOBJECT')) define('DONOTCACHEOBJECT', true);
+    if (!defined('DONOTCACHEDB'))     define('DONOTCACHEDB', true);
+
+    require_once ABSPATH . 'wp-login.php';
+    exit;
+}
 
 
     /* ============================================================
