@@ -28,13 +28,17 @@ function register_acf_website_settings()
                 'layout'            => 'block',
                 'sub_fields'        => array(
 
+
+
+
+                 
                     // DMCA
                     array(
                         'key'               => 'field_68420a173f1c9',
                         'label'             => 'DMCA',
                         'name'              => 'dmca',
                         'type'              => 'wysiwyg',
-                        'instructions'      => "name: dmca<br>[website_content field=\"dmca\"]",
+                        'instructions'      => "name: dmca<br>[website_content field=\"website_dmca\"]",
                         'required'          => 0,
                         'conditional_logic' => 0,
                         'wrapper'           => array(
@@ -56,7 +60,7 @@ function register_acf_website_settings()
                         'label'             => 'Mission Statement',
                         'name'              => 'mission_statement',
                         'type'              => 'wysiwyg',
-                        'instructions'      => "name: mission_statement<br>[website_content field=\"mission_statement\"]",
+                        'instructions'      => "name: mission_statement<br>[website_content field=\"website_mission_statement\"]",
                         'required'          => 0,
                         'conditional_logic' => 0,
                         'wrapper'           => array(
@@ -78,7 +82,7 @@ function register_acf_website_settings()
                         'label'             => 'Biography',
                         'name'              => 'biography',
                         'type'              => 'wysiwyg',
-                        'instructions'       => "name: biography<br>[website_content field=\"biography\"]",
+                        'instructions'       => "name: biography<br>[website_content field=\"website_biography\"]",
                         'required'          => 0,
                         'conditional_logic' => 0,
                         'wrapper'           => array(
@@ -100,7 +104,7 @@ function register_acf_website_settings()
                         'label'             => 'Biography Short',
                         'name'              => 'biography_short',
                         'type'              => 'wysiwyg',
-                        'instructions'       => "name: biography_short<br>[website_content field=\"biography_short\"]",
+                        'instructions'       => "name: biography_short<br>[website_content field=\"website_biography_short\"]",
                         'required'          => 0,
                         'conditional_logic' => 0,
                         'wrapper'           => array(
@@ -160,6 +164,29 @@ function register_acf_website_settings()
                         'prepend'           => '',
                         'append'            => '',
                     ),
+                       // Footer Text
+                       array(
+                        'key'               => 'field_68420a173f1aa',
+                        'label'             => 'Footer Text',
+                        'name'              => 'footer_text',
+                        'type'              => 'wysiwyg',
+                        'instructions'      => "name: footer_text<br>[website_content field=\"website_footer_text\"]",
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'default_value'     => '',
+                        'allow_in_bindings' => 0,
+                        'tabs'              => 'all',
+                        'toolbar'           => 'full',
+                        'media_upload'      => 1,
+                        'delay'             => 0,
+                    ),
+
+
 
                 ),
             ),

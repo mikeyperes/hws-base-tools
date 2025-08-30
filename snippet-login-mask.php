@@ -59,14 +59,17 @@ final class Login_Masking {
         // Stealth/blocks (wp-login.php & wp-admin/).
         add_action('init', [__CLASS__, 'maybe_block_default_endpoints'], 2);
 
-        // Point WordPress helpers at the masked URL.
-        add_filter('login_url', [__CLASS__, 'filter_login_url'], 10, 3);
-        add_filter('lostpassword_url', [__CLASS__, 'filter_lostpassword_url'], 10, 2);
-        add_filter('register_url', [__CLASS__, 'filter_register_url'], 10);
-        add_filter('site_url', [__CLASS__, 'filter_site_url'], 10, 4);
-        add_filter('network_site_url', [__CLASS__, 'filter_site_url'], 10, 4);
-        add_filter('wp_redirect', [__CLASS__, 'filter_redirect'], 10, 2);
 
+        if (!empty(self::opts()['enabled'])) {
+            add_filter('login_url', [__CLASS__, 'filter_login_url'], 10, 3);
+            add_filter('lostpassword_url', [__CLASS__, 'filter_lostpassword_url'], 10, 2);
+            add_filter('register_url', [__CLASS__, 'filter_register_url'], 10);
+            add_filter('site_url', [__CLASS__, 'filter_site_url'], 10, 4);
+            add_filter('network_site_url', [__CLASS__, 'filter_site_url'], 10, 4);
+            add_filter('wp_redirect', [__CLASS__, 'filter_redirect'], 10, 2);
+        }
+
+   
         // Simple admin UI (Tools → Login Masking).
         add_action('admin_menu', [__CLASS__, 'admin_menu']);
         add_action('admin_init', [__CLASS__, 'register_settings']);
@@ -332,14 +335,17 @@ final class Login_Masking {
                 return;
             }
     
-            // Everyone else (guests) → ultra-light static HTML (no PHP parser work)
-            if (!is_user_logged_in()) {
-                header('Content-Type: text/html; charset=utf-8');
-                status_header(200);
-                echo '<!doctype html><html><head><meta charset="utf-8"><title>Access Denied</title></head><body><p>Nothing here.</p></body></html>';
-                exit;
-            }
-    
+           // Everyone else (guests) → ultra-light static HTML (no PHP parser work)
+if (!is_user_logged_in()) {
+    header('Content-Type: text/html; charset=utf-8');
+    status_header(200);
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Access Restricted</title></head><body>'
+       . '<p>WordPress URL has been changed by Hexa Cloud Services (Hexa Web System) for security and performance.</p>'
+       . '<p>Contact support for the revised URL and emergency access.</p>'
+       . '<p>You can also find the current URL under <strong>Dashboard &gt; Settings &gt; Masked Login</strong>.</p>'
+       . '</body></html>';
+    exit;
+}
             // Logged-in users: allow normal load
             return;
         }
@@ -399,19 +405,23 @@ final class Login_Masking {
      *                     URL FILTERS → MASK
      * ============================================================ */
 
-    public static function filter_login_url($login_url, $redirect, $force_reauth) {
+     public static function filter_login_url($login_url, $redirect, $force_reauth) {
+        if (empty(self::opts()['enabled'])) return $login_url;
         return self::login_url($redirect, $force_reauth);
     }
-
+    
     public static function filter_lostpassword_url($url, $redirect) {
-        return add_query_arg(['action' => 'lostpassword'], self::login_url($redirect));
+        if (empty(self::opts()['enabled'])) return $url;
+        return add_query_arg(['action'=>'lostpassword'], self::login_url($redirect));
     }
-
+    
     public static function filter_register_url($url) {
-        return add_query_arg(['action' => 'register'], self::login_url());
+        if (empty(self::opts()['enabled'])) return $url;
+        return add_query_arg(['action'=>'register'], self::login_url());
     }
-
+    
     public static function filter_site_url($url, $path, $scheme, $blog_id) {
+        if (empty(self::opts()['enabled'])) return $url;
         if (is_string($path) && strpos($path, 'wp-login.php') !== false) {
             $parts = wp_parse_url($url); $q = [];
             if (!empty($parts['query'])) parse_str($parts['query'], $q);
@@ -419,8 +429,9 @@ final class Login_Masking {
         }
         return $url;
     }
-
+    
     public static function filter_redirect($location, $status) {
+        if (empty(self::opts()['enabled'])) return $location;
         if (strpos($location, 'wp-login.php') !== false) {
             $parts = wp_parse_url($location); $q = [];
             if (!empty($parts['query'])) parse_str($parts['query'], $q);
@@ -428,6 +439,7 @@ final class Login_Masking {
         }
         return $location;
     }
+    
 
 
     /* ============================================================
@@ -435,13 +447,21 @@ final class Login_Masking {
      * ============================================================ */
 
     public static function admin_menu() {
+        add_options_page(
+            'HWS Login Masking',
+            'Masked Login - Hexa Cloud Services',
+            'manage_options',
+            'hws-login-masking',
+            [__CLASS__, 'render_settings']
+        );
+        /*
         add_management_page(
             'HWS Login Masking',
             'Login Masking',
             'manage_options',
             'hws-login-masking',
             [__CLASS__, 'render_settings']
-        );
+        );*/
     }
 
     public static function register_settings() {
@@ -471,28 +491,28 @@ final class Login_Masking {
         }
         return $out;
     }
-
     private static function login_help_text(): string {
         $o     = self::opts();
         $url   = esc_url(self::login_url());
         $slug  = esc_html(self::slug());
-        $json  = esc_html(home_url('/.well-known/hws-login.json'));
-        $admin = esc_html(home_url('/wp-admin/'));
+        $json  = esc_url(home_url('/.well-known/hws-login.json'));
+        $admin = esc_url(home_url('/wp-admin/'));
         $toolkit = !empty($o['compat_wptoolkit']) ? 'Enabled' : 'Disabled';
         $hide    = !empty($o['hide_wp_admin']) ? 'Enabled' : 'Disabled';
         $wk      = !empty($o['well_known']) ? 'Enabled' : 'Disabled';
-
+    
         return '
             <p><strong>Masked login is active.</strong></p>
             <ul style="list-style: disc; padding-left: 20px;">
-                <li><strong>Login URL:</strong> <a href="'.$url.'">'.$url.'</a> (slug: <code>'.$slug.'</code>)</li>
-                <li><strong>WP Toolkit & Allowlisted IPs:</strong> '.$toolkit.' — may follow redirect from <code>/wp-login.php</code>.</li>
-                <li><strong>/wp-admin/ visibility:</strong> '.$hide.' — guests get 404 at <code>'.$admin.'</code> (ajax/upload allowed).</li>
-                <li><strong>.well-known discovery:</strong> '.$wk.' — <code>'.$json.'</code>.</li>
-                <li><strong>Emergency:</strong> <code>/?'.self::QP_EMERGENCY.'=bypass</code> (native login), <code>/?'.self::QP_EMERGENCY.'=repair</code> (fix rewrites & purge caches).</li>
+                <li><strong>Login URL:</strong> <a href="'.$url.'" target="_blank">'.$url.'</a> (slug: <code>'.$slug.'</code>)</li>
+                <li><strong>WP Toolkit & Allowlisted IPs:</strong> '.$toolkit.' — may follow redirect from <code><a href="'.home_url('/wp-login.php').'" target="_blank">'.home_url('/wp-login.php').'</a></code>.</li>
+                <li><strong>/wp-admin/ visibility:</strong> '.$hide.' — guests get 404 at <a href="'.$admin.'" target="_blank">'.$admin.'</a> (ajax/upload allowed).</li>
+                <li><strong>.well-known discovery:</strong> '.$wk.' — <a href="'.$json.'" target="_blank">'.$json.'</a>.</li>
+                <li><strong>Emergency:</strong> <code><a href="'.home_url('/?hws=bypass').'" target="_blank">/?hws=bypass</a></code> (native login), <code><a href="'.home_url('/?hws=repair').'" target="_blank">/?hws=repair</a></code> (fix rewrites & purge caches).</li>
                 <li><strong>Disable masking:</strong> <code>define(\'HWS_DISABLE_LOGIN_MASKING\', true);</code> in <code>wp-config.php</code>.</li>
             </ul>';
     }
+    
 
     /**
      * Render the admin settings page with a help box and a few toggles.
@@ -532,7 +552,7 @@ final class Login_Masking {
                             <input type="text"
                                    class="regular-text"
                                    value="<?php echo esc_attr(self::slug()); ?>"
-                                   readonly
+                                   xreadonly
                                    disabled>
                             <p class="description">Slug is fixed in code to ensure consistent behavior across environments.</p>
                         </td>
