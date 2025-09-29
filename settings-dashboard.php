@@ -152,6 +152,7 @@ pre {
 <?php //hws_ct_display_settings_php_ini();?>
 <?php if(get_option('enable_custom_rss_functionality', false)) display_settings_rss_dashboard();?>
 <?php if(get_option('enable_comments_management', false)) display_settings_comments_dashboard();?>
+<?php display_shortcode_tests();?>
 <?php hws_ct_display_plugin_info();?>
 <?php
   // Get the buffer contents and clean (erase) the output buffer

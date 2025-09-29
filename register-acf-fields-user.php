@@ -1,5 +1,127 @@
 <?php namespace hws_base_tools; 
 
+/**
+ * Register ACF User fields: "additional"
+ *
+ * Group: additional
+ *  - public_email      (email)
+ *  - public_phone      (text)
+ *  - title             (text)
+ *
+ * Shortcode usage (Company):
+ *  - [company id="additional_public_email"]
+ *  - [company id="additional_public_phone"]
+ *  - [company id="additional_title"]
+ *
+ * Call this on acf/init:
+ *   add_action('acf/init', 'register_user_custom_fields_additional_2025');
+ */
+function register_user_custom_fields_additional_2025() {
+    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+        return;
+    }
+
+    acf_add_local_field_group( array(
+        'key'                   => 'group_6842_additional_user_fields_2025',
+        'title'                 => 'User - Additional',
+        'fields'                => array(
+            array(
+                'key'               => 'field_6842_additional_group',
+                'label'             => 'Additional',
+                'name'              => 'additional',
+                'aria-label'        => '',
+                'type'              => 'group',
+                'instructions'      => '',
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'layout'            => 'block',
+                'sub_fields'        => array(
+
+                    // Public Email
+                    array(
+                        'key'               => 'field_6842_additional_public_email',
+                        'label'             => 'Public Email',
+                        'name'              => 'public_email',
+                        'type'              => 'email',
+                        'instructions'      => 'Shortcode: <code>[company id="additional_public_email"]</code>',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'placeholder'       => 'name@example.com',
+                    ),
+
+                    // Public Phone Number
+                    array(
+                        'key'               => 'field_6842_additional_public_phone',
+                        'label'             => 'Public Phone Number',
+                        'name'              => 'public_phone',
+                        'type'              => 'text',
+                        'instructions'      => 'Shortcode: <code>[company id="additional_public_phone"]</code>',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'placeholder'       => '555-123-4567',
+                    ),
+
+                    // Title
+                    array(
+                        'key'               => 'field_6842_additional_title',
+                        'label'             => 'Title',
+                        'name'              => 'title',
+                        'type'              => 'text',
+                        'instructions'      => 'Shortcode: <code>[company id="additional_title"]</code>',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'placeholder'       => 'Founder & CEO',
+                    ),
+
+                ),
+            ),
+        ),
+
+        // Show on user profile screens
+        'location'              => array(
+            array(
+                array(
+                    'param'     => 'user_form',
+                    'operator'  => '==',
+                    'value'     => 'all',
+                ),
+            ),
+        ),
+
+        'menu_order'            => 0,
+        'position'              => 'normal',
+        'style'                 => 'default',
+        'label_placement'       => 'top',
+        'instruction_placement' => 'label',
+        'hide_on_screen'        => '',
+        'active'                => true,
+        'description'           => '',
+        'show_in_rest'          => 0,
+    ) );
+}
+
+
+
 
 function register_user_custom_fields_2025()
 {
@@ -34,7 +156,7 @@ function register_user_custom_fields_2025()
                         'name' => 'facebook',
                         'aria-label' => '',
                         'type' => 'text',
-                        'instructions' => '',
+                        'instructions'      => 'Shortcode: <code>[company id="url_facebook"]</code>',
                         'required' => 0,
                         'conditional_logic' => 0,
                         'wrapper' => array(
@@ -55,7 +177,7 @@ function register_user_custom_fields_2025()
                         'name' => 'instagram',
                         'aria-label' => '',
                         'type' => 'text',
-                        'instructions' => '',
+                        'instructions'      => 'Shortcode: <code>[company id="url_instagram"]</code>',
                         'required' => 0,
                         'conditional_logic' => 0,
                         'wrapper' => array(
@@ -97,7 +219,7 @@ function register_user_custom_fields_2025()
                         'name' => 'youtube',
                         'aria-label' => '',
                         'type' => 'text',
-                        'instructions' => '',
+                        'instructions'      => 'Shortcode: <code>[company id="url_youtube"]</code>',
                         'required' => 0,
                         'conditional_logic' => 0,
                         'wrapper' => array(
@@ -118,7 +240,7 @@ function register_user_custom_fields_2025()
                         'name' => 'tiktok',
                         'aria-label' => '',
                         'type' => 'text',
-                        'instructions' => '',
+                        'instructions'      => 'Shortcode: <code>[company id="url_tiktok"]</code>',
                         'required' => 0,
                         'conditional_logic' => 0,
                         'wrapper' => array(

@@ -1,16 +1,30 @@
-<?php namespace hws_base_tools;
+<?php namespace hws_base_tools; 
 /*
 Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 8.5.5.4
+Version: 8.6
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
 */  
+
+
+// === Guard: don't bootstrap this plugin during Elementor's internal AJAX ===
+if ( defined('DOING_AJAX') && DOING_AJAX ) {
+    $ajax_action = isset($_REQUEST['action']) ? sanitize_text_field($_REQUEST['action']) : '';
+    if ( $ajax_action === 'elementor_ajax' ) {
+        // Elementor sends a JSON 'actions' payload (often includes get_widgets_config)
+        // Regardless of subaction, we don't need Hexa during Elementor's boot.
+        return;
+    }
+}
+ 
+
+
 
 include_once("snippet-login-mask.php");
 
@@ -217,6 +231,7 @@ include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-php-libraries.php");
 include_once("settings-dashboard-rank-math-settings.php");
+include_once("settings-dashboard-shortcode-tests.php");
 
 // Set up event handling (click listeners and handlers)
 include_once("settings-event-handling.php");
@@ -227,6 +242,8 @@ include_once("snippet-rss.php");
 include_once("snippet-comments.php");
 include_once("snippet-acf-migration-structures.php");
 
+
+include_once("snippet-clean-user.php");
 include_once("snippet-seo-rss.php");
 include_once("snippet-seo-amp.php");
 
@@ -323,6 +340,18 @@ function get_snippets($type = "")
             'function' => 'register_user_custom_fields_2025',
             'scope_admin_only' => false
         ],
+        [
+            'id' => 'register_user_custom_fields_additional_2025',
+            'name' => 'Enable user.php register_user_custom_fields_additional_2025',
+            'description' => '',
+            'info' => '',
+            'info'        =>  '',
+            'function' => 'register_user_custom_fields_additional_2025',
+            'scope_admin_only' => false
+        ],
+
+
+        
         [
             'name'        => 'Enable Author Social ACFs',
             'id'          => 'register_user_custom_fields',

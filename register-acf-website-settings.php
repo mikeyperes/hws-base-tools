@@ -29,7 +29,50 @@ function register_acf_website_settings()
                 'sub_fields'        => array(
 
 
+        // User
+        array(
+            'key'               => 'field_68421889dd80b',
+            'label'             => 'Company',
+            'name'              => 'company',
+            'type'              => 'user',
+            'instructions'      => "This is the main entity of this website. Such as a company, organizations, podcast, news outlet. If this is a website on an individual (person), you can use the person info below",
+            'required'          => 0,
+            'conditional_logic' => 0,
+            'wrapper'           => array(
+                'width' => '',
+                'class' => '',
+                'id'    => '',
+            ),
+            'role'              => '',
+            'return_format'     => 'array',
+            'multiple'          => 0,
+            'allow_null'        => 0,
+            'allow_in_bindings' => 0,
+            'bidirectional'     => 0,
+            'bidirectional_target'=> array(),
+        ),
 
+         // Email
+         array(
+            'key'               => 'field_6842192117d00',
+            'label'             => 'Display Email',
+            'name'              => 'email',
+            'type'              => 'text',
+            'instructions'      => "Email that will be visible to the public.<br />name: email<br>[website_url social=\"email\"]",
+            'required'          => 0,
+            'conditional_logic' => 0,
+            'wrapper'           => array(
+                'width' => '',
+                'class' => '',
+                'id'    => '',
+            ),
+            'default_value'     => '',
+            'maxlength'         => '',
+            'allow_in_bindings' => 0,
+            'placeholder'       => '',
+            'prepend'           => '',
+            'append'            => '',
+        ),
 
                  
                     // DMCA
@@ -120,50 +163,9 @@ function register_acf_website_settings()
                         'delay'             => 0,
                     ),
 
-                    // User
-                    array(
-                        'key'               => 'field_68421889dd80b',
-                        'label'             => 'User',
-                        'name'              => 'user',
-                        'type'              => 'user',
-                        'instructions'      => "",
-                        'required'          => 0,
-                        'conditional_logic' => 0,
-                        'wrapper'           => array(
-                            'width' => '',
-                            'class' => '',
-                            'id'    => '',
-                        ),
-                        'role'              => '',
-                        'return_format'     => 'array',
-                        'multiple'          => 0,
-                        'allow_null'        => 0,
-                        'allow_in_bindings' => 0,
-                        'bidirectional'     => 0,
-                        'bidirectional_target'=> array(),
-                    ),
+            
 
-                    // Email
-                    array(
-                        'key'               => 'field_6842192117d00',
-                        'label'             => 'Email',
-                        'name'              => 'email',
-                        'type'              => 'text',
-                        'instructions'      => "name: email<br>[website_url social=\"email\"]",
-                        'required'          => 0,
-                        'conditional_logic' => 0,
-                        'wrapper'           => array(
-                            'width' => '',
-                            'class' => '',
-                            'id'    => '',
-                        ),
-                        'default_value'     => '',
-                        'maxlength'         => '',
-                        'allow_in_bindings' => 0,
-                        'placeholder'       => '',
-                        'prepend'           => '',
-                        'append'            => '',
-                    ),
+                   
                        // Footer Text
                        array(
                         'key'               => 'field_68420a173f1aa',
@@ -211,7 +213,7 @@ function register_acf_website_settings()
                     // Founder User
                     array(
                         'key'               => 'field_684218049572f',
-                        'label'             => 'User',
+                        'label'             => 'Founder',
                         'name'              => 'user',
                         'type'              => 'user',
                         'instructions'      => "",
