@@ -185,6 +185,13 @@ function display_shortcode_tests(): void
                     $row('Website',                '[founder id="website"]');
                     $row('Facebook',               '[founder id="url_facebook"]');
                     $row('Instagram',              '[founder id="url_instagram"]');
+                    $row('IMDB',              '[founder id="url_imdb"]');
+                    $row('Crunchbase',              '[founder id="url_crunchbase"]');
+                    $row('TikTok',              '[founder id="url_tiktok"]');
+                    $row('YouTube',              '[founder id="url_youtube"]');
+                    $row('LinkedIn',              '[founder id="url_linkedin"]');
+                    $row('X',              '[founder id="url_x"]');
+                    $row('GitHub',              '[founder id="url_github"]');
     echo '      </tbody>
             </table>
         </div>
