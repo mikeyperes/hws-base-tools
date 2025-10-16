@@ -162,7 +162,54 @@ function register_acf_website_settings()
                         'media_upload'      => 1,
                         'delay'             => 0,
                     ),
+    // Biography Short
+                    array(
+                        'key'               => 'field_684216d5feba6',
+                        'label'             => 'Biography Short',
+                        'name'              => 'biography_short',
+                        'type'              => 'wysiwyg',
+                        'instructions'       => "name: biography_short<br>[website_content field=\"website_biography_short\"]",
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'default_value'     => '',
+                        'allow_in_bindings' => 0,
+                        'tabs'              => 'all',
+                        'toolbar'           => 'full',
+                        'media_upload'      => 1,
+                        'delay'             => 0,
+                    ),
 
+            
+
+
+                          // Biography Short
+                          array(
+                            'key'               => 'field_684216d5febzz',
+                            'label'             => 'Media List Dump',
+                            'name'              => 'media_list',
+                            'type'              => 'wysiwyg',
+                            'instructions'       => "name: biography_short<br>[website_content field=\"website_media_list\"]",
+                            'required'          => 0,
+                            'conditional_logic' => 0,
+                            'wrapper'           => array(
+                                'width' => '',
+                                'class' => '',
+                                'id'    => '',
+                            ),
+                            'default_value'     => '',
+                            'allow_in_bindings' => 0,
+                            'tabs'              => 'all',
+                            'toolbar'           => 'full',
+                            'media_upload'      => 1,
+                            'delay'             => 0,
+                        ),
+    
+                
             
 
                    
