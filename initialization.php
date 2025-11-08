@@ -4,15 +4,14 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 8.9
+Version: 8.9.1  
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
 GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
 GitHub Branch: main 
-*/  
-
-
+*/   
+  
 // === Guard: don't bootstrap this plugin during Elementor's internal AJAX ===
 if ( defined('DOING_AJAX') && DOING_AJAX ) {
     $ajax_action = isset($_REQUEST['action']) ? sanitize_text_field($_REQUEST['action']) : '';
@@ -20,8 +19,8 @@ if ( defined('DOING_AJAX') && DOING_AJAX ) {
         // Elementor sends a JSON 'actions' payload (often includes get_widgets_config)
         // Regardless of subaction, we don't need Hexa during Elementor's boot.
         return;
-    }
-}
+    } 
+}  
  
 
 
@@ -254,18 +253,20 @@ activate_snippets("admin");
 include_once("snippet-website-settings-functionality.php");
 
 //include_once("snippet-footer-text.php");
-
+include_once("shortcodes.php");
 
 //include_once("shortcodes.php");
 add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
+
+add_shortcode('display_year', __NAMESPACE__ . '\\display_year_shortcode');
+
+
 
 activate_snippets("non_admin");
 
 
 
 },5);
-
-
 
 
 
