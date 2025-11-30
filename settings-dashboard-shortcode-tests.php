@@ -232,6 +232,9 @@ function display_shortcode_tests(): void
                 </tr></thead>
                 <tbody>';
                     $row('Featured Team Members', 'featured_team_members');
+                      $row('Featured Testimonials', 'featured_testimonials');
+                    
+                 
     echo '      </tbody>
             </table>
         </div>
