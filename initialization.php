@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 8.9.3
+Version: 8.9.4
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -190,10 +190,12 @@ include_once("register-acf-website-settings.php");
 // Import ACF Fields
 include_once("smp-core/register-post-type-organization.php");
 include_once("smp-core/register-post-type-team-member.php");
+include_once("smp-core/register-post-type-testimonial.php");
 
 include_once("smp-core/register-acf-user.php");
 include_once("smp-core/register-acf-organization.php");
 include_once("smp-core/register-acf-team-member.php");
+include_once("smp-core/register-acf-testimonial.php");
 
 //include_once("scale-my-podcast/register-acf-post-podcast.php");
 
@@ -310,6 +312,24 @@ function get_snippets($type = "")
             'function' => 'enable_smp_cpt_organization',
             'scope_admin_only' => false
         ],
+           [
+            'id' => 'enable_cpt_testimonial',
+            'name' => 'enable_cpt_testimonial',
+            'description' => '',
+            'info' => display_cpt_structure('testimonial'),
+            'function' => 'enable_cpt_testimonial',
+            'scope_admin_only' => false
+        ],
+          [
+            'id' => 'enable_acf_testimonial',
+            'name' => 'enable_acf_testimonial',
+            'description' => '',
+  
+            'info'        =>  display_acf_structure('group_64bc3b458d863'),
+            'function' => 'enable_acf_testimonial',
+            'scope_admin_only' => false
+        ],
+        
         [
             'id' => 'smp_enable_acf_organization',
             'name' => 'SMP: Enable Organizations ACFs',
