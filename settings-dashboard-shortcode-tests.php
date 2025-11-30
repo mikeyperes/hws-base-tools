@@ -197,5 +197,45 @@ function display_shortcode_tests(): void
         </div>
     </section>';
 
+
+    
+      // ---------- General Shortcodes ----------
+    echo '<section class="hws-sc-section hws-sc-general">
+        <header class="hws-sc-section-head">
+            <h3 class="hws-sc-section-title">General Shortcodes</h3>
+        </header>
+        <div class="hws-sc-section-body">
+            <table class="hws-sc-table" role="table">
+                <thead><tr>
+                    <th class="hws-sc-th hws-sc-th-test">Test</th>
+                    <th class="hws-sc-th hws-sc-th-code">Shortcode</th>
+                    <th class="hws-sc-th hws-sc-th-output">Output</th>
+                </tr></thead>
+                <tbody>';
+                    $row('Current Year', '[display_year]');
+    echo '      </tbody>
+            </table>
+        </div>
+    </section>';
+
+    // ---------- Elementor Query Filters ----------
+    echo '<section class="hws-sc-section hws-sc-elementor-filters">
+        <header class="hws-sc-section-head">
+            <h3 class="hws-sc-section-title">Elementor Query Filters</h3>
+        </header>
+        <div class="hws-sc-section-body">
+            <table class="hws-sc-table" role="table">
+                <thead><tr>
+                    <th class="hws-sc-th hws-sc-th-test">Test</th>
+                    <th class="hws-sc-th hws-sc-th-code">Query ID</th>
+                  
+                </tr></thead>
+                <tbody>';
+                    $row('Featured Team Members', 'featured_team_members');
+    echo '      </tbody>
+            </table>
+        </div>
+    </section>';
+
     echo '</div></div>';
 }
