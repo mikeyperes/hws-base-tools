@@ -31,8 +31,8 @@ function enable_smp_acf_teammember(){
 		),
 		array(
 			'key' => 'field_64c76866d5a5d',
-			'label' => 'Featured Position',
-			'name' => 'featured_position',
+			'label' => 'Featured',
+			'name' => 'featured',
 			'aria-label' => '',
 			'type' => 'true_false',
 			'instructions' => '',
