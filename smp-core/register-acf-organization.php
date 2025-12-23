@@ -333,6 +333,32 @@ acf_add_local_field_group( array(
 			'prepend' => '',
 			'append' => '',
 		),
+		array(
+	'key' => 'field_1233s1sdfwxa', // change to a unique field key
+	'label' => 'Image Cropped',
+	'name' => 'image_cropped',
+	'aria-label' => '',
+	'type' => 'image',
+	'instructions' => '',
+	'required' => 0,
+	'conditional_logic' => 0,
+	'wrapper' => array(
+		'width' => '',
+		'class' => '',
+		'id' => '',
+	),
+	'return_format' => 'array', // array | url | id
+	'library' => 'all',
+	'min_width' => '',
+	'min_height' => '',
+	'min_size' => '',
+	'max_width' => '',
+	'max_height' => '',
+	'max_size' => '',
+	'mime_types' => '',
+	'preview_size' => 'thumbnail',
+),
+
 	),
 	'location' => array(
 		array(
