@@ -81,7 +81,7 @@ function hws_ct_get_settings_system_checks()
             ],
             'MyISAM Tables' => [
     'id' => 'myisam-tables',
-'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables()) . ' - <a target=_blank href="' . esc_url(admin_url('admin.php?page=litespeed-db_optm')) . '">View More</a>'
+'value' => hws_ct_highlight_based_on_criteria(check_myisam_tables()) . ' - <a target="_blank" href="' . esc_url(admin_url('admin.php?page=litespeed-db_optm')) . '">View More</a>'
 
 ],
 
@@ -197,10 +197,14 @@ function hws_ct_get_settings_system_checks()
     'id' => 'php-upload-max-filesize',
     'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('upload_max_filesize', check_php_ini_status('upload_max_filesize'), ['min_value' => 300000]))
 ],
+// WP-Config Settings Section
+'DISABLE_WP_CRON State' => [
+    'id' => 'disable-wp-cron',
+    'value' => hws_ct_highlight_based_on_criteria(hws_ct_package_constant_value_for_checks('DISABLE_WP_CRON', check_wp_config_constant_status('DISABLE_WP_CRON'), ['listed_values' => ['true', true]]))
+],
     ];
     return $system_checks;
 }
-
 
 
 
@@ -282,6 +286,52 @@ if ($wp_cache_status === 'true' || $wp_cache_status === true): ?>
         <button class="button modify-snippet-via-button" data-snippet-id="enable_auto_update_themes" data-action="disable">Disable Theme Auto Updates</button>
     <?php endif; ?>
 <?php endif; ?>
+
+<?php if ($setting['id'] === 'wp-debug'):
+$wp_debug_status = check_wp_config_constant_status('WP_DEBUG'); 
+if ($wp_debug_status === 'true' || $wp_debug_status === true): ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG" data-value="false" data-target="wp-debug">Disable WP_DEBUG</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG" data-value="true" data-target="wp-debug">Enable WP_DEBUG</button>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php if ($setting['id'] === 'wp-debug-display'):
+$wp_debug_display_status = check_wp_config_constant_status('WP_DEBUG_DISPLAY'); 
+if ($wp_debug_display_status === 'true' || $wp_debug_display_status === true): ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG_DISPLAY" data-value="false" data-target="wp-debug-display">Disable WP_DEBUG_DISPLAY</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG_DISPLAY" data-value="true" data-target="wp-debug-display">Enable WP_DEBUG_DISPLAY</button>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php if ($setting['id'] === 'wp-debug-log'):
+$wp_debug_log_status = check_wp_config_constant_status('WP_DEBUG_LOG'); 
+if ($wp_debug_log_status === 'true' || $wp_debug_log_status === true): ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG_LOG" data-value="false" data-target="wp-debug-log">Disable WP_DEBUG_LOG</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="WP_DEBUG_LOG" data-value="true" data-target="wp-debug-log">Enable WP_DEBUG_LOG</button>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php if ($setting['id'] === 'disable-wp-cron'):
+$disable_cron_status = check_wp_config_constant_status('DISABLE_WP_CRON'); 
+if ($disable_cron_status === 'true' || $disable_cron_status === true): ?>
+    <button class="button modify-wp-config" data-constant="DISABLE_WP_CRON" data-value="false" data-target="disable-wp-cron">Enable WP_CRON</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="DISABLE_WP_CRON" data-value="true" data-target="disable-wp-cron">Disable WP_CRON</button>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php if ($setting['id'] === 'display-errors'):
+$display_errors = ini_get('display_errors');
+$is_on = $display_errors && $display_errors !== '0' && strtolower($display_errors) !== 'off';
+if ($is_on): ?>
+    <button class="button modify-wp-config" data-constant="ini_display_errors" data-value="0" data-target="display-errors">Disable display_errors</button>
+<?php else: ?>
+    <button class="button modify-wp-config" data-constant="ini_display_errors" data-value="1" data-target="display-errors">Enable display_errors</button>
+<?php endif; ?>
+<?php endif; ?>
                 
 
             <?php endforeach; ?>
@@ -290,7 +340,7 @@ if ($wp_cache_status === 'true' || $wp_cache_status === true): ?>
 <?php }
 
 // Toggle Users Must Be Registered to Comment
-if (!function_exists('toggle_users_must_be_registered_to_comment')) {
+if (!function_exists(__NAMESPACE__.'\toggle_users_must_be_registered_to_comment')) {
     function toggle_users_must_be_registered_to_comment($action) {
         if ($action === 'enable') {
             update_option('comment_registration', 1); // Enable user registration requirement
@@ -299,4 +349,4 @@ if (!function_exists('toggle_users_must_be_registered_to_comment')) {
         }
         return true; // Return true to indicate success
     }
-} else write_log("Warning: toggle_users_must_be_registered_to_comment function is already declared", true);
+} 

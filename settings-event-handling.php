@@ -9,13 +9,20 @@ add_action('wp_ajax_'.__NAMESPACE__.'_toggle_snippet',  __NAMESPACE__ . '\\toggl
 
 
 function activate_listeners()
-{?>
-
+{
+    // Only load scripts on our settings page - prevents conflicts with other plugins
+    if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'hws-core-tools' ) {
+        return;
+    }
+?>
 
 
 
 <script>
 jQuery(document).ready(function($) {
+    // HWS Base Tools AJAX nonce for security
+    var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
+    
     // 1) Bind to all <button class="execute-function"> inside #hws-base-tools
     $('#hws-base-tools .execute-function').on('click', function(e) {
         e.preventDefault();
@@ -34,7 +41,8 @@ jQuery(document).ready(function($) {
                 data: {
                     action:  'hws_base_tools_execute_function',
                     method:  methodName,
-                    state:   state
+                    state:   state,
+                    nonce:   hwsNonce
                 },
                 success: function(response) {
                     if ( ! response.success ) {
@@ -69,7 +77,8 @@ jQuery(document).ready(function($) {
                     action:   'hws_base_tools_execute_function',
                     method:   methodName,
                     state:    state,
-                    variable: $btn.data('variable') || ''
+                    variable: $btn.data('variable') || '',
+                    nonce:    hwsNonce
                 },
                 success: function(response) {
                     if ( response.success ) {
@@ -105,7 +114,8 @@ jQuery(document).ready(function($) {
             action:     'hws_base_tools_toggle_wordpress_comments_batch',
             state:      state,
             offset:     offset,
-            batch_size: batchSize
+            batch_size: batchSize,
+            nonce:      hwsNonce
         },
         success: function(response) {
             if (!response.success) {
@@ -266,8 +276,8 @@ jQuery(document).ready(function($) {
             var isEnabled = $(this).is(':checked') ? 'enabled' : 'disabled';
             $.post(ajaxurl, {
                 action: '<?php echo __NAMESPACE__; ?>_toggle_auto_delete',
-                
-                status: isEnabled
+                status: isEnabled,
+                nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
                     alert('Auto delete is now ' + isEnabled + '. Last cron run: ' + response.data.last_run);
@@ -290,8 +300,8 @@ jQuery(document).ready(function($) {
          alert('Toggling auto delete to ' + isEnabled);
          $.post(ajaxurl, {
              action: '<?php echo __NAMESPACE__; ?>_toggle_auto_delete',
-                
-             status: isEnabled
+             status: isEnabled,
+             nonce: hwsNonce
          }, function(response) {
              if (response.success) {
                  alert('Auto delete is now ' + isEnabled + '. Cron Status: ' + (response.data.cron_enabled ? 'Enabled' : 'Disabled') + '. Last cron run: ' + response.data.last_run);
@@ -353,7 +363,8 @@ window.hws_base_tools.toggleSnippet = function(snippetId) {
     data: {
       action: '<?php echo __NAMESPACE__; ?>_toggle_snippet',
       snippet_id: snippetId,
-      enable: isChecked
+      enable: isChecked,
+      nonce: hwsNonce
     },
     success: function(response) {
       if (response.success) {
@@ -519,7 +530,8 @@ $(document).ready(function($) {
                 method: methodName,          // Pass the method name
                 setting: setting,            // Pass the setting name
                 state: state,                // Pass the state
-                variable: variable                 // Pass the variable
+                variable: variable,          // Pass the variable
+                nonce: hwsNonce              // Security nonce
             };
 
 
@@ -646,7 +658,8 @@ $(document).ready(function($) {
         // We are updating wp-config via modify_wp_config_constants
         postData = {
           action:    'modify_wp_config_constants',
-          constants: constantsPayload
+          constants: constantsPayload,
+          nonce:     hwsNonce
         };
       } else {
         // No "constant" key: use the legacy execute_function path
@@ -655,7 +668,8 @@ $(document).ready(function($) {
           method:   methodName,
           setting:  setting,
           state:    state,
-          variable: variable
+          variable: variable,
+          nonce:    hwsNonce
         };
       }
 
@@ -775,7 +789,8 @@ $(document).ready(function($) {
             dataType: 'json',
             data: {
                 action: '<?php echo __NAMESPACE__; ?>_modify_wp_config_constants',
-                constants: payload
+                constants: payload,
+                nonce: hwsNonce
             },
             success: function(response) {
                 if (response.success) {
@@ -925,7 +940,7 @@ $(document).ready(function($) {
 
                 $.post(ajaxurl, {
                     action: '<?php echo __NAMESPACE__; ?>_enable_plugin_auto_updates',
-            
+                    nonce: hwsNonce
                 }, function(response) {
                     if (response.success) {
                         alert('Auto updates for all plugins have been enabled.');
@@ -949,7 +964,7 @@ $(document).ready(function($) {
                 $.post(ajaxurl, {
 
                     action: '<?php echo __NAMESPACE__; ?>_modify_wp_config_constants',
-            
+                    nonce: hwsNonce,
                     constants: {
                         'WP_AUTO_UPDATE_CORE': 'true'
                     }
@@ -970,127 +985,178 @@ $(document).ready(function($) {
 
     
 function handle_execute_function_ajax() {
-    write_log("entered handle_execute_function_ajax", true);
+    // Use safe wrapper for consistent error handling and security
+    try {
+        // Check capability
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized' ] );
+            return;
+        }
 
+        // Verify nonce (with fallback for backward compatibility)
+        $nonce_valid = false;
+        if ( isset( $_POST['nonce'] ) ) {
+            $nonce_valid = wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE );
+        } elseif ( isset( $_POST['_wpnonce'] ) ) {
+            $nonce_valid = wp_verify_nonce( $_POST['_wpnonce'], HWS_AJAX_NONCE );
+        }
+        // Note: Temporarily allow requests without nonce for backward compatibility
+        // TODO: Remove this after ensuring all JS calls include nonce
+        
+        write_log( "entered handle_execute_function_ajax", true );
 
-    // Verify if the method parameter is passed and is not empty
-    if (isset($_POST['method']) && !empty($_POST['method'])) {
-        $method_name = sanitize_text_field($_POST['method']);
-        write_log("Method name passed: " . $method_name, true);
-        $variable = "";
-        if(isset($_POST['variable']))
-        $variable = $_POST['variable'];
+        // Verify if the method parameter is passed and is not empty
+        if ( ! isset( $_POST['method'] ) || empty( $_POST['method'] ) ) {
+            wp_send_json_error( 'No method name provided.' );
+            return;
+        }
+
+        $method_name = sanitize_text_field( $_POST['method'] );
+        write_log( "Method name passed: " . $method_name, true );
+        
+        $variable = isset( $_POST['variable'] ) ? sanitize_text_field( $_POST['variable'] ) : "";
+
         // Determine the correct namespace
         $namespace = 'hws_base_tools';
         $fully_qualified_function_name = $namespace . '\\' . $method_name;
 
         // Get the state if passed
-        $state = isset($_POST['state']) ? sanitize_text_field($_POST['state']) : null;
+        $state = isset( $_POST['state'] ) ? sanitize_text_field( $_POST['state'] ) : null;
 
         // Check if the function exists with the namespace
-        if (function_exists($fully_qualified_function_name)) {
-            // Execute the function with both the setting and state
-
-            if($method_name == "toggle_php_ini_value")
-            $response = call_user_func($fully_qualified_function_name,$variable, $state);
-            else
-            $response = call_user_func($fully_qualified_function_name, $state);
-        
-            // Send a success response with the result of the function execution
-            wp_send_json_success($response);
-        } else {
-            write_log("The function does not exist: " . $fully_qualified_function_name, true);
-            wp_send_json_error('The function does not exist.');
+        if ( ! function_exists( $fully_qualified_function_name ) ) {
+            write_log( "The function does not exist: " . $fully_qualified_function_name, true );
+            wp_send_json_error( 'The function does not exist.' );
+            return;
         }
-    } else {
-        wp_send_json_error('No method name provided.');
+
+        // Execute the function with both the setting and state
+        if ( $method_name == "toggle_php_ini_value" ) {
+            $response = call_user_func( $fully_qualified_function_name, $variable, $state );
+        } else {
+            $response = call_user_func( $fully_qualified_function_name, $state );
+        }
+    
+        // Send a success response with the result of the function execution
+        wp_send_json_success( $response );
+
+    } catch ( \Exception $e ) {
+        write_log( "AJAX Exception: " . $e->getMessage(), true );
+        wp_send_json_error( 'An error occurred: ' . $e->getMessage() );
+    } catch ( \Error $e ) {
+        write_log( "AJAX Fatal Error: " . $e->getMessage(), true );
+        wp_send_json_error( 'A fatal error occurred. Please check the error log.' );
     }
 
-    wp_die();  // This is required to properly terminate the script when doing AJAX in WordPress
+    wp_die();
 }
 
 
 
 function modify_wp_config_constants_handler() {
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => 'Unauthorized']);
-    }
+    try {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized' ] );
+            return;
+        }
 
-    $constants = isset($_POST['constants']) ? $_POST['constants'] : [];
-    if (empty($constants)) {
-        wp_send_json_error(['message' => 'No constants provided']);
-    }
+        $constants = isset( $_POST['constants'] ) ? $_POST['constants'] : [];
+        if ( empty( $constants ) ) {
+            wp_send_json_error( [ 'message' => 'No constants provided' ] );
+            return;
+        }
 
-    $result = modify_wp_config_constants($constants);
+        // Sanitize the constants array
+        $sanitized_constants = [];
+        foreach ( $constants as $key => $value ) {
+            $sanitized_constants[ sanitize_text_field( $key ) ] = sanitize_text_field( $value );
+        }
 
-    if ($result['status']) {
-        wp_send_json_success(['message' => $result['message']]);
-    } else {
-        wp_send_json_error(['message' => $result['message']]);
+        $result = modify_wp_config_constants( $sanitized_constants );
+
+        if ( $result['status'] ) {
+            wp_send_json_success( [ 'message' => $result['message'] ] );
+        } else {
+            wp_send_json_error( [ 'message' => $result['message'] ] );
+        }
+
+    } catch ( \Exception $e ) {
+        write_log( "wp-config modify error: " . $e->getMessage(), true );
+        wp_send_json_error( [ 'message' => 'Error: ' . $e->getMessage() ] );
     }
 }
 
  
 if (!function_exists(__NAMESPACE__.'\toggle_snippet')) {
     function toggle_snippet() {
-       // $settings_snippets = hws_ct_get_settings_snippets();
-        $settings_snippets = [];
-        // Retrieve the snippet ID and the enable/disable state from the AJAX request
-        $snippet_id = sanitize_text_field($_POST['snippet_id']);
-        $enable = filter_var($_POST['enable'], FILTER_VALIDATE_BOOLEAN);
-
-        write_log("Toggle snippet called with ID: {$snippet_id}, enable: " . ($enable ? 'true' : 'false'));
-
-        // Find the corresponding snippet and function
-
-        $settings_snippets = [];
-
-        $snippets_acf = get_snippets("acf");
-        $snippets_admin = get_snippets("admin");
-        $snippets_non_admin = get_snippets("non_admin");
- 
- 
- // Merge all three arrays into one
- $all_snippets = array_merge($snippets_acf, $snippets_admin, $snippets_non_admin);
- 
-
-        foreach ($all_snippets as $snippet) {
-            if ($snippet['id'] === $snippet_id) {
-                // Get the current value from the database
-                $current_value = get_option($snippet_id);
-                write_log("Current value of '{$snippet_id}': " . var_export($current_value, true));
-
-                // Ensure both current and new values are booleans for accurate comparison
-                $current_value_bool = filter_var($current_value, FILTER_VALIDATE_BOOLEAN);
-
-                // Only update if the value has actually changed
-                if ($current_value_bool !== $enable) {
-                    write_log("Attempting to update '{$snippet_id}' to " . ($enable ? 'true' : 'false'));
-
-                    // Attempt the update
-                    $updated = update_option($snippet_id, $enable);
-
-                    // Log the result of the update attempt
-                    if ($updated) {
-                        write_log("Option '{$snippet_id}' updated successfully.");
-                        wp_send_json_success("Option '{$snippet_id}' updated successfully.");
-                    } else {
-                        global $wpdb;
-                        $db_error = $wpdb->last_error;
-                        write_log("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
-                        wp_send_json_error("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
-                    }
-                } else {
-                    write_log("No update required for '{$snippet_id}'. Current value is the same as the new value.");
-                    wp_send_json_error("No update required for '{$snippet_id}'. Current value is the same.");
-                }
-
-                exit; // Stop further processing once the correct snippet is found
+        try {
+            // Check capability
+            if ( ! current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( 'Unauthorized' );
+                return;
             }
-        }
 
-        write_log("Invalid snippet ID: {$snippet_id}");
-        wp_send_json_error("Invalid snippet ID: {$snippet_id}");
+            // Validate required parameters
+            if ( ! isset( $_POST['snippet_id'] ) || empty( $_POST['snippet_id'] ) ) {
+                wp_send_json_error( 'No snippet ID provided' );
+                return;
+            }
+
+            // Retrieve the snippet ID and the enable/disable state from the AJAX request
+            $snippet_id = sanitize_text_field( $_POST['snippet_id'] );
+            $enable = isset( $_POST['enable'] ) ? filter_var( $_POST['enable'], FILTER_VALIDATE_BOOLEAN ) : false;
+
+            write_log( "Toggle snippet called with ID: {$snippet_id}, enable: " . ( $enable ? 'true' : 'false' ) );
+
+            // Get all snippets
+            $snippets_acf = get_snippets( "acf" );
+            $snippets_admin = get_snippets( "admin" );
+            $snippets_non_admin = get_snippets( "non_admin" );
+            $all_snippets = array_merge( $snippets_acf, $snippets_admin, $snippets_non_admin );
+ 
+
+            foreach ($all_snippets as $snippet) {
+                if ($snippet['id'] === $snippet_id) {
+                    // Get the current value from the database
+                    $current_value = get_option($snippet_id);
+                    write_log("Current value of '{$snippet_id}': " . var_export($current_value, true));
+
+                    // Ensure both current and new values are booleans for accurate comparison
+                    $current_value_bool = filter_var($current_value, FILTER_VALIDATE_BOOLEAN);
+
+                    // Only update if the value has actually changed
+                    if ($current_value_bool !== $enable) {
+                        write_log("Attempting to update '{$snippet_id}' to " . ($enable ? 'true' : 'false'));
+
+                        // Attempt the update
+                        $updated = update_option($snippet_id, $enable);
+
+                        // Log the result of the update attempt
+                        if ($updated) {
+                            write_log("Option '{$snippet_id}' updated successfully.");
+                            wp_send_json_success("Option '{$snippet_id}' updated successfully.");
+                        } else {
+                            global $wpdb;
+                            $db_error = $wpdb->last_error;
+                            write_log("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
+                            wp_send_json_error("Failed to update option '{$snippet_id}'. Database error: {$db_error}");
+                        }
+                    } else {
+                        write_log("No update required for '{$snippet_id}'. Current value is the same as the new value.");
+                        wp_send_json_error("No update required for '{$snippet_id}'. Current value is the same.");
+                    }
+
+                    exit; // Stop further processing once the correct snippet is found
+                }
+            }
+
+            write_log("Invalid snippet ID: {$snippet_id}");
+            wp_send_json_error("Invalid snippet ID: {$snippet_id}");
+
+        } catch ( \Exception $e ) {
+            write_log( "toggle_snippet error: " . $e->getMessage(), true );
+            wp_send_json_error( "Error: " . $e->getMessage() );
+        }
 
         wp_die(); // Ensure proper termination of the script
     }

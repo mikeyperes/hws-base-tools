@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 8.9.5.1
+Version: 9.1
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -135,7 +135,16 @@ $github_access_token = ''; // Leave empty if not required for private repositori
  */
 add_action( 'admin_init', function() {
     include_once("GitHub_Updater.php");
-    $updater = new WP_GitHub_Updater( Config::get_github_config() );
+    // Initialize using the new abstract function - much cleaner!
+    // @since 8.9.5.3 - Refactored to use abstract hws_init_github_updater()
+    hws_init_github_updater([
+        'plugin_file'   => __FILE__,
+        'github_repo'   => 'mikeyperes/hws-base-tools',
+        'github_branch' => 'main',
+        'requires'      => '5.0',
+        'tested'        => '6.4',
+        // 'access_token' => '', // Uncomment for private repos
+    ]);
 
     // if you still want your “force‐update‐check” debug hook:
     if ( isset( $_GET['force-update-check'] ) ) {
@@ -218,19 +227,18 @@ if (is_admin()){
 
 
 include_once("helper.php");
+include_once("safe-wrappers.php");  // Safe AJAX, shell_exec, and error handling utilities
 
-// Build Dashboard
-include_once("settings-dashboard.php");
-// Settings sub-pages
-include_once("settings-dashboard-wp-config.php");
-include_once("settings-dashboard-log-delete-cron.php");
+// Build Dashboard - New modular structure
+include_once("settings-dashboard.php");           // Main dashboard with tabs
+include_once("settings-dashboard-system-checks.php");  // System checks (restored original)
+include_once("settings-dashboard-check-plugins.php");  // Plugin status monitoring
+include_once("settings-dashboard-config.php");    // Configuration & PHP info
+include_once("settings-dashboard-backups.php");   // Backup detection & cleanup
+include_once("settings-dashboard-log-delete-cron.php");  // Log file cleaner
 include_once("settings-dashboard-snippets.php");
-include_once("settings-dashboard-plugin-checks.php");
-include_once("settings-dashboard-system-checks.php");
 include_once("settings-dashboard-theme-checks.php");
-include_once("settings-dashboard-php-ini.php");
 include_once("settings-dashboard-plugin-info.php");
-include_once("settings-dashboard-php-libraries.php");
 include_once("settings-dashboard-rank-math-settings.php");
 include_once("settings-dashboard-shortcode-tests.php");
 
@@ -241,18 +249,22 @@ include_once("snippet-allow-svg-upload.php");
 include_once("snippet-smp-display-ads.php");
 include_once("snippet-rss.php");
 include_once("snippet-comments.php");
+// Always enable comments management (not a snippet - core feature)
+if ( function_exists( __NAMESPACE__ . '\\enable_comments_management' ) ) {
+    enable_comments_management();
+}
 include_once("snippet-acf-migration-structures.php");
 
 
 include_once("snippet-clean-user.php");
 include_once("snippet-seo-rss.php");
 include_once("snippet-seo-amp.php");
+include_once("snippet-website-settings-functionality.php");
 
 activate_snippets("admin");
 }
 
 
-include_once("snippet-website-settings-functionality.php");
 
 //include_once("snippet-footer-text.php");
 include_once("shortcodes.php");
@@ -288,8 +300,8 @@ function get_snippets($type = "")
     $snippets_acf = [
         [
             'id' => 'register_acf_website_settings',
-            'name' => 'Register Website Settings Page (theme options and acf structures)',
-            'description' => '',
+            'name' => 'Website Settings Page',
+            'description' => 'Registers a Theme Options page with ACF fields for global site settings like logos, colors, and contact info.',
             'info' => display_acf_structure('group_6842076add7ad'),
             'function' => 'register_acf_website_settings',
             'scope_admin_only' => false
@@ -297,8 +309,8 @@ function get_snippets($type = "")
         ],
         [
             'id' => 'smp_enable_cpt_teammember',
-            'name' => 'SMP: Enable Team Member CPT',
-            'description' => '',
+            'name' => 'Team Member Custom Post Type',
+            'description' => 'Creates a "Team Member" post type for displaying staff/team profiles on your site.',
             'info' => display_cpt_structure('team-member'),
             'function' => 'enable_smp_cpt_teammember',
             'scope_admin_only' => false
@@ -306,24 +318,24 @@ function get_snippets($type = "")
 
         [
             'id' => 'smp_enable_cpt_organization',
-            'name' => 'SMP: Enable Organizations CPT',
-            'description' => '',
+            'name' => 'Organizations Custom Post Type',
+            'description' => 'Creates an "Organization" post type for displaying company/partner profiles.',
             'info' => display_cpt_structure('organization'),
             'function' => 'enable_smp_cpt_organization',
             'scope_admin_only' => false
         ],
            [
             'id' => 'enable_cpt_testimonial',
-            'name' => 'enable_cpt_testimonial',
-            'description' => '',
+            'name' => 'Testimonials Custom Post Type',
+            'description' => 'Creates a "Testimonial" post type for displaying customer reviews and quotes.',
             'info' => display_cpt_structure('testimonial'),
             'function' => 'enable_cpt_testimonial',
             'scope_admin_only' => false
         ],
           [
             'id' => 'enable_acf_testimonial',
-            'name' => 'enable_acf_testimonial',
-            'description' => '',
+            'name' => 'Testimonial ACF Fields',
+            'description' => 'Adds custom fields to testimonials: author name, company, rating, photo, etc.',
   
             'info'        =>  display_acf_structure('group_64bc3b458d863'),
             'function' => 'enable_acf_testimonial',
@@ -332,8 +344,8 @@ function get_snippets($type = "")
         
         [
             'id' => 'smp_enable_acf_organization',
-            'name' => 'SMP: Enable Organizations ACFs',
-            'description' => '',
+            'name' => 'Organization ACF Fields',
+            'description' => 'Adds custom fields to organizations: logo, website, description, contact info.',
   
             'info'        =>  display_acf_structure('group_64bc3b458d863'),
             'function' => 'enable_smp_acf_organization',
@@ -344,9 +356,8 @@ function get_snippets($type = "")
 
         [
             'id' => 'smp_enable_acf_teammember',
-            'name' => 'SMP: Enable Team Member ACFs',
-            'description' => '',
-            'info' => '',
+            'name' => 'Team Member ACF Fields',
+            'description' => 'Adds custom fields to team members: job title, bio, photo, social links.',
             'info'        =>  display_acf_structure('group_64b3a05760b1a'),
             'function' => 'enable_smp_acf_teammember',
             'scope_admin_only' => false
@@ -354,18 +365,16 @@ function get_snippets($type = "")
 
         [
             'id' => 'register_user_custom_fields_2025',
-            'name' => 'Enable user.php acf fields - 2025',
-            'description' => '',
-            'info' => '',
+            'name' => 'User Profile Fields (2025)',
+            'description' => 'Extends WordPress user profiles with additional fields like bio, avatar, and preferences.',
             'info'        =>  display_acf_structure('group_684252fd99081'),
             'function' => 'register_user_custom_fields_2025',
             'scope_admin_only' => false
         ],
         [
             'id' => 'register_user_custom_fields_additional_2025',
-            'name' => 'Enable user.php register_user_custom_fields_additional_2025',
-            'description' => '',
-            'info' => '',
+            'name' => 'Additional User Profile Fields',
+            'description' => 'Extra user profile fields for extended functionality and metadata.',
             'info'        =>  '',
             'function' => 'register_user_custom_fields_additional_2025',
             'scope_admin_only' => false
@@ -374,10 +383,10 @@ function get_snippets($type = "")
 
         
         [
-            'name'        => 'Enable Author Social ACFs',
+            'name'        => 'Author Social Media Links',
             'id'          => 'register_user_custom_fields',
             'function'    => 'register_user_custom_fields',
-            'description' => 'This will enable social media fields in author profiles.',
+            'description' => 'Adds social media profile links (Twitter, Facebook, LinkedIn, etc.) to author profiles.',
             'info'        =>  display_acf_structure('group_590d64c31db0a',true),
             'scope_admin_only' => false
         ]
@@ -388,74 +397,74 @@ function get_snippets($type = "")
     
     [  
         'id' => 'enable_website_settings_functionality',
-        'name' => 'Website Theme Settings Functionality',
-        'description' => '',
-        'info' => '',
+        'name' => 'Theme Settings Functions',
+        'description' => 'Enables helper functions to retrieve theme settings values throughout your site templates.',
+        'info' => 'Provides functions like get_theme_option() for easy access to ACF theme settings.',
         'function' => 'enable_website_settings_functionality',
         'scope_admin_only' => false
     ],
     [
         'id' => 'register_sponsored_functionality',
-        'name' => 'register_sponsored_functionality',
-        'description' => 'Add sponsored ACF to posts',
-        'info' => '',
+        'name' => 'Sponsored Content Fields',
+        'description' => 'Adds "Sponsored" checkbox and sponsor details fields to posts for affiliate/sponsored content disclosure.',
+        'info' => 'Helps comply with FTC disclosure requirements for sponsored content.',
         'function' => 'register_acf_sponsored_functionality',
         'scope_admin_only' => true
     ],
     [
         'id' => 'enable_comments_management',
-        'name' => 'Enable Comments Functionality',
-        'description' => '',
-        'info' => '',
+        'name' => 'Comments Management Dashboard',
+        'description' => 'Adds a Comments tab to the HWS dashboard for bulk comment management and moderation.',
+        'info' => 'Enables batch operations: approve, delete, spam, and close comments across posts.',
         'function' => 'enable_comments_management',
         'scope_admin_only' => true
     ],
     [
         'id' => 'enable_custom_rss_functionality',
-        'name' => 'Enable Custom RSS Functionality',
-        'description' => 'Enable the custom RSS feed functionality based on registered post types and categories.',
-        'info' => 'Once this is selected, custom RSS feeds will be generated for the specified post types and categories defined in the ACF settings.',
+        'name' => 'Custom RSS Feeds',
+        'description' => 'Creates custom RSS feeds for specific post types and categories.',
+        'info' => 'Once enabled, custom RSS feeds will be generated based on your ACF configuration.',
         'function' => 'enable_custom_rss_functionality',
         'scope_admin_only' => true
     ],
     [
         'id' => 'activate_smp_pushads_functionality',
-        'name' => 'Activate SMP PushAds Functionality',
-        'description' => 'Activates the SMP PushAds functionality, including ad codes and shortcodes for ad display.',
-        'info' => 'Shortcodes Example: [smp_display_ad ad_type="banner"], [smp_display_ad ad_type="sidebar"]. <a href="' . esc_url(admin_url('admin.php?page=display-ads-smp')) . '" target="_blank">Click here to configure ACF fields</a>',
+        'name' => 'Display Ads Manager',
+        'description' => 'Manages ad placements with shortcodes for banner, sidebar, and in-content ads.',
+        'info' => 'Shortcodes: [smp_display_ad ad_type="banner"], [smp_display_ad ad_type="sidebar"]. <a href="' . esc_url(admin_url('admin.php?page=display-ads-smp')) . '" target="_blank">Configure ads →</a>',
         'function' => 'activate_snippet_smp_display_ads',
         'scope_admin_only' => true
     ],
     [
         'id' => 'enable_auto_update_plugins',
-        'name' => 'Enable Automatic Updates for Plugins',
-        'description' => 'Enables automatic updates for all plugins.',
-        'info' => 'Automatically keeps your plugins up to date.',
+        'name' => 'Auto-Update All Plugins',
+        'description' => 'Automatically updates all plugins when new versions are released.',
+        'info' => '⚠️ Recommended for most sites. Keeps plugins secure and up-to-date without manual intervention.',
         'function' => 'enable_auto_update_plugins',
         'scope_admin_only' => true
     ],
     [
         'id' => 'enable_auto_update_themes',
-        'name' => 'Enable Automatic Updates for Themes',
-        'description' => 'Enables automatic updates for all themes.',
-        'info' => 'Automatically keeps your themes up to date.',
+        'name' => 'Auto-Update All Themes',
+        'description' => 'Automatically updates all themes when new versions are released.',
+        'info' => '⚠️ Recommended for most sites. Keeps themes secure and up-to-date.',
         'function' => 'enable_auto_update_themes',
         'scope_admin_only' => true
     ],
     [
         'id' => 'disable_litespeed_js_combine',
-        'name' => 'Disable JS Combine in LiteSpeed Cache',
-        'description' => 'Disables JS combining in LiteSpeed Cache.',
-        'info' => 'Prevents LiteSpeed from combining JavaScript files, which can be useful for resolving issues with script loading.',
+        'name' => 'Disable LiteSpeed JS Combine',
+        'description' => 'Prevents LiteSpeed Cache from combining JavaScript files.',
+        'info' => 'Useful for debugging JS issues or when combined scripts cause conflicts.',
         'function' => 'disable_litespeed_js_combine',
         'scope_admin_only' => true
     ],
 
     [
         'id' => 'snippet_enable_svg_uploads',
-        'name' => 'Allow SVG uploads',
-        'description' => '',
-        'info' => '',
+        'name' => 'Allow SVG Uploads',
+        'description' => 'Enables SVG file uploads in the WordPress media library.',
+        'info' => '⚠️ Security note: Only enable if you trust all users who can upload files.',
         'function' => 'snippet_enable_svg_uploads',
         'scope_admin_only' => true
     ]
@@ -470,9 +479,9 @@ function get_snippets($type = "")
 
 [
     'id' => 'enable_elementor_queries',
-    'name' => 'enable_elementor_queries',
-    'description' => 'enable_elementor_queries',
-    'info' => 'enable_elementor_queries',
+    'name' => 'Elementor Custom Queries',
+    'description' => 'Adds custom query filters for Elementor Pro Posts/Archive widgets.',
+    'info' => 'Enables advanced filtering options in Elementor for dynamic content display.',
     'function' => 'enable_elementor_queries',
     'scope_admin_only' => false
 ],    
@@ -480,18 +489,18 @@ function get_snippets($type = "")
 
 [
     'id' => 'enable_seo_amp_no_index',
-    'name' => 'enable_seo_amp_no_index',
-    'description' => 'enable_seo_amp_no_index',
-    'info' => 'enable_seo_amp_no_index',
+    'name' => 'NoIndex AMP Pages',
+    'description' => 'Adds noindex meta tag to AMP pages to prevent duplicate content in search results.',
+    'info' => 'Recommended if you have AMP pages that mirror your main content.',
     'function' => 'enable_seo_amp_no_index',
     'scope_admin_only' => false
 ],    
 
 [
     'id' => 'enable_seo_feeds_no_index',
-    'name' => 'enable_seo_feeds_no_index',
-    'description' => 'enable_seo_feeds_no_index',
-    'info' => 'enable_seo_feeds_no_index',
+    'name' => 'NoIndex RSS Feeds',
+    'description' => 'Adds noindex to RSS/Atom feeds to prevent feed URLs from appearing in search results.',
+    'info' => 'Helps focus SEO on your actual content pages.',
     'function' => 'enable_seo_feeds_no_index',
     'scope_admin_only' => false
 ],
@@ -499,27 +508,27 @@ function get_snippets($type = "")
 
     [
         'id' => 'disable_rankmath_sitemap_caching',
-        'name' => 'Disable RankMath Sitemap Caching',
-        'description' => 'Disables caching for RankMath sitemaps.',
-        'info' => 'This prevents RankMath from caching sitemaps, which can be useful for development or debugging.',
+        'name' => 'Disable Rank Math Sitemap Cache',
+        'description' => 'Prevents Rank Math from caching sitemaps, forcing fresh generation on each request.',
+        'info' => 'Useful during development or when sitemap changes are not reflecting.',
         'function' => 'disable_rankmath_sitemap_caching',
         'scope_admin_only' => false
     ],
     [
         'id' => 'enable_wp_admin_logo',
-        'name' => 'Enable WP Admin Logo',
-        'description' => 'Enable a custom logo on the WP admin login screen using ACF.',
+        'name' => 'Custom Login Logo',
+        'description' => 'Replaces the WordPress logo on the login screen with your site icon.',
         'info' => function() {
-            $logo_url = get_site_icon_url(); // Ensure the logo URL is retrieved
+            $logo_url = get_site_icon_url();
             $thumbnail = $logo_url ? '<img src="' . esc_url($logo_url) . '" style="max-width:100px; display:block; margin-top:10px;" alt="Custom Logo Thumbnail" onclick="event.stopPropagation();">' : '';
     
             if ($logo_url) {
-                return 'This will use the logo from the Site Icon.<br>' . 
+                return 'Uses your Site Icon as the login logo.<br>' . 
                        '<span onclick="event.stopPropagation();">' . $thumbnail . '</span><br>' .
-                       '<a href="' . esc_url($logo_url) . '" target="_blank">View Image</a><br>' . 
-                       '<a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">View in Site Identity Settings</a>';
+                       '<a href="' . esc_url($logo_url) . '" target="_blank">View Image</a> | ' . 
+                       '<a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">Change Icon</a>';
             } else {
-                return 'No site icon is set. Please set a site icon in the Site Identity settings.';
+                return '⚠️ No site icon set. <a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">Set one in Settings → General</a>';
             }
         },
         'function' => 'custom_wp_admin_logo',

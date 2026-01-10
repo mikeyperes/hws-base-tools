@@ -2,3 +2,10 @@
 git
 git
 hws-base-tools.git/
+
+# prevent committing nested/bare git repos and misc server junk
+hws-base-tools.git/
+*.git/
+**/*.git/
+bfg.jar
+.ftpquota

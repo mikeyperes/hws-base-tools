@@ -538,8 +538,7 @@ if (!function_exists(__NAMESPACE__ . '\\check_myisam_tables')) {
         global $wpdb;
 
         // Get the current database prefix
-        $prefix_info = get_database_table_prefix();
-        $current_prefix = isset($prefix_info['raw_value']) ? $prefix_info['raw_value'] : '';
+        $current_prefix = $wpdb->prefix;
 
         // Check for valid prefix
         if (empty($current_prefix)) {
@@ -550,55 +549,35 @@ if (!function_exists(__NAMESPACE__ . '\\check_myisam_tables')) {
             ];
         }
 
-        // Get all MyISAM tables
-        $myisam_tables = $wpdb->get_results("
+        // Get MyISAM tables ONLY for current prefix
+        $myisam_tables = $wpdb->get_results($wpdb->prepare("
             SELECT TABLE_NAME 
             FROM information_schema.TABLES 
-            WHERE TABLE_SCHEMA = '" . DB_NAME . "' 
+            WHERE TABLE_SCHEMA = %s 
             AND ENGINE = 'MyISAM'
-        ");
+            AND TABLE_NAME LIKE %s
+        ", DB_NAME, $current_prefix . '%'));
         
-        $current_prefix_tables = [];
-        $additional_prefixes = [];
-        
+        $table_names = [];
         foreach ($myisam_tables as $table) {
-            $table_name = $table->TABLE_NAME;
-            if (strpos($table_name, $current_prefix) === 0) {
-                $current_prefix_tables[] = $table_name;
-            } else {
-                $prefix = explode('_', $table_name)[0];
-                $additional_prefixes[$prefix][] = $table_name;
-            }
+            $table_names[] = $table->TABLE_NAME;
         }
 
-        // Determine status
-        $status = empty($current_prefix_tables) && empty($additional_prefixes);
+        // Determine status - FALSE if MyISAM tables found (makes it RED)
+        $has_myisam = !empty($table_names);
+        $status = !$has_myisam; // true = good (no MyISAM), false = bad (has MyISAM, show red)
 
         // Prepare details
-        $details = '';
-        if (!empty($current_prefix_tables)) {
-            $details .= 'MyISAM tables found for current WordPress install: ' . implode(', ', $current_prefix_tables);
-        }
-        if (!empty($additional_prefixes)) {
-            if (!empty($details)) {
-                $details .= ' | ';
-            }
-            $details .= 'Additional database prefixes detected: ';
-            foreach ($additional_prefixes as $prefix => $tables) {
-                $details .= $prefix . '_ - MyISAM tables found: ' . implode(', ', $tables) . ' | ';
-            }
-            // Remove trailing ' | ' if any
-            $details = rtrim($details, ' | ');
-        }
-
-        // Check if details are still empty
-        if (empty($details)) {
+        if ($has_myisam) {
+            $count = count($table_names);
+            $details = $count . ' MyISAM tables found: ' . implode(', ', $table_names);
+        } else {
             $details = 'No MyISAM tables found.';
         }
 
         return [
             'function' => "check_myisam_tables",
-            'status' => $status, // True if no MyISAM tables are found
+            'status' => $status,
             'raw_value' => $details
         ];
     }
@@ -689,10 +668,19 @@ if (!function_exists(__NAMESPACE__ . '\\detect_additional_wp_installs')) {
 
 if (!function_exists(__NAMESPACE__ . '\\check_server_memory_limit')) {
     function check_server_memory_limit() {
-        $total_ram = 0;
-
-        if (function_exists('shell_exec')) {
-            $total_ram = trim(shell_exec("free -b | awk '/^Mem:/{print $2}'")); // Get total RAM in bytes
+        // Use safe memory info getter
+        if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
+            $memory = hws_get_memory_info();
+            $total_ram = $memory['total'] ?? 0;
+        } else {
+            // Fallback to safe shell_exec
+            $total_ram = 0;
+            if ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
+                $result = hws_safe_shell_exec( "free -b 2>/dev/null | awk '/^Mem:/{print $2}'" );
+                $total_ram = $result ? (int) $result : 0;
+            } elseif ( function_exists( 'shell_exec' ) ) {
+                $total_ram = (int) @trim( shell_exec( "free -b | awk '/^Mem:/{print $2}'" ) );
+            }
         }
 
         $status = $total_ram >= 4 * 1024 * 1024 * 1024; // Check if RAM is at least 4GB
@@ -718,8 +706,14 @@ if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
                 // Initialize Redis object using the global namespace
                 $redis = new \Redis();
 
-                // Attempt to connect to Redis server
-                if ($redis->connect('127.0.0.1', 6379)) {
+                // Attempt to connect to Redis server WITH TIMEOUT (2 seconds)
+                // This prevents hanging if Redis is not responding
+                $connected = @$redis->connect('127.0.0.1', 6379, 2.0);
+                
+                if ($connected) {
+                    // Set read timeout to prevent hanging on operations
+                    $redis->setOption(\Redis::OPT_READ_TIMEOUT, 2);
+                    
                     // Test setting and getting a value
                     $redis->set("test-key", "Redis is working");
                     $test_value = $redis->get("test-key");
@@ -747,15 +741,17 @@ if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
                         $details = 'Redis connection successful, but failed to set/get a value';
                     }
                 } else {
-                    $details = 'Redis connection failed';
+                    $details = 'Redis connection failed (timeout or refused)';
                 }
-            } catch (Exception $e) {
+            } catch (\RedisException $e) {
+                $details = 'Redis error: ' . $e->getMessage();
+            } catch (\Exception $e) {
                 $details = 'Exception: ' . $e->getMessage();
             }
         }
 
         // Log the results for debugging purposes
-        write_log('Redis check: ' . $details);
+        write_log('Redis check: ' . ($status ? 'Active' : 'Inactive'));
 
         return [
             'status' => $status,
@@ -771,10 +767,18 @@ if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
 
 if (!function_exists(__NAMESPACE__ . '\\check_server_ram')) {
     function check_server_ram() {
-        $total_ram = 0;
-
-        if (function_exists('shell_exec')) {
-            $total_ram = trim(shell_exec("free -m | awk '/^Mem:/{print $2}'")) * 1024 * 1024; // Convert MB to bytes
+        // Use safe memory info getter if available
+        if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
+            $memory = hws_get_memory_info();
+            $total_ram = $memory['total'] ?? 0;
+        } else {
+            $total_ram = 0;
+            if ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
+                $result = hws_safe_shell_exec( "free -m 2>/dev/null | awk '/^Mem:/{print $2}'" );
+                $total_ram = $result ? (int) $result * 1024 * 1024 : 0;
+            } elseif ( function_exists( 'shell_exec' ) ) {
+                $total_ram = (int) @trim( shell_exec( "free -m | awk '/^Mem:/{print $2}'" ) ) * 1024 * 1024;
+            }
         }
 
         $status = $total_ram >= 4 * 1024 * 1024 * 1024; // Check if RAM is at least 4GB
@@ -927,13 +931,33 @@ if (!function_exists(__NAMESPACE__ . '\\custom_wp_admin_logo_link')) {
 
 if(!function_exists('hws_base_tools\check_server_specs')) {
     function check_server_specs() {
-        // Initialize variables
-        $num_processors = function_exists('shell_exec') ? shell_exec('nproc') : 'Unknown';
-        $total_ram = function_exists('shell_exec') ? shell_exec("free -m | awk '/^Mem:/{print $2}'") : 'Unknown';
+        // Use safe wrappers if available
+        $num_processors = 'Unknown';
+        $total_ram = 'Unknown';
 
-        // Clean up the results
-        $num_processors = trim($num_processors);
-        $total_ram = trim($total_ram);
+        if ( function_exists( __NAMESPACE__ . '\\hws_get_cpu_count' ) ) {
+            $cpu = hws_get_cpu_count();
+            $num_processors = $cpu !== null ? $cpu : 'Unknown';
+        } elseif ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
+            $result = hws_safe_shell_exec( 'nproc 2>/dev/null' );
+            $num_processors = $result ?: 'Unknown';
+        } elseif ( function_exists( 'shell_exec' ) ) {
+            $num_processors = @trim( shell_exec( 'nproc' ) ) ?: 'Unknown';
+        }
+
+        if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
+            $memory = hws_get_memory_info();
+            $total_ram = $memory['total'] ? round( $memory['total'] / 1024 / 1024 ) : 'Unknown';
+        } elseif ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
+            $result = hws_safe_shell_exec( "free -m 2>/dev/null | awk '/^Mem:/{print $2}'" );
+            $total_ram = $result ?: 'Unknown';
+        } elseif ( function_exists( 'shell_exec' ) ) {
+            $total_ram = @trim( shell_exec( "free -m | awk '/^Mem:/{print $2}'" ) ) ?: 'Unknown';
+        }
+
+        // Clean up the results (in case of fallback)
+        $num_processors = trim( (string) $num_processors );
+        $total_ram = trim( (string) $total_ram );
 
         // Set the status
         $status = ($num_processors !== 'Unknown' && $total_ram !== 'Unknown');

@@ -1,10 +1,42 @@
 <?php
 namespace hws_base_tools;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Internal: hard gate so admin-only UI injections only run on:
+ * /wp-admin/admin.php?page=website-settings
+ *
+ * We keep this separate so hf_render_user_info_once() and admin_enqueue_scripts hooks
+ * can share the same guard and avoid running on CPT edit screens.
+ *
+ * @return bool
+ */
+function hws_is_website_settings_admin_page(): bool {
+	if ( ! is_admin() ) {
+		return false;
+	}
+
+	global $pagenow;
+
+	// Must be admin.php?page=website-settings
+	if ( $pagenow !== 'admin.php' ) {
+		return false;
+	}
+
+	if ( empty( $_GET['page'] ) || $_GET['page'] !== 'website-settings' ) {
+		return false;
+	}
+
+	return true;
+}
+
 // register the shortcode
 add_action( 'init', function() {
-    add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
-    add_shortcode( 'website_content', __NAMESPACE__ . '\\website_content_shortcode' );
+	add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
+	add_shortcode( 'website_content', __NAMESPACE__ . '\\website_content_shortcode' );
 
 } );
 
@@ -13,12 +45,12 @@ add_action( 'init', function() {
  * Hook into ACF’s user‐select field to render extra info.
  */
 function enable_website_settings_functionality() {
-    add_action(
-        'acf/render_field/name=user',
-        __NAMESPACE__ . '\\hf_render_user_info_once',
-        10,
-        1
-    );
+	add_action(
+		'acf/render_field/name=user',
+		__NAMESPACE__ . '\\hf_render_user_info_once',
+		10,
+		1
+	);
 }
 
 /**
@@ -27,26 +59,32 @@ function enable_website_settings_functionality() {
  * @param array $field ACF field settings/values.
  */
 function hf_render_user_info_once( $field ) {
-    // Only run on the Select2 pass (type "user")
-    if ( $field['type'] !== 'user' ) {
-        return;
-    }
 
-    $user_id = intval( $field['value'] );
-    if ( ! $user_id ) {
-        return;
-    }
+	// HARD ENFORCE: only run on Website Settings page
+	if ( ! hws_is_website_settings_admin_page() ) {
+		return;
+	}
 
-    $user = get_userdata( $user_id );
-    if ( ! $user ) {
-        return;
-    }
+	// Only run on the Select2 pass (type "user")
+	if ( $field['type'] !== 'user' ) {
+		return;
+	}
 
-    $edit_url = get_edit_user_link( $user_id );
-    $view_url = get_author_posts_url( $user_id );
+	$user_id = intval( $field['value'] );
+	if ( ! $user_id ) {
+		return;
+	}
 
-    // Basic user info block
-    echo '<div class="hf-user-info-wrapper" style="
+	$user = get_userdata( $user_id );
+	if ( ! $user ) {
+		return;
+	}
+
+	$edit_url = get_edit_user_link( $user_id );
+	$view_url = get_author_posts_url( $user_id );
+
+	// Basic user info block
+	echo '<div class="hf-user-info-wrapper" style="
             background: #fbfbfb;
             border: 1px solid #ddd;
             padding: 12px;
@@ -54,96 +92,96 @@ function hf_render_user_info_once( $field ) {
             border-radius: 4px;
         ">
         <div class="hf-user-avatar" style="float: left; margin-right: 12px;">'
-            . get_avatar( $user_id, 64 ) .
-        '</div>
+			. get_avatar( $user_id, 64 ) .
+		'</div>
 
         <div class="hf-user-basic-info" style="overflow: hidden;">
             <p style="margin:0 0 4px;"><strong>Username:</strong> '
-                . esc_html( $user->user_login ) . '</p>
+				. esc_html( $user->user_login ) . '</p>
             <p style="margin:0 0 4px;"><strong>Name:</strong> '
-                . esc_html( $user->display_name ) . '</p>
+				. esc_html( $user->display_name ) . '</p>
             <p style="margin:0 0 4px;"><strong>Email:</strong>
                 <a href="mailto:' . esc_attr( $user->user_email ) . '">'
-                    . esc_html( $user->user_email ) . '</a>
+					. esc_html( $user->user_email ) . '</a>
             </p>
             <p style="margin:0 0 4px;"><strong>Role'
-                . ( count( $user->roles ) > 1 ? 's' : '' ) . ':</strong> '
-                . esc_html( implode( ', ', $user->roles ) ) . '</p>
+				. ( count( $user->roles ) > 1 ? 's' : '' ) . ':</strong> '
+				. esc_html( implode( ', ', $user->roles ) ) . '</p>
             <p style="margin:0 0 4px;"><strong>Registered:</strong> '
-                . esc_html( date_i18n( get_option('date_format'), strtotime( $user->user_registered ) ) )
-            . '</p>
+				. esc_html( date_i18n( get_option('date_format'), strtotime( $user->user_registered ) ) )
+			. '</p>
         </div>
 
         <div style="clear: both; margin-top: 8px;"></div>
         <div class="hf-user-buttons" style="margin-top: 8px;">';
-            if ( $edit_url ) {
-                echo '<a href="' . esc_url( $edit_url ) . '" target="_blank" class="button" style="margin-right:6px;">
+	if ( $edit_url ) {
+		echo '<a href="' . esc_url( $edit_url ) . '" target="_blank" class="button" style="margin-right:6px;">
                         Edit User
                       </a>';
-            }
-            if ( $view_url ) {
-                echo '<a href="' . esc_url( $view_url ) . '" target="_blank" class="button">
+	}
+	if ( $view_url ) {
+		echo '<a href="' . esc_url( $view_url ) . '" target="_blank" class="button">
                         View Profile
                       </a>';
-            }
-    echo '</div>';
+	}
+	echo '</div>';
 
-    // --- New: display ACF "urls" group subfields as clickable links ---
-    $urls = get_field( 'urls', 'user_' . $user_id ) ?: [];
+	// --- New: display ACF "urls" group subfields as clickable links ---
+	$urls = get_field( 'urls', 'user_' . $user_id ) ?: [];
 
-    // map sub-field names to human labels
-    $url_fields = [
-        'facebook'   => 'Facebook',
-        'instagram'  => 'Instagram',
-        'linkedin'   => 'LinkedIn',
-        'youtube'    => 'YouTube',
-        'tiktok'     => 'TikTok',
-        'f6s'        => 'F6S',
-        'imdb'       => 'iMDb',
-        'muckrack'   => 'MuckRack',
-        'wikipedia'  => 'Wikipedia',
-        'x'          => 'X',
-        'soundcloud' => 'SoundCloud',
-        'the_org'    => 'The Org',
-        'whatsapp'   => 'WhatsApp',
-        'telegram'   => 'Telegram',
-        'signal'     => 'Signal',
-        'amazon'     => 'Amazon',
-        'github'     => 'GitHub',
-        'audible'    => 'Audible',
-        'threads'    => 'Threads',
-        'crunchbase' => 'CrunchBase',
-        'website'    => 'Website',
-    ];
+	// map sub-field names to human labels
+	$url_fields = [
+		'facebook'   => 'Facebook',
+		'instagram'  => 'Instagram',
+		'linkedin'   => 'LinkedIn',
+		'youtube'    => 'YouTube',
+		'tiktok'     => 'TikTok',
+		'f6s'        => 'F6S',
+		'imdb'       => 'iMDb',
+		'muckrack'   => 'MuckRack',
+		'wikipedia'  => 'Wikipedia',
+		'x'          => 'X',
+		'soundcloud' => 'SoundCloud',
+		'the_org'    => 'The Org',
+		'whatsapp'   => 'WhatsApp',
+		'telegram'   => 'Telegram',
+		'signal'     => 'Signal',
+		'amazon'     => 'Amazon',
+		'github'     => 'GitHub',
+		'audible'    => 'Audible',
+		'threads'    => 'Threads',
+		'crunchbase' => 'CrunchBase',
+		'website'    => 'Website',
+	];
 
-    // Only show if there's at least one URL
-    $has_url = false;
-    foreach ( $url_fields as $key => $label ) {
-        if ( ! empty( $urls[ $key ] ) ) {
-            $has_url = true;
-            break;
-        }
-    }
+	// Only show if there's at least one URL
+	$has_url = false;
+	foreach ( $url_fields as $key => $label ) {
+		if ( ! empty( $urls[ $key ] ) ) {
+			$has_url = true;
+			break;
+		}
+	}
 
-    if ( $has_url ) {
-        echo '<div class="hf-user-urls" style="margin-top:12px;">';
-        foreach ( $url_fields as $key => $label ) {
-            if ( ! empty( $urls[ $key ] ) ) {
-                $url = $urls[ $key ];
-                echo '<p style="margin:0 0 4px;"><strong>' 
-                    . esc_html( $label ) . ':</strong> '
-                    . '<a href="' . esc_url( $url ) 
-                        . '" target="_blank" class="hf-user-url urls_' 
-                        . esc_attr( $key ) . '">'
-                        . esc_html( $url ) . '</a>'
-                    . '</p>';
-            }
-        }
-        echo '</div>';
-    }
+	if ( $has_url ) {
+		echo '<div class="hf-user-urls" style="margin-top:12px;">';
+		foreach ( $url_fields as $key => $label ) {
+			if ( ! empty( $urls[ $key ] ) ) {
+				$url = $urls[ $key ];
+				echo '<p style="margin:0 0 4px;"><strong>'
+					. esc_html( $label ) . ':</strong> '
+					. '<a href="' . esc_url( $url )
+					. '" target="_blank" class="hf-user-url urls_'
+					. esc_attr( $key ) . '">'
+					. esc_html( $url ) . '</a>'
+					. '</p>';
+			}
+		}
+		echo '</div>';
+	}
 
-    // Close main wrapper
-    echo '</div>';
+	// Close main wrapper
+	echo '</div>';
 }
 
 
@@ -158,30 +196,30 @@ function hf_render_user_info_once( $field ) {
  */
 function website_url_shortcode( $atts ) {
 
-    $atts = shortcode_atts( [
-        'social' => '',
-    ], $atts, 'website_url' );
+	$atts = shortcode_atts( [
+		'social' => '',
+	], $atts, 'website_url' );
 
-    $key = sanitize_key( $atts['social'] );
-    if ( ! $key ) {
-        return '';
-    }
+	$key = sanitize_key( $atts['social'] );
+	if ( ! $key ) {
+		return '';
+	}
 
-    // load Website Settings group (options page)
-    $website = get_field( 'website', 'option' );
-    if ( ! ( is_array( $website ) && ! empty( $website['user']['ID'] ) ) ) {
-        return '';
-    }
+	// load Website Settings group (options page)
+	$website = get_field( 'website', 'option' );
+	if ( ! ( is_array( $website ) && ! empty( $website['user']['ID'] ) ) ) {
+		return '';
+	}
 
-    // pull that user’s “urls” repeater/array
-    $user_id   = $website['user']['ID'];
-    $user_urls = get_field( 'urls', 'user_' . $user_id );
+	// pull that user’s “urls” repeater/array
+	$user_id   = $website['user']['ID'];
+	$user_urls = get_field( 'urls', 'user_' . $user_id );
 
-    if ( is_array( $user_urls ) && ! empty( $user_urls[ $key ] ) ) {
-        return esc_url( $user_urls[ $key ] );
-    }
+	if ( is_array( $user_urls ) && ! empty( $user_urls[ $key ] ) ) {
+		return esc_url( $user_urls[ $key ] );
+	}
 
-    return '';
+	return '';
 }
 
 
@@ -191,17 +229,17 @@ function website_url_shortcode( $atts ) {
  * Returns the raw ACF option field value from the Website Settings page.
  */
 function website_content_shortcode( $atts ) {
-    $atts = shortcode_atts( [
-        'field' => '',
-    ], 
-    $atts, 
-    'website_content' );
+	$atts = shortcode_atts( [
+		'field' => '',
+	],
+	$atts,
+	'website_content' );
 
-    if ( empty( $atts['field'] ) ) {
-        return '';
-    }
+	if ( empty( $atts['field'] ) ) {
+		return '';
+	}
 
-    return get_field( $atts['field'], 'option' ) ?: '';
+	return get_field( $atts['field'], 'option' ) ?: '';
 }
 
 
@@ -231,101 +269,101 @@ function website_content_shortcode( $atts ) {
  *   - Biography returns HTML as-is; URLs are escaped; other text is escaped.
  */
 function company_shortcode( $atts ): string {
-    $atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'company' );
-    $requested = strtolower( trim( (string) $atts['id'] ) );
+	$atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'company' );
+	$requested = strtolower( trim( (string) $atts['id'] ) );
 
-    if ( ! function_exists( 'get_field' ) ) {
-        return '';
-    }
+	if ( ! function_exists( 'get_field' ) ) {
+		return '';
+	}
 
-    // Resolve company user from options
-    $website = get_field( 'website', 'option' );
-    if ( ! ( is_array( $website ) && ! empty( $website['company']['ID'] ) ) ) {
-        return '';
-    }
-    $user_id  = (int) $website['company']['ID'];
-    $userdata = get_userdata( $user_id );
-    $user_key = 'user_' . $user_id;
+	// Resolve company user from options
+	$website = get_field( 'website', 'option' );
+	if ( ! ( is_array( $website ) && ! empty( $website['company']['ID'] ) ) ) {
+		return '';
+	}
+	$user_id  = (int) $website['company']['ID'];
+	$userdata = get_userdata( $user_id );
+	$user_key = 'user_' . $user_id;
 
-    // Common data
-    $user_name = $userdata ? $userdata->display_name : '';
-    $user_urls = get_field( 'urls', $user_key );       // array of platforms
-    $user_bio  = (string) get_field( 'biography', $user_key );
-    $user_site = (string) get_field( 'website', $user_key );
+	// Common data
+	$user_name = $userdata ? $userdata->display_name : '';
+	$user_urls = get_field( 'urls', $user_key );       // array of platforms
+	$user_bio  = (string) get_field( 'biography', $user_key );
+	$user_site = (string) get_field( 'website', $user_key );
 
-    // First: explicit known ids
-    switch ( $requested ) {
-        case 'title':
-            return $user_name ? esc_html( $user_name ) : '';
+	// First: explicit known ids
+	switch ( $requested ) {
+		case 'title':
+			return $user_name ? esc_html( $user_name ) : '';
 
-        case 'biography':
-            if ( $user_bio === '' ) {
-                $core_bio = $userdata ? (string) $userdata->description : '';
-                return $core_bio !== '' ? $core_bio : '';
-            }
-            return $user_bio; // allow HTML
+		case 'biography':
+			if ( $user_bio === '' ) {
+				$core_bio = $userdata ? (string) $userdata->description : '';
+				return $core_bio !== '' ? $core_bio : '';
+			}
+			return $user_bio; // allow HTML
 
-        case 'website':
-            if ( $user_site !== '' ) {
-                return esc_url( $user_site );
-            }
-            if ( is_array( $user_urls ) && ! empty( $user_urls['website'] ) ) {
-                return esc_url( (string) $user_urls['website'] );
-            }
-            $core_url = $userdata ? (string) $userdata->user_url : '';
-            return $core_url !== '' ? esc_url( $core_url ) : '';
-    }
+		case 'website':
+			if ( $user_site !== '' ) {
+				return esc_url( $user_site );
+			}
+			if ( is_array( $user_urls ) && ! empty( $user_urls['website'] ) ) {
+				return esc_url( (string) $user_urls['website'] );
+			}
+			$core_url = $userdata ? (string) $userdata->user_url : '';
+			return $core_url !== '' ? esc_url( $core_url ) : '';
+	}
 
-    // Platform URLs: id="url_*"
-    $platform = '';
-    if ( ( function_exists('str_starts_with') && str_starts_with( $requested, 'url_' ) )
-         || substr( $requested, 0, 4 ) === 'url_' ) {
-        $platform = sanitize_key( substr( $requested, 4 ) );
-        if ( $platform !== '' && is_array( $user_urls ) && ! empty( $user_urls[ $platform ] ) ) {
-            return esc_url( (string) $user_urls[ $platform ] );
-        }
-    }
+	// Platform URLs: id="url_*"
+	$platform = '';
+	if ( ( function_exists('str_starts_with') && str_starts_with( $requested, 'url_' ) )
+		 || substr( $requested, 0, 4 ) === 'url_' ) {
+		$platform = sanitize_key( substr( $requested, 4 ) );
+		if ( $platform !== '' && is_array( $user_urls ) && ! empty( $user_urls[ $platform ] ) ) {
+			return esc_url( (string) $user_urls[ $platform ] );
+		}
+	}
 
-    // ---- Generic ACF resolver for user meta ----
-    // 1) Try direct field on user (e.g., id="some_field")
-    $direct = get_field( $requested, $user_key );
-    if ( is_string( $direct ) && $direct !== '' ) {
-        // If it looks like a URL, escape as URL; if it's biography-like, allow HTML; else escape text.
-        if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) {
-            return esc_url( $direct );
-        }
-        if ( in_array( $requested, ['biography','bio'], true ) ) {
-            return $direct; // allow HTML
-        }
-        return esc_html( $direct );
-    }
+	// ---- Generic ACF resolver for user meta ----
+	// 1) Try direct field on user (e.g., id="some_field")
+	$direct = get_field( $requested, $user_key );
+	if ( is_string( $direct ) && $direct !== '' ) {
+		// If it looks like a URL, escape as URL; if it's biography-like, allow HTML; else escape text.
+		if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) {
+			return esc_url( $direct );
+		}
+		if ( in_array( $requested, ['biography','bio'], true ) ) {
+			return $direct; // allow HTML
+		}
+		return esc_html( $direct );
+	}
 
-    // 2) Try group_subfield (e.g., "additional_public_email")
-    //    We treat the first token as the group, the rest joined by '_' as the subkey.
-    if ( strpos( $requested, '_' ) !== false ) {
-        $parts   = explode( '_', $requested );
-        $group   = array_shift( $parts );        // e.g. 'additional'
-        $subkey  = implode( '_', $parts );       // e.g. 'public_email'
+	// 2) Try group_subfield (e.g., "additional_public_email")
+	//    We treat the first token as the group, the rest joined by '_' as the subkey.
+	if ( strpos( $requested, '_' ) !== false ) {
+		$parts   = explode( '_', $requested );
+		$group   = array_shift( $parts );        // e.g. 'additional'
+		$subkey  = implode( '_', $parts );       // e.g. 'public_email'
 
-        if ( $group && $subkey ) {
-            $group_val = get_field( $group, $user_key ); // should be array
-            if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
-                $val = $group_val[ $subkey ];
-                if ( is_string( $val ) && $val !== '' ) {
-                    if ( filter_var( $val, FILTER_VALIDATE_URL ) ) {
-                        return esc_url( $val );
-                    }
-                    // Very common cases: email/phone plain text
-                    if ( is_email( $val ) ) {
-                        return esc_html( $val );
-                    }
-                    return esc_html( $val );
-                }
-            }
-        }
-    }
+		if ( $group && $subkey ) {
+			$group_val = get_field( $group, $user_key ); // should be array
+			if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
+				$val = $group_val[ $subkey ];
+				if ( is_string( $val ) && $val !== '' ) {
+					if ( filter_var( $val, FILTER_VALIDATE_URL ) ) {
+						return esc_url( $val );
+					}
+					// Very common cases: email/phone plain text
+					if ( is_email( $val ) ) {
+						return esc_html( $val );
+					}
+					return esc_html( $val );
+				}
+			}
+		}
+	}
 
-    return '';
+	return '';
 }
 
 
@@ -369,52 +407,56 @@ function company_shortcode( $atts ): string {
  */
 add_action('admin_enqueue_scripts', function( $hook ) {
 
-    // 1) Only run on Theme Options screen. (Uncomment return to hard-enforce.)
-    $screen = get_current_screen();
-    if ( $screen->id !== 'toplevel_page_theme-options' ) {
-        // return;
-    }
+	// NOTE: Hard-enforced to only run on /wp-admin/admin.php?page=website-settings
+	// This preserves original documentation while preventing injection on CPT edit screens.
 
-    // 2) jQuery
-    wp_enqueue_script('jquery');
+	// 1) Only run on Theme Options screen. (Uncomment return to hard-enforce.)
+	$screen = get_current_screen();
+	if ( ! hws_is_website_settings_admin_page() ) {
+		// return;
+		return;
+	}
 
-    // 3) Load Options → website → company (ACF user field, return_format=array)
-    $website = function_exists('get_field') ? get_field('website', 'option') : null;
-    if ( ! is_array($website) || empty($website['company']['ID']) ) {
-        return;
-    }
+	// 2) jQuery
+	wp_enqueue_script('jquery');
 
-    $user_id = absint($website['company']['ID']);
+	// 3) Load Options → website → company (ACF user field, return_format=array)
+	$website = function_exists('get_field') ? get_field('website', 'option') : null;
+	if ( ! is_array($website) || empty($website['company']['ID']) ) {
+		return;
+	}
 
-    // 4) User ACF: urls array in user meta scope
-    $urls = get_field('urls', 'user_' . $user_id);
-    if ( ! is_array($urls) ) {
-        $urls = []; // still render the card without URL rows
-    }
+	$user_id = absint($website['company']['ID']);
 
-    // 5) Build minimal user data for UI
-    $user_obj = get_userdata($user_id);
-    if ( ! $user_obj ) {
-        return;
-    }
+	// 4) User ACF: urls array in user meta scope
+	$urls = get_field('urls', 'user_' . $user_id);
+	if ( ! is_array($urls) ) {
+		$urls = []; // still render the card without URL rows
+	}
 
-    $data = [
-        'user' => [
-            'id'     => $user_id,
-            'avatar' => get_avatar_url($user_id, ['size' => 80]),
-            'name'   => $user_obj->display_name,
-            'edit'   => get_edit_user_link($user_id),
-            'view'   => get_author_posts_url($user_id),
-        ],
-        'urls' => $urls,
-    ];
+	// 5) Build minimal user data for UI
+	$user_obj = get_userdata($user_id);
+	if ( ! $user_obj ) {
+		return;
+	}
 
-    // 6) Register a no-op handle, localize data, and inject inline JS
-    wp_register_script('smp-company-card', false, ['jquery'], null, true);
-    wp_enqueue_script('smp-company-card');
-    wp_localize_script('smp-company-card', 'SMPCompanyData', $data);
+	$data = [
+		'user' => [
+			'id'     => $user_id,
+			'avatar' => get_avatar_url($user_id, ['size' => 80]),
+			'name'   => $user_obj->display_name,
+			'edit'   => get_edit_user_link($user_id),
+			'view'   => get_author_posts_url($user_id),
+		],
+		'urls' => $urls,
+	];
 
-    wp_add_inline_script('smp-company-card', <<<'JS'
+	// 6) Register a no-op handle, localize data, and inject inline JS
+	wp_register_script('smp-company-card', false, ['jquery'], null, true);
+	wp_enqueue_script('smp-company-card');
+	wp_localize_script('smp-company-card', 'SMPCompanyData', $data);
+
+	wp_add_inline_script('smp-company-card', <<<'JS'
 /**
  * Admin card injector for Company User + developer shortcodes.
  * Expects global SMPCompanyData = { user:{...}, urls:{...} }
@@ -529,7 +571,7 @@ jQuery(function($){
     insertAfter.after(card);
 });
 JS
-    );
+	);
 });
 
 
@@ -594,52 +636,56 @@ JS
  */
 add_action('admin_enqueue_scripts', function( $hook ) {
 
-    // 1) Limit to Theme Options screen (uncomment return to strictly enforce)
-    $screen = get_current_screen();
-    if ( $screen->id !== 'toplevel_page_theme-options' ) {
-        // return;
-    }
+	// NOTE: Hard-enforced to only run on /wp-admin/admin.php?page=website-settings
+	// This preserves original documentation while preventing injection on CPT edit screens.
 
-    // 2) jQuery
-    wp_enqueue_script('jquery');
+	// 1) Limit to Theme Options screen (uncomment return to strictly enforce)
+	$screen = get_current_screen();
+	if ( ! hws_is_website_settings_admin_page() ) {
+		// return;
+		return;
+	}
 
-    // 3) Load Options → founder → user (ACF user field, return_format=array)
-    $founder = function_exists('get_field') ? get_field('founder', 'option') : null;
-    if ( ! is_array($founder) || empty($founder['user']['ID']) ) {
-        return;
-    }
+	// 2) jQuery
+	wp_enqueue_script('jquery');
 
-    $user_id = absint($founder['user']['ID']);
+	// 3) Load Options → founder → user (ACF user field, return_format=array)
+	$founder = function_exists('get_field') ? get_field('founder', 'option') : null;
+	if ( ! is_array($founder) || empty($founder['user']['ID']) ) {
+		return;
+	}
 
-    // 4) User ACF: urls array (from user meta scope)
-    $urls = get_field('urls', 'user_' . $user_id);
-    if ( ! is_array($urls) ) {
-        $urls = []; // still render the card without URL rows
-    }
+	$user_id = absint($founder['user']['ID']);
 
-    // 5) Minimal user data
-    $user_obj = get_userdata($user_id);
-    if ( ! $user_obj ) {
-        return;
-    }
+	// 4) User ACF: urls array (from user meta scope)
+	$urls = get_field('urls', 'user_' . $user_id);
+	if ( ! is_array($urls) ) {
+		$urls = []; // still render the card without URL rows
+	}
 
-    $data = [
-        'user' => [
-            'id'     => $user_id,
-            'avatar' => get_avatar_url($user_id, ['size' => 80]),
-            'name'   => $user_obj->display_name,
-            'edit'   => get_edit_user_link($user_id),
-            'view'   => get_author_posts_url($user_id),
-        ],
-        'urls' => $urls,
-    ];
+	// 5) Minimal user data
+	$user_obj = get_userdata($user_id);
+	if ( ! $user_obj ) {
+		return;
+	}
 
-    // 6) Register empty handle, localize data, inject inline JS
-    wp_register_script('smp-founder-card', false, ['jquery'], null, true);
-    wp_enqueue_script('smp-founder-card');
-    wp_localize_script('smp-founder-card', 'SMPFounderData', $data);
+	$data = [
+		'user' => [
+			'id'     => $user_id,
+			'avatar' => get_avatar_url($user_id, ['size' => 80]),
+			'name'   => $user_obj->display_name,
+			'edit'   => get_edit_user_link($user_id),
+			'view'   => get_author_posts_url($user_id),
+		],
+		'urls' => $urls,
+	];
 
-    wp_add_inline_script('smp-founder-card', <<<'JS'
+	// 6) Register empty handle, localize data, inject inline JS
+	wp_register_script('smp-founder-card', false, ['jquery'], null, true);
+	wp_enqueue_script('smp-founder-card');
+	wp_localize_script('smp-founder-card', 'SMPFounderData', $data);
+
+	wp_add_inline_script('smp-founder-card', <<<'JS'
 /**
  * Admin card injector for Founder User + developer shortcodes.
  * Expects global SMPFounderData = { user:{...}, urls:{...} }
@@ -749,7 +795,7 @@ jQuery(function($){
     insertAfter.after(card);
 });
 JS
-    );
+	);
 });
 
 
@@ -791,37 +837,37 @@ JS
  *   3) option → website → company (pragmatic fallback)
  */
 function hws_resolve_founder_user_id(): int {
-    if ( ! function_exists( 'get_field' ) ) {
-        return 0;
-    }
+	if ( ! function_exists( 'get_field' ) ) {
+		return 0;
+	}
 
-    // 1) Primary: option → founder → user
-    $founder = get_field( 'founder', 'option' );
-    if ( is_array( $founder ) && ! empty( $founder['user'] ) ) {
-        $uf = $founder['user'];
-        if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
-        if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
-        return (int) $uf;
-    }
+	// 1) Primary: option → founder → user
+	$founder = get_field( 'founder', 'option' );
+	if ( is_array( $founder ) && ! empty( $founder['user'] ) ) {
+		$uf = $founder['user'];
+		if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
+		if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
+		return (int) $uf;
+	}
 
-    // 2) Legacy: option → website → founder → user
-    $website = get_field( 'website', 'option' );
-    if ( is_array( $website ) && ! empty( $website['founder']['user'] ) ) {
-        $uf = $website['founder']['user'];
-        if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
-        if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
-        return (int) $uf;
-    }
+	// 2) Legacy: option → website → founder → user
+	$website = get_field( 'website', 'option' );
+	if ( is_array( $website ) && ! empty( $website['founder']['user'] ) ) {
+		$uf = $website['founder']['user'];
+		if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
+		if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
+		return (int) $uf;
+	}
 
-    // 3) Fallback: option → website → company
-    if ( is_array( $website ) && ! empty( $website['company'] ) ) {
-        $uf = $website['company'];
-        if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
-        if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
-        return (int) $uf;
-    }
+	// 3) Fallback: option → website → company
+	if ( is_array( $website ) && ! empty( $website['company'] ) ) {
+		$uf = $website['company'];
+		if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
+		if ( is_object( $uf ) && isset( $uf->ID ) )  return (int) $uf->ID;
+		return (int) $uf;
+	}
 
-    return 0;
+	return 0;
 }
 
 /* ---------------------------------------
@@ -833,86 +879,86 @@ function hws_resolve_founder_user_id(): int {
  * [founder id="title|biography|website|url_x|<acf_field>|group_subfield"]
  */
 function founder_shortcode( $atts ): string {
-    $atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'founder' );
-    $requested = strtolower( trim( (string) $atts['id'] ) );
+	$atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'founder' );
+	$requested = strtolower( trim( (string) $atts['id'] ) );
 
-    if ( ! function_exists( 'get_field' ) ) {
-        return '';
-    }
+	if ( ! function_exists( 'get_field' ) ) {
+		return '';
+	}
 
-    $user_id = hws_resolve_founder_user_id();
-    if ( $user_id <= 0 ) return '';
+	$user_id = hws_resolve_founder_user_id();
+	if ( $user_id <= 0 ) return '';
 
-    $userdata = get_userdata( $user_id );
-    if ( ! $userdata ) return '';
+	$userdata = get_userdata( $user_id );
+	if ( ! $userdata ) return '';
 
-    $user_key  = 'user_' . $user_id;
-    $user_name = $userdata->display_name ?: '';
+	$user_key  = 'user_' . $user_id;
+	$user_name = $userdata->display_name ?: '';
 
-    // Option-level founder biography (if populated)
-    $founder_group = get_field( 'founder', 'option' );
-    $founder_group_bio = ( is_array( $founder_group ) && ! empty( $founder_group['biography'] ) && is_string( $founder_group['biography'] ) )
-        ? $founder_group['biography']
-        : '';
+	// Option-level founder biography (if populated)
+	$founder_group = get_field( 'founder', 'option' );
+	$founder_group_bio = ( is_array( $founder_group ) && ! empty( $founder_group['biography'] ) && is_string( $founder_group['biography'] ) )
+		? $founder_group['biography']
+		: '';
 
-    $user_urls = get_field( 'urls',       $user_key );
-    $user_bio  = (string) get_field( 'biography', $user_key );
-    $user_site = (string) get_field( 'website',   $user_key );
+	$user_urls = get_field( 'urls',       $user_key );
+	$user_bio  = (string) get_field( 'biography', $user_key );
+	$user_site = (string) get_field( 'website',   $user_key );
 
-    switch ( $requested ) {
-        case 'title':
-            return $user_name ? esc_html( $user_name ) : '';
+	switch ( $requested ) {
+		case 'title':
+			return $user_name ? esc_html( $user_name ) : '';
 
-        case 'biography':
-            if ( $founder_group_bio !== '' ) return $founder_group_bio; // HTML allowed
-            if ( $user_bio !== '' )          return $user_bio;          // HTML allowed
-            $core_bio = (string) $userdata->description;
-            return $core_bio !== '' ? $core_bio : '';
+		case 'biography':
+			if ( $founder_group_bio !== '' ) return $founder_group_bio; // HTML allowed
+			if ( $user_bio !== '' )          return $user_bio;          // HTML allowed
+			$core_bio = (string) $userdata->description;
+			return $core_bio !== '' ? $core_bio : '';
 
-        case 'website':
-            if ( $user_site !== '' ) return esc_url( $user_site );
-            if ( is_array( $user_urls ) && ! empty( $user_urls['website'] ) ) {
-                return esc_url( (string) $user_urls['website'] );
-            }
-            $core_url = (string) $userdata->user_url;
-            return $core_url !== '' ? esc_url( $core_url ) : '';
-    }
+		case 'website':
+			if ( $user_site !== '' ) return esc_url( $user_site );
+			if ( is_array( $user_urls ) && ! empty( $user_urls['website'] ) ) {
+				return esc_url( (string) $user_urls['website'] );
+			}
+			$core_url = (string) $userdata->user_url;
+			return $core_url !== '' ? esc_url( $core_url ) : '';
+	}
 
-    // url_* platforms
-    if ( ( function_exists( 'str_starts_with' ) && str_starts_with( $requested, 'url_' ) )
-      || substr( $requested, 0, 4 ) === 'url_' ) {
-        $platform = sanitize_key( substr( $requested, 4 ) );
-        if ( $platform && is_array( $user_urls ) && ! empty( $user_urls[ $platform ] ) ) {
-            return esc_url( (string) $user_urls[ $platform ] );
-        }
-        return '';
-    }
+	// url_* platforms
+	if ( ( function_exists( 'str_starts_with' ) && str_starts_with( $requested, 'url_' ) )
+	  || substr( $requested, 0, 4 ) === 'url_' ) {
+		$platform = sanitize_key( substr( $requested, 4 ) );
+		if ( $platform && is_array( $user_urls ) && ! empty( $user_urls[ $platform ] ) ) {
+			return esc_url( (string) $user_urls[ $platform ] );
+		}
+		return '';
+	}
 
-    // Direct user ACF
-    $direct = get_field( $requested, $user_key );
-    if ( is_string( $direct ) && $direct !== '' ) {
-        if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) return esc_url( $direct );
-        if ( in_array( $requested, [ 'biography', 'bio' ], true ) ) return $direct; // allow HTML
-        return esc_html( $direct );
-    }
+	// Direct user ACF
+	$direct = get_field( $requested, $user_key );
+	if ( is_string( $direct ) && $direct !== '' ) {
+		if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) return esc_url( $direct );
+		if ( in_array( $requested, [ 'biography', 'bio' ], true ) ) return $direct; // allow HTML
+		return esc_html( $direct );
+	}
 
-    // Nested group_subfield on user
-    if ( strpos( $requested, '_' ) !== false ) {
-        $parts  = explode( '_', $requested );
-        $group  = array_shift( $parts );
-        $subkey = implode( '_', $parts );
-        if ( $group && $subkey ) {
-            $group_val = get_field( $group, $user_key );
-            if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
-                $val = $group_val[ $subkey ];
-                if ( is_string( $val ) && $val !== '' ) {
-                    if ( filter_var( $val, FILTER_VALIDATE_URL ) ) return esc_url( $val );
-                    if ( is_email( $val ) ) return esc_html( $val );
-                    return esc_html( $val );
-                }
-            }
-        }
-    }
+	// Nested group_subfield on user
+	if ( strpos( $requested, '_' ) !== false ) {
+		$parts  = explode( '_', $requested );
+		$group  = array_shift( $parts );
+		$subkey = implode( '_', $parts );
+		if ( $group && $subkey ) {
+			$group_val = get_field( $group, $user_key );
+			if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
+				$val = $group_val[ $subkey ];
+				if ( is_string( $val ) && $val !== '' ) {
+					if ( filter_var( $val, FILTER_VALIDATE_URL ) ) return esc_url( $val );
+					if ( is_email( $val ) ) return esc_html( $val );
+					return esc_html( $val );
+				}
+			}
+		}
+	}
 
-    return '';
+	return '';
 }

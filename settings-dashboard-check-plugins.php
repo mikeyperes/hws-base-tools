@@ -1,345 +1,536 @@
 <?php namespace hws_base_tools;
 
-// Import functions from the hws_base_tools namespace
-use function hws_base_tools\get_database_table_prefix;
-use function hws_base_tools\check_wordpress_main_email;
-use function hws_base_tools\check_imagick_available;
-use function hws_base_tools\get_constant_value_from_wp_config;
-use function hws_base_tools\check_cloudflare_active;
-use function hws_base_tools\check_php_type;
-use function hws_base_tools\check_php_handler;
-use function hws_base_tools\hws_ct_highlight_if_essential_setting_failed;
-use function hws_base_tools\check_myisam_tables;
-use function hws_base_tools\check_wordfence_notification_email;
-use function hws_base_tools\check_wp_config_constant_status;
-use function hws_base_tools\check_log_file_sizes;
-use function hws_base_tools\check_smtp_auth_status_and_mailer;
-use function hws_base_tools\check_redis_active;
-use function hws_base_tools\check_caching_source;
-use function hws_base_tools\check_wordpress_memory_limit;
-use function hws_base_tools\check_server_memory_limit;
-use function hws_base_tools\check_server_specs;
+/**
+ * Plugin Status Monitoring System
+ * 
+ * Smart, abstract plugin monitoring with easy extensibility.
+ * Simply add plugins to the $monitored_plugins array.
+ * 
+ * @since 8.9.6.0
+ */
 
-function display_settings_check_plugins() {
-   // Get the last time WordPress checked for plugin updates
-   $update_plugins = get_site_transient('update_plugins');
-   $last_checked_timestamp = isset($update_plugins->last_checked) ? $update_plugins->last_checked : false;
-   $last_checked = $last_checked_timestamp ? date('Y-m-d H:i:s', $last_checked_timestamp) : 'Never';
-
-   // Use get_plugin_updates() to reliably get plugins with updates
-   $plugin_updates = get_plugin_updates();
-   $plugins_with_updates = count($plugin_updates);
-   $plugins_list = [];
-
-   if (!empty($plugin_updates)) {
-       foreach ($plugin_updates as $plugin_file => $plugin_data) {
-           $plugin_name = $plugin_data->Name;
-           $plugins_list[] = $plugin_name;
-       }
-   }
-
-   $cron_name = 'wp_version_check'; // The cron job responsible for updates
-   ?>
-
-    <!-- Plugins Status Panel --> 
-    <div class="panel">
-        <h2 class="panel-title">Plugins Status</h2>
-        <h3>Force WordPress to Check for Plugin Updates (Execute Cron)</h3>
-       <?php
-// Generate the dynamic URL
-$update_check_url = admin_url('update-core.php?force-check=1');
-
-// Output the button with the dynamic URL
-echo '<a href="' . esc_url($update_check_url) . '" target="_blank" class="button">Force WordPress to Perform an Update Check</a>';
-?>
-        <p>Last checked: <span id="last-checked"><?php echo esc_html($last_checked); ?></span></p>
-        <p>Number of plugins with available updates: <span id="plugins-with-updates"><?php echo esc_html($plugins_with_updates); ?></span></p>
-        <?php if ($plugins_with_updates > 0): ?>
-            <p>Plugins with updates available:</p>
-            <ul id="plugins-list">
-                <?php foreach ($plugins_list as $plugin_name): ?>
-                    <li><?php echo esc_html($plugin_name); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-        <p>Cron job name: <span id="cron-name"><?= esc_html($cron_name) ?></span></p>
-        <button id="force-update-check" class="button button-primary">Force WordPress to Check for Plugin Updates</button>
-     <div class="panel-content">
-            <?php
-            // Get the list of plugins
-            $plugins = hws_ct_get_plugins_list();
-
-            foreach ($plugins as $plugin) {
-                list($is_installed, $is_active, $is_auto_update_enabled) = check_plugin_status($plugin['id']);
-
-                $plugin_name = $plugin['name'];
-                $constraints = $plugin['approved_constraints'];
-                $additional_info = $plugin['additional_info'];
-
-                echo "<p><strong>$plugin_name:</strong></p>";
-
-                // Installation status
-                if ($is_installed) {
-                    echo "<p style='color: green;'>&#x2705; Installed</p>";
-
-                    // Activation status
-                    if ($is_active) {
-                        if ($constraints['is_active']) {
-                            echo "<p style='color: green;'>&#x2705; Enabled</p>";
-                        } else {
-                            echo "<p style='color: red;'>&#x274C; Enabled (Should be Inactive)</p>";
-                        }
-                    } else {
-                        if ($constraints['is_active']) {
-                            echo "<p style='color: red;'>&#x274C; Not Enabled</p>";
-                        } else {
-                            echo "<p style='color: green;'>&#x2705; Not Enabled (Correct)</p>";
-                        }
-                    }
-
-                    // Auto-update status
-                    if ($is_auto_update_enabled) {
-                        echo "<p style='color: green;'>&#x2705; Auto-update Enabled</p>";
-                    } else {
-                        echo "<p style='color: red;'>&#x274C; Auto-update Disabled</p>";
-                    }
-
-                    // Add "Deactivate plugin" or "Activate plugin" link below all the checks
-                    if ($is_active) {
-                        $deactivate_url = wp_nonce_url(admin_url('plugins.php?action=deactivate&plugin=' . $plugin['id']), 'deactivate-plugin_' . $plugin['id']);
-                        echo "<p><a href='$deactivate_url' target='_blank'>Deactivate plugin</a></p>";
-                    } else {
-                        $activate_url = wp_nonce_url(admin_url('plugins.php?action=activate&plugin=' . $plugin['id']), 'activate-plugin_' . $plugin['id']);
-                        echo "<p><a href='$activate_url' target='_blank'>Activate plugin</a></p>";
-                    }
-                } else {
-                    echo "<p style='color: red;'>&#x274C; Not Installed</p>";
-                    // Show additional info only if not installed
-                    echo "<p>$additional_info</p>";
-                }
-
-                // Divider for each plugin
-                echo "<hr>";
-            } ?>
-        </div>
-    </div>
-
-
-<?php }
-
-function hws_ct_plugin_info_determine_plugin_download_message($plugin_id, $plugin_name, $upload_manually = false) {
-    if ($upload_manually) {
-        return 'Upload the plugin manually';
-    } else {
-        // Dynamically get the WordPress admin URL
-        $base_url = admin_url('plugin-install.php');
-        $search_term = urlencode($plugin_name);
-        $search_url = "{$base_url}?s={$search_term}&tab=search&type=term";
-
-        return '<a href="' . esc_url($search_url) . '" target="_blank">Download ' . esc_html($plugin_name) . '</a>';
-    }
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
 }
 
+// Register AJAX handler for plugin installation
+add_action( 'wp_ajax_hws_install_plugin', __NAMESPACE__ . '\\ajax_install_plugin' );
 
-// Function to get the plugins list with dynamic download messages
-function hws_ct_get_plugins_list() {
+/**
+ * AJAX handler to install a plugin from WordPress.org
+ */
+function ajax_install_plugin() {
+    // Check permissions
+    if ( ! current_user_can( 'install_plugins' ) ) {
+        wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
+        return;
+    }
+    
+    // Verify nonce
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+        wp_send_json_error( 'Security check failed.' );
+        return;
+    }
+    
+    // Get plugin slug
+    $slug = isset( $_POST['slug'] ) ? sanitize_text_field( $_POST['slug'] ) : '';
+    
+    if ( empty( $slug ) ) {
+        wp_send_json_error( 'No plugin slug provided.' );
+        return;
+    }
+    
+    // Load required files
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    
+    // Get plugin info from WordPress.org
+    $api = plugins_api( 'plugin_information', [
+        'slug'   => $slug,
+        'fields' => [
+            'sections' => false,
+        ],
+    ]);
+    
+    if ( is_wp_error( $api ) ) {
+        wp_send_json_error( 'Plugin not found on WordPress.org: ' . $api->get_error_message() );
+        return;
+    }
+    
+    // Use a silent skin to prevent output
+    $skin = new \WP_Ajax_Upgrader_Skin();
+    $upgrader = new \Plugin_Upgrader( $skin );
+    
+    // Install the plugin
+    $result = $upgrader->install( $api->download_link );
+    
+    if ( is_wp_error( $result ) ) {
+        wp_send_json_error( 'Installation failed: ' . $result->get_error_message() );
+        return;
+    }
+    
+    if ( $result === false ) {
+        wp_send_json_error( 'Installation failed.' );
+        return;
+    }
+    
+    // Activate the plugin
+    $plugin_file = $upgrader->plugin_info();
+    if ( $plugin_file ) {
+        $activate_result = activate_plugin( $plugin_file );
+        if ( is_wp_error( $activate_result ) ) {
+            wp_send_json_success( [
+                'message'   => 'Installed but activation failed: ' . $activate_result->get_error_message(),
+                'activated' => false,
+            ]);
+            return;
+        }
+    }
+    
+    wp_send_json_success( [
+        'message'   => 'Plugin installed and activated successfully.',
+        'activated' => true,
+    ]);
+}
+
+/**
+ * Get list of monitored plugins
+ * 
+ * Easy to extend - just add to this array!
+ * 
+ * Format:
+ * 'plugin-folder/plugin-file.php' => [
+ *     'name'        => 'Display Name',
+ *     'should_be'   => 'active' | 'inactive',  // Expected state
+ *     'auto_update' => true | false,           // Should auto-update be enabled?
+ *     'download'    => 'url' | 'manual',       // How to get it
+ * ]
+ */
+function hws_get_monitored_plugins() {
     return [
-
+        // === REQUIRED ACTIVE ===
+        'advanced-custom-fields-pro/acf.php' => [
+            'name'        => 'Advanced Custom Fields Pro',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'manual',
+        ],
+        'elementor-pro/elementor-pro.php' => [
+            'name'        => 'Elementor Pro',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'manual',
+        ],
+        'classic-editor/classic-editor.php' => [
+            'name'        => 'Classic Editor',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/classic-editor/',
+        ],
+        'wordfence/wordfence.php' => [
+            'name'        => 'Wordfence',
+            'should_be'   => 'active',
+            'auto_update' => false,  // Security plugin - manual review
+            'download'    => 'https://wordpress.org/plugins/wordfence/',
+        ],
+        'wp-mail-smtp/wp_mail_smtp.php' => [
+            'name'        => 'WP Mail SMTP',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/wp-mail-smtp/',
+        ],
+        'wp-user-avatars/wp-user-avatars.php' => [
+            'name'        => 'WP User Avatars',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/wp-user-avatars/',
+        ],
+        'litespeed-cache/litespeed-cache.php' => [
+            'name'        => 'LiteSpeed Cache',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/litespeed-cache/',
+        ],
         
-
-        [
-            'id' => 'wp-optimize/wp-optimize.php',
-            'name' => 'WP Optimize',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => false,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-optimize/wp-optimize.php', 'WP Optimize')
+        // === SHOULD BE INACTIVE (installed but not active) ===
+        'wp-optimize/wp-optimize.php' => [
+            'name'        => 'WP Optimize',
+            'should_be'   => 'inactive',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/wp-optimize/',
         ],
-        [
-            'id' => 'hws-base-tools/initialization.php',
-            'name' => 'HWS Base Tools',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('hws-base-tools/initialization.php', 'HWS Base Tools')
-        ],
-        [
-            'id' => 'elementor/elementor.php',
-            'name' => 'Elementor',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor/elementor.php', 'Elementor')
-        ],
-        [
-            'id' => 'elementor-pro/elementor-pro.php',
-            'name' => 'Elementor Pro',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('elementor-pro/elementor-pro.php', 'Elementor Pro',true)
-        ],
-        [
-            'id' => 'seo-by-rank-math/rank-math.php',
-            'name' => 'Rank Math',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => false
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('seo-by-rank-math/rank-math.php', 'Rank Math')
-        ],
-        [
-            'id' => 'seo-by-rank-math-pro/rank-math-pro.php',
-            'name' => 'Rank Math Pro',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => false
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('seo-by-rank-math-pro/rank-math-pro.php', 'Rank Math Pro',true)
-        ],
-        [
-            'id' => 'classic-editor/classic-editor.php',
-            'name' => 'Classic Editor',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('classic-editor/classic-editor.php', 'Classic Editor')
-        ],
-        [
-            'id' => 'jet-engine/jet-engine.php',
-            'name' => 'JetEngine',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('jet-engine/jet-engine.php', 'JetEngine',true)
-        ],
-        [
-            'id' => 'media-cleaner/media-cleaner-pro.php',
-            'name' => 'Media Cleaner Pro',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('media-cleaner/media-cleaner.php', 'Media Cleaner', true)
-        ],
-        [
-            'id' => 'wordfence/wordfence.php',
-            'name' => 'Wordfence',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => false
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wordfence/wordfence.php', 'Wordfence')
-        ],
-        [
-            'id' => 'google-site-kit/google-site-kit.php',
-            'name' => 'Google Site Kit',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('google-site-kit/google-site-kit.php', 'Google Site Kit')
-        ],
-        [
-            'id' => 'wp-mail-smtp/wp_mail_smtp.php',
-            'name' => 'WP Mail SMTP',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-mail-smtp/wp_mail_smtp.php', 'WP Mail SMTP')
-        ],
-        [
-            'id' => 'wp-user-avatars/wp-user-avatars.php',
-            'name' => 'WP User Avatars',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-user-avatars/wp-user-avatars.php', 'WP User Avatars')
-        ],
-        [
-            'id' => 'advanced-custom-fields-pro/acf.php',
-            'name' => 'Advanced Custom Fields Pro',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => true,
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('advanced-custom-fields-pro/acf.php', 'Advanced Custom Fields Pro',true)
-        ],
-        [
-            'id' => 'wp-sweep/wp-sweep.php',
-            'name' => 'WP Sweep',
-            'approved_constraints' => [
-                'is_installed' => true,
-                'is_active' => false,  // WP Sweep should not be active
-                'is_auto_update_enabled' => true
-            ],
-            'additional_info' => hws_ct_plugin_info_determine_plugin_download_message('wp-sweep/wp-sweep.php', 'WP Sweep')
-        ]
     ];
 }
 
 
+/**
+ * Get red flag plugins that should NOT be installed
+ */
+function hws_get_red_flag_plugins() {
+    return [
+        'wp-file-manager/file-manager.php' => [
+            'name'   => 'WP File Manager',
+            'reason' => 'Critical security vulnerability - allows remote file access',
+        ],
+        'duplicator/duplicator.php' => [
+            'name'   => 'Duplicator',
+            'reason' => 'Often left installed after migration - remove when done',
+        ],
+    ];
+}
 
 
+/**
+ * Check plugin status
+ * 
+ * @param string $plugin_path Plugin path (folder/file.php)
+ * @return array Status array with installed, active, auto_update keys
+ */
+function hws_check_plugin_status( $plugin_path ) {
+    $all_plugins = get_plugins();
+    $active_plugins = get_option( 'active_plugins', [] );
+    $auto_updates = (array) get_site_option( 'auto_update_plugins', [] );
+    
+    return [
+        'installed'   => isset( $all_plugins[ $plugin_path ] ),
+        'active'      => in_array( $plugin_path, $active_plugins, true ),
+        'auto_update' => in_array( $plugin_path, $auto_updates, true ),
+        'version'     => isset( $all_plugins[ $plugin_path ] ) ? $all_plugins[ $plugin_path ]['Version'] : null,
+    ];
+}
 
-// Handle the AJAX request to force the update check
+
+/**
+ * Render Plugins Tab
+ */
+function render_tab_plugins() {
+    $monitored = hws_get_monitored_plugins();
+    $red_flags = hws_get_red_flag_plugins();
+    
+    // Get update info
+    $plugin_updates = get_plugin_updates();
+    $theme_updates = get_theme_updates();
+    $core_updates = get_core_updates();
+    $core_update_available = ! empty( $core_updates ) && isset( $core_updates[0]->response ) && $core_updates[0]->response === 'upgrade';
+    ?>
+    
+    <!-- Red Flag Alerts -->
+    <?php
+    $found_red_flags = [];
+    foreach ( $red_flags as $plugin_path => $info ) {
+        $status = hws_check_plugin_status( $plugin_path );
+        if ( $status['installed'] ) {
+            $found_red_flags[ $plugin_path ] = $info;
+        }
+    }
+    
+    if ( ! empty( $found_red_flags ) ) :
+    ?>
+    <div class="hws-red-flag">
+        <h4>🚨 RED FLAG - Remove These Plugins!</h4>
+        <?php foreach ( $found_red_flags as $path => $info ) : ?>
+            <p>
+                <strong><?php echo esc_html( $info['name'] ); ?></strong><br>
+                <span style="color: #666;"><?php echo esc_html( $info['reason'] ); ?></span><br>
+                <a href="<?php echo wp_nonce_url( admin_url( 'plugins.php?action=delete-selected&checked[]=' . $path ), 'bulk-plugins' ); ?>" class="hws-btn hws-btn-danger" style="margin-top: 5px;">Delete Plugin</a>
+            </p>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    
+    <!-- Updates Center -->
+    <div class="hws-panel">
+        <div class="hws-panel-header">📦 Updates Center</div>
+        <div class="hws-panel-body">
+            <div class="hws-status-grid">
+                <div class="hws-status-card <?php echo $core_update_available ? 'bad' : 'good'; ?>">
+                    <div class="value"><?php global $wp_version; echo $wp_version; ?></div>
+                    <div class="label">WordPress <?php echo $core_update_available ? '(Update!)' : ''; ?></div>
+                </div>
+                <div class="hws-status-card <?php echo count( $plugin_updates ) > 0 ? 'warn' : 'good'; ?>">
+                    <div class="value"><?php echo count( $plugin_updates ); ?></div>
+                    <div class="label">Plugin Updates</div>
+                </div>
+                <div class="hws-status-card <?php echo count( $theme_updates ) > 0 ? 'warn' : 'good'; ?>">
+                    <div class="value"><?php echo count( $theme_updates ); ?></div>
+                    <div class="label">Theme Updates</div>
+                </div>
+            </div>
+            
+            <?php if ( count( $plugin_updates ) > 0 || count( $theme_updates ) > 0 || $core_update_available ) : ?>
+            <a href="<?php echo admin_url( 'update-core.php' ); ?>" class="hws-btn" target="_blank">Go to Updates Page</a>
+            <a href="<?php echo admin_url( 'update-core.php?force-check=1' ); ?>" class="hws-btn hws-btn-secondary" target="_blank">Force Update Check</a>
+            <?php else : ?>
+            <p class="status-ok">✅ Everything is up to date!</p>
+            <?php endif; ?>
+        </div>
+    </div>
+    
+    <!-- Monitored Plugins Status -->
+    <div class="hws-panel">
+        <div class="hws-panel-header">🔌 Plugin Status</div>
+        <div class="hws-panel-body">
+            <table class="hws-plugin-table">
+                <thead>
+                    <tr>
+                        <th>Plugin</th>
+                        <th>Installed</th>
+                        <th>Status</th>
+                        <th>Auto-Update</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    $missing_plugins = [];
+                    foreach ( $monitored as $plugin_path => $config ) : 
+                        $status = hws_check_plugin_status( $plugin_path );
+                        $expected_active = ( $config['should_be'] === 'active' );
+                        
+                        // Track missing plugins for batch install
+                        if ( ! $status['installed'] && $config['download'] !== 'manual' ) {
+                            // Extract slug from download URL
+                            if ( preg_match( '/wordpress\.org\/plugins\/([^\/]+)/', $config['download'], $matches ) ) {
+                                $missing_plugins[ $matches[1] ] = $config['name'];
+                            }
+                        }
+                        
+                        // Determine status correctness
+                        $installed_ok = $status['installed'];
+                        $active_ok = ( $expected_active && $status['active'] ) || ( ! $expected_active && ! $status['active'] );
+                        $autoupdate_ok = ( $config['auto_update'] && $status['auto_update'] ) || ( ! $config['auto_update'] );
+                    ?>
+                    <tr>
+                        <td>
+                            <strong><?php echo esc_html( $config['name'] ); ?></strong>
+                            <?php if ( $status['version'] ) : ?>
+                                <br><small style="color: #666;">v<?php echo esc_html( $status['version'] ); ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ( $status['installed'] ) : ?>
+                                <span class="status-ok">✅ Installed</span>
+                            <?php else : ?>
+                                <span class="status-bad">❌ Not Installed</span>
+                                <?php if ( $config['download'] !== 'manual' && preg_match( '/wordpress\.org\/plugins\/([^\/]+)/', $config['download'], $slug_match ) ) : ?>
+                                    <br><input type="checkbox" class="hws-missing-plugin-checkbox" value="<?php echo esc_attr( $slug_match[1] ); ?>" data-name="<?php echo esc_attr( $config['name'] ); ?>" style="margin-top: 5px;" checked>
+                                    <small style="color: #666;">Include in batch</small>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ( ! $status['installed'] ) : ?>
+                                <span style="color: #999;">—</span>
+                            <?php elseif ( $active_ok ) : ?>
+                                <?php if ( $status['active'] ) : ?>
+                                    <span class="status-ok">✅ Active</span>
+                                <?php else : ?>
+                                    <span class="status-ok">✅ Inactive (Correct)</span>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <?php if ( $status['active'] ) : ?>
+                                    <span class="status-bad">❌ Active (Should be Inactive)</span>
+                                <?php else : ?>
+                                    <span class="status-bad">❌ Inactive (Should be Active)</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ( ! $status['installed'] ) : ?>
+                                <span style="color: #999;">—</span>
+                            <?php elseif ( $status['auto_update'] ) : ?>
+                                <span class="status-ok">✅ Enabled</span>
+                            <?php else : ?>
+                                <span class="<?php echo $config['auto_update'] ? 'status-bad' : 'status-ok'; ?>">
+                                    <?php echo $config['auto_update'] ? '❌ Disabled' : '✅ Disabled (OK)'; ?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ( ! $status['installed'] ) : ?>
+                                <?php if ( $config['download'] === 'manual' ) : ?>
+                                    <span style="color: #666; font-size: 12px;">Upload manually</span>
+                                <?php else : ?>
+                                    <a href="<?php echo esc_url( $config['download'] ); ?>" target="_blank" class="hws-btn hws-btn-secondary" style="padding: 4px 8px; font-size: 11px;">Download</a>
+                                <?php endif; ?>
+                            <?php elseif ( $status['active'] && ! $expected_active ) : ?>
+                                <?php
+                                $deactivate_url = wp_nonce_url(
+                                    admin_url( 'plugins.php?action=deactivate&plugin=' . urlencode( $plugin_path ) ),
+                                    'deactivate-plugin_' . $plugin_path
+                                );
+                                ?>
+                                <a href="<?php echo esc_url( $deactivate_url ); ?>" class="hws-btn hws-btn-secondary" style="padding: 4px 8px; font-size: 11px;">Deactivate</a>
+                            <?php elseif ( ! $status['active'] && $expected_active ) : ?>
+                                <?php
+                                $activate_url = wp_nonce_url(
+                                    admin_url( 'plugins.php?action=activate&plugin=' . urlencode( $plugin_path ) ),
+                                    'activate-plugin_' . $plugin_path
+                                );
+                                ?>
+                                <a href="<?php echo esc_url( $activate_url ); ?>" class="hws-btn" style="padding: 4px 8px; font-size: 11px;">Activate</a>
+                            <?php else : ?>
+                                <span style="color: #00a32a;">✓</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 15px;">
+                <a href="<?php echo admin_url( 'plugins.php' ); ?>" class="hws-btn hws-btn-secondary" target="_blank">Manage All Plugins</a>
+                <button type="button" id="enable-plugin-auto-updates" class="hws-btn">Enable Auto-Updates for All</button>
+                
+                <?php if ( ! empty( $missing_plugins ) ) : ?>
+                <button type="button" id="hws-batch-install-plugins" class="hws-btn" style="background: #2271b1; margin-left: 10px;">
+                    📥 Install Selected Missing Plugins
+                </button>
+                <?php endif; ?>
+            </div>
+            
+            <?php if ( ! empty( $missing_plugins ) ) : ?>
+            <div id="hws-batch-install-status" style="margin-top: 15px; padding: 10px; background: #f0f6fc; border-radius: 4px; display: none;">
+                <strong>Installation Progress:</strong>
+                <div id="hws-batch-install-log" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    
+    <!-- Theme Info -->
+    <?php
+    if ( function_exists( __NAMESPACE__ . '\\display_settings_theme_checks' ) ) {
+        display_settings_theme_checks();
+    }
+    ?>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        // Enable auto-updates for ALL plugins
+        $('#enable-plugin-auto-updates').on('click', function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Enabling...');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_enable_all_auto_updates',
+                    nonce: '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $btn.text('✅ ' + response.data.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        $btn.prop('disabled', false).text('Enable Auto-Updates for All');
+                        alert('Error: ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $btn.prop('disabled', false).text('Enable Auto-Updates for All');
+                    alert('AJAX request failed: ' + status + ' - ' + error + '\n' + (xhr.responseText || '').substring(0, 200));
+                }
+            });
+        });
+        
+        // Batch install missing plugins
+        $('#hws-batch-install-plugins').on('click', function() {
+            var selectedPlugins = [];
+            $('.hws-missing-plugin-checkbox:checked').each(function() {
+                selectedPlugins.push({
+                    slug: $(this).val(),
+                    name: $(this).data('name')
+                });
+            });
+            
+            if (selectedPlugins.length === 0) {
+                alert('Please select at least one plugin to install.');
+                return;
+            }
+            
+            if (!confirm('Install ' + selectedPlugins.length + ' plugin(s)?\n\nThis will download and install from WordPress.org.')) {
+                return;
+            }
+            
+            var $btn = $(this);
+            var $status = $('#hws-batch-install-status');
+            var $log = $('#hws-batch-install-log');
+            
+            $btn.prop('disabled', true).text('Installing...');
+            $status.show();
+            $log.html('');
+            
+            // Install plugins one by one
+            var installNext = function(index) {
+                if (index >= selectedPlugins.length) {
+                    $log.append('<br><strong style="color: green;">✅ All installations complete!</strong>');
+                    $btn.text('✅ Complete - Reloading...');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                    return;
+                }
+                
+                var plugin = selectedPlugins[index];
+                $log.append('Installing ' + plugin.name + '...<br>');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'hws_install_plugin',
+                        slug: plugin.slug,
+                        nonce: '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $log.append('<span style="color: green;">✅ ' + plugin.name + ' installed successfully</span><br>');
+                        } else {
+                            $log.append('<span style="color: red;">❌ ' + plugin.name + ': ' + response.data + '</span><br>');
+                        }
+                        installNext(index + 1);
+                    },
+                    error: function() {
+                        $log.append('<span style="color: red;">❌ ' + plugin.name + ': AJAX Error</span><br>');
+                        installNext(index + 1);
+                    }
+                });
+            };
+            
+            installNext(0);
+        });
+    });
+    </script>
+    <?php
+}
 
 
+/**
+ * Force update check AJAX handler
+ */
 function hws_ct_force_update_check() {
-    // Force WordPress to check for plugin and theme updates
     wp_clean_update_cache();
     wp_update_plugins();
     wp_update_themes();
 
-    // Get the updated last checked time and plugins with updates using get_plugin_updates()
     $plugin_updates = get_plugin_updates();
-    $last_checked_timestamp = time();
-    $last_checked = date('Y-m-d H:i:s', $last_checked_timestamp);
-    $plugins_with_updates = count($plugin_updates);
+    $last_checked = date( 'Y-m-d H:i:s' );
     $plugins_list = [];
 
-    if (!empty($plugin_updates)) {
-        foreach ($plugin_updates as $plugin_file => $plugin_data) {
-            $plugin_name = $plugin_data->Name;
-            $plugins_list[] = $plugin_name;
-        }
+    foreach ( $plugin_updates as $plugin_file => $plugin_data ) {
+        $plugins_list[] = $plugin_data->Name;
     }
-<<<<<<< HEAD
 
-=======
- 
->>>>>>> 4583631 (fixed GIT issue)
-    // Send back the last checked time, number of plugins with updates, and their names
-    echo json_encode([
-        'last_checked' => $last_checked,
-        'plugins_with_updates' => $plugins_with_updates,
-        'plugins_list' => $plugins_list,
-    ]);
-    wp_die();
+    wp_send_json( [
+        'last_checked'         => $last_checked,
+        'plugins_with_updates' => count( $plugin_updates ),
+        'plugins_list'         => $plugins_list,
+    ] );
 }
-
-add_action('wp_ajax_hws_ct_force_update_check', 'hws_base_tools\hws_ct_force_update_check');
-
-?>
+add_action( 'wp_ajax_hws_base_tools_force_update_check', __NAMESPACE__ . '\\hws_ct_force_update_check' );
