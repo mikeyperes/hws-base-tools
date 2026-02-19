@@ -1,0 +1,610 @@
+<?php namespace hws_base_tools;
+
+/**
+ * HWS Base Tools - UI Cleanup Settings
+ * 
+ * Hides unnecessary/cluttery UI elements from WordPress admin pages,
+ * particularly on the user profile edit screen.
+ * 
+ * @since 10.7
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+// Register AJAX handlers
+add_action( 'wp_ajax_hws_toggle_ui_cleanup', __NAMESPACE__ . '\\ajax_toggle_ui_cleanup' );
+add_action( 'wp_ajax_hws_ui_cleanup_bulk', __NAMESPACE__ . '\\ajax_ui_cleanup_bulk' );
+
+/**
+ * UI Cleanup Options Configuration
+ * 
+ * Each option defines:
+ *   - label: Display name for the toggle
+ *   - description: What it hides
+ *   - css_selectors: CSS selectors to hide (on user profile pages)
+ *   - js_hide: Text to find via jQuery for hiding (for elements without good CSS selectors)
+ *   - js_input_id: Input ID to target the containing row
+ *   - default: Default state (false = show, true = hide)
+ *   - section: Grouping category
+ */
+function get_ui_cleanup_options(): array {
+    return [
+        // ========================================
+        // User Profile - WordPress Core
+        // ========================================
+        'hide_admin_color_scheme' => [
+            'label'         => 'Admin Color Scheme',
+            'description'   => 'Hides the "Administration Color Scheme" picker on user profile',
+            'css_selectors' => '.user-admin-color-wrap',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'hide_language_selector' => [
+            'label'         => 'Language Selector',
+            'description'   => 'Hides the "Language" dropdown on user profile',
+            'css_selectors' => '.user-language-wrap',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'hide_keyboard_shortcuts' => [
+            'label'         => 'Keyboard Shortcuts',
+            'description'   => 'Hides the "Keyboard Shortcuts" option for comment moderation',
+            'css_selectors' => '.user-comment-shortcuts-wrap',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'hide_syntax_highlighting' => [
+            'label'         => 'Syntax Highlighting',
+            'description'   => 'Hides the "Syntax Highlighting" toggle for code editing',
+            'css_selectors' => '.user-syntax-highlighting-wrap',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        
+        // ========================================
+        // User Profile - Elementor
+        // ========================================
+        'hide_elementor_ai' => [
+            'label'         => 'Elementor AI Section',
+            'description'   => 'Hides the "Elementor - AI" settings section on user profile',
+            'js_hide'       => 'Elementor - AI',
+            'js_input_id'   => 'elementor_enable_ai',
+            'default'       => false,
+            'section'       => 'elementor',
+        ],
+        'hide_elementor_notes' => [
+            'label'         => 'Elementor Notes Section',
+            'description'   => 'Hides the "Elementor Notes" settings section on user profile',
+            'js_hide'       => 'Elementor Notes',
+            'js_input_id'   => 'elementor_pro_enable_notes_notifications',
+            'default'       => false,
+            'section'       => 'elementor',
+        ],
+        
+        // ========================================
+        // User Profile - Wordfence
+        // ========================================
+        'hide_wordfence_app_passwords' => [
+            'label'         => 'Wordfence Application Passwords',
+            'description'   => 'Hides the "Application Passwords" section disabled by Wordfence',
+            'js_hide'       => 'Application Passwords',
+            'default'       => false,
+            'section'       => 'wordfence',
+        ],
+        'hide_wordfence_2fa' => [
+            'label'         => 'Wordfence 2FA Section',
+            'description'   => 'Hides the "Wordfence Login Security" 2FA settings section',
+            'css_selectors' => '#wfls-user-settings',
+            'js_hide'       => 'Wordfence Login Security',
+            'default'       => false,
+            'section'       => 'wordfence',
+        ],
+    ];
+}
+
+/**
+ * Get the current state of a UI cleanup option
+ */
+function get_ui_cleanup_option( string $key ): bool {
+    $options = get_ui_cleanup_options();
+    $default = isset( $options[ $key ]['default'] ) ? $options[ $key ]['default'] : false;
+    return (bool) get_option( 'hws_ui_cleanup_' . $key, $default );
+}
+
+/**
+ * Display the UI Cleanup settings tab
+ */
+function display_settings_ui_cleanup() {
+    $options = get_ui_cleanup_options();
+    
+    // Group options by section
+    $sections = [
+        'wordpress'  => [
+            'title' => 'WordPress Core',
+            'icon'  => '🔷',
+            'items' => [],
+        ],
+        'elementor'  => [
+            'title' => 'Elementor',
+            'icon'  => '🟣',
+            'items' => [],
+        ],
+        'wordfence'  => [
+            'title' => 'Wordfence',
+            'icon'  => '🛡️',
+            'items' => [],
+        ],
+    ];
+    
+    foreach ( $options as $key => $opt ) {
+        $section = $opt['section'] ?? 'wordpress';
+        if ( isset( $sections[ $section ] ) ) {
+            $sections[ $section ]['items'][ $key ] = $opt;
+        }
+    }
+    ?>
+    <style>
+        /* UI Cleanup Tab Styles */
+        .hws-ui-cleanup-intro {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .hws-ui-cleanup-intro h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #fff;
+        }
+        .hws-ui-cleanup-intro p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .hws-ui-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .hws-ui-section-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hws-ui-section-header h4 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .hws-ui-section-icon {
+            font-size: 20px;
+        }
+        
+        .hws-ui-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+        .hws-ui-item:last-child {
+            border-bottom: none;
+        }
+        .hws-ui-item:hover {
+            background: #fafafa;
+        }
+        .hws-ui-item-info {
+            flex: 1;
+        }
+        .hws-ui-item-label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #1d2327;
+            margin-bottom: 3px;
+        }
+        .hws-ui-item-desc {
+            font-size: 12px;
+            color: #646970;
+        }
+        
+        /* Toggle Switch Styles */
+        .hws-ui-toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+        .hws-ui-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .hws-ui-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .hws-ui-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .hws-ui-toggle input:checked + .hws-ui-toggle-slider {
+            background-color: #2271b1;
+        }
+        .hws-ui-toggle input:checked + .hws-ui-toggle-slider:before {
+            transform: translateX(24px);
+        }
+        .hws-ui-toggle input:disabled + .hws-ui-toggle-slider {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Status Badge */
+        .hws-ui-status {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+        .hws-ui-status-hidden {
+            background: #d63638;
+            color: #fff;
+        }
+        .hws-ui-status-visible {
+            background: #e0e0e0;
+            color: #646970;
+        }
+        
+        /* Bulk Actions */
+        .hws-ui-bulk-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .hws-ui-bulk-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid #2271b1;
+            background: #f6f7f7;
+            color: #2271b1;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .hws-ui-bulk-btn:hover {
+            background: #2271b1;
+            color: #fff;
+        }
+        .hws-ui-bulk-btn.danger {
+            border-color: #d63638;
+            color: #d63638;
+        }
+        .hws-ui-bulk-btn.danger:hover {
+            background: #d63638;
+            color: #fff;
+        }
+    </style>
+    
+    <div class="hws-ui-cleanup-intro">
+        <h3>🧹 UI Cleanup</h3>
+        <p>Hide unnecessary or cluttery elements from the WordPress User Profile page. Toggle each option to hide the corresponding UI element.</p>
+    </div>
+    
+    <div class="hws-ui-bulk-actions">
+        <button type="button" class="hws-ui-bulk-btn" id="hws-ui-hide-all">Hide All</button>
+        <button type="button" class="hws-ui-bulk-btn danger" id="hws-ui-show-all">Show All (Reset)</button>
+    </div>
+    
+    <?php foreach ( $sections as $section_key => $section ) : ?>
+        <?php if ( ! empty( $section['items'] ) ) : ?>
+            <div class="hws-ui-section" data-section="<?php echo esc_attr( $section_key ); ?>">
+                <div class="hws-ui-section-header">
+                    <span class="hws-ui-section-icon"><?php echo $section['icon']; ?></span>
+                    <h4><?php echo esc_html( $section['title'] ); ?></h4>
+                </div>
+                
+                <?php foreach ( $section['items'] as $key => $opt ) : 
+                    $is_hidden = get_ui_cleanup_option( $key );
+                ?>
+                    <div class="hws-ui-item" data-option="<?php echo esc_attr( $key ); ?>">
+                        <div class="hws-ui-item-info">
+                            <div class="hws-ui-item-label">
+                                <?php echo esc_html( $opt['label'] ); ?>
+                                <span class="hws-ui-status <?php echo $is_hidden ? 'hws-ui-status-hidden' : 'hws-ui-status-visible'; ?>">
+                                    <?php echo $is_hidden ? 'Hidden' : 'Visible'; ?>
+                                </span>
+                            </div>
+                            <div class="hws-ui-item-desc"><?php echo esc_html( $opt['description'] ); ?></div>
+                        </div>
+                        <label class="hws-ui-toggle">
+                            <input type="checkbox" 
+                                   class="hws-ui-toggle-input" 
+                                   data-option="<?php echo esc_attr( $key ); ?>"
+                                   <?php checked( $is_hidden ); ?>>
+                            <span class="hws-ui-toggle-slider"></span>
+                        </label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        // Toggle individual option
+        $('.hws-ui-toggle-input').on('change', function() {
+            var $toggle = $(this);
+            var option = $toggle.data('option');
+            var enabled = $toggle.is(':checked') ? 1 : 0;
+            var $item = $toggle.closest('.hws-ui-item');
+            var $status = $item.find('.hws-ui-status');
+            
+            // Disable toggle during save
+            $toggle.prop('disabled', true);
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_toggle_ui_cleanup',
+                    nonce: hwsNonce,
+                    option: option,
+                    enabled: enabled
+                },
+                success: function(response) {
+                    $toggle.prop('disabled', false);
+                    if (response.success) {
+                        // Update status badge
+                        if (enabled) {
+                            $status.removeClass('hws-ui-status-visible').addClass('hws-ui-status-hidden').text('Hidden');
+                        } else {
+                            $status.removeClass('hws-ui-status-hidden').addClass('hws-ui-status-visible').text('Visible');
+                        }
+                    } else {
+                        // Revert on error
+                        $toggle.prop('checked', !enabled);
+                        console.error('Failed to save UI cleanup option');
+                    }
+                },
+                error: function() {
+                    $toggle.prop('disabled', false);
+                    $toggle.prop('checked', !enabled);
+                    console.error('AJAX error saving UI cleanup option');
+                }
+            });
+        });
+        
+        // Hide All button
+        $('#hws-ui-hide-all').on('click', function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Hiding...');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_ui_cleanup_bulk',
+                    nonce: hwsNonce,
+                    mode: 'hide_all'
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Hide All');
+                    if (response.success) {
+                        // Update all toggles and badges
+                        $('.hws-ui-toggle-input').prop('checked', true);
+                        $('.hws-ui-status').removeClass('hws-ui-status-visible').addClass('hws-ui-status-hidden').text('Hidden');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Hide All');
+                }
+            });
+        });
+        
+        // Show All button
+        $('#hws-ui-show-all').on('click', function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Resetting...');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_ui_cleanup_bulk',
+                    nonce: hwsNonce,
+                    mode: 'show_all'
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Show All (Reset)');
+                    if (response.success) {
+                        // Update all toggles and badges
+                        $('.hws-ui-toggle-input').prop('checked', false);
+                        $('.hws-ui-status').removeClass('hws-ui-status-hidden').addClass('hws-ui-status-visible').text('Visible');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Show All (Reset)');
+                }
+            });
+        });
+    });
+    </script>
+    <?php
+}
+
+/**
+ * AJAX: Toggle individual UI cleanup option
+ */
+function ajax_toggle_ui_cleanup() {
+    // Verify nonce
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+        wp_send_json_error( 'Invalid nonce' );
+    }
+    
+    // Check permissions
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+    
+    // Get option key
+    $option = isset( $_POST['option'] ) ? sanitize_key( $_POST['option'] ) : '';
+    $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
+    
+    // Validate option exists
+    $options = get_ui_cleanup_options();
+    if ( ! isset( $options[ $option ] ) ) {
+        wp_send_json_error( 'Invalid option' );
+    }
+    
+    // Save the option
+    update_option( 'hws_ui_cleanup_' . $option, $enabled ? '1' : '0' );
+    
+    wp_send_json_success( [ 'option' => $option, 'enabled' => $enabled ] );
+}
+
+/**
+ * AJAX: Bulk toggle UI cleanup options
+ */
+function ajax_ui_cleanup_bulk() {
+    // Verify nonce
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+        wp_send_json_error( 'Invalid nonce' );
+    }
+    
+    // Check permissions
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+    
+    $mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : '';
+    $options = get_ui_cleanup_options();
+    $value = ( $mode === 'hide_all' ) ? '1' : '0';
+    
+    foreach ( array_keys( $options ) as $key ) {
+        update_option( 'hws_ui_cleanup_' . $key, $value );
+    }
+    
+    wp_send_json_success( [ 'mode' => $mode, 'count' => count( $options ) ] );
+}
+
+/**
+ * Inject CSS/JS to hide selected UI elements on user profile pages
+ * 
+ * Hooked to admin_head
+ */
+function inject_ui_cleanup_css() {
+    // Only run on user profile pages
+    global $pagenow;
+    if ( ! in_array( $pagenow, [ 'user-edit.php', 'profile.php' ], true ) ) {
+        return;
+    }
+    
+    $options = get_ui_cleanup_options();
+    $css_rules = [];
+    $js_hide_headers = [];
+    $js_hide_inputs = [];
+    
+    foreach ( $options as $key => $opt ) {
+        if ( get_ui_cleanup_option( $key ) ) {
+            // Add CSS selectors for elements with good class/ID selectors
+            if ( ! empty( $opt['css_selectors'] ) ) {
+                $css_rules[] = $opt['css_selectors'];
+            }
+            // Add JS hide targets (for h2 headers that need text matching)
+            if ( ! empty( $opt['js_hide'] ) ) {
+                $js_hide_headers[] = $opt['js_hide'];
+            }
+            // Add input IDs to hide their containing rows
+            if ( ! empty( $opt['js_input_id'] ) ) {
+                $js_hide_inputs[] = $opt['js_input_id'];
+            }
+        }
+    }
+    
+    // Output CSS if any rules exist
+    if ( ! empty( $css_rules ) ) {
+        echo "<style id='hws-ui-cleanup-css'>\n";
+        echo "/* HWS UI Cleanup - Auto-generated */\n";
+        echo implode( ",\n", $css_rules ) . " {\n";
+        echo "    display: none !important;\n";
+        echo "}\n";
+        echo "</style>\n";
+    }
+    
+    // Output JS for elements that need text-based matching
+    if ( ! empty( $js_hide_headers ) || ! empty( $js_hide_inputs ) ) {
+        ?>
+        <script id='hws-ui-cleanup-js'>
+        jQuery(document).ready(function($) {
+            <?php foreach ( $js_hide_headers as $text ) : 
+                $escaped = esc_js( $text );
+            ?>
+            // Hide: <?php echo $escaped; ?>
+            
+            $('h2').filter(function() {
+                return $(this).text().trim() === '<?php echo $escaped; ?>';
+            }).each(function() {
+                var $h2 = $(this);
+                // Hide the h2 itself
+                $h2.hide();
+                // Hide the following table.form-table
+                $h2.next('table.form-table').hide();
+                // Also hide if wrapped in a th/tr
+                $h2.closest('tr').hide();
+                // Hide parent th if h2 is inside
+                $h2.closest('th').closest('tr').hide();
+            });
+            <?php endforeach; ?>
+            
+            <?php foreach ( $js_hide_inputs as $input_id ) : 
+                $escaped = esc_js( $input_id );
+            ?>
+            // Hide input row: <?php echo $escaped; ?>
+            
+            $('#<?php echo $escaped; ?>').closest('tr').hide();
+            <?php endforeach; ?>
+            
+            <?php if ( in_array( 'Wordfence Login Security', $js_hide_headers ) ) : ?>
+            // Special handling for Wordfence 2FA section
+            $('#wfls-user-settings').hide().next('table.form-table').hide();
+            $('table.form-table').has('#wordfence-ls').hide();
+            <?php endif; ?>
+            
+            <?php if ( in_array( 'Application Passwords', $js_hide_headers ) ) : ?>
+            // Special handling for Application Passwords
+            $('h2').filter(function() {
+                return $(this).text().trim() === 'Application Passwords';
+            }).hide().next('table.form-table').hide();
+            <?php endif; ?>
+        });
+        </script>
+        <?php
+    }
+}
+add_action( 'admin_head', __NAMESPACE__ . '\\inject_ui_cleanup_css', 999 );
