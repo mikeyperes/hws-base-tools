@@ -1,502 +1,138 @@
 # HWS Base Tools
 
-**A comprehensive WordPress plugin for website optimization, debugging, and management.**
-
-[![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)]()
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Dashboard](#dashboard)
-- [Shortcodes](#shortcodes)
-- [Automated Tasks (Cron Jobs)](#automated-tasks-cron-jobs)
-- [GitHub Auto-Updater](#github-auto-updater)
-- [Configuration](#configuration)
-- [Requirements](#requirements)
-- [Changelog](#changelog)
+**A comprehensive WordPress plugin for website management, optimization, security monitoring, and deployment readiness.**
 
 ---
 
 ## Overview
 
-HWS Base Tools is an all-in-one WordPress plugin designed for developers and site administrators. It provides a centralized dashboard for debugging, system monitoring, automated maintenance tasks, and dynamic content shortcodes.
-
-**Key Benefits:**
-- 🔧 Centralized debugging and error log management
-- ⚡ Automated database and log maintenance
-- 🏷️ Dynamic shortcodes for founder/company information
-- 🔄 GitHub-based auto-updates with version history
-- 📊 Comprehensive system health monitoring
+HWS Base Tools is an all-in-one WordPress administration plugin for developers and site administrators managing production websites. It provides a centralized dashboard for system monitoring, automated maintenance, deployment readiness checks, security oversight, and dynamic content shortcodes — all powered by ACF.
 
 ---
 
-## Features
+## Dashboard Panels (Overview Tab)
 
-### 🖥️ Admin Dashboard
-- **System Summary** — PHP version, WordPress version, memory limits, debug status
-- **Error Log Viewer** — Tabbed interface for Fatal/Syntax errors, debug.log, and error_log
-- **Real-time Log Search** — Search and highlight matches with keyboard navigation
-- **WP-Config Editor** — Toggle debug constants directly from the dashboard
-- **Plugin Health Monitor** — Track active/inactive plugins and updates
+### 🚀 Going Live Checklist
+Three-column deployment readiness checker:
+- **Snippets** — All recommended snippets enabled (ACF fields, auto-updates, admin logo, etc.)
+- **Plugins** — Essential plugins installed & active (ACF Pro, Elementor, Wordfence, WP Mail SMTP, Rank Math, LiteSpeed, etc.)
+- **Settings & Server** — 25+ checks: WP_MEMORY_LIMIT, comments/pingbacks off, SMTP authenticated, WP_DEBUG off, display_errors off, Wordfence alerts, log file sizes (debug.log, error_log, wp-admin/error_log), WP_CRON disabled, Cloudflare active, PHP SAPI LiteSpeed, PHP ≥ 8.1, Imagick, no MyISAM tables, Redis active, post_max_size/upload_max ≥ 128MB, Brotli, max 2 themes, all updated, no Twenty* themes
 
-### 🏷️ Dynamic Shortcodes
-- `[founder id="..."]` — Display founder/user information
-- `[company id="..."]` — Display company/organization information
-- `[website_url]` — Output the site URL
-- `[website_content id="..."]` — Display website settings content
-- `[display_year]` — Current year (useful for copyright)
+### ⚡ Quick Setup
+One-click production configuration: disable debug, set memory 4GB, enable auto-updates, delete logs/backups/comments, enable recommended snippets, install & activate essential free plugins, enable Redis/LiteSpeed/Wordfence.
 
-### 🔄 Automated Maintenance
-- **Log File Cleaner** — Auto-delete logs exceeding size limits
-- **Backup Cleaner** — Remove old backup files automatically
-- **Elementor DB Updater** — Auto-run Elementor database updates
+### ⚡ LiteSpeed Cache Panel
+Four-column status: Page Cache (on/off, private, browser, mobile, REST, TTL) · CSS/JS (minify, combine, async, defer) · Redis (connection, driver, version, memory, hit rate, uptime, keys) · Brotli & General (compression, PHP, SAPI, server)
 
-### 📦 GitHub Integration
-- **Auto-Updates** — Check for updates from GitHub repository
-- **Version History** — Download any tagged release
-- **Direct Install** — Update directly from GitHub with proper folder naming
-- **30-Minute Cache** — Fast update detection
+### 📧 SMTP Status
+Detects WP Mail SMTP mailer type and auth status for 15+ providers (SendGrid, Mailgun, Postmark, Brevo, SparkPost, SMTP, Gmail/Outlook/Zoho OAuth, etc.)
 
----
+### 🛡️ Wordfence Security
+Plugin/firewall status, alert email config, collapsible setup instructions.
 
-## Installation
+### 🖥️ PHP & Server Extensions
+22 PHP extensions with loaded/missing status (9 required, 13 recommended).
 
-### Method 1: Direct Upload
-1. Download the latest release ZIP from [GitHub Releases](https://github.com/mikeyperes/hws-base-tools/releases)
-2. Go to **WordPress Admin → Plugins → Add New → Upload Plugin**
-3. Upload the ZIP file and click **Install Now**
-4. Activate the plugin
+### 📄 Error Logs
+Four-tab viewer: Fatal/Syntax Errors · debug.log · error_log · wp-admin/error_log. Real-time search, keyboard navigation, size display, delete buttons, display_errors indicator.
 
-### Method 2: Manual Installation
-```bash
-cd wp-content/plugins/
-git clone https://github.com/mikeyperes/hws-base-tools.git
-```
-
-### Method 3: From Plugin Dashboard
-Once installed, use the **Plugin Info** panel to:
-- Force update checks
-- Download specific versions
-- Update directly from GitHub
+### ⚙️ WP-Config Settings
+Toggle WP_DEBUG, WP_DEBUG_LOG, WP_DEBUG_DISPLAY, SCRIPT_DEBUG, DISABLE_WP_CRON, WP_MEMORY_LIMIT.
 
 ---
 
-## Dashboard
+## Plugins Tab
+Monitored plugins (11 total, 9 essential, 2 optional) with ESSENTIAL/OPTIONAL/PRO badges, batch install, auto-update controls, red flag plugin detection.
 
-Access the dashboard at **WordPress Admin → HWS Base Tools**
+## Themes Tab
+Active theme verification, auto-update status, batch delete, warning for >2 themes.
 
-### Dashboard Panels
+## Snippets Tab
+Toggle-based feature management with recommended badges: ACF Field Registration, Admin Features, Frontend Features.
 
-#### 📊 System Summary
-Displays critical system information at a glance:
-- PHP Version & Memory Limit
-- WordPress Version & Debug Status
-- Active Theme & Child Theme Detection
-- Database Size & Post Counts
-
-#### 🔴 Error Logs
-Three-tab interface for viewing logs:
-
-| Tab | Description |
-|-----|-------------|
-| **Fatal & Syntax** | Combined fatal/syntax errors from both logs |
-| **debug.log** | WordPress debug log (wp-content/debug.log) |
-| **error_log** | Server error log (site root) |
-
-**Search Features:**
-- Real-time highlighting as you type
-- `Enter` / `Shift+Enter` — Navigate between matches
-- `Escape` — Clear search
-- Match counter with current position
-
-#### ⚙️ WP-Config Settings
-Toggle these constants without editing files:
-- `WP_DEBUG` — Enable/disable debug mode
-- `WP_DEBUG_LOG` — Enable/disable debug logging
-- `WP_DEBUG_DISPLAY` — Show/hide errors on screen
-- `SCRIPT_DEBUG` — Use unminified scripts
-- `DISABLE_WP_CRON` — Disable WordPress cron
-
-#### 🔌 Plugin Info
-- Current version vs. latest GitHub version
-- **Force Update Check** — Clear caches and check immediately
-- **Update Now** — Direct install from GitHub
-- **Version History** — Download any tagged release
+## UI Cleanup Tab
+WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, footer text.
 
 ---
 
 ## Shortcodes
 
-### Founder Shortcode
-Display information about the designated "founder" user.
-
-```
-[founder id="attribute"]
-```
-
-| Attribute | Description |
+| Shortcode | Description |
 |-----------|-------------|
-| `title` / `name` | Display name |
-| `first_name` | First name |
-| `last_name` | Last name |
-| `email` | Email address |
-| `biography` | ACF biography field (with fallbacks) |
-| `avatar` | Avatar URL (200px) |
-| `website` | Website URL |
-| `url_facebook` | Facebook URL (from ACF urls group) |
-| `url_twitter` | Twitter/X URL |
-| `url_linkedin` | LinkedIn URL |
-| `url_instagram` | Instagram URL |
-| `url_youtube` | YouTube URL |
-| `additional_public_email` | Public contact email |
-| `additional_public_phone` | Public phone number |
-| `additional_title` | Professional title |
-
-**Example:**
-```html
-<p>Contact [founder id="first_name"] at [founder id="additional_public_email"]</p>
-```
-
-### Company Shortcode
-Display information about the designated "company" user.
-
-```
-[company id="attribute"]
-```
-
-Supports the same attributes as `[founder]`.
-
-**Example:**
-```html
-<footer>
-    <p>© [display_year] [company id="name"]</p>
-    <p>Phone: [company id="additional_public_phone"]</p>
-    <p>Email: [company id="additional_public_email"]</p>
-</footer>
-```
-
-### Education Shortcode
-Display education history from the user's repeater field.
-
-```
-[founder id="education"]
-[founder id="education" format="json"]
-[founder id="education" index="0"]
-[founder id="education" index="0" field="college"]
-[founder id="education" field="college"]
-```
-
-| Attribute | Description |
-|-----------|-------------|
-| `format` | Output format: `html` (default), `json`, `array` |
-| `index` | Specific entry index (0-based) |
-| `field` | Specific field: `college`, `wiki_url`, `year`, `designation`, `major` |
-
-**Examples:**
-```html
-<!-- Display all education as HTML -->
-[founder id="education"]
-
-<!-- Get first college name -->
-[founder id="education" index="0" field="college"]
-
-<!-- Get all college names (comma-separated) -->
-[founder id="education" field="college"]
-
-<!-- Get as JSON for JavaScript -->
-[founder id="education" format="json"]
-```
-
-**HTML Output CSS Classes:**
-- `.hws-education-list` — Container for all entries
-- `.hws-education-entry` — Single education entry
-- `.hws-education-college` — College/university name
-- `.hws-education-degree` — Degree container
-- `.hws-education-designation` — Degree type (B.S., M.A., etc.)
-- `.hws-education-major` — Field of study
-- `.hws-education-year` — Graduation year
-
-### SameAs Shortcode
-Display Schema.org sameAs URLs for structured data.
-
-```
-[founder id="sameas"]
-[founder id="sameas" format="json"]
-[founder id="sameas" format="ul"]
-```
-
-| Format | Description |
-|--------|-------------|
-| `text` | Newline-separated URLs (default) |
-| `json` | JSON array |
-| `ul` | HTML unordered list with links |
-| `array` | Serialized PHP array |
-
-**Examples:**
-```html
-<!-- For Schema.org JSON-LD -->
-<script type="application/ld+json">
-{
-  "@type": "Person",
-  "sameAs": [founder id="sameas" format="json"]
-}
-</script>
-
-<!-- Display as link list -->
-[founder id="sameas" format="ul"]
-```
-
-### Website Content Shortcode
-Display content from ACF website settings.
-
-```
-[website_content id="field_name"]
-```
-
-### Website URL Shortcode
-Output the site URL.
-
-```
-[website_url]
-```
-
-### Display Year Shortcode
-Output the current 4-digit year.
-
-```
-[display_year]
-```
+| `[founder id="..."]` | Founder user data (name, title, bio, social URLs, education, etc.) |
+| `[company id="..."]` | Company user data (same attributes as founder) |
+| `[website_content id="..."]` | ACF website settings options |
+| `[website_url]` | Site URL |
+| `[display_year]` | Current year |
 
 ---
 
-## Automated Tasks (Cron Jobs)
+## Automated Maintenance
 
-### 📁 Log File Cleaner
-
-**Purpose:** Automatically delete debug.log and error_log when they exceed size limits.
-
-| Setting | Default | Range |
-|---------|---------|-------|
-| Enabled | ✅ Yes | Toggle |
-| Interval | 5 days | 1-30 days |
-| Size Limit | 10 MB | 1-500 MB |
-
-**Dashboard Location:** HWS Base Tools → Log Cleaner panel
-
-### 📦 Backup Cleaner
-
-**Purpose:** Remove old backup files (*.sql, *.zip, *.tar.gz) from common backup locations.
-
-| Setting | Default |
-|---------|---------|
-| Enabled | ✅ Yes |
-| Retention | 5 days |
-| Schedule | Daily |
-
-**Scans these directories:**
-- `/wp-content/backups/`
-- `/wp-content/uploads/backups/`
-- `/wp-content/ai1wm-backups/`
-- `/wp-content/updraft/`
-
-### ⚡ Elementor Database Updater
-
-**Purpose:** Automatically run Elementor database updates to prevent the "Database Update Required" notice.
-
-| Setting | Default | Range |
-|---------|---------|-------|
-| Enabled | ✅ Yes | Toggle |
-| Interval | 3 days | 1-14 days |
-
-**Dashboard Location:** HWS Base Tools → Elementor Database Auto-Updater panel
-
-**Panel Shows:**
-- Elementor Version vs. DB Version comparison
-- Last run timestamp and report
-- Cron status with next scheduled run
-- Manual "Run Now" button
+| Task | Default | Description |
+|------|---------|-------------|
+| Log Cleaner | 5 days, 10MB | Deletes debug.log, error_log, wp-admin/error_log |
+| Backup Cleaner | Daily, 5 days | Removes backups from common directories |
+| Elementor DB Updater | 3 days | Auto-runs Elementor DB migrations |
 
 ---
 
-## GitHub Auto-Updater
+## Reusable Helper Functions
 
-The plugin includes a custom GitHub-based update system that integrates with WordPress's native updater.
+All in `generic-functions.php` for site-wide use:
 
-### Features
-
-- **Automatic Checks** — Polls GitHub every 30 minutes for new versions
-- **WordPress Integration** — Updates appear in Dashboard → Updates
-- **Version Comparison** — Compares local version against GitHub releases
-- **Proper Folder Naming** — Handles GitHub's `-main` suffix automatically
-
-### Manual Controls
-
-| Button | Action |
-|--------|--------|
-| **Force Update Check** | Clears all caches, checks GitHub immediately |
-| **Update Now from GitHub** | Downloads and installs latest version directly |
-| **Load Versions** | Fetches all tagged releases from GitHub |
-| **Download Selected Version** | Downloads any historical version |
-
-### Configuration
-
-Edit these values in `initialization.php` → `Config` class:
-
-```php
-public static $plugin_folder_name = "hws-base-tools";
-public static $github_repo = "mikeyperes/hws-base-tools";
-public static $github_branch = "main";
-```
-
----
-
-## Configuration
-
-### Config Class
-
-All plugin configuration is centralized in the `Config` class (`initialization.php`):
-
-```php
-class Config {
-    // Dashboard settings
-    public static $settings_page_name = "HWS Base Tools";
-    public static $settings_page_capability = "manage_options";
-    public static $settings_page_slug = "hws-core-tools";
-    
-    // Plugin identification
-    public static $plugin_folder_name = "hws-base-tools";
-    public static $github_repo = "mikeyperes/hws-base-tools";
-    public static $github_branch = "main";
-}
-```
-
-### ACF Requirements
-
-The shortcodes require Advanced Custom Fields (ACF) with specific field configurations:
-
-**Website Settings (Options Page):**
-- `website` → Group
-  - `founder` → User field (return format: array)
-  - `company` → User field (return format: array)
-
-**User Fields:**
-- `biography` → Textarea/WYSIWYG
-- `website` → URL
-- `urls` → Group containing platform URLs
-- `additional` → Group
-  - `public_email` → Email
-  - `public_phone` → Text
-  - `title` → Text
+| Function | Returns |
+|----------|---------|
+| `hws_check_redis_status()` | `{ active, extension, connected, litespeed_enabled, info{}, error }` |
+| `hws_check_brotli_support()` | `{ enabled, details }` |
+| `hws_get_litespeed_info()` | Full LiteSpeed config array (cache, CSS, JS, object cache) |
+| `hws_get_glc_settings_checks()` | Array of `{ label, pass, value }` for 25+ checks |
+| `check_cloudflare_active()` | CF-Ray/CF-Connecting-IP header detection + NS fallback |
+| `check_smtp_auth_status_and_mailer()` | Auth status for 15+ mail providers |
+| `check_myisam_tables()` | MyISAM detection scoped to current WP prefix |
+| `hws_check_php_extensions()` | 22 extensions with loaded/required status |
+| `hws_render_instructions()` | Reusable collapsible instruction box |
 
 ---
 
 ## Requirements
 
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| WordPress | 5.0+ | 6.0+ |
-| PHP | 7.4+ | 8.0+ |
-| ACF | 5.0+ | 6.0+ (for shortcodes) |
+| Requirement | Minimum |
+|-------------|---------|
+| WordPress | 6.0+ |
+| PHP | 8.1+ |
+| ACF Pro | 6.0+ |
+| LiteSpeed Cache | 6.0+ (for cache panel) |
 
-**Optional:**
-- Elementor (for DB auto-updater feature)
-- WP-Cron enabled (or server cron configured)
-
----
-
-## File Structure
-
-```
-hws-base-tools/
-├── initialization.php              # Main plugin file, Config class
-├── README.md                       # This file
-│
-├── settings-dashboard.php          # Main dashboard UI
-├── settings-dashboard-*.php        # Dashboard panel modules
-│   ├── settings-dashboard-plugin-info.php
-│   ├── settings-dashboard-system-checks.php
-│   ├── settings-dashboard-config.php
-│   ├── settings-dashboard-backups.php
-│   ├── settings-dashboard-log-delete-cron.php
-│   ├── settings-dashboard-elementor-db-cron.php
-│   ├── settings-dashboard-snippets.php
-│   └── ...
-│
-├── snippet-*.php                   # Feature modules
-│   ├── snippet-website-settings-functionality.php  # Shortcodes
-│   ├── snippet-login-mask.php
-│   ├── snippet-comments.php
-│   └── ...
-│
-├── register-acf-*.php              # ACF field registrations
-├── GitHub_Updater.php              # GitHub update integration
-├── helper.php                      # Utility functions
-├── safe-wrappers.php               # Safe AJAX/shell utilities
-│
-└── smp-core/                       # Scale My Podcast integrations
-    └── ...
-```
+**Essential Plugins:** ACF Pro, Elementor + Pro, Classic Editor, Wordfence, WP Mail SMTP, Rank Math SEO, WP User Avatars, LiteSpeed Cache
 
 ---
 
 ## Changelog
 
-### v10.5 (Latest)
-- ✨ **NEW:** Version history now shows commits (not just tags)
-- ✨ **NEW:** Color-coded admin cards (🔵 Blue = Company, 🟢 Green = Founder)
-- ✨ **NEW:** Education repeater for users (college, wiki_url, year, designation, major)
-- ✨ **NEW:** SameAs field for Schema.org structured data
-- ✨ **NEW:** Shortcodes for education and sameAs data with multiple formats
+### v10.9.2 (Current)
+- Fixed Redis redeclaration crash (function_exists guards)
+- Fixed LiteSpeed panel undefined array key errors (null-coalescing)
+- Fixed Cloudflare detection (HTTP headers first, nameservers fallback)
+- Fixed Redis detection (reads LiteSpeed's stored host/port/auth config)
+- Added display_errors, individual log checks, wp-admin/error_log to GLC
+- Added wp-admin/error_log tab to Error Logs
+- Removed SVG from recommended/GLC
+- Comprehensive README rewrite
 
-### v10.4
-- 📝 Added comprehensive README documentation for GitHub
+### v10.9.1
+- Going Live Checklist 3-column layout with 25+ checks
+- LiteSpeed Cache 4-column status panel
+- Robust Redis/Brotli/LiteSpeed helper functions
+- Removed memcached from PHP extensions
 
-### v10.3
-- ✨ **NEW:** Elementor Database Auto-Updater with cron scheduling
-- 🔧 Fixed log search to properly find matches in all content
-- 📦 Added version history dropdown for downloading older releases
-
-### v10.2
-- 🔍 Rewrote log search with reliable regex-based highlighting
-- 🐛 Fixed "No matches" bug when matches clearly existed
-
-### v10.1
-- ✨ Added real-time log search with keyboard navigation
-- 🎨 Search highlighting with current match indicator
-
-### v10.0
-- 🔧 **CRITICAL:** Fixed shortcode loading order for Elementor compatibility
-- 📜 Added version history panel with tag selection
-- 🔄 Shortcodes now load before any guards/hooks
-
-### v9.9
-- 🐛 Fixed shortcodes not rendering on frontend
-- 📍 Moved shortcode registration outside `init` hook
-
-### v9.8
-- ✨ Added Config class to eliminate hardcoded values
-- ⚡ Reduced GitHub cache from 6 hours to 30 minutes
-- 🔄 Added direct update functionality with folder name handling
+### v10.9.0
+- SMTP auth fix for all 15+ mailers
+- Plugin categorization (essential/optional/pro)
+- Quick Setup: auto-enable snippets + install plugins
+- Instruction system, Wordfence/Favicon setup guides
+- PHP Extensions panel, Schema.org removal, ACF title WYSIWYG
 
 ---
 
-## Support
-
-**Repository:** [github.com/mikeyperes/hws-base-tools](https://github.com/mikeyperes/hws-base-tools)
-
-**Issues:** [GitHub Issues](https://github.com/mikeyperes/hws-base-tools/issues)
-
----
-
-## License
-
-Proprietary - All Rights Reserved
-
-**Author:** Michael Peres  
-**Website:** [michaelperes.com](https://michaelperes.com)
+**Author:** Michael Peres · [michaelperes.com](https://michaelperes.com)

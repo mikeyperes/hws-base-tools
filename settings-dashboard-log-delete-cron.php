@@ -58,6 +58,7 @@ class Log_Cleaner_Config {
         return [
             'debug_log' => WP_CONTENT_DIR . '/debug.log',
             'error_log' => ABSPATH . 'error_log',
+            'admin_log' => ABSPATH . 'wp-admin/error_log',
         ];
     }
 }

@@ -332,29 +332,85 @@ if (!function_exists(__NAMESPACE__ . '\\add_settings_menu')) {
 
 
 if (!function_exists(__NAMESPACE__ . '\\check_smtp_auth_status_and_mailer')) {
+    /**
+     * Check SMTP authentication status using WP Mail SMTP stored options.
+     * Mirrors the plugin's own is_mailer_complete() logic for each provider.
+     *
+     * @since 10.9.0
+     * @return array { status: bool, mailer: string, raw_value: string }
+     */
     function check_smtp_auth_status_and_mailer() {
-        $status = false;
-        $mailer = '';
-        $details = 'No details available';
-    
-        if (is_plugin_active('wp-mail-smtp/wp_mail_smtp.php')) {
-            $wp_mail_smtp_options = get_option('wp_mail_smtp');
-            $mailer = $wp_mail_smtp_options['mail']['mailer'] ?? 'Unknown';
-            
-            if ($mailer === 'smtp' || $mailer === 'sendinblue') {
-                $status = true;
-                $details = $wp_mail_smtp_options['mail']['from_email'] ?? 'Unknown';
-            } else {
-                $details = 'Authenticated domain could not be determined for the mailer: ' . $mailer;
-            }
+        // — Plugin must be active
+        if ( ! is_plugin_active( 'wp-mail-smtp/wp_mail_smtp.php' ) ) {
+            return [ 'status' => false, 'mailer' => '', 'raw_value' => 'WP Mail SMTP not active' ];
         }
-    
-        // Always return the structure with status, mailer, and details
-        return [
-            'status' => $status,
-            'mailer' => $mailer,
-            'raw_value' => $details." - ".$mailer
+
+        // — Read the plugin's stored options (same source is_mailer_complete reads)
+        $opts   = get_option( 'wp_mail_smtp', [] );
+        $mailer = $opts['mail']['mailer'] ?? 'none';
+        $from   = $opts['mail']['from_email'] ?? '';
+
+        // — PHP mail() and "none" have no authentication layer
+        if ( $mailer === 'mail' || $mailer === 'none' ) {
+            return [
+                'status'    => false,
+                'mailer'    => $mailer,
+                'raw_value' => $mailer === 'mail'
+                    ? 'PHP mail() — no SMTP authentication'
+                    : 'No mailer configured',
+            ];
+        }
+
+        // — API-key-based mailers: each stores api_key under $opts[$mailer]['api_key']
+        $api_key_mailers = [
+            'sendgrid', 'sendinblue', 'sparkpost', 'mandrill',
+            'sendlayer', 'smtp2go', 'smtpcom', 'elasticemail',
+            'mailjet', 'pepipostapi', 'mailersend', 'resend',
         ];
+        if ( in_array( $mailer, $api_key_mailers, true ) ) {
+            $mailer_opts = $opts[ $mailer ] ?? [];
+            $has_key     = ! empty( $mailer_opts['api_key'] );
+            return [
+                'status'    => $has_key,
+                'mailer'    => $mailer,
+                'raw_value' => $has_key
+                    ? esc_html( $from ) . ' — ' . $mailer
+                    : 'API key missing — ' . $mailer,
+            ];
+        }
+
+        // — Mailgun: needs api_key AND domain
+        if ( $mailer === 'mailgun' ) {
+            $mg = $opts['mailgun'] ?? [];
+            $ok = ! empty( $mg['api_key'] ) && ! empty( $mg['domain'] );
+            return [ 'status' => $ok, 'mailer' => 'mailgun',
+                'raw_value' => $ok ? esc_html($from).' — Mailgun ('.$mg['domain'].')' : 'Mailgun API key or domain missing' ];
+        }
+
+        // — Postmark: uses server_api_token
+        if ( $mailer === 'postmark' ) {
+            $ok = ! empty( ($opts['postmark'] ?? [])['server_api_token'] );
+            return [ 'status' => $ok, 'mailer' => 'postmark',
+                'raw_value' => $ok ? esc_html($from).' — Postmark' : 'Postmark server API token missing' ];
+        }
+
+        // — SMTP mailer: needs host AND port
+        if ( $mailer === 'smtp' ) {
+            $s = $opts['smtp'] ?? [];
+            $ok = ! empty( $s['host'] ) && ! empty( $s['port'] );
+            return [ 'status' => $ok, 'mailer' => 'smtp',
+                'raw_value' => $ok ? esc_html($from).' — SMTP ('.$s['host'].')' : 'SMTP host/port not configured' ];
+        }
+
+        // — OAuth mailers (Gmail, Outlook, Zoho): check client_id
+        if ( in_array( $mailer, [ 'gmail', 'outlook', 'zoho' ], true ) ) {
+            $ok = ! empty( ($opts[ $mailer ] ?? [])['client_id'] );
+            return [ 'status' => $ok, 'mailer' => $mailer,
+                'raw_value' => $ok ? esc_html($from).' — '.ucfirst($mailer).' OAuth' : ucfirst($mailer).' not authorized' ];
+        }
+
+        // — Unknown mailer: assume configured
+        return [ 'status' => true, 'mailer' => $mailer, 'raw_value' => esc_html($from).' — '.$mailer ];
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_smtp_auth_status_and_mailer function is already declared",true);
 
@@ -1652,29 +1708,68 @@ function render_enable_plugin_auto_updates_button() {
 
 // Check if Cloudflare is active and get nameservers
 function check_cloudflare_active() {
-    // Get the domain from the server name
-    $domain = $_SERVER['SERVER_NAME'];
-    
-    // Get the nameservers for the domain
-    $nameservers = dns_get_record($domain, DNS_NS);
-    $nameserver_list = [];
+    $details = [];
+    $is_active = false;
 
-    foreach ($nameservers as $ns) {
-        $nameserver_list[] = $ns['target'];
+    // — Method 1 (most reliable): Check for Cloudflare headers in $_SERVER
+    //   CF sets these on every proxied request regardless of nameserver config
+    if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+        $is_active = true;
+        $details[] = 'CF-Connecting-IP header present';
+    }
+    if ( ! empty( $_SERVER['HTTP_CF_RAY'] ) ) {
+        $is_active = true;
+        $details[] = 'CF-Ray: ' . sanitize_text_field( $_SERVER['HTTP_CF_RAY'] );
     }
 
-    // Check if any of the nameservers indicate Cloudflare
-    $is_active = false;
-    foreach ($nameserver_list as $ns) {
-        if (strpos($ns, 'cloudflare') !== false) {
-            $is_active = true;
-            break;
+    // — Method 2: Self-request to check response headers
+    if ( ! $is_active ) {
+        $response = wp_remote_get( home_url( '/' ), [
+            'timeout'   => 5,
+            'sslverify' => false,
+            'headers'   => [ 'Cache-Control' => 'no-cache' ],
+        ] );
+        if ( ! is_wp_error( $response ) ) {
+            $cf_ray    = wp_remote_retrieve_header( $response, 'cf-ray' );
+            $cf_cache  = wp_remote_retrieve_header( $response, 'cf-cache-status' );
+            $server_hd = wp_remote_retrieve_header( $response, 'server' );
+            if ( $cf_ray ) {
+                $is_active = true;
+                $details[] = 'CF-Ray: ' . $cf_ray;
+            }
+            if ( $cf_cache ) {
+                $details[] = 'Cache: ' . $cf_cache;
+            }
+            if ( stripos( $server_hd, 'cloudflare' ) !== false ) {
+                $is_active = true;
+                $details[] = 'Server: cloudflare';
+            }
+        }
+    }
+
+    // — Method 3 (fallback): Check nameservers
+    if ( ! $is_active ) {
+        $domain = wp_parse_url( home_url(), PHP_URL_HOST );
+        $ns_records = @dns_get_record( $domain, DNS_NS );
+        $ns_list = [];
+        if ( is_array( $ns_records ) ) {
+            foreach ( $ns_records as $ns ) {
+                $ns_list[] = $ns['target'] ?? '';
+                if ( stripos( $ns['target'] ?? '', 'cloudflare' ) !== false ) {
+                    $is_active = true;
+                }
+            }
+        }
+        if ( ! empty( $ns_list ) ) {
+            $details[] = 'NS: ' . implode( ', ', $ns_list );
         }
     }
 
     return [
-        'status' => $is_active,
-        'raw_value' => $is_active ? 'Cloudflare is active. Nameservers: ' . implode(', ', $nameserver_list) : 'Cloudflare is not active. Nameservers: ' . implode(', ', $nameserver_list)
+        'status'    => $is_active,
+        'raw_value' => $is_active
+            ? 'Cloudflare active — ' . implode( ' · ', $details )
+            : 'Not detected' . ( ! empty( $details ) ? ' (' . implode( ', ', $details ) . ')' : '' ),
     ];
 }
 // Check the type of PHP (CloudLinux or other)
@@ -2035,328 +2130,930 @@ if (!function_exists(__NAMESPACE__ . '\\toggle_php_ini_value')) {
  *                • <h3> for “Display Conditions”
  *                • <ul> for condition sets, nested <ul> for individual rules
  */
+/**
+ * Generate a detailed, recursive HTML hierarchy for one or more ACF field groups.
+ * Shows field name, label, key, and type. Handles nested groups, repeaters, and
+ * flexible content layouts recursively to any depth.
+ *
+ * @param string|array $group_keys  Single group key or array of group keys
+ * @param bool         $deprecated  If true, shows with red background (pending delete)
+ * @return string  HTML output
+ */
+/**
+ * Returns a CLOSURE that renders ACF field group structure(s) as HTML.
+ *
+ * Returning a closure (instead of a string) ensures the ACF field groups are
+ * looked up lazily — at render time on the admin page — rather than eagerly
+ * at array-construction time inside get_snippets(), when the groups may not
+ * yet be registered.
+ *
+ * Both snippet renderers (settings-dashboard-snippets.php and
+ * settings-dashboard-website-types.php) already handle callable 'info' values
+ * via is_callable() + call_user_func().
+ *
+ * @param string|array $group_keys  One ACF group key or an array of keys.
+ * @param bool         $deprecated  Whether to style the box as deprecated.
+ * @return callable                 Closure that returns HTML string when invoked.
+ */
 function display_acf_structure( $group_keys, $deprecated = false ) {
-    // If ACF isn’t active, bail early.
-    if ( ! function_exists( 'acf_get_field_groups' ) ) {
-        return '';
+    // — Return a closure so it's evaluated lazily at render time
+    return function() use ( $group_keys, $deprecated ) {
+        // — Bail if ACF isn't active
+        if ( ! function_exists( 'acf_get_field_group' ) ) {
+            return '<em style="color:#999;">ACF not active — cannot display field structure.</em>';
+        }
+
+        $keys   = is_array( $group_keys ) ? $group_keys : [ $group_keys ];
+        $output = '';
+
+        foreach ( $keys as $group_key ) {
+            // — Fetch the group object using the correct singular API
+            //   acf_get_field_group( $key ) returns the group array or false
+            //   (acf_get_field_groups() with a key filter does NOT work reliably)
+            $group = acf_get_field_group( $group_key );
+            if ( empty( $group ) ) {
+                // — Group not registered — show a helpful fallback instead of nothing
+                $output .= '<div style="border:1px solid #dba617;border-radius:6px;padding:10px;margin-bottom:12px;background:#fff8e5;font-size:12px;color:#6a5400;">'
+                         . '⚠️ ACF group <code>' . esc_html( $group_key ) . '</code> not found. '
+                         . 'Enable the snippet that registers it, or verify the group key.'
+                         . '</div>';
+                continue;
+            }
+
+            // — Background color based on deprecation
+            $bg     = $deprecated ? 'rgba(255,0,0,0.08)' : '#f8f9fa';
+            $border = $deprecated ? '#d63638' : '#ddd';
+
+            // — Open group container
+            $output .= '<div style="border:1px solid ' . $border . ';border-radius:6px;padding:14px;margin-bottom:16px;font-family:-apple-system,sans-serif;background:' . $bg . ';font-size:13px;">';
+
+            // — Group title + key
+            $output .= '<div style="font-weight:700;font-size:14px;margin-bottom:10px;color:#1d2327;">'
+                     . esc_html( $group['title'] )
+                     . ' <code style="background:#e0e0e0;padding:2px 6px;border-radius:3px;font-size:11px;color:#555;font-weight:400;">'
+                     . esc_html( $group_key )
+                     . '</code></div>';
+
+            // — Render fields recursively
+            $fields = acf_get_fields( $group_key );
+            if ( ! empty( $fields ) ) {
+                $output .= hws_render_acf_fields_recursive( $fields, 0 );
+            } else {
+                $output .= '<div style="color:#999;font-size:12px;font-style:italic;">No fields found in this group.</div>';
+            }
+
+            // — Display conditions (location rules)
+            if ( isset( $group['location'] ) && is_array( $group['location'] ) && ! empty( $group['location'] ) ) {
+                $output .= '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #ddd;">';
+                $output .= '<div style="font-weight:600;color:#646970;font-size:12px;margin-bottom:4px;">📍 Display Conditions</div>';
+                foreach ( $group['location'] as $si => $rules ) {
+                    $parts = [];
+                    foreach ( $rules as $rule ) {
+                        $parts[] = esc_html( ( $rule['param'] ?? '' ) . ' ' . ( $rule['operator'] ?? '' ) . ' ' . ( $rule['value'] ?? '' ) );
+                    }
+                    $output .= '<div style="font-size:12px;color:#888;margin-left:12px;">Set ' . ( $si + 1 ) . ': ' . implode( ' AND ', $parts ) . '</div>';
+                }
+                $output .= '</div>';
+            }
+
+            $output .= '</div>';
+        }
+
+        return $output;
+    };
+}
+
+
+/**
+ * Recursively render ACF fields as a nested HTML list.
+ * Handles: group, repeater, flexible_content (with layouts), and all leaf types.
+ *
+ * @param array $fields  Array of ACF field definitions
+ * @param int   $depth   Current nesting depth (for indentation)
+ * @return string HTML output
+ */
+function hws_render_acf_fields_recursive( array $fields, int $depth = 0 ): string {
+    if ( empty( $fields ) ) return '';
+
+    $indent = $depth * 16;
+    $output = '<div style="margin-left:' . $indent . 'px;">';
+
+    foreach ( $fields as $field ) {
+        $name  = $field['name'] ?? '';
+        $label = $field['label'] ?? '';
+        $key   = $field['key'] ?? '';
+        $type  = $field['type'] ?? '';
+
+        // — Type badge color
+        $type_color = '#646970';
+        if ( in_array( $type, [ 'group', 'repeater', 'flexible_content' ], true ) ) {
+            $type_color = '#2271b1';
+        }
+
+        // — Field row
+        $output .= '<div style="padding:3px 0;border-bottom:1px solid #f0f0f1;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">';
+
+        // — Expand indicator for parent fields
+        if ( in_array( $type, [ 'group', 'repeater', 'flexible_content' ], true ) ) {
+            $output .= '<span style="color:#2271b1;font-weight:700;">▼</span>';
+        } else {
+            $output .= '<span style="color:#ddd;margin-left:2px;">·</span>';
+        }
+
+        // — Field name (bold)
+        $output .= '<span style="font-weight:600;color:#1d2327;">' . esc_html( $name ) . '</span>';
+
+        // — Label
+        if ( $label && $label !== $name ) {
+            $output .= '<span style="color:#646970;"> — ' . esc_html( $label ) . '</span>';
+        }
+
+        // — Type badge
+        $output .= '<code style="background:#f0f0f1;padding:1px 5px;border-radius:3px;font-size:11px;color:' . $type_color . ';">' . esc_html( $type ) . '</code>';
+
+        // — Field key
+        $output .= '<code style="font-size:10px;color:#999;">' . esc_html( $key ) . '</code>';
+
+        $output .= '</div>';
+
+        // — Recurse into sub_fields (group, repeater)
+        if ( in_array( $type, [ 'group', 'repeater' ], true ) && ! empty( $field['sub_fields'] ) ) {
+            $output .= hws_render_acf_fields_recursive( $field['sub_fields'], $depth + 1 );
+        }
+
+        // — Recurse into flexible content layouts
+        if ( $type === 'flexible_content' && ! empty( $field['layouts'] ) ) {
+            foreach ( $field['layouts'] as $layout ) {
+                $layout_label = $layout['label'] ?? $layout['name'] ?? 'Layout';
+                $layout_key   = $layout['key'] ?? '';
+                $output .= '<div style="margin-left:' . ( ( $depth + 1 ) * 16 ) . 'px;padding:3px 0;color:#8c5e00;font-size:12px;">';
+                $output .= '📐 <strong>' . esc_html( $layout_label ) . '</strong>';
+                if ( $layout_key ) {
+                    $output .= ' <code style="font-size:10px;color:#999;">' . esc_html( $layout_key ) . '</code>';
+                }
+                $output .= '</div>';
+                if ( ! empty( $layout['sub_fields'] ) ) {
+                    $output .= hws_render_acf_fields_recursive( $layout['sub_fields'], $depth + 2 );
+                }
+            }
+        }
     }
 
-    // Normalize into an array
-    $keys   = is_array( $group_keys ) ? $group_keys : [ $group_keys ];
-    $output = '';
+    $output .= '</div>';
+    return $output;
+}
 
-    foreach ( $keys as $group_key ) {
-        // 1) Fetch the group object (title, location, etc.)
-        $groups = acf_get_field_groups( [ 'key' => $group_key ] );
-        if ( empty( $groups ) ) {
-            continue;
+/**
+ * Returns a CLOSURE that renders CPT (Custom Post Type) structure as HTML.
+ *
+ * Same lazy-evaluation pattern as display_acf_structure():
+ * the post type is looked up at render time when the admin page displays,
+ * not at array-construction time inside get_snippets().
+ *
+ * @param string $cpt_slug  The registered post type slug (e.g. 'team-member').
+ * @return callable          Closure that returns HTML string when invoked.
+ */
+function display_cpt_structure( string $cpt_slug ) {
+    // — Return a closure so CPT lookup happens lazily at render time
+    return function() use ( $cpt_slug ) {
+        // — Get the post type object; if not registered, show helpful fallback
+        $pt_obj = get_post_type_object( $cpt_slug );
+        if ( ! $pt_obj ) {
+            return '<div style="border:1px solid #dba617;border-radius:6px;padding:10px;margin-bottom:12px;background:#fff8e5;font-size:12px;color:#6a5400;">'
+                 . '⚠️ CPT <code>' . esc_html( $cpt_slug ) . '</code> not registered. '
+                 . 'Enable the snippet that registers it.'
+                 . '</div>';
         }
-        $group = reset( $groups );
 
-        // Determine background color based on deprecation flag
-        $bg_color = $deprecated ? 'rgba(255,0,0,0.5)' : '#f9f9f9';
+        $output = '';
 
-        // 2) Open group container
+        // — Open CPT container
         $output .= '<div style="'
-                 . 'border:1px solid #ccc;'
+                 . 'border:1px solid #666;'
                  . 'border-radius:4px;'
                  . 'padding:16px;'
                  . 'margin-bottom:24px;'
                  . 'font-family:Arial, sans-serif;'
-                 . 'background-color:' . $bg_color . ';'
+                 . 'background-color:#f5f5f5;'
                  . '">';
 
-                 
-        // 3) Group title and key
+        // — CPT title and slug
         $output .= '<h2 style="'
                  . 'margin:0 0 12px;'
                  . 'font-size:1.25em;'
-                 . 'color:#333;'
+                 . 'color:#222;'
                  . '">'
-                 . esc_html( $group['title'] )
+                 . esc_html( $pt_obj->labels->name )
                  . ' <code style="'
-                 . 'background:#eaeaea;'
+                 . 'background:#e0e0e0;'
                  . 'padding:2px 4px;'
                  . 'border-radius:3px;'
                  . 'font-size:0.9em;'
-                 . 'color:#555;'
+                 . 'color:#444;'
                  . '">'
-                 . esc_html( $group_key )
+                 . esc_html( $cpt_slug )
                  . '</code>'
                  . '</h2>';
 
-        // 4) List all fields
-        $fields = acf_get_fields( $group_key );
-        if ( ! empty( $fields ) ) {
+        // — 1) Labels Section
+        $output .= '<h3 style="'
+                 . 'margin:12px 0 6px;'
+                 . 'font-size:1.1em;'
+                 . 'color:#333;'
+                 . '">'
+                 . 'Labels'
+                 . '</h3>';
+        $output .= '<ul style="'
+                 . 'list-style-type:disc;'
+                 . 'margin:0 0 16px 20px;'
+                 . 'padding:0;'
+                 . '">';
+        $label_props = [
+            'singular_name', 'add_new_item', 'edit_item', 'view_item',
+            'all_items', 'menu_name', 'archives', 'attributes',
+            'insert_into_item', 'uploaded_to_this_item', 'filter_items_list',
+            'search_items', 'not_found', 'not_found_in_trash',
+            'items_list', 'items_list_navigation'
+        ];
+        foreach ( $label_props as $prop ) {
+            if ( isset( $pt_obj->labels->$prop ) && $pt_obj->labels->$prop !== '' ) {
+                $output .= '<li style="margin-bottom:6px;">'
+                         . '<span style="font-weight:bold; color:#222;">'
+                         . esc_html( $prop )
+                         . '</span>: '
+                         . '<span style="color:#555;">'
+                         . esc_html( $pt_obj->labels->$prop )
+                         . '</span>'
+                         . '</li>';
+            }
+        }
+        $output .= '</ul>';
+
+        // — 2) Supports Section
+        if ( ! empty( $pt_obj->supports ) ) {
+            $output .= '<h3 style="'
+                     . 'margin:12px 0 6px;'
+                     . 'font-size:1.1em;'
+                     . 'color:#333;'
+                     . '">'
+                     . 'Supported Features'
+                     . '</h3>';
             $output .= '<ul style="'
                      . 'list-style-type:disc;'
                      . 'margin:0 0 16px 20px;'
                      . 'padding:0;'
                      . '">';
-            foreach ( $fields as $field ) {
-                // Top-level field: “name – Label (type)”
-                $output .= '<li style="margin-bottom:6px;">'
-                         . '<span style="font-weight:bold; color:#222;">'
-                         . esc_html( $field['name'] )
-                         . '</span> – '
-                         . '<span style="color:#555;">'
-                         . esc_html( $field['label'] )
-                         . '</span> '
-                         . '<em style="color:#999;">('
-                         . esc_html( $field['type'] )
-                         . ')</em>';
-
-                // 4a) If this field is a “group,” show its sub_fields indented
-                if ( isset( $field['type'], $field['sub_fields'] ) 
-                     && $field['type'] === 'group' 
-                     && ! empty( $field['sub_fields'] ) ) {
-                    $output .= '<ul style="'
-                             . 'list-style-type:circle;'
-                             . 'margin:8px 0 0 20px;'
-                             . 'padding:0;'
-                             . '">';
-                    foreach ( $field['sub_fields'] as $sub_field ) {
-                        $output .= '<li style="margin-bottom:4px;">'
-                                 . '<span style="font-weight:bold; color:#222;">'
-                                 . esc_html( $sub_field['name'] )
-                                 . '</span> – '
-                                 . '<span style="color:#555;">'
-                                 . esc_html( $sub_field['label'] )
-                                 . '</span> '
-                                 . '<em style="color:#999;">('
-                                 . esc_html( $sub_field['type'] )
-                                 . ')</em>'
-                                 . '</li>';
-                    }
-                    $output .= '</ul>';
-                }
-
-                $output .= '</li>';
+            foreach ( $pt_obj->supports as $support ) {
+                $output .= '<li style="margin-bottom:6px; color:#555;">'
+                         . esc_html( $support )
+                         . '</li>';
             }
             $output .= '</ul>';
         }
 
-        // 5) Display Conditions heading
-        if ( isset( $group['location'] ) && is_array( $group['location'] ) ) {
+        // — 3) Taxonomies Section
+        if ( ! empty( $pt_obj->taxonomies ) ) {
             $output .= '<h3 style="'
-                     . 'margin:0 0 8px;'
+                     . 'margin:12px 0 6px;'
                      . 'font-size:1.1em;'
                      . 'color:#333;'
                      . '">'
-                     . 'Display Conditions'
+                     . 'Attached Taxonomies'
                      . '</h3>';
-
             $output .= '<ul style="'
                      . 'list-style-type:disc;'
-                     . 'margin:0 0 0 20px;'
+                     . 'margin:0 0 16px 20px;'
                      . 'padding:0;'
                      . '">';
-            foreach ( $group['location'] as $set_index => $rules ) {
-                $set_num = $set_index + 1;
-                $output .= '<li style="margin-bottom:6px;">'
-                         . '<strong style="color:#444;">Condition Set '
-                         . esc_html( $set_num )
-                         . '</strong>'
-                         . '<ul style="'
-                         . 'list-style-type:circle;'
-                         . 'margin:4px 0 0 20px;'
-                         . 'padding:0;'
-                         . '">';
-                foreach ( $rules as $rule ) {
-                    $param    = $rule['param']    ?? '';
-                    $operator = $rule['operator'] ?? '';
-                    $value    = $rule['value']    ?? '';
-                    $output  .= '<li style="margin-bottom:4px; color:#555;">'
-                              . esc_html( "{$param} {$operator} {$value}" )
-                              . '</li>';
-                }
-                $output .= '</ul></li>';
+            foreach ( $pt_obj->taxonomies as $tax ) {
+                $output .= '<li style="margin-bottom:6px; color:#555;">'
+                         . esc_html( $tax )
+                         . '</li>';
             }
             $output .= '</ul>';
         }
 
-        // 6) Close group container
+        // — 4) Flags & Arguments Section
+        $output .= '<h3 style="'
+                 . 'margin:12px 0 6px;'
+                 . 'font-size:1.1em;'
+                 . 'color:#333;'
+                 . '">'
+                 . 'Settings & Flags'
+                 . '</h3>';
+        $output .= '<ul style="'
+                 . 'list-style-type:disc;'
+                 . 'margin:0 0 0 20px;'
+                 . 'padding:0;'
+                 . '">';
+        // — Public
+        $output .= '<li style="margin-bottom:6px; color:#555;">'
+                 . '<strong>public</strong>: '
+                 . ( $pt_obj->public ? 'true' : 'false' )
+                 . '</li>';
+        // — Show in REST
+        $show_in_rest = isset( $pt_obj->show_in_rest ) ? $pt_obj->show_in_rest : false;
+        $output     .= '<li style="margin-bottom:6px; color:#555;">'
+                     . '<strong>show_in_rest</strong>: '
+                     . ( $show_in_rest ? 'true' : 'false' )
+                     . '</li>';
+        // — Menu Icon
+        $menu_icon = isset( $pt_obj->menu_icon ) && $pt_obj->menu_icon !== '' 
+                     ? esc_html( $pt_obj->menu_icon ) 
+                     : '—';
+        $output  .= '<li style="margin-bottom:6px; color:#555;">'
+                  . '<strong>menu_icon</strong>: '
+                  . $menu_icon
+                  . '</li>';
+        // — Delete with user
+        $del_with_user = isset( $pt_obj->delete_with_user ) && $pt_obj->delete_with_user 
+                         ? 'true' 
+                         : 'false';
+        $output     .= '<li style="margin-bottom:6px; color:#555;">'
+                     . '<strong>delete_with_user</strong>: '
+                     . $del_with_user
+                     . '</li>';
+        $output .= '</ul>';
+
+        // — Close CPT container
         $output .= '</div>';
-    }
 
-    return $output;
+        return $output;
+    };
 }
-
 
 
 /**
- * Generate a styled HTML output for a registered custom post type (CPT),
- * listing its main arguments (labels, supports, taxonomies, and flags)
- * in a clear, nested format with inline CSS.
- *
- * @param string $cpt_slug The slug of the registered CPT (e.g., 'organization').
- * @return string HTML string with improved styling:
- *                • <div> wrapper per CPT
- *                • <h2> for CPT name and slug
- *                • <h3> and <ul> for Labels, Supports, Taxonomies, and Flags
+ * ═══════════════════════════════════════════════════════════════════════════
+ * REUSABLE INSTRUCTION BOX RENDERER
+ * ═══════════════════════════════════════════════════════════════════════════
+ * @since 10.9.0
  */
-
- 
-function display_cpt_structure( string $cpt_slug ): string {
-    // Get the post type object; if not registered, return empty string
-    $pt_obj = get_post_type_object( $cpt_slug );
-    if ( ! $pt_obj ) {
-        return '';
+if ( ! function_exists( __NAMESPACE__ . '\\hws_render_instructions' ) ) {
+function hws_render_instructions( $title, $steps, $icon = '📋', $collapsed = true ) {
+    $uid     = 'hws-instr-' . substr( md5( $title . count( $steps ) ), 0, 8 );
+    $display = $collapsed ? 'none' : 'block';
+    $arrow   = $collapsed ? '▶' : '▼';
+    $html  = '<div class="hws-instruction-box" style="margin-top:12px;border:1px solid #c3d9f0;border-radius:6px;background:#f0f7ff;">';
+    $html .= '<div onclick="(function(el){var b=document.getElementById(\'' . $uid . '\');var a=el.querySelector(\'.hws-instr-arrow\');if(b.style.display===\'none\'){b.style.display=\'block\';a.textContent=\'▼\';}else{b.style.display=\'none\';a.textContent=\'▶\';}})(this)" '
+           . 'style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;user-select:none;">'
+           . '<span class="hws-instr-arrow">' . $arrow . '</span> ' . $icon . ' ' . esc_html( $title )
+           . '</div>';
+    $html .= '<div id="' . $uid . '" style="display:' . $display . ';padding:0 14px 12px;">';
+    $html .= '<ol style="margin:0;padding-left:20px;font-size:12.5px;line-height:1.8;color:#1d2327;">';
+    foreach ( $steps as $step ) {
+        $html .= '<li style="margin-bottom:4px;">' . $step . '</li>';
     }
-
-    $output = '';
-
-    // Open CPT container
-    $output .= '<div style="'
-             . 'border:1px solid #666;'
-             . 'border-radius:4px;'
-             . 'padding:16px;'
-             . 'margin-bottom:24px;'
-             . 'font-family:Arial, sans-serif;'
-             . 'background-color:#f5f5f5;'
-             . '">';
-
-    // CPT title and slug
-    $output .= '<h2 style="'
-             . 'margin:0 0 12px;'
-             . 'font-size:1.25em;'
-             . 'color:#222;'
-             . '">'
-             . esc_html( $pt_obj->labels->name )
-             . ' <code style="'
-             . 'background:#e0e0e0;'
-             . 'padding:2px 4px;'
-             . 'border-radius:3px;'
-             . 'font-size:0.9em;'
-             . 'color:#444;'
-             . '">'
-             . esc_html( $cpt_slug )
-             . '</code>'
-             . '</h2>';
-
-    // 1) Labels Section
-    $output .= '<h3 style="'
-             . 'margin:12px 0 6px;'
-             . 'font-size:1.1em;'
-             . 'color:#333;'
-             . '">'
-             . 'Labels'
-             . '</h3>';
-    $output .= '<ul style="'
-             . 'list-style-type:disc;'
-             . 'margin:0 0 16px 20px;'
-             . 'padding:0;'
-             . '">';
-    $label_props = [
-        'singular_name', 'add_new_item', 'edit_item', 'view_item',
-        'all_items', 'menu_name', 'archives', 'attributes',
-        'insert_into_item', 'uploaded_to_this_item', 'filter_items_list',
-        'search_items', 'not_found', 'not_found_in_trash',
-        'items_list', 'items_list_navigation'
-    ];
-    foreach ( $label_props as $prop ) {
-        if ( isset( $pt_obj->labels->$prop ) && $pt_obj->labels->$prop !== '' ) {
-            $output .= '<li style="margin-bottom:6px;">'
-                     . '<span style="font-weight:bold; color:#222;">'
-                     . esc_html( $prop )
-                     . '</span>: '
-                     . '<span style="color:#555;">'
-                     . esc_html( $pt_obj->labels->$prop )
-                     . '</span>'
-                     . '</li>';
-        }
-    }
-    $output .= '</ul>';
-
-    // 2) Supports Section
-    if ( ! empty( $pt_obj->supports ) ) {
-        $output .= '<h3 style="'
-                 . 'margin:12px 0 6px;'
-                 . 'font-size:1.1em;'
-                 . 'color:#333;'
-                 . '">'
-                 . 'Supported Features'
-                 . '</h3>';
-        $output .= '<ul style="'
-                 . 'list-style-type:disc;'
-                 . 'margin:0 0 16px 20px;'
-                 . 'padding:0;'
-                 . '">';
-        foreach ( $pt_obj->supports as $support ) {
-            $output .= '<li style="margin-bottom:6px; color:#555;">'
-                     . esc_html( $support )
-                     . '</li>';
-        }
-        $output .= '</ul>';
-    }
-
-    // 3) Taxonomies Section
-    if ( ! empty( $pt_obj->taxonomies ) ) {
-        $output .= '<h3 style="'
-                 . 'margin:12px 0 6px;'
-                 . 'font-size:1.1em;'
-                 . 'color:#333;'
-                 . '">'
-                 . 'Attached Taxonomies'
-                 . '</h3>';
-        $output .= '<ul style="'
-                 . 'list-style-type:disc;'
-                 . 'margin:0 0 16px 20px;'
-                 . 'padding:0;'
-                 . '">';
-        foreach ( $pt_obj->taxonomies as $tax ) {
-            $output .= '<li style="margin-bottom:6px; color:#555;">'
-                     . esc_html( $tax )
-                     . '</li>';
-        }
-        $output .= '</ul>';
-    }
-
-    // 4) Flags & Arguments Section
-    $output .= '<h3 style="'
-             . 'margin:12px 0 6px;'
-             . 'font-size:1.1em;'
-             . 'color:#333;'
-             . '">'
-             . 'Settings & Flags'
-             . '</h3>';
-    $output .= '<ul style="'
-             . 'list-style-type:disc;'
-             . 'margin:0 0 0 20px;'
-             . 'padding:0;'
-             . '">';
-    // Public
-    $output .= '<li style="margin-bottom:6px; color:#555;">'
-             . '<strong>public</strong>: '
-             . ( $pt_obj->public ? 'true' : 'false' )
-             . '</li>';
-    // Show in REST
-    $show_in_rest = isset( $pt_obj->show_in_rest ) ? $pt_obj->show_in_rest : false;
-    $output     .= '<li style="margin-bottom:6px; color:#555;">'
-                 . '<strong>show_in_rest</strong>: '
-                 . ( $show_in_rest ? 'true' : 'false' )
-                 . '</li>';
-    // Menu Icon
-    $menu_icon = isset( $pt_obj->menu_icon ) && $pt_obj->menu_icon !== '' 
-                 ? esc_html( $pt_obj->menu_icon ) 
-                 : '—';
-    $output  .= '<li style="margin-bottom:6px; color:#555;">'
-              . '<strong>menu_icon</strong>: '
-              . $menu_icon
-              . '</li>';
-    // Delete with user (if registered via args)
-    $del_with_user = isset( $pt_obj->delete_with_user ) && $pt_obj->delete_with_user 
-                     ? 'true' 
-                     : 'false';
-    $output     .= '<li style="margin-bottom:6px; color:#555;">'
-                 . '<strong>delete_with_user</strong>: '
-                 . $del_with_user
-                 . '</li>';
-    $output .= '</ul>';
-
-    // Close CPT container
-    $output .= '</div>';
-
-    return $output;
+    $html .= '</ol></div></div>';
+    return $html;
+}
 }
 
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * PHP EXTENSION / LIBRARY CHECK FOR WORDPRESS
+ * ═══════════════════════════════════════════════════════════════════════════
+ * @since 10.9.0
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_check_php_extensions' ) ) {
+function hws_check_php_extensions() {
+    return [
+        [ 'name' => 'mysqli',    'loaded' => extension_loaded('mysqli'),       'purpose' => 'MySQL database (required)',       'required' => true ],
+        [ 'name' => 'curl',      'loaded' => extension_loaded('curl'),         'purpose' => 'HTTP requests / API calls',      'required' => true ],
+        [ 'name' => 'json',      'loaded' => extension_loaded('json'),         'purpose' => 'JSON parsing (required)',         'required' => true ],
+        [ 'name' => 'mbstring',  'loaded' => extension_loaded('mbstring'),     'purpose' => 'Multibyte string support',       'required' => true ],
+        [ 'name' => 'openssl',   'loaded' => extension_loaded('openssl'),      'purpose' => 'SSL/TLS encryption',             'required' => true ],
+        [ 'name' => 'xml',       'loaded' => extension_loaded('xml'),          'purpose' => 'XML parsing (RSS, sitemaps)',     'required' => true ],
+        [ 'name' => 'dom',       'loaded' => extension_loaded('dom'),          'purpose' => 'DOM manipulation',               'required' => true ],
+        [ 'name' => 'fileinfo',  'loaded' => extension_loaded('fileinfo'),     'purpose' => 'File type detection',            'required' => true ],
+        [ 'name' => 'tokenizer', 'loaded' => extension_loaded('tokenizer'),    'purpose' => 'PHP tokenizer (WP internals)',   'required' => true ],
+        [ 'name' => 'imagick',   'loaded' => extension_loaded('imagick'),      'purpose' => 'Advanced image processing',      'required' => false ],
+        [ 'name' => 'gd',        'loaded' => extension_loaded('gd'),           'purpose' => 'Image processing (fallback)',    'required' => false ],
+        [ 'name' => 'zip',       'loaded' => extension_loaded('zip'),          'purpose' => 'Plugin/theme ZIP handling',      'required' => false ],
+        [ 'name' => 'intl',      'loaded' => extension_loaded('intl'),         'purpose' => 'Internationalization',           'required' => false ],
+        [ 'name' => 'exif',      'loaded' => extension_loaded('exif'),         'purpose' => 'Image EXIF metadata',            'required' => false ],
+        [ 'name' => 'sodium',    'loaded' => extension_loaded('sodium'),       'purpose' => 'Modern cryptography (WP 5.2+)',  'required' => false ],
+        [ 'name' => 'opcache',   'loaded' => extension_loaded('Zend OPcache'),'purpose' => 'PHP bytecode caching',           'required' => false ],
+        [ 'name' => 'redis',     'loaded' => extension_loaded('redis'),        'purpose' => 'Redis object cache',             'required' => false ],
+        [ 'name' => 'bcmath',    'loaded' => extension_loaded('bcmath'),       'purpose' => 'Arbitrary precision math',       'required' => false ],
+        [ 'name' => 'iconv',     'loaded' => extension_loaded('iconv'),        'purpose' => 'Character encoding conversion',  'required' => false ],
+        [ 'name' => 'simplexml', 'loaded' => extension_loaded('simplexml'),    'purpose' => 'Simple XML parsing',             'required' => false ],
+        [ 'name' => 'xmlreader', 'loaded' => extension_loaded('xmlreader'),    'purpose' => 'XML stream reader',              'required' => false ],
+        [ 'name' => 'zlib',      'loaded' => extension_loaded('zlib'),         'purpose' => 'Gzip compression',               'required' => false ],
+    ];
+}
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * GOING LIVE CHECKLIST — RECOMMENDED SNIPPET IDS
+ * ═══════════════════════════════════════════════════════════════════════════
+ * @since 10.9.0
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_get_going_live_snippets' ) ) {
+function hws_get_going_live_snippets() {
+    return [
+        'register_acf_website_settings',
+        'register_user_custom_fields_2025',
+        'register_user_custom_fields_additional_2025',
+        'enable_website_settings_functionality',
+        'enable_auto_update_plugins',
+        'enable_auto_update_themes',
+        'enable_elementor_social_icon_cleanup',
+        'enable_wp_admin_logo',
+    ];
+}
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ROBUST REDIS STATUS CHECK
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Reads LiteSpeed Cache's stored host/port config to connect (instead of
+ * hardcoding 127.0.0.1:6379). Falls back to defaults if LiteSpeed not found.
+ *
+ * Returns detailed array with extension, connection, litespeed, server info.
+ *
+ * @since 10.9.1
+ * @return array { active: bool, extension: bool, connected: bool, litespeed_enabled: bool, info: array, error: string }
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_check_redis_status' ) ) {
+function hws_check_redis_status() {
+    // — Default result with ALL keys guaranteed
+    $result = [
+        'active'             => false,
+        'extension'          => false,
+        'connected'          => false,
+        'litespeed_enabled'  => false,
+        'info'               => [],
+        'error'              => '',
+    ];
+
+    // — Check PHP Redis extension
+    $result['extension'] = extension_loaded( 'redis' );
+    if ( ! $result['extension'] ) {
+        $result['error'] = 'Redis PHP extension not installed';
+        return $result;
+    }
+
+    // — Read LiteSpeed's stored Redis config from wp_options
+    $ls_obj  = get_option( 'litespeed.conf.object', false );
+    $ls_kind = get_option( 'litespeed.conf.object-kind', false );
+    $ls_host = get_option( 'litespeed.conf.object-host', '' );
+    $ls_port = (int) get_option( 'litespeed.conf.object-port', 6379 );
+    $ls_db   = (int) get_option( 'litespeed.conf.object-db_id', 0 );
+    $ls_user = get_option( 'litespeed.conf.object-user', '' );
+    $ls_pswd = get_option( 'litespeed.conf.object-pswd', '' );
+
+    // — LiteSpeed considers Redis enabled when: object=true + kind=true(Redis) + host is set
+    $result['litespeed_enabled'] = ( (bool) $ls_obj && (bool) $ls_kind && ! empty( $ls_host ) );
+
+    // — Determine connection target (use LS config, fall back to localhost)
+    $host = ! empty( $ls_host ) ? $ls_host : '127.0.0.1';
+    $port = $ls_port > 0 ? $ls_port : 6379;
+
+    // — Attempt connection using LiteSpeed's exact config
+    try {
+        $redis = new \Redis();
+        $ok = @$redis->connect( $host, $port, 2.0 );
+        if ( ! $ok ) {
+            $result['error'] = "Connection refused ({$host}:{$port})";
+            return $result;
+        }
+
+        // — Authenticate if password set (matches LiteSpeed's auth logic)
+        if ( ! empty( $ls_pswd ) ) {
+            if ( ! empty( $ls_user ) ) {
+                $redis->auth( [ $ls_user, $ls_pswd ] );
+            } else {
+                $redis->auth( $ls_pswd );
+            }
+        }
+
+        // — Select database if specified
+        if ( $ls_db > 0 ) {
+            $redis->select( $ls_db );
+        }
+
+        // — Ping test (rawCommand matches LiteSpeed's own check)
+        $redis->setOption( \Redis::OPT_READ_TIMEOUT, 2 );
+        $pong = $redis->rawCommand( 'PING' );
+        if ( $pong !== 'PONG' && $pong !== true && $pong !== '+PONG' ) {
+            $result['error'] = 'Redis PING failed';
+            return $result;
+        }
+
+        $result['connected'] = true;
+
+        // — Gather server info
+        $info = @$redis->info();
+        if ( is_array( $info ) ) {
+            $hits   = (int) ( $info['keyspace_hits'] ?? 0 );
+            $misses = (int) ( $info['keyspace_misses'] ?? 0 );
+            $total  = $hits + $misses;
+
+            $result['info'] = [
+                'version'     => $info['redis_version'] ?? 'unknown',
+                'port'        => $info['tcp_port'] ?? $port,
+                'host'        => $host,
+                'db_index'    => $ls_db,
+                'used_memory' => $info['used_memory_human'] ?? '0B',
+                'peak_memory' => $info['used_memory_peak_human'] ?? '0B',
+                'uptime_days' => isset( $info['uptime_in_seconds'] ) ? round( $info['uptime_in_seconds'] / 86400, 1 ) : 0,
+                'total_keys'  => @$redis->dbSize() ?: 0,
+                'hit_rate'    => $total > 0 ? round( ( $hits / $total ) * 100, 1 ) . '%' : 'N/A',
+            ];
+        }
+
+        @$redis->close();
+    } catch ( \RedisException $e ) {
+        $result['error'] = 'Redis: ' . $e->getMessage();
+        return $result;
+    } catch ( \Exception $e ) {
+        $result['error'] = $e->getMessage();
+        return $result;
+    }
+
+    // — Active = extension loaded + connected + LiteSpeed has it enabled
+    $result['active'] = $result['connected'] && $result['litespeed_enabled'];
+
+    return $result;
+}
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * BROTLI SUPPORT CHECK
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Brotli is a server-level feature on LiteSpeed/OpenLiteSpeed.
+ * Detection: check Accept-Encoding header from client + check if
+ * server advertises br via a self-request, or check ini settings.
+ *
+ * @since 10.9.1
+ * @return array { enabled: bool, details: string }
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_check_brotli_support' ) ) {
+function hws_check_brotli_support() {
+    // — Method 1: Check if PHP brotli extension is loaded
+    $php_ext = function_exists( 'brotli_compress' );
+
+    // — Method 2: Check server response headers via self-request
+    $server_br = false;
+    $details   = [];
+    $test_url  = home_url( '/' );
+
+    $response = wp_remote_get( $test_url, [
+        'timeout'   => 5,
+        'headers'   => [ 'Accept-Encoding' => 'br, gzip, deflate' ],
+        'sslverify' => false,
+    ] );
+
+    if ( ! is_wp_error( $response ) ) {
+        $encoding = wp_remote_retrieve_header( $response, 'content-encoding' );
+        if ( stripos( $encoding, 'br' ) !== false ) {
+            $server_br = true;
+            $details[] = 'Server responds with Content-Encoding: br';
+        }
+
+        // — Also check LiteSpeed-specific header
+        $x_ls = wp_remote_retrieve_header( $response, 'x-litespeed-cache' );
+        if ( $x_ls ) {
+            $details[] = 'LiteSpeed cache header detected';
+        }
+    }
+
+    // — Method 3: Check if LiteSpeed server is present (Brotli built-in)
+    $server_sw = $_SERVER['SERVER_SOFTWARE'] ?? '';
+    if ( stripos( $server_sw, 'LiteSpeed' ) !== false ) {
+        $details[] = 'LiteSpeed server (Brotli built-in)';
+    }
+
+    $enabled = $server_br || $php_ext;
+    if ( $php_ext ) $details[] = 'PHP brotli extension loaded';
+
+    return [
+        'enabled' => $enabled,
+        'details' => ! empty( $details ) ? implode( ' · ', $details ) : 'Not detected',
+    ];
+}
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LITESPEED CACHE INFO — READ ALL RELEVANT SETTINGS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Reads LiteSpeed Cache settings directly from wp_options using the
+ * plugin's storage format: get_option('litespeed.conf.{key}').
+ *
+ * @since 10.9.1
+ * @return array|false  Settings array or false if plugin not active
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_get_litespeed_info' ) ) {
+function hws_get_litespeed_info() {
+    if ( ! is_plugin_active( 'litespeed-cache/litespeed-cache.php' ) ) {
+        return false;
+    }
+
+    // — Helper to read a LiteSpeed option
+    $opt = function( $key, $default = false ) {
+        return get_option( 'litespeed.conf.' . $key, $default );
+    };
+
+    return [
+        // — Page Cache
+        'cache_enabled'      => (bool) $opt( 'cache' ),
+        'cache_private'      => (bool) $opt( 'cache-priv' ),
+        'cache_browser'      => (bool) $opt( 'cache-browser' ),
+        'cache_mobile'       => (bool) $opt( 'cache-mobile' ),
+        'cache_rest'         => (bool) $opt( 'cache-rest' ),
+        'cache_ttl_public'   => (int)  $opt( 'cache-ttl_pub', 0 ),
+        'cache_ttl_browser'  => (int)  $opt( 'cache-ttl_browser', 0 ),
+
+        // — CSS Optimization
+        'css_minify'         => (bool) $opt( 'optm-css_min' ),
+        'css_combine'        => (bool) $opt( 'optm-css_comb' ),
+        'css_async'          => (bool) $opt( 'optm-css_async' ),
+        'css_font_display'   => $opt( 'optm-css_font_display', false ),
+
+        // — JS Optimization
+        'js_minify'          => (bool) $opt( 'optm-js_min' ),
+        'js_combine'         => (bool) $opt( 'optm-js_comb' ),
+        'js_defer'           => $opt( 'optm-js_defer', false ),
+
+        // — Object Cache (Redis)
+        'object_enabled'     => (bool) $opt( 'object' ),
+        'object_kind'        => $opt( 'object-kind' ) ? 'Redis' : 'Memcached',
+        'object_host'        => $opt( 'object-host', '' ),
+        'object_port'        => (int)  $opt( 'object-port', 0 ),
+        'object_db_id'       => (int)  $opt( 'object-db_id', 0 ),
+        'object_persistent'  => (bool) $opt( 'object-persistent' ),
+        'object_admin'       => (bool) $opt( 'object-admin' ),
+        'object_transients'  => (bool) $opt( 'object-transients' ),
+    ];
+}
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * GOING LIVE CHECKLIST — SETTINGS & SERVER CHECKS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Returns an array of named checks each with: label, pass (bool), value (string).
+ * Used by the GLC panel to show full site readiness.
+ *
+ * @since 10.9.1
+ * @return array [ [ 'label' => '...', 'pass' => bool, 'value' => '...' ], ... ]
+ */
+if ( ! function_exists( __NAMESPACE__ . '\\hws_get_glc_settings_checks' ) ) {
+function hws_get_glc_settings_checks() {
+    $checks = [];
+
+    // ─── WORDPRESS SETTINGS ────────────────────────────────────────────
+
+    // — WP_MEMORY_LIMIT > 512MB
+    $mem_limit = defined( 'WP_MEMORY_LIMIT' ) ? WP_MEMORY_LIMIT : '40M';
+    $mem_bytes = wp_convert_hr_to_bytes( $mem_limit );
+    $checks[] = [
+        'label' => 'WP Memory Limit > 512MB',
+        'pass'  => $mem_bytes >= 536870912,
+        'value' => $mem_limit,
+    ];
+
+    // — Comments disabled
+    $comments_closed = get_option( 'default_comment_status' ) === 'closed';
+    $checks[] = [
+        'label' => 'Comments Disabled',
+        'pass'  => $comments_closed,
+        'value' => $comments_closed ? 'Closed' : 'Open',
+    ];
+
+    // — Pingbacks disabled
+    $pings_closed = get_option( 'default_ping_status' ) === 'closed';
+    $checks[] = [
+        'label' => 'Pingbacks Disabled',
+        'pass'  => $pings_closed,
+        'value' => $pings_closed ? 'Closed' : 'Open',
+    ];
+
+    // — SMTP / Email Authentication active
+    $smtp = function_exists( __NAMESPACE__ . '\\check_smtp_auth_status_and_mailer' )
+        ? check_smtp_auth_status_and_mailer()
+        : [ 'status' => false, 'mailer' => '', 'raw_value' => '' ];
+    $checks[] = [
+        'label' => 'Email / SMTP Authenticated',
+        'pass'  => (bool) $smtp['status'],
+        'value' => $smtp['status'] ? ucfirst( $smtp['mailer'] ) : ( $smtp['raw_value'] ?: 'Not configured' ),
+    ];
+
+    // — WP_DEBUG off
+    $debug_on = defined( 'WP_DEBUG' ) && WP_DEBUG;
+    $checks[] = [
+        'label' => 'WP_DEBUG Off',
+        'pass'  => ! $debug_on,
+        'value' => $debug_on ? 'ON' : 'Off',
+    ];
+
+    // — WP_DEBUG_DISPLAY off
+    $debug_display = defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY;
+    $checks[] = [
+        'label' => 'WP_DEBUG_DISPLAY Off',
+        'pass'  => ! $debug_display,
+        'value' => $debug_display ? 'ON' : 'Off',
+    ];
+
+    // — WP_DEBUG_LOG off
+    $debug_log = defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+    $checks[] = [
+        'label' => 'WP_DEBUG_LOG Off',
+        'pass'  => ! $debug_log,
+        'value' => $debug_log ? 'ON' : 'Off',
+    ];
+
+    // — Wordfence alert email set
+    if ( function_exists( __NAMESPACE__ . '\\check_wordfence_notification_email' ) ) {
+        $wf = check_wordfence_notification_email();
+        $checks[] = [
+            'label' => 'Wordfence Alert Email Set',
+            'pass'  => (bool) ( $wf['status'] ?? false ),
+            'value' => ( $wf['raw_value'] ?? $wf['details'] ?? 'Not set' ),
+        ];
+    }
+
+    // — display_errors off (should be off in production)
+    $display_errors = ini_get( 'display_errors' );
+    $de_off = ( ! $display_errors || $display_errors === '0' || strtolower( $display_errors ) === 'off' );
+    $checks[] = [
+        'label' => 'display_errors Off',
+        'pass'  => $de_off,
+        'value' => $de_off ? 'Off' : 'ON (' . $display_errors . ')',
+    ];
+
+    // — Individual log file checks (each < 10MB)
+    $max_log = 10 * 1024 * 1024; // 10MB
+    $log_files = [
+        'debug.log'          => WP_CONTENT_DIR . '/debug.log',
+        'error_log (root)'   => ABSPATH . 'error_log',
+        'error_log (admin)'  => ABSPATH . 'wp-admin/error_log',
+    ];
+    foreach ( $log_files as $label => $path ) {
+        $size = file_exists( $path ) ? filesize( $path ) : 0;
+        $checks[] = [
+            'label' => $label . ' < 10MB',
+            'pass'  => $size < $max_log,
+            'value' => file_exists( $path ) ? size_format( $size ) : 'Not found (good)',
+        ];
+    }
+
+    // — DISABLE_WP_CRON (should be true for production with real cron)
+    $cron_disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
+    $checks[] = [
+        'label' => 'WP Cron Disabled (real cron)',
+        'pass'  => $cron_disabled,
+        'value' => $cron_disabled ? 'Disabled (good)' : 'WP Cron active',
+    ];
+
+    // ─── SERVER & PHP ──────────────────────────────────────────────────
+
+    // — Cloudflare active (check headers + nameservers)
+    if ( function_exists( __NAMESPACE__ . '\\check_cloudflare_active' ) ) {
+        $cf = check_cloudflare_active();
+        $checks[] = [
+            'label' => 'Cloudflare Active',
+            'pass'  => (bool) ( $cf['status'] ?? false ),
+            'value' => $cf['raw_value'] ?? 'Unknown',
+        ];
+    }
+
+    // — PHP SAPI = litespeed
+    $sapi = php_sapi_name();
+    $checks[] = [
+        'label' => 'PHP SAPI: LiteSpeed',
+        'pass'  => ( $sapi === 'litespeed' ),
+        'value' => $sapi,
+    ];
+
+    // — PHP version >= 8.1
+    $php_ver = phpversion();
+    $checks[] = [
+        'label' => 'PHP ≥ 8.1',
+        'pass'  => version_compare( $php_ver, '8.1', '>=' ),
+        'value' => $php_ver,
+    ];
+
+    // — Imagick available
+    $imagick = extension_loaded( 'imagick' );
+    $checks[] = [
+        'label' => 'Imagick Library',
+        'pass'  => $imagick,
+        'value' => $imagick ? 'Available' : 'Missing',
+    ];
+
+    // — MyISAM tables (scoped to current WP prefix only)
+    if ( function_exists( __NAMESPACE__ . '\\check_myisam_tables' ) ) {
+        $myisam = check_myisam_tables();
+        $checks[] = [
+            'label' => 'No MyISAM Tables',
+            'pass'  => (bool) ( $myisam['status'] ?? false ),
+            'value' => $myisam['raw_value'] ?? 'Unknown',
+        ];
+    }
+
+    // — Redis active (safe access with null-coalescing on every key)
+    if ( function_exists( __NAMESPACE__ . '\\hws_check_redis_status' ) ) {
+        $redis     = hws_check_redis_status();
+        $r_active  = $redis['active'] ?? false;
+        $r_error   = $redis['error'] ?? '';
+        $r_info    = $redis['info'] ?? [];
+        $redis_val = $r_active
+            ? 'Active (v' . ( $r_info['version'] ?? '?' ) . ', ' . ( $r_info['used_memory'] ?? '' ) . ')'
+            : ( $r_error ?: 'Inactive' );
+        $checks[] = [
+            'label' => 'Redis Active',
+            'pass'  => (bool) $r_active,
+            'value' => $redis_val,
+        ];
+    }
+
+    // — post_max_size >= 128MB
+    $post_max     = ini_get( 'post_max_size' );
+    $post_max_b   = wp_convert_hr_to_bytes( $post_max );
+    $checks[] = [
+        'label' => 'post_max_size ≥ 128MB',
+        'pass'  => $post_max_b >= 134217728,
+        'value' => $post_max,
+    ];
+
+    // — upload_max_filesize >= 128MB
+    $upload_max   = ini_get( 'upload_max_filesize' );
+    $upload_max_b = wp_convert_hr_to_bytes( $upload_max );
+    $checks[] = [
+        'label' => 'upload_max_filesize ≥ 128MB',
+        'pass'  => $upload_max_b >= 134217728,
+        'value' => $upload_max,
+    ];
+
+    // — Brotli enabled
+    $brotli = hws_check_brotli_support();
+    $checks[] = [
+        'label' => 'Brotli Compression',
+        'pass'  => $brotli['enabled'],
+        'value' => $brotli['details'],
+    ];
+
+    // ─── THEMES & PLUGINS ──────────────────────────────────────────────
+
+    // — No more than 2 themes installed
+    $all_themes  = wp_get_themes();
+    $theme_count = count( $all_themes );
+    $checks[] = [
+        'label' => 'Max 2 Themes Installed',
+        'pass'  => $theme_count <= 2,
+        'value' => $theme_count . ' theme(s)',
+    ];
+
+    // — All themes updated
+    $theme_updates = get_site_transient( 'update_themes' );
+    $outdated_themes = ! empty( $theme_updates->response ) ? count( $theme_updates->response ) : 0;
+    $checks[] = [
+        'label' => 'All Themes Updated',
+        'pass'  => $outdated_themes === 0,
+        'value' => $outdated_themes > 0 ? $outdated_themes . ' update(s) available' : 'Up to date',
+    ];
+
+    // — All plugins updated
+    $plugin_updates  = get_site_transient( 'update_plugins' );
+    $outdated_plugins = ! empty( $plugin_updates->response ) ? count( $plugin_updates->response ) : 0;
+    $checks[] = [
+        'label' => 'All Plugins Updated',
+        'pass'  => $outdated_plugins === 0,
+        'value' => $outdated_plugins > 0 ? $outdated_plugins . ' update(s) available' : 'Up to date',
+    ];
+
+    // — Detect default Twenty* themes (should be removed)
+    $twenty_themes = [];
+    $twenty_slugs  = [ 'twentytwentyfive', 'twentytwentyfour', 'twentytwentythree', 'twentytwentytwo', 'twentytwentyone', 'twentytwenty', 'twentynineteen' ];
+    foreach ( $all_themes as $slug => $theme ) {
+        if ( in_array( $slug, $twenty_slugs, true ) ) {
+            $twenty_themes[] = $theme->get( 'Name' );
+        }
+    }
+    $checks[] = [
+        'label' => 'No Default Twenty* Themes',
+        'pass'  => empty( $twenty_themes ),
+        'value' => empty( $twenty_themes )
+            ? 'None found'
+            : implode( ', ', $twenty_themes ),
+    ];
+
+    return $checks;
+}
+}

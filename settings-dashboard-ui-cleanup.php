@@ -101,6 +101,17 @@ function get_ui_cleanup_options(): array {
             'default'       => false,
             'section'       => 'wordfence',
         ],
+        
+        // ========================================
+        // Rank Math SEO
+        // ========================================
+        'hide_rankmath_content_ai' => [
+            'label'         => 'Rank Math Content AI',
+            'description'   => 'Disables the Content AI module in Rank Math (hides the Content AI panel from the dashboard and post editor)',
+            'callback'      => 'apply_rankmath_content_ai_cleanup',
+            'default'       => true,
+            'section'       => 'rankmath',
+        ],
     ];
 }
 
@@ -134,6 +145,11 @@ function display_settings_ui_cleanup() {
         'wordfence'  => [
             'title' => 'Wordfence',
             'icon'  => '🛡️',
+            'items' => [],
+        ],
+        'rankmath'   => [
+            'title' => 'Rank Math SEO',
+            'icon'  => '📈',
             'items' => [],
         ],
     ];
@@ -608,3 +624,51 @@ function inject_ui_cleanup_css() {
     }
 }
 add_action( 'admin_head', __NAMESPACE__ . '\\inject_ui_cleanup_css', 999 );
+
+/**
+ * Apply Rank Math Content AI cleanup
+ * 
+ * Disables the Content AI module by filtering Rank Math's module list.
+ * Also hides the Content AI metabox and dashboard widget via CSS.
+ * Hooked early so the module never loads.
+ * 
+ * @since 10.8.0
+ */
+function apply_rankmath_content_ai_cleanup() {
+    // — Only act if the toggle is enabled (default: true)
+    if ( ! get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
+        return;
+    }
+
+    // — Filter: Remove Content AI from Rank Math's active modules
+    add_filter( 'rank_math/modules', function( $modules ) {
+        unset( $modules['content-ai'] );
+        return $modules;
+    }, 999 );
+
+    // — CSS fallback: Hide Content AI elements from the dashboard and editor
+    add_action( 'admin_head', function() {
+        echo "<style id='hws-rankmath-content-ai-cleanup'>
+/* HWS: Hide Rank Math Content AI UI elements */
+.rank-math-content-ai-tab,
+.rank-math-content-ai-score,
+#rank-math-content-ai-metabox,
+.rank-math-toolbar .content-ai,
+[data-module='content-ai'],
+.rank-math-content-ai-wrapper,
+.rank-math-ca-credits,
+#rank-math-ca-wrap { display: none !important; }
+</style>\n";
+    }, 999 );
+}
+
+// — Run the Content AI cleanup immediately at include time + admin_init fallback
+// — Rank Math may process modules during init, so register the filter as early as possible
+if ( get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
+    apply_rankmath_content_ai_cleanup();
+}
+add_action( 'admin_init', function() {
+    if ( function_exists( __NAMESPACE__ . '\\get_ui_cleanup_option' ) && get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
+        apply_rankmath_content_ai_cleanup();
+    }
+}, 1 );

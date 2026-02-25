@@ -13,8 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Register AJAX handler for plugin installation
+// Register AJAX handler for plugin installation (from WordPress.org → install + activate)
 add_action( 'wp_ajax_hws_install_plugin', __NAMESPACE__ . '\\ajax_install_plugin' );
+
+// Register AJAX handler for activating an already-installed plugin
+add_action( 'wp_ajax_hws_activate_plugin', __NAMESPACE__ . '\\ajax_activate_plugin' );
 
 /**
  * AJAX handler to install a plugin from WordPress.org
@@ -95,6 +98,72 @@ function ajax_install_plugin() {
     ]);
 }
 
+
+/**
+ * AJAX handler to activate an already-installed plugin.
+ *
+ * Abstract/reusable: any panel can call this with a plugin_file parameter.
+ * Uses the same nonce (HWS_AJAX_NONCE) as install handler for consistency.
+ *
+ * Expected POST params:
+ *   - plugin_file  (string) e.g. 'wordfence/wordfence.php'
+ *   - nonce        (string) wp_create_nonce( HWS_AJAX_NONCE )
+ *
+ * @since 10.8.4
+ */
+function ajax_activate_plugin() {
+    // — Check permissions
+    if ( ! current_user_can( 'activate_plugins' ) ) {
+        wp_send_json_error( 'Unauthorized — you do not have permission to activate plugins.' );
+        return;
+    }
+
+    // — Verify nonce
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+        wp_send_json_error( 'Security check failed.' );
+        return;
+    }
+
+    // — Get plugin file path (e.g. 'wordfence/wordfence.php')
+    $plugin_file = isset( $_POST['plugin_file'] ) ? sanitize_text_field( $_POST['plugin_file'] ) : '';
+
+    if ( empty( $plugin_file ) ) {
+        wp_send_json_error( 'No plugin file provided.' );
+        return;
+    }
+
+    // — Load required files
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+    // — Check if the plugin file actually exists
+    if ( ! file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
+        wp_send_json_error( 'Plugin file not found: ' . $plugin_file );
+        return;
+    }
+
+    // — Check if already active
+    if ( is_plugin_active( $plugin_file ) ) {
+        wp_send_json_success( [
+            'message'   => 'Plugin is already active.',
+            'activated' => true,
+        ]);
+        return;
+    }
+
+    // — Activate the plugin
+    $result = activate_plugin( $plugin_file );
+    if ( is_wp_error( $result ) ) {
+        wp_send_json_error( 'Activation failed: ' . $result->get_error_message() );
+        return;
+    }
+
+    wp_send_json_success( [
+        'message'   => 'Plugin activated successfully.',
+        'activated' => true,
+    ]);
+}
+
+
 /**
  * Get list of monitored plugins
  * 
@@ -106,60 +175,102 @@ function ajax_install_plugin() {
  *     'should_be'   => 'active' | 'inactive',  // Expected state
  *     'auto_update' => true | false,           // Should auto-update be enabled?
  *     'download'    => 'url' | 'manual',       // How to get it
+ *     'category'    => 'essential' | 'optional', // Importance level
+ *     'pro'         => true | false,            // Pro/paid plugin? (won't auto-install)
  * ]
  */
 function hws_get_monitored_plugins() {
     return [
-        // === REQUIRED ACTIVE ===
+        // === ESSENTIAL ACTIVE (auto-installed by Quick Setup where possible) ===
         'advanced-custom-fields-pro/acf.php' => [
             'name'        => 'Advanced Custom Fields Pro',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'manual',
+            'category'    => 'essential',
+            'pro'         => true,
+        ],
+        'elementor/elementor.php' => [
+            'name'        => 'Elementor',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/elementor/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
         'elementor-pro/elementor-pro.php' => [
             'name'        => 'Elementor Pro',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'manual',
+            'category'    => 'essential',
+            'pro'         => true,
         ],
         'classic-editor/classic-editor.php' => [
             'name'        => 'Classic Editor',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/classic-editor/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
         'wordfence/wordfence.php' => [
             'name'        => 'Wordfence',
             'should_be'   => 'active',
-            'auto_update' => false,  // Security plugin - manual review
+            'auto_update' => false,  // — Security plugin: review updates manually
             'download'    => 'https://wordpress.org/plugins/wordfence/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
         'wp-mail-smtp/wp_mail_smtp.php' => [
             'name'        => 'WP Mail SMTP',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/wp-mail-smtp/',
+            'category'    => 'essential',
+            'pro'         => false,
+        ],
+        'seo-by-rank-math/rank-math.php' => [
+            'name'        => 'Rank Math SEO',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/seo-by-rank-math/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
         'wp-user-avatars/wp-user-avatars.php' => [
             'name'        => 'WP User Avatars',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/wp-user-avatars/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
         'litespeed-cache/litespeed-cache.php' => [
             'name'        => 'LiteSpeed Cache',
             'should_be'   => 'active',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/litespeed-cache/',
+            'category'    => 'essential',
+            'pro'         => false,
         ],
-        
-        // === SHOULD BE INACTIVE (installed but not active) ===
+
+        // === OPTIONAL ===
         'wp-optimize/wp-optimize.php' => [
             'name'        => 'WP Optimize',
             'should_be'   => 'inactive',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/wp-optimize/',
+            'category'    => 'optional',
+            'pro'         => false,
+        ],
+        'regenerate-thumbnails/regenerate-thumbnails.php' => [
+            'name'        => 'Regenerate Thumbnails',
+            'should_be'   => 'inactive',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/regenerate-thumbnails/',
+            'category'    => 'optional',
+            'pro'         => false,
         ],
     ];
 }
@@ -305,6 +416,15 @@ function render_tab_plugins() {
                     <tr>
                         <td>
                             <strong><?php echo esc_html( $config['name'] ); ?></strong>
+                            <?php
+                            // — Category badge (essential / optional)
+                            $cat = $config['category'] ?? 'essential';
+                            $cat_colors = [ 'essential' => '#2271b1', 'optional' => '#646970' ];
+                            ?>
+                            <span style="background:<?php echo $cat_colors[ $cat ] ?? '#646970'; ?>;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;"><?php echo strtoupper( $cat ); ?></span>
+                            <?php if ( ! empty( $config['pro'] ) ) : ?>
+                                <span style="background:#8c5e00;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px;vertical-align:middle;">PRO</span>
+                            <?php endif; ?>
                             <?php if ( $status['version'] ) : ?>
                                 <br><small style="color: #666;">v<?php echo esc_html( $status['version'] ); ?></small>
                             <?php endif; ?>

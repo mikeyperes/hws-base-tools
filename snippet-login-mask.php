@@ -37,10 +37,12 @@ const DEFAULT_SLUG = 'hexa-admin';
             return;
         }
 
-        // Activation/deactivation for normal plugin installs.
-        if (function_exists('register_activation_hook')) {
-            \register_activation_hook(__FILE__, [__CLASS__, 'activate']);
-            \register_deactivation_hook(__FILE__, [__CLASS__, 'deactivate']);
+        // Activation/deactivation — use the MAIN plugin file, not this include file
+        // __FILE__ points to snippet-login-mask.php which is wrong for activation hooks
+        $main_plugin_file = dirname(__FILE__) . '/initialization.php';
+        if (function_exists('register_activation_hook') && file_exists($main_plugin_file)) {
+            \register_activation_hook($main_plugin_file, [__CLASS__, 'activate']);
+            \register_deactivation_hook($main_plugin_file, [__CLASS__, 'deactivate']);
         }
 
         // Emergency actions first.
@@ -49,14 +51,16 @@ const DEFAULT_SLUG = 'hexa-admin';
         // Early, rewrite-free fallback so /hexa-admin works even if rules are missing.
         add_action('init', [__CLASS__, 'serve_masked_login_early_fallback'], 1);
 
-        // Rewrites + routing.
+        // Stealth/blocks (wp-login.php & wp-admin/) — ONLY if rules are confirmed installed.
+        // If rules are missing (migration, first activation), blocking is SKIPPED to prevent lockout.
+        add_action('init', [__CLASS__, 'maybe_block_default_endpoints'], 2);
+
+        // Rewrites + routing + auto-flush detection
         add_action('init', [__CLASS__, 'add_rewrites'], 5);
+        add_action('init', [__CLASS__, 'auto_detect_and_flush'], 6);
         add_filter('query_vars', [__CLASS__, 'register_qv']);
         add_action('template_redirect', [__CLASS__, 'serve_masked_login'], 0);
         add_action('template_redirect', [__CLASS__, 'serve_well_known'], 0);
-
-        // Stealth/blocks (wp-login.php & wp-admin/).
-        add_action('init', [__CLASS__, 'maybe_block_default_endpoints'], 2);
 
 
         if (!empty(self::opts()['enabled'])) {
@@ -190,12 +194,81 @@ const DEFAULT_SLUG = 'hexa-admin';
      *                  LIFECYCLE / REWRITES
      * ============================================================ */
 
-    public static function activate()  { self::flush_rewrites(); }
+    public static function activate()  {
+        self::flush_rewrites();
+        // — Set a transient marking activation so blocking is safe
+        set_transient( 'hws_login_mask_rules_ok', '1', 0 );
+    }
     public static function deactivate(){ self::flush_rewrites(); }
 
     private static function flush_rewrites(): void {
         self::add_rewrites();
         flush_rewrite_rules(false);
+    }
+
+    /**
+     * Check if our rewrite rule is actually installed in WordPress's rule set.
+     * Returns false if rules haven't been flushed yet (migration/first activation).
+     *
+     * This is the KEY function that prevents lockouts during migration —
+     * if this returns false, blocking is completely skipped.
+     */
+    public static function rules_installed(): bool {
+        // — Quick check: if our transient is set, rules are confirmed good
+        if ( get_transient( 'hws_login_mask_rules_ok' ) ) {
+            return true;
+        }
+
+        // — Check the actual rewrite rules array
+        global $wp_rewrite;
+        if ( ! is_object( $wp_rewrite ) || empty( $wp_rewrite->rules ) || ! is_array( $wp_rewrite->rules ) ) {
+            return false;
+        }
+
+        $slug    = self::slug();
+        $pattern = '^' . preg_quote( $slug, '~' ) . '/?$';
+
+        foreach ( $wp_rewrite->rules as $rule_pattern => $target ) {
+            if ( $rule_pattern === $pattern ) {
+                // — Rules confirmed present, cache for 24h to avoid checking every request
+                set_transient( 'hws_login_mask_rules_ok', '1', 0 );
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Auto-detect missing rewrite rules and flush them.
+     * 
+     * Runs at init:6 (after add_rewrites at init:5). If our slug rule is
+     * missing from $wp_rewrite->rules, this auto-flushes and logs the event.
+     * This handles:
+     *   - Plugin migration (files copied, no activation hook)
+     *   - Fresh activation where hook failed
+     *   - Corrupted rewrite rules
+     *   - Slug changes that weren't flushed
+     *
+     * Uses a transient to prevent flushing on every page load.
+     */
+    public static function auto_detect_and_flush(): void {
+        $o = self::opts();
+        if ( empty( $o['enabled'] ) ) return;
+
+        // — If rules are already confirmed, nothing to do
+        if ( self::rules_installed() ) return;
+
+        // — Rules are missing — auto-flush now
+        self::flush_rewrites();
+
+        // — Mark as flushed so we don't run this again immediately
+        set_transient( 'hws_login_mask_rules_ok', '1', 0 );
+
+        // — Log the auto-flush event (if logging function exists)
+        if ( function_exists( __NAMESPACE__ . '\\hws_login_log' ) ) {
+            hws_login_log( 'warning', 'Auto-flushed rewrite rules — rules were missing (likely migration or first activation)' );
+        }
     }
 
 
@@ -342,6 +415,17 @@ private static function serve_core_login_now(): void {
      public static function maybe_block_default_endpoints(): void {
         $o = self::opts();
         if (empty($o['enabled'])) return;
+
+        // ═══════════════════════════════════════════════════════════════
+        // SAFE MODE: If rewrite rules aren't installed yet, DO NOT block
+        // anything. This prevents lockout during migration or first activation.
+        // The masked login URL won't work yet, so blocking /wp-login.php 
+        // and /wp-admin would make the site completely inaccessible.
+        // auto_detect_and_flush() at init:6 will fix the rules shortly.
+        // ═══════════════════════════════════════════════════════════════
+        if ( ! self::rules_installed() ) {
+            return;
+        }
     
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         $path = rtrim($path ?? '/', '/');
@@ -554,6 +638,8 @@ if (!is_user_logged_in()) {
         if (!empty($prev['slug']) && $prev['slug'] !== $slug) {
             $legacy[] = $prev['slug'];
             $legacy = array_values(array_unique(array_filter($legacy)));
+            // — Clear rules transient so auto-detect will re-verify with new slug
+            delete_transient( 'hws_login_mask_rules_ok' );
         }
         $out['legacy_slugs'] = $legacy;
     

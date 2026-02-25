@@ -145,12 +145,12 @@ function register_user_custom_fields_additional_2025() {
                         'placeholder'       => '555-123-4567',
                     ),
 
-                    // — Title
+                    // — Title (WYSIWYG editor for rich text formatting)
                     array(
                         'key'               => 'field_6842_additional_title',
                         'label'             => 'Title',
                         'name'              => 'title',
-                        'type'              => 'text',
+                        'type'              => 'wysiwyg',
                         // — Both company and founder shortcodes documented
                         'instructions'      => 'Shortcode: <code>[company id="additional_title"]</code> or <code>[founder id="additional_title"]</code>',
                         'required'          => 0,
@@ -160,7 +160,11 @@ function register_user_custom_fields_additional_2025() {
                             'class' => '',
                             'id'    => '',
                         ),
-                        'placeholder'       => 'Founder & CEO',
+                        'default_value'     => '',
+                        'tabs'              => 'all',
+                        'toolbar'           => 'basic',
+                        'media_upload'      => 0,
+                        'delay'             => 0,
                     ),
 
                 ),
@@ -220,7 +224,7 @@ function register_user_custom_fields_2025()
 
     acf_add_local_field_group( array(
         'key' => 'group_684252fd99081',
-        'title' => 'User - General Fields',
+        'title' => '',
         'fields' => array(
 
             // ─────────────────────────────────────────────────────────────
@@ -1124,282 +1128,3 @@ function register_user_custom_fields(){
     
 }
 
-
-// ═══════════════════════════════════════════════════════════════════════════
-// GROUP 3: SCHEMA.ORG STRUCTURED DATA
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Register ACF User fields: Schema.org Structured Data
- *
- * Adds entity type toggle (Person vs Organization) and appropriate fields for each.
- *
- * Person fields:
- *   - Education repeater (college, wiki_url, year, designation, major)
- *
- * Organization fields:
- *   - Inception Date
- *   - Headquarters (location, wiki_url)
- *
- * Shared fields:
- *   - SameAs URLs (for Schema.org)
- *
- * @since 10.5 — Initial education/sameas
- * @since 10.6 — Added person/company toggle, company fields, renamed to Schema.org Structured Data
- */
-function register_user_education_sameas_fields() {
-
-    // — Bail if ACF is not available
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
-        'key'                   => 'group_hws_user_education_sameas',
-        'title'                 => 'Schema.org Structured Data',
-        'fields'                => array(
-            
-            // ═══════════════════════════════════════════════════════════════
-            // ENTITY TYPE TOGGLE
-            // ═══════════════════════════════════════════════════════════════
-            array(
-                'key'               => 'field_hws_entity_type',
-                'label'             => 'Entity Type',
-                'name'              => 'entity_type',
-                'type'              => 'button_group',
-                // — Both company and founder shortcodes documented
-                'instructions'      => 'Shortcode: <code>[company id="entity_type"]</code> or <code>[founder id="entity_type"]</code>',
-                'required'          => 0,
-                'conditional_logic' => 0,
-                'wrapper'           => array(
-                    'width' => '100',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'choices'           => array(
-                    'person'       => '👤 Person',
-                    'organization' => '🏢 Organization',
-                ),
-                'default_value'     => 'person',
-                'return_format'     => 'value',
-                'allow_null'        => 0,
-                'layout'            => 'horizontal',
-            ),
-            
-            // ═══════════════════════════════════════════════════════════════
-            // PERSON FIELDS (shown when entity_type = 'person')
-            // ═══════════════════════════════════════════════════════════════
-            array(
-                'key'               => 'field_hws_education_repeater',
-                'label'             => 'Education History',
-                'name'              => 'education',
-                'type'              => 'repeater',
-                // — Both company and founder shortcodes documented with format options
-                'instructions'      => '<code>[company id="education"]</code> or <code>[founder id="education"]</code> — HTML list<br>
-<code>[company id="education" format="json"]</code> or <code>[founder id="education" format="json"]</code> — JSON<br>
-<code>[founder id="education" index="0" field="college"]</code> — Specific field<br>
-<strong>Fields:</strong> college, wiki_url, year, designation, major',
-                'required'          => 0,
-                'conditional_logic' => array(
-                    array(
-                        array(
-                            'field'    => 'field_hws_entity_type',
-                            'operator' => '==',
-                            'value'    => 'person',
-                        ),
-                    ),
-                ),
-                'wrapper'           => array(
-                    'width' => '',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'layout'            => 'block',
-                'pagination'        => 0,
-                'min'               => 0,
-                'max'               => 10,
-                'collapsed'         => 'field_hws_edu_college',
-                'button_label'      => 'Add Education',
-                'rows_per_page'     => 20,
-                'sub_fields'        => array(
-                    array(
-                        'key'               => 'field_hws_edu_college',
-                        'label'             => 'College / University',
-                        'name'              => 'college',
-                        'type'              => 'text',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '50' ),
-                        'placeholder'       => 'Harvard University',
-                    ),
-                    array(
-                        'key'               => 'field_hws_edu_wiki_url',
-                        'label'             => 'Wikipedia URL',
-                        'name'              => 'wiki_url',
-                        'type'              => 'url',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '50' ),
-                        'placeholder'       => 'https://en.wikipedia.org/wiki/...',
-                    ),
-                    array(
-                        'key'               => 'field_hws_edu_year',
-                        'label'             => 'Year',
-                        'name'              => 'year',
-                        'type'              => 'text',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '33' ),
-                        'placeholder'       => '2015 or 2011-2015',
-                    ),
-                    array(
-                        'key'               => 'field_hws_edu_designation',
-                        'label'             => 'Degree',
-                        'name'              => 'designation',
-                        'type'              => 'text',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '33' ),
-                        'placeholder'       => 'B.S., M.A., Ph.D.',
-                    ),
-                    array(
-                        'key'               => 'field_hws_edu_major',
-                        'label'             => 'Major / Field',
-                        'name'              => 'major',
-                        'type'              => 'text',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '34' ),
-                        'placeholder'       => 'Computer Science',
-                    ),
-                ),
-            ),
-            
-            // ═══════════════════════════════════════════════════════════════
-            // ORGANIZATION FIELDS (shown when entity_type = 'organization')
-            // ═══════════════════════════════════════════════════════════════
-            array(
-                'key'               => 'field_hws_inception_date',
-                'label'             => 'Inception Date',
-                'name'              => 'inception_date',
-                'type'              => 'text',
-                // — Both company and founder shortcodes documented
-                'instructions'      => 'When founded. Shortcode: <code>[company id="inception_date"]</code> or <code>[founder id="inception_date"]</code>',
-                'required'          => 0,
-                'conditional_logic' => array(
-                    array(
-                        array(
-                            'field'    => 'field_hws_entity_type',
-                            'operator' => '==',
-                            'value'    => 'organization',
-                        ),
-                    ),
-                ),
-                'wrapper'           => array(
-                    'width' => '50',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'placeholder'       => '2015 or January 1, 2015',
-            ),
-            
-            array(
-                'key'               => 'field_hws_headquarters_group',
-                'label'             => 'Headquarters',
-                'name'              => 'headquarters',
-                'type'              => 'group',
-                // — Both company and founder shortcodes documented for sub_fields
-                'instructions'      => '<code>[company id="headquarters_location"]</code> or <code>[founder id="headquarters_location"]</code><br><code>[company id="headquarters_wiki"]</code> or <code>[founder id="headquarters_wiki"]</code>',
-                'required'          => 0,
-                'conditional_logic' => array(
-                    array(
-                        array(
-                            'field'    => 'field_hws_entity_type',
-                            'operator' => '==',
-                            'value'    => 'organization',
-                        ),
-                    ),
-                ),
-                'wrapper'           => array(
-                    'width' => '',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'layout'            => 'block',
-                'sub_fields'        => array(
-                    array(
-                        'key'               => 'field_hws_hq_location',
-                        'label'             => 'Location',
-                        'name'              => 'location',
-                        'type'              => 'text',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '50' ),
-                        'placeholder'       => 'Miami, Florida',
-                    ),
-                    array(
-                        'key'               => 'field_hws_hq_wiki',
-                        'label'             => 'Wikipedia URL',
-                        'name'              => 'wiki_url',
-                        'type'              => 'url',
-                        'instructions'      => '',
-                        'required'          => 0,
-                        'wrapper'           => array( 'width' => '50' ),
-                        'placeholder'       => 'https://en.wikipedia.org/wiki/Miami',
-                    ),
-                ),
-            ),
-            
-            // ═══════════════════════════════════════════════════════════════
-            // SHARED FIELDS (both Person and Organization)
-            // ═══════════════════════════════════════════════════════════════
-            array(
-                'key'               => 'field_hws_sameas',
-                'label'             => 'SameAs URLs',
-                'name'              => 'sameas',
-                'type'              => 'textarea',
-                // — Both company and founder shortcodes documented with format options
-                'instructions'      => 'One URL per line. Used in JSON-LD structured data.<br>
-<code>[company id="sameas"]</code> or <code>[founder id="sameas"]</code> — Text<br>
-<code>[company id="sameas" format="json"]</code> or <code>[founder id="sameas" format="json"]</code> — JSON<br>
-<code>[company id="sameas" format="ul"]</code> or <code>[founder id="sameas" format="ul"]</code> — HTML list',
-                'required'          => 0,
-                'conditional_logic' => 0,
-                'wrapper'           => array(
-                    'width' => '',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'default_value'     => '',
-                'rows'              => 4,
-                'placeholder'       => "https://linkedin.com/in/name\nhttps://twitter.com/handle",
-                'new_lines'         => '',
-            ),
-            
-        ),
-
-        // — Show on all user profile screens
-        'location'              => array(
-            array(
-                array(
-                    'param'     => 'user_form',
-                    'operator'  => '==',
-                    'value'     => 'all',
-                ),
-            ),
-        ),
-
-        'menu_order'            => 5,
-        'position'              => 'normal',
-        'style'                 => 'default',
-        'label_placement'       => 'top',
-        'instruction_placement' => 'field',
-        'hide_on_screen'        => '',
-        'active'                => true,
-        'description'           => '',
-        'show_in_rest'          => 0,
-    ) );
-}
-
-// — Hook the Schema.org field group into ACF init
-add_action( 'acf/init', __NAMESPACE__ . '\\register_user_education_sameas_fields' );

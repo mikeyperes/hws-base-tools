@@ -99,11 +99,12 @@ if ( file_exists( $wp_config_path ) ) {
  * Render system checks
  */
 function render_system_checks() {
-    // Get Redis and Cloudflare status
-    $redis_status = hws_check_redis_status();
-    $cloudflare_status = hws_check_cloudflare_status();
-    $myisam_status = hws_check_myisam_tables();
-    
+    // — Use the robust helpers from generic-functions.php (safe null-coalescing)
+    $redis_status      = function_exists( __NAMESPACE__ . '\hws_check_redis_status' ) ? hws_check_redis_status() : [];
+    $cloudflare_status = function_exists( __NAMESPACE__ . '\check_cloudflare_active' ) ? check_cloudflare_active() : [ 'status' => false, 'raw_value' => 'N/A' ];
+    $myisam_status     = function_exists( __NAMESPACE__ . '\check_myisam_tables' ) ? check_myisam_tables() : [ 'status' => true, 'raw_value' => 'N/A' ];
+
+    // — Build checks array using standardized return formats
     $checks = [
         'WordPress Auto Updates' => [
             'value' => defined( 'WP_AUTO_UPDATE_CORE' ) && WP_AUTO_UPDATE_CORE,
@@ -122,19 +123,19 @@ function render_system_checks() {
             'good'  => true,
         ],
         'Redis Object Cache' => [
-            'value' => $redis_status['status'] === true,
+            'value' => (bool) ( $redis_status['active'] ?? false ),
             'good'  => true,
         ],
         'Cloudflare' => [
-            'value' => $cloudflare_status['status'] === true,
+            'value' => (bool) ( $cloudflare_status['status'] ?? false ),
             'good'  => true,
         ],
         'MyISAM Tables' => [
-            'value' => $myisam_status['status'] === false, // No MyISAM = good
+            'value' => (bool) ( $myisam_status['status'] ?? true ), // status=true means no MyISAM = good
             'good'  => true,
         ],
     ];
-    
+
     echo '<div class="hws-status-grid">';
     foreach ( $checks as $label => $check ) :
         $is_good = ( $check['good'] && $check['value'] ) || ( ! $check['good'] && ! $check['value'] );
@@ -147,176 +148,32 @@ function render_system_checks() {
         </div>
     <?php endforeach;
     echo '</div>';
-    
-    // Show detailed status messages
+
+    // — Detailed status messages
     echo '<div style="margin-top: 15px;">';
-    
-    // Redis with full details
-    echo '<p><strong>Redis:</strong> ' . esc_html( $redis_status['message'] );
-    if ( ! empty( $redis_status['details'] ) ) {
-        echo '<br><small style="color: #666;">' . esc_html( $redis_status['details'] ) . '</small>';
+
+    // Redis details from robust checker
+    $r_info = $redis_status['info'] ?? [];
+    $r_msg  = ( $redis_status['active'] ?? false )
+        ? 'Active (v' . ( $r_info['version'] ?? '?' ) . ', ' . ( $r_info['used_memory'] ?? '' ) . ')'
+        : ( $redis_status['error'] ?? 'Inactive' );
+    echo '<p><strong>Redis:</strong> ' . esc_html( $r_msg );
+    if ( ! empty( $r_info ) ) {
+        echo '<br><small style="color:#666;">Host: ' . esc_html( $r_info['host'] ?? '' ) . ':' . ( $r_info['port'] ?? '' )
+           . ' | DB: ' . ( $r_info['db_index'] ?? 0 ) . ' | Keys: ' . number_format( (int)( $r_info['total_keys'] ?? 0 ) )
+           . ' | Hit Rate: ' . ( $r_info['hit_rate'] ?? 'N/A' ) . '</small>';
     }
     echo ' - <a href="' . esc_url( admin_url( 'admin.php?page=litespeed-cache' ) ) . '" target="_blank">View in LiteSpeed</a></p>';
-    
-    // Cloudflare with nameserver info
-    echo '<p><strong>Cloudflare:</strong> ' . esc_html( $cloudflare_status['message'] );
-    if ( ! empty( $cloudflare_status['nameservers'] ) ) {
-        echo '<br><small style="color: #666;">Nameservers: ' . esc_html( implode( ', ', $cloudflare_status['nameservers'] ) ) . '</small>';
-    }
-    echo '</p>';
-    
-    // MyISAM - show RED if tables found, include link
-    $myisam_color = $myisam_status['status'] ? 'color: red; font-weight: bold;' : '';
-    echo '<p><strong>MyISAM:</strong> <span style="' . $myisam_color . '">' . esc_html( $myisam_status['message'] ) . '</span>';
-    echo ' - <a href="' . esc_url( admin_url( 'admin.php?page=litespeed-db_optm' ) ) . '" target="_blank">View More in LiteSpeed</a></p>';
+
+    // Cloudflare
+    echo '<p><strong>Cloudflare:</strong> ' . esc_html( $cloudflare_status['raw_value'] ?? 'Unknown' ) . '</p>';
+
+    // MyISAM
+    $has_myisam = ! ( $myisam_status['status'] ?? true );
+    $myisam_style = $has_myisam ? 'color:red;font-weight:bold;' : '';
+    echo '<p><strong>MyISAM:</strong> <span style="' . $myisam_style . '">' . esc_html( $myisam_status['raw_value'] ?? 'N/A' ) . '</span>';
+    echo ' - <a href="' . esc_url( admin_url( 'admin.php?page=litespeed-db_optm' ) ) . '" target="_blank">View in LiteSpeed</a></p>';
     echo '</div>';
-}
-
-
-/**
- * Check MyISAM tables - ONLY for current WordPress prefix
- */
-function hws_check_myisam_tables() {
-    global $wpdb;
-    
-    // Use current WordPress prefix only
-    $prefix = $wpdb->prefix;
-    
-    $myisam_tables = $wpdb->get_results( $wpdb->prepare( "
-        SELECT TABLE_NAME 
-        FROM information_schema.TABLES 
-        WHERE TABLE_SCHEMA = DATABASE() 
-        AND ENGINE = 'MyISAM'
-        AND TABLE_NAME LIKE %s
-    ", $prefix . '%' ) );
-    
-    if ( empty( $myisam_tables ) ) {
-        return [ 'status' => false, 'message' => 'No MyISAM tables found (good!)' ];
-    }
-    
-    $table_names = array_map( function( $t ) { return $t->TABLE_NAME; }, $myisam_tables );
-    return [ 
-        'status' => true, // true = bad (MyISAM found)
-        'message' => count( $myisam_tables ) . ' MyISAM tables found: ' . implode( ', ', array_slice( $table_names, 0, 5 ) ) . ( count( $table_names ) > 5 ? '...' : '' )
-    ];
-}
-
-
-/**
- * Check Redis status properly - with full details
- */
-function hws_check_redis_status() {
-    // Check if Redis PHP extension is loaded
-    if ( ! extension_loaded( 'redis' ) ) {
-        return [ 'status' => false, 'message' => 'Redis extension not installed', 'details' => '' ];
-    }
-    
-    // Check if we can connect
-    try {
-        $redis = new \Redis();
-        $connected = @$redis->connect( '127.0.0.1', 6379, 2 ); // 2 second timeout
-        
-        if ( ! $connected ) {
-            return [ 'status' => false, 'message' => 'Redis service not running', 'details' => '' ];
-        }
-        
-        // Get detailed Redis info
-        $info = $redis->info();
-        $details = '';
-        
-        if ( $info ) {
-            $server_version = isset( $info['redis_version'] ) ? $info['redis_version'] : 'Unknown';
-            $port = isset( $info['tcp_port'] ) ? $info['tcp_port'] : '6379';
-            $used_memory = isset( $info['used_memory_human'] ) ? $info['used_memory_human'] : 'Unknown';
-            $peak_memory = isset( $info['used_memory_peak_human'] ) ? $info['used_memory_peak_human'] : 'Unknown';
-            $uptime = isset( $info['uptime_in_seconds'] ) ? $info['uptime_in_seconds'] : 0;
-            $connections = isset( $info['total_connections_received'] ) ? number_format( $info['total_connections_received'] ) : 'Unknown';
-            $commands = isset( $info['total_commands_processed'] ) ? number_format( $info['total_commands_processed'] ) : 'Unknown';
-            $db_index = 0;
-            
-            // Format uptime
-            $uptime_days = floor( $uptime / 86400 );
-            $uptime_str = $uptime_days . ' days';
-            
-            $details = "Server: $server_version | Port: $port | DB: $db_index | Memory: $used_memory | Peak: $peak_memory | Uptime: $uptime_str | Connections: $connections | Commands: $commands";
-        }
-        
-        // Check if LiteSpeed object cache is using Redis
-        $lscwp_redis = defined( 'LSCWP_OBJECT_CACHE' ) && LSCWP_OBJECT_CACHE;
-        
-        $redis->close();
-        
-        if ( $lscwp_redis ) {
-            return [ 
-                'status' => true, 
-                'message' => 'Redis active + LiteSpeed Object Cache enabled',
-                'details' => $details
-            ];
-        } else {
-            return [ 
-                'status' => 'partial', 
-                'message' => 'Redis available but Object Cache not enabled',
-                'details' => $details
-            ];
-        }
-    } catch ( \Exception $e ) {
-        return [ 'status' => false, 'message' => 'Redis error: ' . $e->getMessage(), 'details' => '' ];
-    }
-}
-
-
-/**
- * Check Cloudflare status properly - with nameservers
- */
-function hws_check_cloudflare_status() {
-    $nameservers = [];
-    
-    // Get nameservers first
-    $site_domain = parse_url( home_url(), PHP_URL_HOST );
-    $site_domain = preg_replace( '/^www\./', '', $site_domain );
-    $ns_records = @dns_get_record( $site_domain, DNS_NS );
-    
-    if ( $ns_records ) {
-        $nameservers = array_column( $ns_records, 'target' );
-    }
-    
-    // Method 1: Check HTTP headers
-    if ( isset( $_SERVER['HTTP_CF_RAY'] ) || isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-        $cf_ray = isset( $_SERVER['HTTP_CF_RAY'] ) ? $_SERVER['HTTP_CF_RAY'] : '';
-        return [ 
-            'status' => true, 
-            'message' => 'Cloudflare active (CF headers present)' . ( $cf_ray ? " - Ray ID: $cf_ray" : '' ),
-            'nameservers' => $nameservers
-        ];
-    }
-    
-    // Method 2: Check nameservers for Cloudflare
-    if ( $ns_records ) {
-        foreach ( $ns_records as $record ) {
-            if ( isset( $record['target'] ) && stripos( $record['target'], 'cloudflare' ) !== false ) {
-                return [ 
-                    'status' => true, 
-                    'message' => 'Cloudflare nameservers detected',
-                    'nameservers' => $nameservers
-                ];
-            }
-        }
-    }
-    
-    // Method 3: Check for Cloudflare plugin
-    if ( is_plugin_active( 'cloudflare/cloudflare.php' ) ) {
-        return [ 
-            'status' => 'partial', 
-            'message' => 'Cloudflare plugin active (proxy status unknown)',
-            'nameservers' => $nameservers
-        ];
-    }
-    
-    return [ 
-        'status' => false, 
-        'message' => 'Not using Cloudflare',
-        'nameservers' => $nameservers
-    ];
 }
 
 

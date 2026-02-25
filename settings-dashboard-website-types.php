@@ -21,14 +21,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function get_website_type_presets() {
     return [
+        'website_settings' => [
+            'name'        => 'Website Settings & User Fields',
+            'description' => 'Core site configuration: global settings page, user profile fields, and extended user metadata.',
+            'icon'        => '⚙️',
+            'snippets'    => [
+                'register_acf_website_settings',
+                'register_user_custom_fields_2025',
+                'register_user_custom_fields_additional_2025',
+            ],
+        ],
         'person_website' => [
             'name'        => 'Person Website',
-            'description' => 'Personal website configuration with user profiles, team members, organizations, and testimonials.',
+            'description' => 'Personal website configuration with team members, organizations, and testimonials.',
             'icon'        => '👤',
             'snippets'    => [
-                'register_user_custom_fields_additional_2025',
-                'register_user_custom_fields_2025',
-                'register_acf_website_settings',
                 'smp_enable_cpt_teammember',
                 'smp_enable_cpt_organization',
                 'enable_cpt_testimonial',

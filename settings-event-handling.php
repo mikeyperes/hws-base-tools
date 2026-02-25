@@ -424,39 +424,8 @@ alert("snippet ID: "+snippetId+"::: is checked"+isChecked);
         });
     }
 */
-// assets/js/hws-base-tools-listeners.js
-;(function($){
-  'use strict';
-
-  // Define a unique namespace for our plugin listeners
-  var ns = 'hws_base_tools';
-  window[ns] = window[ns] || {};
-
-  window[ns].toggleSnippet = function(snippetId) {
-    var isChecked = $('#'+snippetId).prop('checked');
-    $.ajax({
-      url: ajaxurl,
-      type: 'post',
-      data: {
-        action: ns + '_toggle_snippet',
-        snippet_id: snippetId,
-        enable: isChecked
-      },
-      success: function(response) {
-        if (response.success) {
-          alert(response.data);
-        } else {
-          alert('Error: ' + response.data);
-        }
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        console.error('AJAX Error:', textStatus, errorThrown, jqXHR.responseText);
-        alert('An AJAX error occurred: ' + textStatus + ' - ' + errorThrown);
-      }
-    });  
-  };
-
-})(jQuery);
+// — NOTE: Legacy duplicate toggleSnippet IIFE removed in 10.7.3
+// — The correct version is defined above (line ~355) with toggle- prefix support and nonce
 
 
 

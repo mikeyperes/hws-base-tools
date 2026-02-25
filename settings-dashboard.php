@@ -28,7 +28,21 @@ class Dashboard_Config {
     const SECRET_FATAL_KEY      = 'hws_fatal_log';
     const SECRET_SETUP_KEY      = 'hws_quick_setup';
     const SECRET_PERMALINKS_KEY = 'hws_purge_permalinks';
-    const SECRET_KEY_VALUE      = 'hht112';
+    
+    /** DB option key for the master secret password */
+    const OPT_MASTER_SECRET     = 'hws_master_secret_key';
+    
+    /** Default master password (used if no DB value exists) */
+    const DEFAULT_SECRET        = 'hexa2000!';
+    
+    /**
+     * Get the master secret key (from DB or default)
+     * Used by ALL secret/public URLs across the plugin
+     */
+    public static function get_secret_key(): string {
+        $val = get_option( self::OPT_MASTER_SECRET, '' );
+        return ( is_string( $val ) && $val !== '' ) ? $val : self::DEFAULT_SECRET;
+    }
     
     // Options
     const OPT_SECRET_URLS_ENABLED       = 'hws_secret_urls_enabled';
@@ -69,10 +83,10 @@ class Dashboard_Config {
  * Runs early on init to catch before any output
  */
 function hws_handle_secret_debug_url() {
-    // Handle debug toggle: /?hws_debug=hht112
+    // Handle debug toggle: /?hws_debug=hexa2000!
     if ( Dashboard_Config::are_secret_urls_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_DEBUG_KEY ] ) && 
-         $_GET[ Dashboard_Config::SECRET_DEBUG_KEY ] === Dashboard_Config::SECRET_KEY_VALUE ) {
+         $_GET[ Dashboard_Config::SECRET_DEBUG_KEY ] === Dashboard_Config::get_secret_key() ) {
         
         // Toggle all debug settings
         $wp_config_path = ABSPATH . 'wp-config.php';
@@ -100,26 +114,26 @@ function hws_handle_secret_debug_url() {
         }
     }
     
-    // Handle fatal log display: /?hws_fatal_log=hht112
+    // Handle fatal log display: /?hws_fatal_log=hexa2000!
     if ( Dashboard_Config::are_secret_urls_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_FATAL_KEY ] ) && 
-         $_GET[ Dashboard_Config::SECRET_FATAL_KEY ] === Dashboard_Config::SECRET_KEY_VALUE ) {
+         $_GET[ Dashboard_Config::SECRET_FATAL_KEY ] === Dashboard_Config::get_secret_key() ) {
         hws_display_fatal_errors_page();
         exit;
     }
     
-    // Handle quick setup: /?hws_quick_setup=hht112
+    // Handle quick setup: /?hws_quick_setup=hexa2000!
     if ( Dashboard_Config::is_secret_setup_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_SETUP_KEY ] ) && 
-         $_GET[ Dashboard_Config::SECRET_SETUP_KEY ] === Dashboard_Config::SECRET_KEY_VALUE ) {
+         $_GET[ Dashboard_Config::SECRET_SETUP_KEY ] === Dashboard_Config::get_secret_key() ) {
         hws_run_quick_setup_public();
         exit;
     }
     
-    // Handle permalink purge: /?hws_purge_permalinks=hht112
+    // Handle permalink purge: /?hws_purge_permalinks=hexa2000!
     if ( Dashboard_Config::is_secret_permalinks_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_PERMALINKS_KEY ] ) && 
-         $_GET[ Dashboard_Config::SECRET_PERMALINKS_KEY ] === Dashboard_Config::SECRET_KEY_VALUE ) {
+         $_GET[ Dashboard_Config::SECRET_PERMALINKS_KEY ] === Dashboard_Config::get_secret_key() ) {
         hws_purge_permalinks_public();
         exit;
     }
@@ -324,6 +338,7 @@ function hws_get_recent_fatal_errors( $limit = 100 ) {
     $log_files = [
         WP_CONTENT_DIR . '/debug.log',
         ABSPATH . 'error_log',
+        ABSPATH . 'wp-admin/error_log',
     ];
     
     $patterns = [
@@ -375,6 +390,13 @@ function add_wp_admin_settings_page() {
 }
 add_action( 'admin_menu', __NAMESPACE__ . '\\add_wp_admin_settings_page' );
 
+// — Enqueue WP media uploader scripts on our settings page (for favicon upload)
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+    if ( strpos( $hook, 'hws-core-tools' ) !== false ) {
+        wp_enqueue_media();
+    }
+});
+
 
 /**
  * Register AJAX handlers
@@ -385,6 +407,8 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_toggle_secret_setup', __NAMESPACE__ . '\\ajax_toggle_secret_setup' );
     add_action( 'wp_ajax_hws_toggle_secret_permalinks', __NAMESPACE__ . '\\ajax_toggle_secret_permalinks' );
     add_action( 'wp_ajax_hws_enable_all_auto_updates', __NAMESPACE__ . '\\ajax_enable_all_auto_updates' );
+    add_action( 'wp_ajax_hws_save_master_secret', __NAMESPACE__ . '\\ajax_save_master_secret' );
+    add_action( 'wp_ajax_hws_copy_favicon', __NAMESPACE__ . '\\ajax_copy_favicon' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
 }
@@ -408,6 +432,8 @@ function display_wp_admin_settings_page() {
         'backups'       => '💾 Backups',
         'advanced'      => '🔧 Advanced',
         'comments'      => '💬 Comments',
+        'update-center' => '🔄 Update Center',
+        'masked-login'  => '🔐 Masked Login',
     ];
     ?>
     <style>
@@ -461,6 +487,29 @@ function display_wp_admin_settings_page() {
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             background: #fff;
+        }
+        /* — Panel status modifiers (same pattern as cron-unhealthy) */
+        .hws-panel.panel-needs-attention {
+            border-color: #d63638;
+            background: #fcf0f1;
+        }
+        .hws-panel.panel-needs-attention .hws-panel-header {
+            background: #fce4e4;
+            border-bottom-color: #d63638;
+        }
+        .hws-panel.panel-warning {
+            border-color: #dba617;
+            background: #fff8e5;
+        }
+        .hws-panel.panel-warning .hws-panel-header {
+            background: #fef3d0;
+            border-bottom-color: #dba617;
+        }
+        .hws-panel.panel-healthy {
+            border-color: #00a32a;
+        }
+        .hws-panel.panel-healthy .hws-panel-header {
+            border-bottom-color: #00a32a;
         }
         .hws-panel-header {
             padding: 15px 20px;
@@ -678,18 +727,27 @@ function display_wp_admin_settings_page() {
     <div class="wrap" id="hws-base-tools">
         <h1><?php echo Config::$settings_page_display_title; ?></h1>
         
+        <?php
+        // — Determine active tab from ?tab= query string (default: first tab)
+        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : '';
+        // — Validate the tab exists in our tabs array; fall back to first tab if invalid
+        if ( ! array_key_exists( $active_tab, $tabs ) ) {
+            $active_tab = array_key_first( $tabs );
+        }
+        ?>
+        
         <!-- Tab Navigation -->
         <nav class="hws-tabs-nav">
-            <?php $first = true; foreach ( $tabs as $tab_id => $label ) : ?>
-                <button type="button" class="hws-tab-btn <?php echo $first ? 'active' : ''; ?>" data-tab="<?php echo $tab_id; ?>">
+            <?php foreach ( $tabs as $tab_id => $label ) : ?>
+                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?>" data-tab="<?php echo $tab_id; ?>">
                     <?php echo $label; ?>
                 </button>
-            <?php $first = false; endforeach; ?>
+            <?php endforeach; ?>
         </nav>
         
         <!-- Tab Contents - ALL LOADED AT ONCE -->
-        <?php $first = true; foreach ( $tabs as $tab_id => $label ) : ?>
-            <div id="tab-<?php echo $tab_id; ?>" class="hws-tab-content <?php echo $first ? 'active' : ''; ?>">
+        <?php foreach ( $tabs as $tab_id => $label ) : ?>
+            <div id="tab-<?php echo $tab_id; ?>" class="hws-tab-content <?php echo $tab_id === $active_tab ? 'active' : ''; ?>">
                 <?php
                 switch ( $tab_id ) {
                     case 'overview':
@@ -732,25 +790,107 @@ function display_wp_admin_settings_page() {
                     case 'advanced':
                         render_tab_advanced();
                         break;
+                    case 'update-center':
+                        if ( function_exists( __NAMESPACE__ . '\\display_settings_update_center' ) ) {
+                            display_settings_update_center();
+                        }
+                        break;
+                    case 'masked-login':
+                        if ( function_exists( __NAMESPACE__ . '\\display_settings_masked_login' ) ) {
+                            display_settings_masked_login();
+                        }
+                        break;
                 }
                 ?>
             </div>
-        <?php $first = false; endforeach; ?>
+        <?php endforeach; ?>
     </div>
 
     <script>
     // Global nonce for all AJAX calls
     var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
+
+    /**
+     * Abstract: Install a plugin from WordPress.org and activate it.
+     * Reuses the existing hws_install_plugin AJAX handler.
+     *
+     * @param {string}      slug  Plugin slug (e.g. 'wordfence', 'wp-mail-smtp')
+     * @param {HTMLElement}  btn   The button element (for UI feedback)
+     */
+    function hwsInstallPlugin( slug, btn ) {
+        if ( ! confirm( 'Install and activate "' + slug + '" from WordPress.org?' ) ) return;
+        var $btn = jQuery( btn );
+        var origText = $btn.text();
+        $btn.prop( 'disabled', true ).text( 'Installing…' );
+
+        jQuery.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: { action: 'hws_install_plugin', slug: slug, nonce: hwsNonce },
+            success: function( response ) {
+                if ( response.success ) {
+                    $btn.text( '✅ Installed — Reloading…' );
+                    setTimeout( function(){ location.reload(); }, 1500 );
+                } else {
+                    alert( 'Install failed: ' + ( response.data || 'Unknown error' ) );
+                    $btn.prop( 'disabled', false ).text( origText );
+                }
+            },
+            error: function() {
+                alert( 'AJAX error during installation.' );
+                $btn.prop( 'disabled', false ).text( origText );
+            }
+        });
+    }
+
+    /**
+     * Abstract: Activate an already-installed plugin.
+     * Reuses the new hws_activate_plugin AJAX handler.
+     *
+     * @param {string}      pluginFile  Plugin file path (e.g. 'wordfence/wordfence.php')
+     * @param {HTMLElement}  btn         The button element (for UI feedback)
+     */
+    function hwsActivatePlugin( pluginFile, btn ) {
+        var $btn = jQuery( btn );
+        var origText = $btn.text();
+        $btn.prop( 'disabled', true ).text( 'Activating…' );
+
+        jQuery.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: { action: 'hws_activate_plugin', plugin_file: pluginFile, nonce: hwsNonce },
+            success: function( response ) {
+                if ( response.success ) {
+                    $btn.text( '✅ Activated — Reloading…' );
+                    setTimeout( function(){ location.reload(); }, 1500 );
+                } else {
+                    alert( 'Activation failed: ' + ( response.data || 'Unknown error' ) );
+                    $btn.prop( 'disabled', false ).text( origText );
+                }
+            },
+            error: function() {
+                alert( 'AJAX error during activation.' );
+                $btn.prop( 'disabled', false ).text( origText );
+            }
+        });
+    }
     
     jQuery(document).ready(function($) {
         
-        // Tab switching (no page refresh)
+        // — Tab switching with URL persistence via ?tab= query string
         $('.hws-tab-btn').on('click', function() {
             var tabId = $(this).data('tab');
+
+            // — Switch active classes
             $('.hws-tab-btn').removeClass('active');
             $(this).addClass('active');
             $('.hws-tab-content').removeClass('active');
             $('#tab-' + tabId).addClass('active');
+
+            // — Update the URL query string without a page reload
+            var url = new URL(window.location);
+            url.searchParams.set('tab', tabId);
+            window.history.replaceState({}, '', url);
         });
         
         // Quick Setup
@@ -819,6 +959,35 @@ function display_wp_admin_settings_page() {
                 if (response.success) {
                     location.reload();
                 }
+            });
+        });
+        
+        // Save Master Secret Password
+        $('#hws-save-master-secret').on('click', function() {
+            var $btn = $(this);
+            var secret = $('#hws-master-secret').val().trim();
+            var $status = $('#hws-master-secret-status');
+            
+            if (secret.length < 6) {
+                $status.html('<span style="color:#d63638;">❌ Password must be at least 6 characters</span>');
+                return;
+            }
+            
+            $btn.prop('disabled', true).text('Saving...');
+            $.post(ajaxurl, {
+                action: 'hws_save_master_secret',
+                secret: secret,
+                nonce: hwsNonce
+            }, function(response) {
+                $btn.prop('disabled', false).text('💾 Save Password');
+                if (response.success) {
+                    $status.html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
+                } else {
+                    $status.html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed to save') + '</span>');
+                }
+            }).fail(function() {
+                $btn.prop('disabled', false).text('💾 Save Password');
+                $status.html('<span style="color:#d63638;">❌ AJAX error</span>');
             });
         });
         
@@ -1138,17 +1307,19 @@ function render_tab_overview() {
     
     $debug_log_path = WP_CONTENT_DIR . '/debug.log';
     $error_log_path = ABSPATH . 'error_log';
+    $admin_log_path = ABSPATH . 'wp-admin/error_log';
     $debug_log_size = file_exists( $debug_log_path ) ? size_format( filesize( $debug_log_path ) ) : 'N/A';
     $error_log_size = file_exists( $error_log_path ) ? size_format( filesize( $error_log_path ) ) : 'N/A';
+    $admin_log_size = file_exists( $admin_log_path ) ? size_format( filesize( $admin_log_path ) ) : 'N/A';
     
     // Secret URLs
     $secret_urls_enabled = Dashboard_Config::are_secret_urls_enabled();
     $secret_setup_enabled = Dashboard_Config::is_secret_setup_enabled();
     $secret_permalinks_enabled = Dashboard_Config::is_secret_permalinks_enabled();
-    $debug_url = add_query_arg( Dashboard_Config::SECRET_DEBUG_KEY, Dashboard_Config::SECRET_KEY_VALUE, home_url( '/' ) );
-    $fatal_url = add_query_arg( Dashboard_Config::SECRET_FATAL_KEY, Dashboard_Config::SECRET_KEY_VALUE, home_url( '/' ) );
-    $setup_url = add_query_arg( Dashboard_Config::SECRET_SETUP_KEY, Dashboard_Config::SECRET_KEY_VALUE, home_url( '/' ) );
-    $permalinks_url = add_query_arg( Dashboard_Config::SECRET_PERMALINKS_KEY, Dashboard_Config::SECRET_KEY_VALUE, home_url( '/' ) );
+    $debug_url = add_query_arg( Dashboard_Config::SECRET_DEBUG_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
+    $fatal_url = add_query_arg( Dashboard_Config::SECRET_FATAL_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
+    $setup_url = add_query_arg( Dashboard_Config::SECRET_SETUP_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
+    $permalinks_url = add_query_arg( Dashboard_Config::SECRET_PERMALINKS_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
     ?>
     
     <!-- Summary Section -->
@@ -1156,6 +1327,27 @@ function render_tab_overview() {
         <div class="hws-panel-header">📋 Summary</div>
         <div class="hws-panel-body">
             <?php render_summary_section(); ?>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════════════
+         GOING LIVE CHECKLIST (GLC)
+         Checks recommended snippets + essential plugins are active.
+         @since 10.9.0
+    ═══════════════════════════════════════════════════════════════════ -->
+    <?php render_going_live_checklist(); ?>
+    
+    <!-- Master Secret Password -->
+    <div class="hws-panel">
+        <div class="hws-panel-header">🔑 Master Secret Password</div>
+        <div class="hws-panel-body">
+            <p style="font-size:13px;color:#646970;margin:0 0 12px;">This password is used by ALL public/secret URLs across the plugin (debug, quick setup, update center, masked login, etc). Change it here to update everywhere at once.</p>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <input type="text" id="hws-master-secret" value="<?php echo esc_attr( Dashboard_Config::get_secret_key() ); ?>" class="regular-text" style="font-family:monospace;font-size:14px;">
+                <button type="button" id="hws-save-master-secret" class="hws-btn" style="white-space:nowrap;">💾 Save Password</button>
+            </div>
+            <div id="hws-master-secret-status" style="font-size:13px;"></div>
+            <p style="font-size:12px;color:#d63638;margin:8px 0 0;">⚠️ Anyone with this password can trigger public URLs. Use a strong, unique password.</p>
         </div>
     </div>
     
@@ -1171,13 +1363,12 @@ function render_tab_overview() {
                     <li>Enable WP core auto-updates</li>
                     <li>Enable ALL plugin auto-updates</li>
                     <li>Enable ALL theme auto-updates</li>
-                    <li>Delete log files</li>
-                    <li>Delete all comments</li>
+                    <li>Delete log files &amp; backup files</li>
+                    <li>Delete all comments &amp; pingbacks</li>
                 </ul>
                 <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
-                    <li>Delete backup files</li>
-                    <li>Disable all comments (past & future)</li>
-                    <li>Disable all pingbacks</li>
+                    <li><strong>Enable all recommended snippets</strong></li>
+                    <li><strong>Install &amp; activate essential plugins</strong> <em>(skips pro)</em></li>
                     <li>Enable Redis object cache <em>(if available)</em></li>
                     <li>Activate LiteSpeed Cache <em>(if installed)</em></li>
                     <li>Activate Wordfence <em>(if installed)</em></li>
@@ -1288,6 +1479,12 @@ function render_tab_overview() {
         </div>
     </div>
     
+    <!-- SMTP / Brevo Email -->
+    <?php render_smtp_status_panel(); ?>
+    
+    <!-- Wordfence Security -->
+    <?php render_wordfence_status_panel(); ?>
+    
     <!-- Log Files - Clean 3-Panel View -->
     <div class="hws-panel">
         <div class="hws-panel-header">📄 Error Logs</div>
@@ -1306,6 +1503,18 @@ function render_tab_overview() {
                         <?php echo $error_log_size; ?>
                     </span>
                 </div>
+                <div>
+                    <strong>wp-admin/error_log:</strong> 
+                    <span style="color: <?php echo $admin_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
+                        <?php echo $admin_log_size; ?>
+                    </span>
+                </div>
+                <div>
+                    <strong>display_errors:</strong> 
+                    <span style="color: <?php echo $display_errors ? '#d63638' : '#00a32a'; ?>;">
+                        <?php echo $display_errors ? 'ON' : 'Off'; ?>
+                    </span>
+                </div>
                 <div style="margin-left: auto;">
                     <button type="button" class="button button-secondary hws-btn-danger" id="delete-debug-log" style="padding: 2px 8px; font-size: 11px;">Delete debug.log</button>
                     <button type="button" class="button button-secondary hws-btn-danger" id="delete-error-log" style="padding: 2px 8px; font-size: 11px;">Delete error_log</button>
@@ -1317,6 +1526,7 @@ function render_tab_overview() {
                 <button type="button" class="button hws-log-tab active" data-log="fatal-syntax">🔴 Fatal & Syntax Errors</button>
                 <button type="button" class="button hws-log-tab" data-log="debug">📝 debug.log</button>
                 <button type="button" class="button hws-log-tab" data-log="error">📝 error_log</button>
+                <button type="button" class="button hws-log-tab" data-log="admin-error">📝 wp-admin/error_log</button>
             </div>
             
             <!-- Search Bar -->
@@ -1378,6 +1588,19 @@ function render_tab_overview() {
                         echo hws_highlight_log_errors( hws_get_log_tail( $error_log_path, 150 ) ); 
                     } else {
                         echo '<span style="color: #666;">error_log not found</span>';
+                    }
+                    ?>
+                </div>
+            </div>
+            
+            <!-- wp-admin/error_log Panel -->
+            <div id="log-panel-admin-error" class="hws-log-panel" style="display: none;">
+                <div class="hws-log-viewer" style="max-height: 400px;">
+                    <?php 
+                    if ( file_exists( $admin_log_path ) ) {
+                        echo hws_highlight_log_errors( hws_get_log_tail( $admin_log_path, 150 ) ); 
+                    } else {
+                        echo '<span style="color: #666;">wp-admin/error_log not found</span>';
                     }
                     ?>
                 </div>
@@ -1541,6 +1764,15 @@ function render_tab_overview() {
         display_settings_log_cleaner();
     }
     ?>
+    
+    <!-- Site Icon / Favicon -->
+    <?php render_site_icon_panel(); ?>
+    
+    <!-- LiteSpeed Cache Status -->
+    <?php render_litespeed_panel(); ?>
+    
+    <!-- PHP & Server Extensions -->
+    <?php render_php_extensions_panel(); ?>
     
     <!-- Elementor Database Updater -->
     <?php
@@ -2254,6 +2486,83 @@ function hws_execute_quick_setup() {
         $log .= "  <span class='warning'>⚠ Wordfence not installed</span>\n";
     }
     
+    // 12. Enable all recommended snippets
+    $log .= "<span class='success'>[Step {$step}]</span> Enabling recommended snippets...\n";
+    $step++;
+    if ( function_exists( __NAMESPACE__ . '\\hws_get_going_live_snippets' ) ) {
+        $glc_snippets = hws_get_going_live_snippets();
+        $enabled_count = 0;
+        $already_count = 0;
+        foreach ( $glc_snippets as $snippet_id ) {
+            if ( get_option( $snippet_id, false ) ) {
+                $already_count++;
+            } else {
+                update_option( $snippet_id, true );
+                $enabled_count++;
+            }
+        }
+        $log .= "  ✓ Enabled {$enabled_count} snippet(s), {$already_count} already active\n";
+    }
+    
+    // 13. Install & activate essential plugins (skip pro plugins)
+    $log .= "<span class='success'>[Step {$step}]</span> Installing essential plugins...\n";
+    $step++;
+    if ( function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugins' ) ) {
+        $monitored = hws_get_monitored_plugins();
+        // — Need WordPress plugin installer functions
+        include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+        include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        include_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
+        foreach ( $monitored as $plugin_path => $info ) {
+            // — Skip non-essential, optional, and pro plugins
+            if ( ( $info['category'] ?? '' ) !== 'essential' ) continue;
+            if ( ! empty( $info['pro'] ) ) {
+                $log .= "  - Skipped {$info['name']} (pro/manual install)\n";
+                continue;
+            }
+            // — Already active?
+            if ( is_plugin_active( $plugin_path ) ) {
+                $log .= "  ✓ {$info['name']} already active\n";
+                continue;
+            }
+            // — Installed but not active? Activate it
+            if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
+                $result = activate_plugin( $plugin_path );
+                if ( is_wp_error( $result ) ) {
+                    $log .= "  <span class='warning'>⚠ Could not activate {$info['name']}: " . $result->get_error_message() . "</span>\n";
+                } else {
+                    $log .= "  ✓ Activated {$info['name']}\n";
+                }
+                continue;
+            }
+            // — Not installed: download from wordpress.org slug
+            $download = $info['download'] ?? 'manual';
+            if ( $download === 'manual' ) {
+                $log .= "  <span class='warning'>⚠ {$info['name']} not installed (manual download required)</span>\n";
+                continue;
+            }
+            // — Extract slug from download URL or use plugin folder name
+            $slug = basename( dirname( $plugin_path ) );
+            $api  = plugins_api( 'plugin_information', [ 'slug' => $slug, 'fields' => [ 'sections' => false ] ] );
+            if ( is_wp_error( $api ) ) {
+                $log .= "  <span class='warning'>⚠ Could not find {$info['name']} in repository</span>\n";
+                continue;
+            }
+            $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
+            $installed = $upgrader->install( $api->download_link );
+            if ( $installed && ! is_wp_error( $installed ) ) {
+                $activate_result = activate_plugin( $plugin_path );
+                if ( is_wp_error( $activate_result ) ) {
+                    $log .= "  ✓ Installed {$info['name']} (activation failed: " . $activate_result->get_error_message() . ")\n";
+                } else {
+                    $log .= "  ✓ Installed & activated {$info['name']}\n";
+                }
+            } else {
+                $log .= "  <span class='warning'>⚠ Failed to install {$info['name']}</span>\n";
+            }
+        }
+    }
+    
     $log .= "\n<span class='success'>═══════════════════════════════════════</span>\n";
     $log .= "<span class='success'>✅ Quick Setup Complete!</span>\n";
     
@@ -2376,4 +2685,1103 @@ function ajax_toggle_all_debug() {
     } else {
         wp_send_json_error( 'modify_wp_config_constants function not found' );
     }
+}
+
+
+/**
+ * AJAX: Save the master secret password
+ */
+function ajax_save_master_secret() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+    
+    $new_secret = isset( $_POST['secret'] ) ? sanitize_text_field( $_POST['secret'] ) : '';
+    
+    // — Validate: must be at least 6 characters
+    if ( strlen( $new_secret ) < 6 ) {
+        wp_send_json_error( 'Password must be at least 6 characters' );
+    }
+    
+    update_option( Dashboard_Config::OPT_MASTER_SECRET, $new_secret );
+    
+    wp_send_json_success( [
+        'message' => 'Master password updated successfully',
+        'secret'  => $new_secret,
+    ] );
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SMTP / BREVO EMAIL STATUS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Reports WP Mail SMTP plugin status with Brevo (Sendinblue) integration details:
+ *   - Plugin installed/activated status
+ *   - Active mailer (Brevo, SMTP, etc.)
+ *   - From email and sending domain
+ *   - Brevo API key status
+ *   - Link to settings page
+ *
+ * @since 10.8.2
+ */
+function render_smtp_status_panel() {
+    // — Check if WP Mail SMTP plugin is installed and active
+    $plugin_file     = 'wp-mail-smtp/wp_mail_smtp.php';
+    $plugin_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+    $plugin_active    = is_plugin_active( $plugin_file );
+    $settings_url     = admin_url( 'admin.php?page=wp-mail-smtp' );
+
+    // — Get SMTP options if plugin is active
+    $smtp_options = $plugin_active ? get_option( 'wp_mail_smtp', [] ) : [];
+    $mailer       = $smtp_options['mail']['mailer'] ?? 'none';
+    $from_email   = $smtp_options['mail']['from_email'] ?? '';
+    $from_name    = $smtp_options['mail']['from_name'] ?? '';
+    $is_brevo     = $mailer === 'sendinblue';
+
+    // — Get Brevo-specific info
+    $brevo_api_key  = '';
+    $brevo_domain   = '';
+    if ( $is_brevo ) {
+        $brevo_api_key = $smtp_options['sendinblue']['api_key'] ?? '';
+        if ( $from_email ) {
+            $brevo_domain = substr( strrchr( $from_email, '@' ), 1 );
+        }
+    }
+
+    // — Use existing helper functions if available
+    $smtp_check = function_exists( __NAMESPACE__ . '\\check_smtp_auth_status_and_mailer' )
+                  ? check_smtp_auth_status_and_mailer()
+                  : [ 'status' => false, 'mailer' => '', 'raw_value' => '' ];
+
+    // — Mailer display names
+    $mailer_names = [
+        'sendinblue' => 'Brevo (Sendinblue)',
+        'smtp'       => 'Other SMTP',
+        'mail'       => 'PHP mail()',
+        'gmail'      => 'Gmail',
+        'outlook'    => 'Outlook',
+        'sendgrid'   => 'SendGrid',
+        'mailgun'    => 'Mailgun',
+        'sparkpost'  => 'SparkPost',
+        'postmark'   => 'Postmark',
+        'sendlayer'  => 'SendLayer',
+        'none'       => 'Not configured',
+    ];
+    $mailer_display = $mailer_names[ $mailer ] ?? ucfirst( $mailer );
+
+    // — Determine panel health status
+    //   Healthy: plugin active + using authenticated mailer (smtp/sendinblue/sendgrid/etc)
+    //   Needs attention: plugin missing, inactive, or using PHP mail()
+    $is_authenticated = $plugin_active && $smtp_check['status'];
+    $is_php_mail      = $plugin_active && $mailer === 'mail';
+
+    // — Panel CSS class based on status
+    //   Red = not installed / not active / no mailer
+    //   Yellow = active but using PHP mail() (not authenticated)
+    //   Default = fully authenticated
+    $panel_class = 'hws-panel';
+    if ( ! $plugin_active ) {
+        $panel_class .= ' panel-needs-attention';
+    } elseif ( $is_php_mail || ! $is_authenticated ) {
+        $panel_class .= ' panel-needs-attention';
+    }
+    ?>
+    <div class="<?php echo esc_attr( $panel_class ); ?>">
+        <div class="hws-panel-header">📧 Email / SMTP Authentication</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+
+                <!-- Status Icon -->
+                <div style="text-align:center;">
+                    <?php if ( $is_authenticated ) : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;font-size:28px;">✅</div>
+                        <div style="font-size:11px;color:#00a32a;margin-top:4px;">Authenticated</div>
+                    <?php elseif ( $plugin_active ) : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;font-size:28px;">⚠️</div>
+                        <div style="font-size:11px;color:#dba617;margin-top:4px;">Needs Setup</div>
+                    <?php else : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#f8d7da;display:flex;align-items:center;justify-content:center;font-size:28px;">❌</div>
+                        <div style="font-size:11px;color:#d63638;margin-top:4px;"><?php echo $plugin_installed ? 'Inactive' : 'Not Installed'; ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Status Grid -->
+                <div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                        <!-- Plugin Status -->
+                        <div style="padding:10px 14px;background:<?php echo $plugin_active ? '#f8f9fa' : 'rgba(214,54,56,0.06)'; ?>;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">WP Mail SMTP Plugin</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <span style="color:#00a32a;font-size:13px;">✅ Active</span>
+                            <?php elseif ( $plugin_installed ) : ?>
+                                <span style="color:#dba617;font-size:13px;">⚠️ Installed but not activated</span>
+                                <div style="font-size:12px;margin-top:3px;">
+                                    <button type="button" class="hws-btn" style="font-size:11px;padding:4px 10px;" onclick="hwsActivatePlugin('wp-mail-smtp/wp_mail_smtp.php', this);">Activate Now</button>
+                                </div>
+                            <?php else : ?>
+                                <span style="color:#d63638;font-size:13px;">❌ Not installed</span>
+                                <div style="font-size:12px;margin-top:3px;">
+                                    <button type="button" class="hws-btn" style="font-size:11px;padding:4px 10px;" onclick="hwsInstallPlugin('wp-mail-smtp', this);">Install & Activate</button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Mailer -->
+                        <div style="padding:10px 14px;background:<?php echo ( $plugin_active && ! $is_authenticated ) ? 'rgba(214,54,56,0.06)' : '#f8f9fa'; ?>;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Active Mailer</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <span style="color:<?php echo $is_authenticated ? '#00a32a' : '#d63638'; ?>;font-size:13px;">
+                                    <?php echo $is_authenticated ? '✅' : '⚠️'; ?> <?php echo esc_html( $mailer_display ); ?>
+                                </span>
+                                <?php if ( $is_php_mail ) : ?>
+                                    <div style="font-size:11px;color:#d63638;margin-top:2px;">PHP mail() is unreliable — configure an API mailer like Brevo</div>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- From Email -->
+                        <div style="padding:10px 14px;background:#f8f9fa;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">From Email</div>
+                            <?php if ( $from_email ) : ?>
+                                <code style="font-size:12px;"><?php echo esc_html( $from_email ); ?></code>
+                                <?php if ( $from_name ) : ?>
+                                    <div style="font-size:11px;color:#646970;margin-top:2px;">Name: <?php echo esc_html( $from_name ); ?></div>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Sending Domain -->
+                        <div style="padding:10px 14px;background:#f8f9fa;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Sending Domain</div>
+                            <?php if ( $brevo_domain ) : ?>
+                                <code style="font-size:12px;"><?php echo esc_html( $brevo_domain ); ?></code>
+                            <?php elseif ( $from_email ) : ?>
+                                <code style="font-size:12px;"><?php echo esc_html( substr( strrchr( $from_email, '@' ), 1 ) ); ?></code>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if ( $is_brevo ) : ?>
+                        <!-- Brevo API Key Status -->
+                        <div style="padding:10px 14px;background:<?php echo empty( $brevo_api_key ) ? 'rgba(214,54,56,0.06)' : '#f0f7ff'; ?>;border:1px solid <?php echo empty( $brevo_api_key ) ? '#d63638' : '#c3d9f0'; ?>;border-radius:6px;margin-bottom:12px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">🔑 Brevo API Key</div>
+                            <?php if ( ! empty( $brevo_api_key ) ) : ?>
+                                <span style="color:#00a32a;font-size:13px;">✅ Configured</span>
+                                <code style="font-size:11px;color:#888;margin-left:8px;"><?php echo esc_html( substr( $brevo_api_key, 0, 8 ) . '••••••••' . substr( $brevo_api_key, -4 ) ); ?></code>
+                            <?php else : ?>
+                                <span style="color:#d63638;font-size:13px;">❌ Missing — add your Brevo API key in WP Mail SMTP settings</span>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Actions -->
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <?php if ( $plugin_active ) : ?>
+                            <a href="<?php echo esc_url( $settings_url ); ?>" class="hws-btn" style="text-decoration:none;">⚙️ SMTP Settings</a>
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mail-smtp-tools&tab=test' ) ); ?>" class="hws-btn" style="text-decoration:none;background:#2271b1;border-color:#2271b1;">📤 Send Test Email</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WORDFENCE SECURITY STATUS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Reports Wordfence plugin status and key security configuration:
+ *   - Plugin installed/activated status (one-click install/activate)
+ *   - Firewall protection status
+ *   - Security alert email configuration
+ *   - License key status
+ *   - Links to Wordfence settings pages
+ *
+ * Uses abstract hwsInstallPlugin() / hwsActivatePlugin() JS helpers
+ * and the existing hws_install_plugin / hws_activate_plugin AJAX handlers.
+ *
+ * @since 10.8.4
+ */
+function render_wordfence_status_panel() {
+    // — Check if Wordfence is installed and active
+    $plugin_file      = 'wordfence/wordfence.php';
+    $plugin_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+    $plugin_active    = is_plugin_active( $plugin_file );
+
+    // — Wordfence configuration (from wfconfig DB table)
+    $alert_emails     = '';
+    $alert_email_list = [];
+    $has_license      = false;
+    $license_type     = '';
+    $firewall_enabled = false;
+    $firewall_mode    = '';
+    $waf_status       = '';
+
+    if ( $plugin_active ) {
+        // — Alert emails: reuse existing check_wordfence_notification_email()
+        if ( function_exists( __NAMESPACE__ . '\\check_wordfence_notification_email' ) ) {
+            $wf_email_check = check_wordfence_notification_email();
+            if ( ! empty( $wf_email_check['status'] ) ) {
+                $alert_emails = $wf_email_check['details'] ?? $wf_email_check['raw_value'] ?? '';
+            }
+        }
+
+        // — Read Wordfence config from its DB table
+        global $wpdb;
+        $wf_table = $wpdb->prefix . 'wfconfig';
+
+        // — License key check
+        $api_key = $wpdb->get_var( $wpdb->prepare(
+            "SELECT `val` FROM `{$wf_table}` WHERE `name` = %s", 'apiKey'
+        ) );
+        $has_license = ! empty( $api_key ) && strlen( $api_key ) > 10;
+
+        // — License type (free vs premium)
+        $is_premium = $wpdb->get_var( $wpdb->prepare(
+            "SELECT `val` FROM `{$wf_table}` WHERE `name` = %s", 'isPaid'
+        ) );
+        $license_type = $is_premium ? 'Premium' : 'Free';
+
+        // — Firewall mode
+        $waf_status = $wpdb->get_var( $wpdb->prepare(
+            "SELECT `val` FROM `{$wf_table}` WHERE `name` = %s", 'wafStatus'
+        ) );
+        $firewall_enabled = ! empty( $waf_status ) && $waf_status !== 'disabled';
+        $firewall_mode = $waf_status === 'enabled' ? 'Extended Protection' : ( $waf_status === 'learning-mode' ? 'Learning Mode' : ucfirst( $waf_status ?: 'Unknown' ) );
+    }
+
+    // — Determine overall panel health
+    //   Red: not installed or not active
+    //   Yellow: active but missing alerts email or firewall disabled
+    //   Green: all good
+    $panel_class = 'hws-panel';
+    if ( ! $plugin_active ) {
+        $panel_class .= ' panel-needs-attention';
+    } elseif ( empty( $alert_emails ) || ! $firewall_enabled ) {
+        $panel_class .= ' panel-warning';
+    }
+    ?>
+    <div class="<?php echo esc_attr( $panel_class ); ?>">
+        <div class="hws-panel-header">🛡️ Wordfence Security</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+
+                <!-- Status Icon -->
+                <div style="text-align:center;">
+                    <?php if ( $plugin_active && $firewall_enabled && ! empty( $alert_emails ) ) : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;font-size:28px;">🛡️</div>
+                        <div style="font-size:11px;color:#00a32a;margin-top:4px;">Protected</div>
+                    <?php elseif ( $plugin_active ) : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;font-size:28px;">⚠️</div>
+                        <div style="font-size:11px;color:#dba617;margin-top:4px;">Needs Setup</div>
+                    <?php else : ?>
+                        <div style="width:64px;height:64px;border-radius:50%;background:#f8d7da;display:flex;align-items:center;justify-content:center;font-size:28px;">❌</div>
+                        <div style="font-size:11px;color:#d63638;margin-top:4px;"><?php echo $plugin_installed ? 'Inactive' : 'Not Installed'; ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Status Grid -->
+                <div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+
+                        <!-- Plugin Status -->
+                        <div style="padding:10px 14px;background:<?php echo $plugin_active ? '#f8f9fa' : 'rgba(214,54,56,0.06)'; ?>;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Wordfence Plugin</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <span style="color:#00a32a;font-size:13px;">✅ Active</span>
+                            <?php elseif ( $plugin_installed ) : ?>
+                                <span style="color:#dba617;font-size:13px;">⚠️ Installed but not active</span>
+                                <div style="margin-top:5px;">
+                                    <button type="button" class="hws-btn" style="font-size:11px;padding:4px 10px;" onclick="hwsActivatePlugin('wordfence/wordfence.php', this);">Activate Now</button>
+                                </div>
+                            <?php else : ?>
+                                <span style="color:#d63638;font-size:13px;">❌ Not installed</span>
+                                <div style="margin-top:5px;">
+                                    <button type="button" class="hws-btn" style="font-size:11px;padding:4px 10px;" onclick="hwsInstallPlugin('wordfence', this);">Install & Activate</button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Firewall Status -->
+                        <div style="padding:10px 14px;background:<?php echo ( $plugin_active && ! $firewall_enabled ) ? 'rgba(214,54,56,0.06)' : '#f8f9fa'; ?>;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Firewall Protection</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <?php if ( $firewall_enabled ) : ?>
+                                    <span style="color:#00a32a;font-size:13px;">✅ <?php echo esc_html( $firewall_mode ); ?></span>
+                                <?php else : ?>
+                                    <span style="color:#d63638;font-size:13px;">❌ Disabled</span>
+                                    <div style="font-size:11px;color:#d63638;margin-top:2px;">Enable the WAF in Wordfence → Firewall</div>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- License Key -->
+                        <div style="padding:10px 14px;background:#f8f9fa;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">License</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <?php if ( $has_license ) : ?>
+                                    <span style="color:#00a32a;font-size:13px;">✅ <?php echo esc_html( $license_type ); ?></span>
+                                <?php else : ?>
+                                    <span style="color:#dba617;font-size:13px;">⚠️ No license key</span>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Security Alerts Email -->
+                        <div style="padding:10px 14px;background:<?php echo ( $plugin_active && empty( $alert_emails ) ) ? 'rgba(219,166,23,0.08)' : '#f8f9fa'; ?>;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Security Alert Emails</div>
+                            <?php if ( $plugin_active ) : ?>
+                                <?php if ( ! empty( $alert_emails ) ) : ?>
+                                    <span style="color:#00a32a;font-size:13px;">✅ Active</span>
+                                    <div style="font-size:11px;color:#646970;margin-top:2px;">
+                                        <code style="font-size:11px;"><?php echo esc_html( $alert_emails ); ?></code>
+                                    </div>
+                                <?php else : ?>
+                                    <span style="color:#dba617;font-size:13px;">⚠️ No alert email configured</span>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color:#999;font-size:13px;">—</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <?php if ( $plugin_active ) : ?>
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=WordfenceOptions' ) ); ?>" class="hws-btn" style="text-decoration:none;" target="_blank">⚙️ Wordfence Settings</a>
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=WordfenceOptions#wf-option-alertEmails' ) ); ?>" class="hws-btn" style="text-decoration:none;background:#2271b1;border-color:#2271b1;" target="_blank">📧 Alert Email Settings</a>
+                            <a href="https://www.wordfence.com/manage-wordfence-api-keys/" class="hws-btn hws-btn-secondary" style="text-decoration:none;" target="_blank">🔑 Manage License Key</a>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Setup Instructions (reusable instruction box) -->
+                    <?php echo hws_render_instructions(
+                        'Wordfence Setup Instructions',
+                        [
+                            'Install and activate Wordfence from the Plugins tab or Quick Setup.',
+                            'During initial setup wizard, <strong>select the Free version</strong>.',
+                            'Send your free license key to <code>contact+wordfence@michaelperes.com</code>',
+                            'When prompted <em>"Would you like WordPress security and vulnerability alerts sent to you via email?"</em> — select <strong>Yes</strong>.',
+                            'Set the alert email to <code>contact@michaelperes.com</code>',
+                            'Verify the email address when the confirmation email arrives.',
+                            'Confirm the Firewall is enabled under <strong>Wordfence → Firewall</strong>.',
+                        ],
+                        '🛡️'
+                    ); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * SITE ICON / FAVICON PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Reports the current site icon status and provides tools for management:
+ *   - WP Site Icon (Customizer-managed, <link rel="icon"> tag)
+ *   - Physical favicon.ico at webroot (Google crawler standard)
+ *   - Upload via native WP media uploader
+ *   - One-click copy WP icon → /favicon.ico
+ *
+ * @since 10.8.0
+ */
+function render_site_icon_panel() {
+    // — WP Site Icon status
+    $has_icon       = has_site_icon();
+    $icon_url       = $has_icon ? get_site_icon_url( 512 ) : '';
+    $icon_id        = (int) get_option( 'site_icon', 0 );
+    $icon_url_32    = $has_icon ? get_site_icon_url( 32 ) : '';
+
+    // — Physical favicon.ico at webroot
+    $favicon_path   = ABSPATH . 'favicon.ico';
+    $favicon_exists = file_exists( $favicon_path );
+    $favicon_size   = $favicon_exists ? size_format( filesize( $favicon_path ) ) : '';
+    $favicon_url    = home_url( '/favicon.ico' );
+
+    // — Customizer link
+    $customizer_url = admin_url( 'customize.php?autofocus[section]=title_tagline' );
+    ?>
+    <div class="hws-panel">
+        <div class="hws-panel-header">🖼️ Site Icon / Favicon</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+                
+                <!-- Icon Preview -->
+                <div style="text-align:center;">
+                    <?php if ( $has_icon ) : ?>
+                        <img src="<?php echo esc_url( $icon_url ); ?>" alt="Site Icon" 
+                             style="width:64px;height:64px;border-radius:8px;border:2px solid #ddd;background:#f0f0f1;">
+                        <div style="font-size:11px;color:#646970;margin-top:4px;">512px source</div>
+                    <?php else : ?>
+                        <div style="width:64px;height:64px;border-radius:8px;border:2px dashed #ccc;background:#f9f9f9;display:flex;align-items:center;justify-content:center;color:#999;font-size:24px;">?</div>
+                        <div style="font-size:11px;color:#d63638;margin-top:4px;">Not set</div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Status Grid -->
+                <div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                        
+                        <!-- WP Site Icon -->
+                        <div style="padding:10px 14px;background:#f8f9fa;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">WordPress Site Icon</div>
+                            <?php if ( $has_icon ) : ?>
+                                <span style="color:#00a32a;font-size:13px;">✅ Active</span>
+                                <div style="font-size:12px;color:#646970;margin-top:3px;">
+                                    <code style="font-size:11px;word-break:break-all;"><?php echo esc_html( $icon_url_32 ); ?></code>
+                                </div>
+                                <div style="font-size:11px;color:#646970;">Outputs: <code>&lt;link rel="icon"&gt;</code>, <code>apple-touch-icon</code>, <code>msapplication-TileImage</code></div>
+                            <?php else : ?>
+                                <span style="color:#d63638;font-size:13px;">❌ Not set</span>
+                                <div style="font-size:12px;color:#646970;margin-top:3px;">No <code>&lt;link rel="icon"&gt;</code> tags will be output</div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Physical favicon.ico -->
+                        <div style="padding:10px 14px;background:#f8f9fa;border-radius:6px;">
+                            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Physical /favicon.ico</div>
+                            <?php if ( $favicon_exists ) : ?>
+                                <span style="color:#00a32a;font-size:13px;">✅ Exists (<?php echo esc_html( $favicon_size ); ?>)</span>
+                                <div style="font-size:12px;color:#646970;margin-top:3px;">
+                                    <a href="<?php echo esc_url( $favicon_url ); ?>" target="_blank"><?php echo esc_html( $favicon_url ); ?></a>
+                                </div>
+                                <div style="font-size:11px;color:#646970;">Direct URL used by Google crawlers and older browsers</div>
+                            <?php else : ?>
+                                <span style="color:#dba617;font-size:13px;">⚠️ Missing</span>
+                                <div style="font-size:12px;color:#646970;margin-top:3px;">Some crawlers look for <code>/favicon.ico</code> directly. Click below to create it.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <a href="<?php echo esc_url( $customizer_url ); ?>" class="hws-btn" style="text-decoration:none;">🎨 Change in Customizer</a>
+                        
+                        <?php if ( $has_icon ) : ?>
+                            <button type="button" id="hws-copy-favicon" class="hws-btn" style="background:#2271b1;border-color:#2271b1;">
+                                📋 <?php echo $favicon_exists ? 'Update' : 'Create'; ?> /favicon.ico from Site Icon
+                            </button>
+                        <?php endif; ?>
+                        
+                        <button type="button" id="hws-upload-favicon" class="hws-btn" style="background:#8c5e00;border-color:#8c5e00;">
+                            📤 Upload New Icon
+                        </button>
+                    </div>
+                    <div id="hws-favicon-status" style="font-size:13px;margin-top:8px;"></div>
+
+                    <p style="font-size:12px;color:#646970;margin:10px 0 0;">
+                        💡 WordPress outputs <code>&lt;link rel="icon"&gt;</code> in the HTML head (supports PNG). The physical <code>/favicon.ico</code> file is a fallback for Google crawlers and browsers that request it directly. Modern browsers accept PNG at <code>/favicon.ico</code>.
+                    </p>
+
+                    <!-- Setup Instructions (reusable instruction box) -->
+                    <?php echo hws_render_instructions(
+                        'Favicon / Site Icon Setup',
+                        [
+                            'Prepare a <strong>1:1 aspect ratio</strong> (square) image — minimum 512×512px recommended.',
+                            'Go to <a href="' . esc_url( admin_url( 'options-general.php' ) ) . '" target="_blank"><strong>Settings → General</strong></a> and scroll to "Site Icon".',
+                            'Upload your square image and crop if prompted.',
+                            'Return here and click <strong>"Create /favicon.ico from Site Icon"</strong> to also generate the physical favicon.ico file for crawlers.',
+                            'Verify your favicon appears in the browser tab after a hard refresh (Ctrl+Shift+R).',
+                        ],
+                        '🖼️'
+                    ); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    jQuery(document).ready(function($) {
+        // — Copy WP site icon to /favicon.ico
+        $('#hws-copy-favicon').on('click', function() {
+            var $btn = $(this);
+            var origText = $btn.text();
+            $btn.prop('disabled', true).text('Copying...');
+            
+            $.post(ajaxurl, {
+                action: 'hws_copy_favicon',
+                nonce: hwsNonce,
+                source: 'site_icon'
+            }, function(response) {
+                $btn.prop('disabled', false).text(origText);
+                if (response.success) {
+                    $('#hws-favicon-status').html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
+                    setTimeout(function() { location.reload(); }, 1500);
+                } else {
+                    $('#hws-favicon-status').html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
+                }
+            }).fail(function() {
+                $btn.prop('disabled', false).text(origText);
+                $('#hws-favicon-status').html('<span style="color:#d63638;">❌ AJAX error</span>');
+            });
+        });
+
+        // — Upload new icon via WP Media Library
+        $('#hws-upload-favicon').on('click', function(e) {
+            e.preventDefault();
+            
+            // — Open WP media uploader
+            var frame = wp.media({
+                title: 'Select Site Icon',
+                button: { text: 'Set as Site Icon' },
+                library: { type: 'image' },
+                multiple: false
+            });
+
+            frame.on('select', function() {
+                var attachment = frame.state().get('selection').first().toJSON();
+                
+                // — Set as WP site icon via the site_icon option
+                $.post(ajaxurl, {
+                    action: 'hws_copy_favicon',
+                    nonce: hwsNonce,
+                    source: 'upload',
+                    attachment_id: attachment.id
+                }, function(response) {
+                    if (response.success) {
+                        $('#hws-favicon-status').html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
+                        setTimeout(function() { location.reload(); }, 1500);
+                    } else {
+                        $('#hws-favicon-status').html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
+                    }
+                });
+            });
+
+            frame.open();
+        });
+    });
+    </script>
+    <?php
+}
+
+
+/**
+ * AJAX: Copy site icon to /favicon.ico or set a new icon from upload
+ */
+function ajax_copy_favicon() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    $source = isset( $_POST['source'] ) ? sanitize_key( $_POST['source'] ) : '';
+
+    // — Source: upload — set as WP site icon + create resized favicon.ico
+    if ( $source === 'upload' ) {
+        $attachment_id = isset( $_POST['attachment_id'] ) ? intval( $_POST['attachment_id'] ) : 0;
+        if ( ! $attachment_id ) {
+            wp_send_json_error( 'No attachment selected' );
+        }
+
+        // — Set as WordPress site icon (full-size for <link rel="icon"> tags)
+        update_option( 'site_icon', $attachment_id );
+
+        // — Create resized /favicon.ico (48×48 for browser tabs)
+        $file_path = get_attached_file( $attachment_id );
+        $result    = hws_create_resized_favicon( $file_path );
+
+        wp_send_json_success( [ 'message' => 'Site icon set. ' . $result ] );
+        return;
+    }
+
+    // — Source: site_icon — resize existing WP site icon to /favicon.ico
+    if ( $source === 'site_icon' ) {
+        $icon_id = (int) get_option( 'site_icon', 0 );
+        if ( ! $icon_id ) {
+            wp_send_json_error( 'No WordPress site icon is set. Set one first via Customizer.' );
+        }
+
+        // — Get the original file path
+        $file_path = get_attached_file( $icon_id );
+
+        // — Fallback: download from URL if local file missing
+        if ( ! $file_path || ! file_exists( $file_path ) ) {
+            $icon_url = get_site_icon_url( 512 );
+            if ( ! $icon_url ) {
+                wp_send_json_error( 'Could not locate site icon file' );
+            }
+
+            $tmp = download_url( $icon_url, 10 );
+            if ( is_wp_error( $tmp ) ) {
+                wp_send_json_error( 'Could not download site icon: ' . $tmp->get_error_message() );
+            }
+            $file_path = $tmp;
+        }
+
+        $result = hws_create_resized_favicon( $file_path );
+
+        // — Clean up temp file if we downloaded
+        if ( isset( $tmp ) && file_exists( $tmp ) ) @unlink( $tmp );
+
+        if ( strpos( $result, 'error' ) !== false || strpos( $result, 'Could not' ) !== false ) {
+            wp_send_json_error( $result );
+        }
+        wp_send_json_success( [ 'message' => $result ] );
+        return;
+    }
+
+    wp_send_json_error( 'Unknown source type' );
+}
+
+
+/**
+ * Create a resized 48×48 favicon.ico from a source image file.
+ * Uses WP_Image_Editor for reliable resizing and compression.
+ * Output is PNG (modern browsers accept PNG at /favicon.ico).
+ *
+ * @param string|null $source_path  Path to the source image
+ * @return string                   Status message
+ */
+function hws_create_resized_favicon( ?string $source_path ): string {
+    if ( ! $source_path || ! file_exists( $source_path ) ) {
+        return 'Could not locate source image file';
+    }
+
+    $dest = ABSPATH . 'favicon.ico';
+
+    // — Use WP_Image_Editor to resize to 48×48
+    $editor = wp_get_image_editor( $source_path );
+    if ( is_wp_error( $editor ) ) {
+        // — Fallback: direct copy without resize
+        if ( @copy( $source_path, $dest ) ) {
+            return '/favicon.ico created (not resized — image editor unavailable: ' . $editor->get_error_message() . ')';
+        }
+        return 'Could not create /favicon.ico — ' . $editor->get_error_message();
+    }
+
+    // — Resize to 48×48 (standard browser tab favicon size)
+    $resized = $editor->resize( 48, 48, true );
+    if ( is_wp_error( $resized ) ) {
+        // — Fallback: direct copy without resize
+        if ( @copy( $source_path, $dest ) ) {
+            return '/favicon.ico created (not resized — ' . $resized->get_error_message() . ')';
+        }
+        return 'Could not resize — ' . $resized->get_error_message();
+    }
+
+    // — Set quality for compression
+    $editor->set_quality( 90 );
+
+    // — Save to a temp file first (WP doesn't let us specify .ico extension directly)
+    $tmp_dir  = get_temp_dir();
+    $tmp_file = $tmp_dir . 'hws-favicon-' . wp_generate_password( 8, false ) . '.png';
+    $saved    = $editor->save( $tmp_file, 'image/png' );
+
+    if ( is_wp_error( $saved ) ) {
+        return 'Could not save resized favicon — ' . $saved->get_error_message();
+    }
+
+    // — Move the resized file to /favicon.ico
+    $saved_path = $saved['path'];
+    if ( @rename( $saved_path, $dest ) || @copy( $saved_path, $dest ) ) {
+        @unlink( $saved_path );
+        $size = size_format( filesize( $dest ) );
+        return '/favicon.ico created (48×48, ' . $size . ')';
+    }
+
+    @unlink( $saved_path );
+    return 'Could not write to ' . ABSPATH . 'favicon.ico — check file permissions';
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * GOING LIVE CHECKLIST PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Verifies that all recommended snippets are active and essential plugins
+ * are installed/activated. Shows green/red status for each item.
+ *
+ * @since 10.9.0
+ */
+function render_going_live_checklist() {
+    // ═════════════════════════════════════════════════════════════════════
+    // SECTION 1: Recommended Snippets
+    // ═════════════════════════════════════════════════════════════════════
+    $glc_snippets = function_exists( __NAMESPACE__ . '\hws_get_going_live_snippets' )
+        ? hws_get_going_live_snippets() : [];
+
+    $snippet_names = [];
+    if ( function_exists( __NAMESPACE__ . '\get_snippets' ) ) {
+        foreach ( [ '', 'admin', 'non_admin' ] as $type ) {
+            foreach ( get_snippets( $type ) as $s ) {
+                $snippet_names[ $s['id'] ] = $s['name'];
+            }
+        }
+    }
+
+    $snippet_statuses = [];
+    $snippets_ok = 0;
+    foreach ( $glc_snippets as $sid ) {
+        $active = (bool) get_option( $sid, false );
+        $snippet_statuses[] = [
+            'id' => $sid, 'name' => $snippet_names[ $sid ] ?? $sid, 'active' => $active,
+        ];
+        if ( $active ) $snippets_ok++;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // SECTION 2: Essential Plugins
+    // ═════════════════════════════════════════════════════════════════════
+    $monitored = function_exists( __NAMESPACE__ . '\hws_get_monitored_plugins' )
+        ? hws_get_monitored_plugins() : [];
+    $essential_plugins = [];
+    $plugins_ok = 0;
+    foreach ( $monitored as $path => $info ) {
+        if ( ( $info['category'] ?? '' ) !== 'essential' ) continue;
+        $active    = is_plugin_active( $path );
+        $installed = file_exists( WP_PLUGIN_DIR . '/' . $path );
+        $essential_plugins[] = [
+            'name' => $info['name'], 'active' => $active,
+            'installed' => $installed, 'pro' => $info['pro'] ?? false,
+        ];
+        if ( $active ) $plugins_ok++;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // SECTION 3: Settings & Server Checks
+    // ═════════════════════════════════════════════════════════════════════
+    $settings_checks = function_exists( __NAMESPACE__ . '\hws_get_glc_settings_checks' )
+        ? hws_get_glc_settings_checks() : [];
+    $settings_ok = count( array_filter( $settings_checks, fn( $c ) => $c['pass'] ) );
+
+    // ═════════════════════════════════════════════════════════════════════
+    // TOTALS
+    // ═════════════════════════════════════════════════════════════════════
+    $total_checks = count( $glc_snippets ) + count( $essential_plugins ) + count( $settings_checks );
+    $total_ok     = $snippets_ok + $plugins_ok + $settings_ok;
+    $all_good     = ( $total_ok === $total_checks );
+
+    $panel_class = 'hws-panel';
+    if ( ! $all_good ) {
+        $panel_class .= ( $total_ok < $total_checks / 2 ) ? ' panel-needs-attention' : ' panel-warning';
+    }
+    ?>
+    <div class="<?php echo esc_attr( $panel_class ); ?>">
+        <div class="hws-panel-header">
+            🚀 Going Live Checklist
+            <span style="font-weight:400;font-size:12px;color:#646970;margin-left:8px;">
+                (<?php echo $total_ok; ?>/<?php echo $total_checks; ?> ready)
+            </span>
+        </div>
+        <div class="hws-panel-body">
+            <?php if ( $all_good ) : ?>
+                <p style="color:#00a32a;font-weight:600;font-size:14px;margin:0 0 12px;">✅ All checks passed — site is ready to go live!</p>
+            <?php else : ?>
+                <p style="color:#dba617;font-size:13px;margin:0 0 12px;">⚠️ <?php echo ( $total_checks - $total_ok ); ?> items need attention. Run <strong>Quick Setup</strong> below to fix what can be automated.</p>
+            <?php endif; ?>
+
+            <!-- ─── THREE-COLUMN GRID ─── -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+
+                <!-- Column 1: Recommended Snippets -->
+                <div>
+                    <h4 style="margin:0 0 8px;font-size:13px;color:#1d2327;border-bottom:2px solid #2271b1;padding-bottom:4px;">
+                        📝 Snippets <span style="font-weight:400;color:#646970;">(<?php echo $snippets_ok; ?>/<?php echo count($glc_snippets); ?>)</span>
+                    </h4>
+                    <?php foreach ( $snippet_statuses as $ss ) : ?>
+                        <div style="padding:4px 0;font-size:12px;border-bottom:1px solid #f0f0f0;">
+                            <?php echo $ss['active'] ? '✅' : '❌'; ?>
+                            <span style="color:<?php echo $ss['active'] ? '#1d2327' : '#d63638'; ?>;">
+                                <?php echo esc_html( $ss['name'] ); ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Column 2: Essential Plugins -->
+                <div>
+                    <h4 style="margin:0 0 8px;font-size:13px;color:#1d2327;border-bottom:2px solid #2271b1;padding-bottom:4px;">
+                        🔌 Plugins <span style="font-weight:400;color:#646970;">(<?php echo $plugins_ok; ?>/<?php echo count($essential_plugins); ?>)</span>
+                    </h4>
+                    <?php foreach ( $essential_plugins as $ep ) : ?>
+                        <div style="padding:4px 0;font-size:12px;border-bottom:1px solid #f0f0f0;">
+                            <?php echo $ep['active'] ? '✅' : '❌'; ?>
+                            <span style="color:<?php echo $ep['active'] ? '#1d2327' : '#d63638'; ?>;">
+                                <?php echo esc_html( $ep['name'] ); ?>
+                            </span>
+                            <?php if ( $ep['pro'] ) : ?>
+                                <span style="background:#8c5e00;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px;">PRO</span>
+                            <?php endif; ?>
+                            <?php if ( ! $ep['installed'] && ! $ep['pro'] ) : ?>
+                                <span style="color:#d63638;font-size:10px;margin-left:3px;">(missing)</span>
+                            <?php elseif ( ! $ep['active'] && $ep['installed'] ) : ?>
+                                <span style="color:#dba617;font-size:10px;margin-left:3px;">(inactive)</span>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Column 3: Settings & Server Checks -->
+                <div>
+                    <h4 style="margin:0 0 8px;font-size:13px;color:#1d2327;border-bottom:2px solid #2271b1;padding-bottom:4px;">
+                        ⚙️ Settings & Server <span style="font-weight:400;color:#646970;">(<?php echo $settings_ok; ?>/<?php echo count($settings_checks); ?>)</span>
+                    </h4>
+                    <?php foreach ( $settings_checks as $chk ) : ?>
+                        <div style="padding:4px 0;font-size:12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:flex-start;gap:4px;" title="<?php echo esc_attr( $chk['value'] ); ?>">
+                            <span style="flex-shrink:0;"><?php echo $chk['pass'] ? '✅' : '❌'; ?></span>
+                            <span style="color:<?php echo $chk['pass'] ? '#1d2327' : '#d63638'; ?>;">
+                                <?php echo esc_html( $chk['label'] ); ?>
+                                <?php if ( ! $chk['pass'] ) : ?>
+                                    <span style="color:#999;font-size:10px;display:block;"><?php echo esc_html( $chk['value'] ); ?></span>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * PHP & SERVER EXTENSIONS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Displays all PHP extensions important for WordPress with loaded status.
+ * Required extensions shown in red if missing, recommended in yellow.
+ *
+ * @since 10.9.0
+ */
+function render_php_extensions_panel() {
+    // — Get extension data from helper function
+    $extensions = function_exists( __NAMESPACE__ . '\\hws_check_php_extensions' )
+        ? hws_check_php_extensions()
+        : [];
+
+    if ( empty( $extensions ) ) return;
+
+    // — Count stats
+    $total    = count( $extensions );
+    $loaded   = count( array_filter( $extensions, fn( $e ) => $e['loaded'] ) );
+    $missing_required = count( array_filter( $extensions, fn( $e ) => $e['required'] && ! $e['loaded'] ) );
+
+    // — Panel health
+    $panel_class = 'hws-panel';
+    if ( $missing_required > 0 ) {
+        $panel_class .= ' panel-needs-attention';
+    }
+    ?>
+    <div class="<?php echo esc_attr( $panel_class ); ?>">
+        <div class="hws-panel-header">🖥️ PHP & Server Extensions <span style="font-weight:400;font-size:12px;color:#646970;margin-left:8px;">(<?php echo $loaded; ?>/<?php echo $total; ?> loaded)</span></div>
+        <div class="hws-panel-body">
+            <p style="font-size:13px;color:#646970;margin:0 0 12px;">
+                PHP <?php echo phpversion(); ?> — Extensions required and recommended for WordPress.
+                <?php if ( $missing_required > 0 ) : ?>
+                    <span style="color:#d63638;font-weight:600;"><?php echo $missing_required; ?> required extension(s) missing!</span>
+                <?php endif; ?>
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:6px;">
+                <?php foreach ( $extensions as $ext ) :
+                    // — Color coding: red if required+missing, yellow if optional+missing, green if loaded
+                    $bg    = $ext['loaded'] ? '#f8f9fa' : ( $ext['required'] ? 'rgba(214,54,56,0.06)' : 'rgba(219,166,23,0.06)' );
+                    $color = $ext['loaded'] ? '#00a32a' : ( $ext['required'] ? '#d63638' : '#dba617' );
+                    $icon  = $ext['loaded'] ? '✅' : ( $ext['required'] ? '❌' : '⚠️' );
+                ?>
+                    <div style="padding:6px 10px;background:<?php echo $bg; ?>;border-radius:4px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                        <span><?php echo $icon; ?></span>
+                        <code style="font-size:11px;font-weight:600;"><?php echo esc_html( $ext['name'] ); ?></code>
+                        <span style="color:#646970;font-size:11px;">— <?php echo esc_html( $ext['purpose'] ); ?></span>
+                        <?php if ( $ext['required'] ) : ?>
+                            <span style="background:#d63638;color:#fff;font-size:9px;padding:1px 4px;border-radius:2px;margin-left:auto;">REQ</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * LITESPEED CACHE STATUS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Displays detailed LiteSpeed Cache configuration: page cache, CSS/JS
+ * optimization, Redis object cache, Brotli compression. Links directly
+ * to the relevant LiteSpeed settings pages.
+ *
+ * @since 10.9.1
+ */
+function render_litespeed_panel() {
+    // — Get LiteSpeed info from helper (returns false if plugin not active)
+    $ls = function_exists( __NAMESPACE__ . '\hws_get_litespeed_info' )
+        ? hws_get_litespeed_info()
+        : false;
+
+    if ( $ls === false ) {
+        ?>
+        <div class="hws-panel panel-needs-attention">
+            <div class="hws-panel-header">⚡ LiteSpeed Cache</div>
+            <div class="hws-panel-body">
+                <p style="color:#d63638;">❌ LiteSpeed Cache plugin is not active.</p>
+            </div>
+        </div>
+        <?php
+        return;
+    }
+
+    // — Get Redis status (with full null-safety)
+    $redis = function_exists( __NAMESPACE__ . '\hws_check_redis_status' )
+        ? hws_check_redis_status()
+        : [];
+    $r_active    = $redis['active'] ?? false;
+    $r_connected = $redis['connected'] ?? false;
+    $r_extension = $redis['extension'] ?? false;
+    $r_ls_on     = $redis['litespeed_enabled'] ?? false;
+    $r_error     = $redis['error'] ?? '';
+    $r_info      = $redis['info'] ?? [];
+
+    // — Get Brotli status
+    $brotli = function_exists( __NAMESPACE__ . '\hws_check_brotli_support' )
+        ? hws_check_brotli_support()
+        : [ 'enabled' => false, 'details' => '' ];
+
+    // — LiteSpeed admin page URLs
+    $ls_cache_url   = admin_url( 'admin.php?page=litespeed-cache' );
+    $ls_optm_url    = admin_url( 'admin.php?page=litespeed-page_optm' );
+    $ls_object_url  = admin_url( 'admin.php?page=litespeed-cache#object' );
+    $ls_general_url = admin_url( 'admin.php?page=litespeed' );
+
+    // — Panel health
+    $issues = 0;
+    if ( ! ( $ls['cache_enabled'] ?? false ) ) $issues += 2;
+    if ( ! ( $ls['object_enabled'] ?? false ) ) $issues++;
+    if ( ! $r_active ) $issues++;
+    $panel_class = 'hws-panel';
+    if ( $issues > 2 ) $panel_class .= ' panel-needs-attention';
+    elseif ( $issues > 0 ) $panel_class .= ' panel-warning';
+
+    // — Status badge helper
+    $badge = function( $on, $label_on = 'ON', $label_off = 'OFF' ) {
+        $bg    = $on ? '#00a32a' : '#d63638';
+        $label = $on ? $label_on : $label_off;
+        return '<span style="background:' . $bg . ';color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;">' . $label . '</span>';
+    };
+
+    ?>
+    <div class="<?php echo esc_attr( $panel_class ); ?>">
+        <div class="hws-panel-header">⚡ LiteSpeed Cache</div>
+        <div class="hws-panel-body">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+
+                <!-- COLUMN 1: Page Cache -->
+                <div style="background:#f8f9fa;border-radius:6px;padding:12px;">
+                    <h4 style="margin:0 0 8px;font-size:12px;color:#1d2327;">📄 Page Cache</h4>
+                    <div style="font-size:12px;line-height:2;">
+                        <div>Cache: <?php echo $badge( $ls['cache_enabled'] ?? false ); ?></div>
+                        <div>Private Cache: <?php echo $badge( $ls['cache_private'] ?? false ); ?></div>
+                        <div>Browser Cache: <?php echo $badge( $ls['cache_browser'] ?? false ); ?></div>
+                        <div>Mobile Cache: <?php echo $badge( $ls['cache_mobile'] ?? false ); ?></div>
+                        <div>REST Cache: <?php echo $badge( $ls['cache_rest'] ?? false ); ?></div>
+                        <?php $ttl = $ls['cache_ttl_public'] ?? 0; if ( $ttl ) : ?>
+                            <div style="color:#646970;font-size:11px;">TTL: <?php echo number_format( $ttl ); ?>s</div>
+                        <?php endif; ?>
+                    </div>
+                    <a href="<?php echo esc_url( $ls_cache_url ); ?>" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;">⚙️ Cache Settings →</a>
+                </div>
+
+                <!-- COLUMN 2: CSS/JS Optimization -->
+                <div style="background:#f8f9fa;border-radius:6px;padding:12px;">
+                    <h4 style="margin:0 0 8px;font-size:12px;color:#1d2327;">🎨 CSS</h4>
+                    <div style="font-size:12px;line-height:2;">
+                        <div>Minify: <?php echo $badge( $ls['css_minify'] ?? false ); ?></div>
+                        <div>Combine: <?php echo $badge( $ls['css_combine'] ?? false ); ?></div>
+                        <div>Load Async: <?php echo $badge( $ls['css_async'] ?? false ); ?></div>
+                        <div>Font Display: <?php echo $badge( (bool) ( $ls['css_font_display'] ?? false ) ); ?></div>
+                    </div>
+                    <h4 style="margin:12px 0 8px;font-size:12px;color:#1d2327;">📜 JS</h4>
+                    <div style="font-size:12px;line-height:2;">
+                        <div>Minify: <?php echo $badge( $ls['js_minify'] ?? false ); ?></div>
+                        <div>Combine: <?php echo $badge( $ls['js_combine'] ?? false ); ?></div>
+                        <div>Defer: <?php echo $badge( (bool) ( $ls['js_defer'] ?? false ) ); ?></div>
+                    </div>
+                    <a href="<?php echo esc_url( $ls_optm_url ); ?>" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;">⚙️ Optimization Settings →</a>
+                </div>
+
+                <!-- COLUMN 3: Redis / Object Cache -->
+                <div style="background:<?php echo $r_active ? '#f0faf0' : '#fef7f0'; ?>;border-radius:6px;padding:12px;">
+                    <h4 style="margin:0 0 8px;font-size:12px;color:#1d2327;">🗄️ Redis / Object Cache</h4>
+                    <div style="font-size:12px;line-height:2;">
+                        <div>Object Cache: <?php echo $badge( $ls['object_enabled'] ?? false ); ?></div>
+                        <div>Driver: <?php echo $badge( ( $ls['object_kind'] ?? '' ) === 'Redis', 'Redis', $ls['object_kind'] ?? 'N/A' ); ?></div>
+                        <div>Connection: <?php echo $badge( $r_connected ); ?></div>
+                        <div>Extension: <?php echo $badge( $r_extension ); ?></div>
+                        <?php $obj_host = $ls['object_host'] ?? ''; if ( $obj_host ) : ?>
+                            <div style="color:#646970;font-size:11px;">Host: <?php echo esc_html( $obj_host ); ?>:<?php echo (int) ( $ls['object_port'] ?? 0 ); ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ( $r_connected && ! empty( $r_info ) ) : ?>
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e0e0e0;font-size:11px;color:#646970;line-height:1.8;">
+                            <div>Version: <strong><?php echo esc_html( $r_info['version'] ?? '?' ); ?></strong></div>
+                            <div>Memory: <?php echo esc_html( $r_info['used_memory'] ?? '?' ); ?> (peak: <?php echo esc_html( $r_info['peak_memory'] ?? '?' ); ?>)</div>
+                            <div>DB: <?php echo (int) ( $r_info['db_index'] ?? 0 ); ?> · Keys: <?php echo number_format( (int) ( $r_info['total_keys'] ?? 0 ) ); ?></div>
+                            <?php if ( ! empty( $r_info['hit_rate'] ) && $r_info['hit_rate'] !== 'N/A' ) : ?>
+                                <div>Hit Rate: <strong><?php echo esc_html( $r_info['hit_rate'] ); ?></strong></div>
+                            <?php endif; ?>
+                            <div>Uptime: <?php echo esc_html( $r_info['uptime_days'] ?? 0 ); ?> days</div>
+                        </div>
+                    <?php elseif ( $r_error ) : ?>
+                        <div style="margin-top:8px;font-size:11px;color:#d63638;">⚠️ <?php echo esc_html( $r_error ); ?></div>
+                    <?php endif; ?>
+
+                    <div style="margin-top:8px;font-size:11px;">
+                        Persistent: <?php echo $badge( $ls['object_persistent'] ?? false ); ?>
+                        · Admin: <?php echo $badge( $ls['object_admin'] ?? false ); ?>
+                        · Transients: <?php echo $badge( $ls['object_transients'] ?? false ); ?>
+                    </div>
+                    <a href="<?php echo esc_url( $ls_object_url ); ?>" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;">⚙️ Object Cache Settings →</a>
+                </div>
+
+                <!-- COLUMN 4: Brotli & General -->
+                <div style="background:#f8f9fa;border-radius:6px;padding:12px;">
+                    <h4 style="margin:0 0 8px;font-size:12px;color:#1d2327;">🗜️ Brotli Compression</h4>
+                    <div style="font-size:12px;line-height:2;">
+                        <div>Brotli: <?php echo $badge( $brotli['enabled'] ?? false ); ?></div>
+                    </div>
+                    <?php $br_details = $brotli['details'] ?? ''; if ( $br_details ) : ?>
+                        <div style="margin-top:4px;font-size:11px;color:#646970;">
+                            <?php echo esc_html( $br_details ); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <h4 style="margin:16px 0 8px;font-size:12px;color:#1d2327;">ℹ️ General</h4>
+                    <div style="font-size:11px;color:#646970;line-height:1.8;">
+                        <div>PHP: <?php echo phpversion(); ?></div>
+                        <div>SAPI: <?php echo php_sapi_name(); ?></div>
+                        <div>Server: <?php echo esc_html( $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown' ); ?></div>
+                    </div>
+                    <a href="<?php echo esc_url( $ls_general_url ); ?>" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;">⚙️ LiteSpeed Dashboard →</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <?php
 }
