@@ -72,6 +72,7 @@ function hws_elementor_db_updater_init() {
     add_action( 'wp_ajax_hws_elementor_db_toggle', __NAMESPACE__ . '\\hws_elementor_db_ajax_toggle' );
     add_action( 'wp_ajax_hws_elementor_db_update_settings', __NAMESPACE__ . '\\hws_elementor_db_ajax_update_settings' );
     add_action( 'wp_ajax_hws_elementor_db_run_now', __NAMESPACE__ . '\\hws_elementor_db_ajax_run_now' );
+    add_action( 'wp_ajax_hws_get_elementor_db_state', __NAMESPACE__ . '\\hws_elementor_db_ajax_get_state' );
     
     // Register cron hook
     add_action( Elementor_DB_Updater_Config::CRON_HOOK, __NAMESPACE__ . '\\hws_elementor_db_updater_run' );
@@ -82,6 +83,32 @@ function hws_elementor_db_updater_init() {
     }
 }
 add_action( 'init', __NAMESPACE__ . '\\hws_elementor_db_updater_init' );
+
+/**
+ * Build the current dashboard state for the Elementor DB updater.
+ */
+function hws_get_elementor_db_state_payload() {
+    return [
+        'settings'          => Elementor_DB_Updater_Config::get_settings(),
+        'cron_status'       => hws_elementor_db_get_cron_status(),
+        'elementor_version' => defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : 'Unknown',
+        'db_version'        => get_option( 'elementor_version', 'Unknown' ),
+    ];
+}
+
+/**
+ * AJAX: Return a fresh Elementor DB updater state payload.
+ */
+function hws_elementor_db_ajax_get_state() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+        return;
+    }
+
+    check_ajax_referer( 'hws_elementor_db_nonce', 'nonce' );
+
+    wp_send_json_success( hws_get_elementor_db_state_payload() );
+}
 
 
 /**
@@ -369,13 +396,14 @@ function display_elementor_db_updater_panel() {
         return;
     }
     
-    $settings = Elementor_DB_Updater_Config::get_settings();
-    $cron_status = hws_elementor_db_get_cron_status();
+    $state = hws_get_elementor_db_state_payload();
+    $settings = $state['settings'];
+    $cron_status = $state['cron_status'];
     $nonce = wp_create_nonce( 'hws_elementor_db_nonce' );
     
     // Get Elementor version info
-    $elementor_version = defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : 'Unknown';
-    $db_version = get_option( 'elementor_version', 'Unknown' );
+    $elementor_version = $state['elementor_version'];
+    $db_version = $state['db_version'];
     ?>
     <div class="panel">
         <h2 class="panel-title">⚡ Elementor Database Auto-Updater</h2>
@@ -385,18 +413,18 @@ function display_elementor_db_updater_panel() {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                 <div style="padding: 12px; background: #f0f6fc; border-radius: 6px;">
                     <strong>Elementor Version:</strong><br>
-                    <span style="font-size: 18px;"><?php echo esc_html( $elementor_version ); ?></span>
+                    <span id="hws-elementor-version" style="font-size: 18px;"><?php echo esc_html( $elementor_version ); ?></span>
                 </div>
                 <div style="padding: 12px; background: #f0f6fc; border-radius: 6px;">
                     <strong>DB Version:</strong><br>
-                    <span style="font-size: 18px; color: <?php echo $db_version === $elementor_version ? '#00a32a' : '#dba617'; ?>;">
+                    <span id="hws-elementor-db-version" style="font-size: 18px; color: <?php echo $db_version === $elementor_version ? '#00a32a' : '#dba617'; ?>;">
                         <?php echo esc_html( $db_version ); ?>
                         <?php echo $db_version === $elementor_version ? '✅' : '⚠️'; ?>
                     </span>
                 </div>
                 <div style="padding: 12px; background: #f0f6fc; border-radius: 6px;">
                     <strong>Last Run:</strong><br>
-                    <span><?php echo esc_html( $settings['last_run'] ); ?></span>
+                    <span id="hws-elementor-last-run"><?php echo esc_html( $settings['last_run'] ); ?></span>
                 </div>
             </div>
             
@@ -427,20 +455,24 @@ function display_elementor_db_updater_panel() {
             </div>
             
             <!-- Cron Status -->
-            <div style="padding: 15px; background: <?php echo $cron_status['is_scheduled'] ? '#edfaef' : '#fcf0f1'; ?>; border-radius: 6px; margin-bottom: 15px;">
+            <div id="hws-elementor-db-cron-box" style="padding: 15px; background: <?php echo $cron_status['is_scheduled'] ? '#edfaef' : '#fcf0f1'; ?>; border-radius: 6px; margin-bottom: 15px;">
                 <strong>🕐 Cron Status</strong>
-                <p style="margin: 5px 0;"><strong>Scheduled:</strong> <?php echo $cron_status['is_scheduled'] ? '✅ Yes' : '❌ No'; ?></p>
+                <p id="hws-elementor-db-cron-scheduled" style="margin: 5px 0;"><strong>Scheduled:</strong> <?php echo $cron_status['is_scheduled'] ? '✅ Yes' : '❌ No'; ?></p>
                 <?php if ( $cron_status['next_run'] ) : ?>
-                    <p style="margin: 5px 0;"><strong>Next Run:</strong> <?php echo esc_html( $cron_status['next_run'] ); ?> (in <?php echo esc_html( $cron_status['next_run_human'] ); ?>)</p>
+                    <p id="hws-elementor-db-cron-next" style="margin: 5px 0;"><strong>Next Run:</strong> <?php echo esc_html( $cron_status['next_run'] ); ?> (in <?php echo esc_html( $cron_status['next_run_human'] ); ?>)</p>
+                <?php else : ?>
+                    <p id="hws-elementor-db-cron-next" style="margin: 5px 0; display:none;"></p>
                 <?php endif; ?>
                 <?php if ( $cron_status['wp_cron_disabled'] ) : ?>
-                    <p style="color: #d63638; margin: 5px 0;">⚠️ WP-Cron is disabled. Set up a server cron job for reliable scheduling.</p>
+                    <p id="hws-elementor-db-cron-warning" style="color: #d63638; margin: 5px 0;">⚠️ WP-Cron is disabled. Set up a server cron job for reliable scheduling.</p>
+                <?php else : ?>
+                    <p id="hws-elementor-db-cron-warning" style="color: #d63638; margin: 5px 0; display:none;"></p>
                 <?php endif; ?>
             </div>
             
             <!-- Last Report -->
             <?php if ( ! empty( $settings['last_report'] ) && is_array( $settings['last_report'] ) ) : ?>
-            <div style="padding: 15px; background: #1d2327; color: #b4b4b4; border-radius: 6px; font-family: monospace; font-size: 12px;">
+            <div id="hws-elementor-db-report" style="padding: 15px; background: #1d2327; color: #b4b4b4; border-radius: 6px; font-family: monospace; font-size: 12px;">
                 <strong style="color: #fff;">Last Report:</strong><br>
                 <?php foreach ( $settings['last_report'] as $key => $value ) : ?>
                     <span style="color: #5dade2;"><?php echo esc_html( $key ); ?>:</span> 
@@ -449,6 +481,8 @@ function display_elementor_db_updater_panel() {
                     </span><br>
                 <?php endforeach; ?>
             </div>
+            <?php else : ?>
+            <div id="hws-elementor-db-report" style="display:none;padding: 15px; background: #1d2327; color: #b4b4b4; border-radius: 6px; font-family: monospace; font-size: 12px;"></div>
             <?php endif; ?>
             
             <div id="hws-elementor-db-status" style="margin-top: 15px;"></div>
@@ -458,6 +492,83 @@ function display_elementor_db_updater_panel() {
     <script>
     jQuery(document).ready(function($) {
         var nonce = '<?php echo esc_js( $nonce ); ?>';
+
+        function escapeHtml(value) {
+            return $('<div>').text(value == null ? '' : value).html();
+        }
+
+        function renderElementorReport(report) {
+            if (!report || typeof report !== 'object' || !Object.keys(report).length) {
+                return '';
+            }
+
+            var html = '<strong style="color: #fff;">Last Report:</strong><br>';
+
+            $.each(report, function(key, value) {
+                var renderedValue = value;
+                if (typeof value === 'object') {
+                    renderedValue = JSON.stringify(value);
+                }
+
+                var color = (key === 'status' && value === 'success') ? '#00a32a' : '#fff';
+                html += '<span style="color: #5dade2;">' + escapeHtml(key) + ':</span> ';
+                html += '<span style="color: ' + color + ';">' + escapeHtml(renderedValue) + '</span><br>';
+            });
+
+            return html;
+        }
+
+        function applyElementorDbState(state) {
+            var settings = state.settings || {};
+            var cronStatus = state.cron_status || {};
+            var versionsMatch = state.db_version === state.elementor_version;
+
+            $('#hws-elementor-version').text(state.elementor_version || 'Unknown');
+            $('#hws-elementor-db-version')
+                .css('color', versionsMatch ? '#00a32a' : '#dba617')
+                .text((state.db_version || 'Unknown') + ' ' + (versionsMatch ? '✅' : '⚠️'));
+            $('#hws-elementor-last-run').text(settings.last_run || 'Never');
+            $('#hws-elementor-db-enabled').prop('checked', !!settings.enabled);
+            $('#hws-elementor-db-interval').val(settings.interval || 1);
+
+            $('#hws-elementor-db-cron-box').css('background', cronStatus.is_scheduled ? '#edfaef' : '#fcf0f1');
+            $('#hws-elementor-db-cron-scheduled').html('<strong>Scheduled:</strong> ' + (cronStatus.is_scheduled ? '✅ Yes' : '❌ No'));
+
+            if (cronStatus.next_run) {
+                $('#hws-elementor-db-cron-next')
+                    .show()
+                    .html('<strong>Next Run:</strong> ' + escapeHtml(cronStatus.next_run) + ' (in ' + escapeHtml(cronStatus.next_run_human || '') + ')');
+            } else {
+                $('#hws-elementor-db-cron-next').hide().text('');
+            }
+
+            if (cronStatus.wp_cron_disabled) {
+                $('#hws-elementor-db-cron-warning').show().text('⚠️ WP-Cron is disabled. Set up a server cron job for reliable scheduling.');
+            } else {
+                $('#hws-elementor-db-cron-warning').hide().text('');
+            }
+
+            if (settings.last_report && Object.keys(settings.last_report).length) {
+                $('#hws-elementor-db-report').show().html(renderElementorReport(settings.last_report));
+            } else {
+                $('#hws-elementor-db-report').hide().html('');
+            }
+        }
+
+        function refreshElementorDbState() {
+            return $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_get_elementor_db_state',
+                    nonce: nonce
+                }
+            }).done(function(response) {
+                if (response && response.success && response.data) {
+                    applyElementorDbState(response.data);
+                }
+            });
+        }
         
         // Toggle enabled
         $('#hws-elementor-db-enabled').on('change', function() {
@@ -474,7 +585,7 @@ function display_elementor_db_updater_panel() {
                 success: function(response) {
                     if (response.success) {
                         $status.html('<span style="color: green;">✅ ' + response.data.message + '</span>');
-                        setTimeout(function() { location.reload(); }, 1000);
+                        refreshElementorDbState();
                     } else {
                         $status.html('<span style="color: red;">❌ ' + response.data + '</span>');
                     }
@@ -503,6 +614,7 @@ function display_elementor_db_updater_panel() {
                 success: function(response) {
                     if (response.success) {
                         $status.html('<span style="color: green;">✅ ' + response.data.message + '</span>');
+                        refreshElementorDbState();
                     } else {
                         $status.html('<span style="color: red;">❌ ' + response.data + '</span>');
                     }
@@ -537,7 +649,7 @@ function display_elementor_db_updater_panel() {
                         reportHtml += '<strong>Duration:</strong> ' + report.duration;
                         
                         $status.html('<div style="padding: 10px; background: #edfaef; border-radius: 4px; color: #1d2327;">' + reportHtml + '</div>');
-                        setTimeout(function() { location.reload(); }, 2000);
+                        refreshElementorDbState();
                     } else {
                         $status.html('<span style="color: red;">❌ ' + response.data + '</span>');
                     }

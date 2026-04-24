@@ -11,23 +11,57 @@
  */
 function display_shortcode_tests(): void
 {
-    // helper: echo one row
-    $row = function (string $label, string $shortcode): void {
-        $raw       = do_shortcode($shortcode);                 // may include HTML
-        $stripped  = trim(wp_strip_all_tags($raw));
-        $has_value = ($stripped !== '');
+    $get_shortcode_tag = static function (string $shortcode): string {
+        if ( preg_match( '/^\[([^\s\]]+)/', trim( $shortcode ), $matches ) ) {
+            return sanitize_key( $matches[1] );
+        }
+
+        return '';
+    };
+
+    // helper: echo one shortcode row
+    $row = function (string $label, string $shortcode) use ( $get_shortcode_tag ): void {
+        $tag = $get_shortcode_tag( $shortcode );
+
+        if ( $tag === '' || ! shortcode_exists( $tag ) ) {
+            echo '<tr class="hws-sc-row">
+                <td class="hws-sc-col hws-sc-label"><span class="hws-sc-status" aria-hidden="true">⚪</span> ' . esc_html( $label ) . '</td>
+                <td class="hws-sc-col hws-sc-code"><code class="hws-sc-badge">' . esc_html( $shortcode ) . '</code></td>
+                <td class="hws-sc-col hws-sc-output"><em class="hws-sc-missing">Shortcode not registered on this site</em></td>
+            </tr>';
+            return;
+        }
+
+        $raw       = do_shortcode( $shortcode );
+        $stripped  = trim( wp_strip_all_tags( $raw ) );
+        $has_value = ( $stripped !== '' );
         $status    = $has_value ? '✅' : '❌';
 
-        if ($has_value && filter_var($stripped, FILTER_VALIDATE_URL)) {
-            $output = '<a class="hws-sc-link" href="' . esc_url($stripped) . '" target="_blank" rel="noopener">' . esc_html($stripped) . '</a>';
+        if ( $has_value && filter_var( $stripped, FILTER_VALIDATE_URL ) ) {
+            $output = '<a class="hws-sc-link" href="' . esc_url( $stripped ) . '" target="_blank" rel="noopener">' . esc_html( $stripped ) . '</a>';
         } else {
             $output = $has_value ? $raw : '<em class="hws-sc-empty">(empty)</em>';
         }
 
         echo '<tr class="hws-sc-row">
-            <td class="hws-sc-col hws-sc-label"><span class="hws-sc-status" aria-hidden="true">'.$status.'</span> '.esc_html($label).'</td>
-            <td class="hws-sc-col hws-sc-code"><code class="hws-sc-badge">'.esc_html($shortcode).'</code></td>
-            <td class="hws-sc-col hws-sc-output">'.$output.'</td>
+            <td class="hws-sc-col hws-sc-label"><span class="hws-sc-status" aria-hidden="true">' . $status . '</span> ' . esc_html( $label ) . '</td>
+            <td class="hws-sc-col hws-sc-code"><code class="hws-sc-badge">' . esc_html( $shortcode ) . '</code></td>
+            <td class="hws-sc-col hws-sc-output">' . $output . '</td>
+        </tr>';
+    };
+
+    $query_row = function (string $label, string $query_id): void {
+        $hook_name = 'elementor/query/' . $query_id;
+        $is_registered = has_action( $hook_name ) !== false;
+        $status = $is_registered ? '✅' : '⚪';
+        $output = $is_registered
+            ? '<span class="hws-sc-query-ok">Registered on <code>' . esc_html( $hook_name ) . '</code></span>'
+            : '<em class="hws-sc-missing">Query hook not registered</em>';
+
+        echo '<tr class="hws-sc-row">
+            <td class="hws-sc-col hws-sc-label"><span class="hws-sc-status" aria-hidden="true">' . $status . '</span> ' . esc_html( $label ) . '</td>
+            <td class="hws-sc-col hws-sc-code"><code class="hws-sc-badge">' . esc_html( $query_id ) . '</code></td>
+            <td class="hws-sc-col hws-sc-output">' . $output . '</td>
         </tr>';
     };
 
@@ -48,7 +82,8 @@ function display_shortcode_tests(): void
             .hws-sc-row:last-child td{border-bottom:none}
             .hws-sc-badge{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:2px 6px;font-size:12px}
             .hws-sc-link{color:#2563eb;text-decoration:none}.hws-sc-link:hover{text-decoration:underline}
-            .hws-sc-empty{color:#9ca3af}.hws-sc-status{display:inline-block;margin-right:.4rem}
+            .hws-sc-empty{color:#9ca3af}.hws-sc-missing{color:#9ca3af}.hws-sc-status{display:inline-block;margin-right:.4rem}
+            .hws-sc-query-ok{color:#166534}
         </style>';
     }
 
@@ -97,7 +132,7 @@ function display_shortcode_tests(): void
                     $row('Facebook',  '[company id="url_facebook"]');
                     $row('Additional Info Public Email',  '[company id="additional_public_email"]');
                     $row('Additional Title',  '[company id="additional_title"]');
-                    $row('Additional Title',  '[company id="additional_public_phone"]');
+                    $row('Additional Public Phone',  '[company id="additional_public_phone"]');
     echo '      </tbody>
             </table>
         </div>
@@ -228,11 +263,11 @@ function display_shortcode_tests(): void
                 <thead><tr>
                     <th class="hws-sc-th hws-sc-th-test">Test</th>
                     <th class="hws-sc-th hws-sc-th-code">Query ID</th>
-                  
+                    <th class="hws-sc-th hws-sc-th-output">Status</th>
                 </tr></thead>
                 <tbody>';
-                    $row('Featured Team Members', 'featured_team_members');
-                      $row('Featured Testimonials', 'featured_testimonials');
+                    $query_row('Featured Team Members', 'featured_team_members');
+                    $query_row('Featured Testimonials', 'featured_testimonials');
                     
                  
     echo '      </tbody>

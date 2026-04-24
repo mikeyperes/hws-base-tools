@@ -37,12 +37,42 @@ function hws_create_nonce() {
  */
 function hws_verify_nonce( $nonce = null ) {
     if ( $nonce === null ) {
-        $nonce = isset( $_POST['nonce'] ) ? $_POST['nonce'] : '';
+        $nonce = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
         if ( empty( $nonce ) ) {
-            $nonce = isset( $_REQUEST['_wpnonce'] ) ? $_REQUEST['_wpnonce'] : '';
+            $nonce = isset( $_REQUEST['_wpnonce'] ) ? wp_unslash( $_REQUEST['_wpnonce'] ) : '';
         }
     }
+
+    if ( ! is_string( $nonce ) ) {
+        return false;
+    }
+
+    $nonce = sanitize_text_field( $nonce );
+
     return wp_verify_nonce( $nonce, HWS_AJAX_NONCE );
+}
+
+/**
+ * Require a valid AJAX nonce and stop with a consistent JSON error if invalid.
+ *
+ * @param string $field Preferred nonce field in the request body.
+ * @return void
+ */
+function hws_require_ajax_nonce_or_error( $field = 'nonce' ) {
+    $nonce = null;
+
+    if ( isset( $_POST[ $field ] ) ) {
+        $nonce = wp_unslash( $_POST[ $field ] );
+    } elseif ( isset( $_REQUEST['_wpnonce'] ) ) {
+        $nonce = wp_unslash( $_REQUEST['_wpnonce'] );
+    }
+
+    if ( ! hws_verify_nonce( $nonce ) ) {
+        wp_send_json_error( [
+            'message' => 'Security check failed. Please refresh the page and try again.',
+            'code'    => 'invalid_nonce',
+        ] );
+    }
 }
 
 /**

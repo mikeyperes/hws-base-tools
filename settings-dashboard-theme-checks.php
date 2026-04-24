@@ -121,7 +121,7 @@ function display_settings_theme_checks() { ?>
                         // Checkbox for non-active themes
                         $checkbox = $is_active ? '' : '<input type="checkbox" class="hws-theme-checkbox" value="' . esc_attr( $theme_slug ) . '" style="margin-right: 8px;">';
                     
-                        echo "<div style='$focus_style margin-bottom: 5px;'>$checkbox{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status - <span style='$auto_update_style'>$auto_update_status</span> $update_status</div>";
+                        echo "<div data-theme-row='" . esc_attr( $theme_slug ) . "' style='$focus_style margin-bottom: 5px;'>$checkbox{$theme_data->get('Name')} - {$theme_data->get('Version')} - $status - <span style='$auto_update_style'>$auto_update_status</span> $update_status</div>";
                     }
                     ?>
                 </div>
@@ -186,7 +186,10 @@ function display_settings_theme_checks() { ?>
                 success: function(response) {
                     if (response.success) {
                         alert(response.data.message);
-                        location.reload();
+                        (response.data.deleted || []).forEach(function(themeSlug) {
+                            $('[data-theme-row="' + themeSlug + '"]').remove();
+                        });
+                        $btn.prop('disabled', false).text('🗑️ Delete Selected Themes');
                     } else {
                         alert('Error: ' + response.data);
                         $btn.prop('disabled', false).text('🗑️ Delete Selected Themes');

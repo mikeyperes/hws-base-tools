@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.9.2
+Version: 10.9.3
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -14,6 +14,35 @@ GitHub Branch: main
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
+
+include_once("runtime-options.php");
+require_once __DIR__ . '/src/Core/Autoloader.php';
+
+\HWS\BaseTools\Core\Autoloader::register( __DIR__ . '/src' );
+
+function hws_get_structured_plugin() {
+    static $plugin = null;
+
+    if ( null === $plugin ) {
+        $plugin = new \HWS\BaseTools\Core\Plugin();
+    }
+
+    return $plugin;
+}
+
+function hws_boot_structured_admin_modules() {
+    static $booted = false;
+
+    if ( $booted ) {
+        return;
+    }
+
+    $plugin = hws_get_structured_plugin();
+    $plugin->add_module( new \HWS\BaseTools\Admin\Dashboard\LegacyEventBridge() );
+    $plugin->boot();
+
+    $booted = true;
+}
 
 // CRITICAL: Load shortcodes FIRST at plugin load time (before any guards)
 // This ensures shortcodes work with Elementor, Gutenberg, and all page builders
@@ -249,6 +278,7 @@ if (is_admin()){
 
 include_once("helper.php");
 include_once("safe-wrappers.php");  // Safe AJAX, shell_exec, and error handling utilities
+hws_boot_structured_admin_modules();
 
 // Build Dashboard - New modular structure
 include_once("settings-dashboard.php");           // Main dashboard with tabs
@@ -265,9 +295,6 @@ include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-rank-math-settings.php");
 include_once("settings-dashboard-shortcode-tests.php");
-
-// Set up event handling (click listeners and handlers)
-include_once("settings-event-handling.php");
 
 include_once("snippet-allow-svg-upload.php");
 include_once("snippet-rss.php");
@@ -294,7 +321,10 @@ include_once("snippet-elementor-social-icons.php");
 
 
 
-//include_once("snippet-footer-text.php");
+include_once("snippet-footer-text.php");
+if ( function_exists( __NAMESPACE__ . '\\enable_footer_text_auto_injection' ) ) {
+    enable_footer_text_auto_injection();
+}
 include_once("shortcodes.php");
 include_once("register-elementor-queries.php");
 //include_once("shortcodes.php");

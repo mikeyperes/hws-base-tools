@@ -14,12 +14,12 @@
  *   • Fault-tolerant: never creates .maintenance, skips failures
  *   • Detailed per-item logging with success/fail status
  *
- * SECRET URLs (all use key: hexa2000!, default enabled):
- *   /?hws_update_wp=hexa2000!           — Update WordPress core
- *   /?hws_update_plugins=hexa2000!      — Update all plugins
- *   /?hws_update_themes=hexa2000!       — Update all themes
- *   /?hws_update_all=hexa2000!          — Update WP + plugins + themes + delete .maintenance
- *   /?hws_delete_maintenance=hexa2000!  — Force delete .maintenance file
+ * SECRET URLs (all use the DB-backed master secret):
+ *   /?hws_update_wp=<secret>           — Update WordPress core
+ *   /?hws_update_plugins=<secret>      — Update all plugins
+ *   /?hws_update_themes=<secret>       — Update all themes
+ *   /?hws_update_all=<secret>          — Update WP + plugins + themes + delete .maintenance
+ *   /?hws_delete_maintenance=<secret>  — Force delete .maintenance file
  *
  * @since 10.8.0
  * ═══════════════════════════════════════════════════════════════════════════
@@ -45,9 +45,8 @@ function hws_update_secret(): string {
     if ( class_exists( __NAMESPACE__ . '\\Dashboard_Config' ) ) {
         return Dashboard_Config::get_secret_key();
     }
-    // — Fallback: read DB directly (for frontend secret URL handling)
-    $val = get_option( 'hws_master_secret_key', '' );
-    return ( is_string( $val ) && $val !== '' ) ? $val : 'hexa2000!';
+
+    return hws_get_master_secret();
 }
 
 /** All secret URL keys for the update center */
@@ -77,11 +76,10 @@ function get_update_url_keys(): array {
 }
 
 /**
- * Check if update center secret URLs are enabled (default: YES)
+ * Check if update center secret URLs are enabled.
  */
 function are_update_urls_enabled(): bool {
-    $val = get_option( constant( __NAMESPACE__ . '\\HWS_OPT_UPDATE_URLS_ENABLED' ), 'yes' );
-    return $val === 'yes' || $val === true || $val === '1' || $val === 1;
+    return hws_option_is_enabled( constant( __NAMESPACE__ . '\\HWS_OPT_UPDATE_URLS_ENABLED' ), false );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -121,6 +119,8 @@ function ajax_update_center() {
     if ( ! current_user_can( 'update_plugins' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
 
     $type = isset( $_POST['update_type'] ) ? sanitize_key( $_POST['update_type'] ) : '';
     $slug = isset( $_POST['slug'] ) ? sanitize_text_field( $_POST['slug'] ) : '';
@@ -169,6 +169,9 @@ function ajax_toggle_update_urls() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
+
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     update_option( constant( __NAMESPACE__ . '\\HWS_OPT_UPDATE_URLS_ENABLED' ), $enabled ? 'yes' : 'no' );
     wp_send_json_success( [ 'enabled' => $enabled ] );
@@ -888,7 +891,11 @@ function display_settings_update_center() {
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
-                data: { action: 'hws_update_center', update_type: 'refresh' },
+                data: {
+                    action: 'hws_update_center',
+                    update_type: 'refresh',
+                    nonce: hwsNonce
+                },
                 success: function(response) {
                     if (!response.success) return;
                     var d = response.data;

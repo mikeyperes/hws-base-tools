@@ -7,6 +7,10 @@ add_action( 'wp_ajax_hws_direct_update_plugin', __NAMESPACE__ . '\\ajax_direct_u
 add_action( 'wp_ajax_hws_load_github_versions', __NAMESPACE__ . '\\ajax_load_github_versions' );
 add_action( 'wp_ajax_hws_download_specific_version', __NAMESPACE__ . '\\ajax_download_specific_version' );
 
+function hws_plugin_info_require_nonce() {
+    hws_require_ajax_nonce_or_error();
+}
+
 /**
  * AJAX: Load available versions (commits) from GitHub
  * Fetches actual plugin version from initialization.php at each commit
@@ -16,6 +20,8 @@ function ajax_load_github_versions() {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
+
+    hws_plugin_info_require_nonce();
     
     $github_repo = Config::$github_repo;
     
@@ -140,6 +146,8 @@ function ajax_download_specific_version() {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
+
+    hws_plugin_info_require_nonce();
     
     $version = isset( $_POST['version'] ) ? sanitize_text_field( $_POST['version'] ) : '';
     $sha = isset( $_POST['sha'] ) ? sanitize_text_field( $_POST['sha'] ) : '';
@@ -260,6 +268,8 @@ function ajax_force_update_check() {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
+
+    hws_plugin_info_require_nonce();
     
     // Use Config class - never hardcode
     $plugin_basename = Config::get_plugin_basename();
@@ -326,6 +336,8 @@ function ajax_direct_update_plugin() {
         wp_send_json_error( 'Unauthorized - you need update_plugins capability' );
         return;
     }
+
+    hws_plugin_info_require_nonce();
     
     // Include required files
     require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -457,6 +469,8 @@ function ajax_download_plugin_zip() {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
+
+    hws_plugin_info_require_nonce();
     
     // Use Config class - never hardcode
     $github_repo = Config::$github_repo;
@@ -669,7 +683,7 @@ function hws_ct_display_plugin_info() {
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>Current Version:</strong> 
-                        <span style="font-size: 16px; font-weight: bold;"><?php echo esc_html($plugin_data['Version']); ?></span>
+                        <span id="hws-current-version" style="font-size: 16px; font-weight: bold;"><?php echo esc_html($plugin_data['Version']); ?></span>
                     </div>
                     <div>
                         <strong>Latest Version:</strong> 
@@ -766,7 +780,10 @@ function hws_ct_display_plugin_info() {
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
-                data: { action: 'hws_force_update_check' },
+                data: {
+                    action: 'hws_force_update_check',
+                    nonce: hwsNonce
+                },
                 success: function(response) {
                     if (response.success) {
                         $('#hws-latest-version').text(response.data.new_version);
@@ -806,15 +823,16 @@ function hws_ct_display_plugin_info() {
                 url: ajaxurl,
                 type: 'POST',
                 timeout: 120000, // 2 minute timeout
-                data: { action: 'hws_direct_update_plugin' },
+                data: {
+                    action: 'hws_direct_update_plugin',
+                    nonce: hwsNonce
+                },
                 success: function(response) {
                     if (response.success) {
                         $status.html('<span style="color: green;">✅ ' + response.data.message + '</span>');
-                        if (response.data.reload) {
-                            $status.append('<br><span style="color: #666;">Reloading page in 2 seconds...</span>');
-                            setTimeout(function() {
-                                location.reload();
-                            }, 2000);
+                        if (response.data.new_version) {
+                            $('#hws-current-version').text(response.data.new_version);
+                            $('#hws-latest-version').text(response.data.new_version).css('color', '#00a32a');
                         }
                     } else {
                         $status.html('<span style="color: red;">❌ ' + response.data + '</span>');
@@ -840,7 +858,10 @@ function hws_ct_display_plugin_info() {
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
-                data: { action: 'hws_download_plugin_zip' },
+                data: {
+                    action: 'hws_download_plugin_zip',
+                    nonce: hwsNonce
+                },
                 success: function(response) {
                     if (response.success) {
                         $status.html('<a href="' + response.data.url + '" target="_blank" style="color: green;">✅ Download Ready</a>');
@@ -872,7 +893,10 @@ function hws_ct_display_plugin_info() {
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
-                data: { action: 'hws_load_github_versions' },
+                data: {
+                    action: 'hws_load_github_versions',
+                    nonce: hwsNonce
+                },
                 success: function(response) {
                     if (response.success) {
                         $select.empty();
@@ -920,7 +944,8 @@ function hws_ct_display_plugin_info() {
                 data: { 
                     action: 'hws_download_specific_version',
                     version: version,
-                    sha: sha
+                    sha: sha,
+                    nonce: hwsNonce
                 },
                 success: function(response) {
                     if (response.success) {

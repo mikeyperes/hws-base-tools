@@ -32,16 +32,12 @@ class Dashboard_Config {
     /** DB option key for the master secret password */
     const OPT_MASTER_SECRET     = 'hws_master_secret_key';
     
-    /** Default master password (used if no DB value exists) */
-    const DEFAULT_SECRET        = 'hexa2000!';
-    
     /**
-     * Get the master secret key (from DB or default)
+     * Get the master secret key from DB-backed runtime storage.
      * Used by ALL secret/public URLs across the plugin
      */
     public static function get_secret_key(): string {
-        $val = get_option( self::OPT_MASTER_SECRET, '' );
-        return ( is_string( $val ) && $val !== '' ) ? $val : self::DEFAULT_SECRET;
+        return hws_get_master_secret();
     }
     
     // Options
@@ -53,27 +49,21 @@ class Dashboard_Config {
      * Get secret URLs enabled status (default: false for security)
      */
     public static function are_secret_urls_enabled() {
-        $val = get_option( self::OPT_SECRET_URLS_ENABLED, 'no' );
-        // Handle both old boolean and new string format
-        return $val === 'yes' || $val === true || $val === '1' || $val === 1;
+        return hws_option_is_enabled( self::OPT_SECRET_URLS_ENABLED, false );
     }
     
     /**
      * Get secret setup URL enabled status (default: false for security)
      */
     public static function is_secret_setup_enabled() {
-        $val = get_option( self::OPT_SECRET_SETUP_ENABLED, 'no' );
-        // Handle both old boolean and new string format
-        return $val === 'yes' || $val === true || $val === '1' || $val === 1;
+        return hws_option_is_enabled( self::OPT_SECRET_SETUP_ENABLED, false );
     }
     
     /**
      * Get secret permalinks purge URL enabled status (default: false for security)
      */
     public static function is_secret_permalinks_enabled() {
-        $val = get_option( self::OPT_SECRET_PERMALINKS_ENABLED, 'no' );
-        // Handle both old boolean and new string format
-        return $val === 'yes' || $val === true || $val === '1' || $val === 1;
+        return hws_option_is_enabled( self::OPT_SECRET_PERMALINKS_ENABLED, false );
     }
 }
 
@@ -83,7 +73,7 @@ class Dashboard_Config {
  * Runs early on init to catch before any output
  */
 function hws_handle_secret_debug_url() {
-    // Handle debug toggle: /?hws_debug=hexa2000!
+    // Handle debug toggle: /?hws_debug=<secret>
     if ( Dashboard_Config::are_secret_urls_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_DEBUG_KEY ] ) && 
          $_GET[ Dashboard_Config::SECRET_DEBUG_KEY ] === Dashboard_Config::get_secret_key() ) {
@@ -114,7 +104,7 @@ function hws_handle_secret_debug_url() {
         }
     }
     
-    // Handle fatal log display: /?hws_fatal_log=hexa2000!
+    // Handle fatal log display: /?hws_fatal_log=<secret>
     if ( Dashboard_Config::are_secret_urls_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_FATAL_KEY ] ) && 
          $_GET[ Dashboard_Config::SECRET_FATAL_KEY ] === Dashboard_Config::get_secret_key() ) {
@@ -122,7 +112,7 @@ function hws_handle_secret_debug_url() {
         exit;
     }
     
-    // Handle quick setup: /?hws_quick_setup=hexa2000!
+    // Handle quick setup: /?hws_quick_setup=<secret>
     if ( Dashboard_Config::is_secret_setup_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_SETUP_KEY ] ) && 
          $_GET[ Dashboard_Config::SECRET_SETUP_KEY ] === Dashboard_Config::get_secret_key() ) {
@@ -130,7 +120,7 @@ function hws_handle_secret_debug_url() {
         exit;
     }
     
-    // Handle permalink purge: /?hws_purge_permalinks=hexa2000!
+    // Handle permalink purge: /?hws_purge_permalinks=<secret>
     if ( Dashboard_Config::is_secret_permalinks_enabled() &&
          isset( $_GET[ Dashboard_Config::SECRET_PERMALINKS_KEY ] ) && 
          $_GET[ Dashboard_Config::SECRET_PERMALINKS_KEY ] === Dashboard_Config::get_secret_key() ) {
@@ -403,6 +393,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
  */
 function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_quick_setup', __NAMESPACE__ . '\\ajax_quick_setup' );
+    add_action( 'wp_ajax_hws_get_overview_state', __NAMESPACE__ . '\\ajax_get_overview_state' );
     add_action( 'wp_ajax_hws_toggle_secret_urls', __NAMESPACE__ . '\\ajax_toggle_secret_urls' );
     add_action( 'wp_ajax_hws_toggle_secret_setup', __NAMESPACE__ . '\\ajax_toggle_secret_setup' );
     add_action( 'wp_ajax_hws_toggle_secret_permalinks', __NAMESPACE__ . '\\ajax_toggle_secret_permalinks' );
@@ -413,6 +404,56 @@ function hws_dashboard_register_ajax() {
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
 }
 add_action( 'init', __NAMESPACE__ . '\\hws_dashboard_register_ajax' );
+
+function hws_is_display_errors_enabled(): bool {
+    $display_errors_raw = ini_get( 'display_errors' );
+
+    return (bool) ( $display_errors_raw && $display_errors_raw !== '0' && strtolower( (string) $display_errors_raw ) !== 'off' );
+}
+
+function hws_get_overview_state_payload(): array {
+    $secret = Dashboard_Config::get_secret_key();
+    $debug_log_path = WP_CONTENT_DIR . '/debug.log';
+    $error_log_path = ABSPATH . 'error_log';
+    $admin_log_path = ABSPATH . 'wp-admin/error_log';
+
+    return [
+        'secret' => $secret,
+        'config' => [
+            'WP_DEBUG'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
+            'WP_DEBUG_DISPLAY' => defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY,
+            'WP_DEBUG_LOG'     => defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG,
+            'ini_display_errors' => hws_is_display_errors_enabled(),
+            'DISABLE_WP_CRON'  => defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
+            'WP_MEMORY_LIMIT'  => defined( 'WP_MEMORY_LIMIT' ) ? (string) WP_MEMORY_LIMIT : 'Not Set',
+        ],
+        'secret_toggles' => [
+            'debug'      => Dashboard_Config::are_secret_urls_enabled(),
+            'setup'      => Dashboard_Config::is_secret_setup_enabled(),
+            'permalinks' => Dashboard_Config::is_secret_permalinks_enabled(),
+        ],
+        'secret_urls' => [
+            'debug'      => add_query_arg( Dashboard_Config::SECRET_DEBUG_KEY, $secret, home_url( '/' ) ),
+            'fatal'      => add_query_arg( Dashboard_Config::SECRET_FATAL_KEY, $secret, home_url( '/' ) ),
+            'setup'      => add_query_arg( Dashboard_Config::SECRET_SETUP_KEY, $secret, home_url( '/' ) ),
+            'permalinks' => add_query_arg( Dashboard_Config::SECRET_PERMALINKS_KEY, $secret, home_url( '/' ) ),
+        ],
+        'logs' => [
+            'debug' => [
+                'exists' => file_exists( $debug_log_path ),
+                'size'   => file_exists( $debug_log_path ) ? size_format( filesize( $debug_log_path ) ) : 'N/A',
+            ],
+            'error' => [
+                'exists' => file_exists( $error_log_path ),
+                'size'   => file_exists( $error_log_path ) ? size_format( filesize( $error_log_path ) ) : 'N/A',
+            ],
+            'admin_error' => [
+                'exists' => file_exists( $admin_log_path ),
+                'size'   => file_exists( $admin_log_path ) ? size_format( filesize( $admin_log_path ) ) : 'N/A',
+            ],
+        ],
+    ];
+}
 
 
 /**
@@ -809,6 +850,9 @@ function display_wp_admin_settings_page() {
     <script>
     // Global nonce for all AJAX calls
     var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
+    var hwsDashboardConfig = {
+        homeUrl: <?php echo wp_json_encode( home_url( '/' ) ); ?>
+    };
 
     /**
      * Abstract: Install a plugin from WordPress.org and activate it.
@@ -829,8 +873,7 @@ function display_wp_admin_settings_page() {
             data: { action: 'hws_install_plugin', slug: slug, nonce: hwsNonce },
             success: function( response ) {
                 if ( response.success ) {
-                    $btn.text( '✅ Installed — Reloading…' );
-                    setTimeout( function(){ location.reload(); }, 1500 );
+                    $btn.text( '✅ Installed' ).prop( 'disabled', true );
                 } else {
                     alert( 'Install failed: ' + ( response.data || 'Unknown error' ) );
                     $btn.prop( 'disabled', false ).text( origText );
@@ -861,8 +904,7 @@ function display_wp_admin_settings_page() {
             data: { action: 'hws_activate_plugin', plugin_file: pluginFile, nonce: hwsNonce },
             success: function( response ) {
                 if ( response.success ) {
-                    $btn.text( '✅ Activated — Reloading…' );
-                    setTimeout( function(){ location.reload(); }, 1500 );
+                    $btn.text( '✅ Activated' ).prop( 'disabled', true );
                 } else {
                     alert( 'Activation failed: ' + ( response.data || 'Unknown error' ) );
                     $btn.prop( 'disabled', false ).text( origText );
@@ -892,6 +934,206 @@ function display_wp_admin_settings_page() {
             url.searchParams.set('tab', tabId);
             window.history.replaceState({}, '', url);
         });
+
+        function getAjaxErrorMessage(response, fallback) {
+            if (response && response.data) {
+                if (typeof response.data === 'string') {
+                    return response.data;
+                }
+
+                if (response.data.message) {
+                    return response.data.message;
+                }
+            }
+
+            return fallback || 'Unknown error';
+        }
+
+        function setStatusHtml($target, html) {
+            if ($target && $target.length) {
+                $target.html(html);
+            }
+        }
+
+        function formatConfigSummary(constant, value) {
+            switch (constant) {
+                case 'WP_DEBUG':
+                case 'WP_DEBUG_LOG':
+                    return {
+                        className: value ? 'status-warn' : 'status-ok',
+                        html: constant + ': ' + (value ? '⚠️ ON' : '✅ OFF')
+                    };
+                case 'WP_DEBUG_DISPLAY':
+                    return {
+                        className: value ? 'status-bad' : 'status-ok',
+                        html: constant + ': ' + (value ? '❌ ON' : '✅ OFF')
+                    };
+                case 'DISABLE_WP_CRON':
+                    return {
+                        className: value ? 'status-ok' : 'status-warn',
+                        html: 'DISABLE_WP_CRON: ' + (value ? '✅ TRUE (using real cron)' : '⚠️ FALSE')
+                    };
+                case 'WP_MEMORY_LIMIT':
+                    return {
+                        className: '',
+                        html: 'WP_MEMORY_LIMIT: <strong>' + value + '</strong>'
+                    };
+                default:
+                    return null;
+            }
+        }
+
+        function updateSummarySetting(constant, value) {
+            var summary = formatConfigSummary(constant, value);
+            var $summary = $('[data-summary-setting="' + constant + '"]');
+
+            if (!summary || !$summary.length) {
+                return;
+            }
+
+            $summary.removeClass('status-ok status-warn status-bad');
+            if (summary.className) {
+                $summary.addClass(summary.className);
+            }
+            $summary.html(summary.html);
+        }
+
+        function updateConfigToggle(constant, rawValue) {
+            var value = rawValue;
+            var $toggle = $('[data-config-toggle="' + constant + '"]').first();
+
+            if (!$toggle.length) {
+                updateSummarySetting(constant, value);
+                return;
+            }
+
+            if (constant === 'WP_MEMORY_LIMIT') {
+                $toggle.find('[data-config-label="' + constant + '"]').text('WP_MEMORY_LIMIT: ' + value);
+                $toggle.find('button.modify-wp-config[data-constant="WP_MEMORY_LIMIT"]').removeClass('button-primary');
+                $toggle.find('button.modify-wp-config[data-constant="WP_MEMORY_LIMIT"][data-value="' + value + '"]').addClass('button-primary');
+                updateSummarySetting(constant, value);
+                return;
+            }
+
+            if (constant === 'ini_display_errors') {
+                value = !!value;
+                $toggle.removeClass('on off').addClass(value ? 'on' : 'off');
+                $toggle.find('[data-config-label="' + constant + '"]').text('display_errors: ' + (value ? 'ON' : 'OFF'));
+                $toggle.find('button.modify-wp-config[data-constant="' + constant + '"]')
+                    .text(value ? 'Disable' : 'Enable')
+                    .attr('data-value', value ? '0' : '1');
+                $('[data-config-summary="ini_display_errors"]')
+                    .text(value ? 'ON' : 'Off')
+                    .css('color', value ? '#d63638' : '#00a32a');
+                return;
+            }
+
+            if (constant === 'DISABLE_WP_CRON') {
+                value = !!value;
+                $toggle.removeClass('on off').addClass(value ? 'off' : 'on');
+                $toggle.find('[data-config-label="' + constant + '"]').text(
+                    'DISABLE_WP_CRON: ' + (value ? 'TRUE (cron disabled - recommended)' : 'FALSE (cron enabled)')
+                );
+                $toggle.find('button.modify-wp-config[data-constant="' + constant + '"]')
+                    .text(value ? 'Enable WP-Cron' : 'Disable WP-Cron')
+                    .attr('data-value', value ? 'false' : 'true');
+                updateSummarySetting(constant, value);
+                return;
+            }
+
+            value = !!value;
+            $toggle.removeClass('on off').addClass(value ? 'on' : 'off');
+            $toggle.find('[data-config-label="' + constant + '"]').text(constant + ': ' + (value ? 'ON' : 'OFF'));
+            $toggle.find('button.modify-wp-config[data-constant="' + constant + '"]')
+                .text(value ? 'Disable' : 'Enable')
+                .attr('data-value', value ? 'false' : 'true');
+            updateSummarySetting(constant, value);
+        }
+
+        function updateSecretDetails(state) {
+            if (!state || !state.secret_urls || !state.secret_toggles) {
+                return;
+            }
+
+            $('#hws-master-secret').val(state.secret || $('#hws-master-secret').val());
+
+            $('#hws-toggle-secret-urls').prop('checked', !!state.secret_toggles.debug);
+            $('#hws-secret-debug-details').toggle(!!state.secret_toggles.debug);
+            $('#hws-secret-debug-url').text(state.secret_urls.debug || '');
+            $('#hws-secret-fatal-url').text(state.secret_urls.fatal || '');
+
+            $('#hws-toggle-secret-setup').prop('checked', !!state.secret_toggles.setup);
+            $('#hws-secret-setup-details').toggle(!!state.secret_toggles.setup);
+            $('#hws-secret-setup-url').text(state.secret_urls.setup || '');
+
+            $('#hws-toggle-secret-permalinks').prop('checked', !!state.secret_toggles.permalinks);
+            $('#hws-secret-permalinks-details').toggle(!!state.secret_toggles.permalinks);
+            $('#hws-secret-permalinks-url').text(state.secret_urls.permalinks || '');
+        }
+
+        function updateLogState(logKey, logState) {
+            var labels = {
+                debug: 'debug.log',
+                error: 'error_log'
+            };
+            var $size = $('[data-log-size="' + logKey + '"]');
+            var $summary = $('[data-summary-log="' + logKey + '"]');
+            var label = labels[logKey];
+
+            if ($size.length) {
+                $size.text(logState.size).css('color', logState.exists ? '#d63638' : '#00a32a');
+            }
+
+            if ($summary.length && label) {
+                $summary
+                    .removeClass('status-ok status-warn status-bad')
+                    .addClass(logState.exists ? 'status-warn' : 'status-ok')
+                    .text(label + ': ' + (logState.exists ? '⚠️ ' + logState.size : '✅ None'));
+            }
+        }
+
+        function applyOverviewState(state) {
+            if (!state) {
+                return;
+            }
+
+            if (state.config) {
+                Object.keys(state.config).forEach(function(constant) {
+                    updateConfigToggle(constant, state.config[constant]);
+                });
+            }
+
+            if (state.logs) {
+                updateLogState('debug', state.logs.debug);
+                updateLogState('error', state.logs.error);
+                updateLogState('admin_error', state.logs.admin_error);
+
+                var hasProblemLogs = !!((state.logs.debug && state.logs.debug.exists) || (state.logs.error && state.logs.error.exists));
+                $('#hws-summary-log-card').toggleClass('warn', hasProblemLogs);
+            }
+
+            updateSecretDetails(state);
+
+            if (window.hwsUpdateLogPanels && typeof window.hwsUpdateLogPanels === 'function') {
+                window.hwsUpdateLogPanels(state.logs || {});
+            }
+        }
+
+        function refreshOverviewState() {
+            return $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'hws_get_overview_state',
+                    nonce: hwsNonce
+                }
+            }).done(function(response) {
+                if (response.success) {
+                    applyOverviewState(response.data);
+                }
+            });
+        }
         
         // Quick Setup
         $('#hws-run-quick-setup').on('click', function() {
@@ -909,6 +1151,7 @@ function display_wp_admin_settings_page() {
                     if (response.success) {
                         $log.val($log.val() + response.data.log);
                         $log.val($log.val() + '\n✅ Quick Setup Complete!\n');
+                        refreshOverviewState();
                     } else {
                         $log.val($log.val() + '\n❌ Error: ' + response.data + '\n');
                     }
@@ -922,6 +1165,7 @@ function display_wp_admin_settings_page() {
         
         // Toggle Secret URLs
         $('#hws-toggle-secret-urls').on('change', function() {
+            var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
                 action: 'hws_toggle_secret_urls',
@@ -929,13 +1173,20 @@ function display_wp_admin_settings_page() {
                 nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
-                    location.reload();
+                    refreshOverviewState();
+                } else {
+                    $checkbox.prop('checked', !enabled);
+                    alert(getAjaxErrorMessage(response, 'Failed to update secret debug URLs.'));
                 }
+            }).fail(function() {
+                $checkbox.prop('checked', !enabled);
+                alert('AJAX error');
             });
         });
         
         // Toggle Secret Setup URL
         $('#hws-toggle-secret-setup').on('change', function() {
+            var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
                 action: 'hws_toggle_secret_setup',
@@ -943,13 +1194,20 @@ function display_wp_admin_settings_page() {
                 nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
-                    location.reload();
+                    refreshOverviewState();
+                } else {
+                    $checkbox.prop('checked', !enabled);
+                    alert(getAjaxErrorMessage(response, 'Failed to update public quick setup URL.'));
                 }
+            }).fail(function() {
+                $checkbox.prop('checked', !enabled);
+                alert('AJAX error');
             });
         });
         
         // Toggle Secret Permalinks Purge URL
         $('#hws-toggle-secret-permalinks').on('change', function() {
+            var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
                 action: 'hws_toggle_secret_permalinks',
@@ -957,8 +1215,14 @@ function display_wp_admin_settings_page() {
                 nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
-                    location.reload();
+                    refreshOverviewState();
+                } else {
+                    $checkbox.prop('checked', !enabled);
+                    alert(getAjaxErrorMessage(response, 'Failed to update public permalink purge URL.'));
                 }
+            }).fail(function() {
+                $checkbox.prop('checked', !enabled);
+                alert('AJAX error');
             });
         });
         
@@ -982,8 +1246,9 @@ function display_wp_admin_settings_page() {
                 $btn.prop('disabled', false).text('💾 Save Password');
                 if (response.success) {
                     $status.html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
+                    refreshOverviewState();
                 } else {
-                    $status.html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed to save') + '</span>');
+                    $status.html('<span style="color:#d63638;">❌ ' + getAjaxErrorMessage(response, 'Failed to save') + '</span>');
                 }
             }).fail(function() {
                 $btn.prop('disabled', false).text('💾 Save Password');
@@ -1013,7 +1278,13 @@ function display_wp_admin_settings_page() {
                 nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
-                    $btn.closest('tr').fadeOut();
+                    var $row = $btn.closest('tr');
+                    $row.fadeOut(200, function() {
+                        $(this).remove();
+                        if (window.hwsBackupUi && typeof window.hwsBackupUi.refreshSummary === 'function') {
+                            window.hwsBackupUi.refreshSummary();
+                        }
+                    });
                 } else {
                     alert('Error: ' + response.data);
                     $btn.prop('disabled', false).text('🗑️ Delete');
@@ -1036,7 +1307,11 @@ function display_wp_admin_settings_page() {
                 nonce: hwsNonce
             }, function(response) {
                 if (response.success) {
-                    location.reload();
+                    $('[data-backup-plugin-panel="' + plugin + '"]').remove();
+                    if (window.hwsBackupUi && typeof window.hwsBackupUi.refreshSummary === 'function') {
+                        window.hwsBackupUi.refreshSummary();
+                    }
+                    $btn.text('✅ Deleted').prop('disabled', true);
                 } else {
                     alert('Error: ' + response.data);
                     $btn.prop('disabled', false).text('🗑️ Delete All');
@@ -1065,9 +1340,9 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        $toggle.removeClass('on off').addClass(value === 'true' ? 'on' : 'off');
+                        refreshOverviewState();
                     } else {
-                        alert('Error: ' + (response.data?.message || response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $checkbox.prop('checked', !$checkbox.is(':checked'));
                     }
                 },
@@ -1083,6 +1358,7 @@ function display_wp_admin_settings_page() {
             var $btn = $(this);
             var constant = $btn.data('constant');
             var value = $btn.data('value');
+            var originalText = $btn.text();
             
             if (!constant || value === undefined || value === null) {
                 alert('Missing constant or value');
@@ -1108,15 +1384,16 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        refreshOverviewState();
+                        $btn.prop('disabled', false).text(originalText);
                     } else {
-                        alert('Error: ' + (response.data?.message || response.data || 'Unknown error'));
-                        $btn.prop('disabled', false).text('Retry');
+                        alert('Error: ' + getAjaxErrorMessage(response));
+                        $btn.prop('disabled', false).text(originalText);
                     }
                 },
                 error: function() {
                     alert('AJAX error');
-                    $btn.prop('disabled', false).text('Retry');
+                    $btn.prop('disabled', false).text(originalText);
                 }
             });
         });
@@ -1146,9 +1423,9 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        $btn.prop('disabled', false).text(action === 'enable' ? 'Enabled' : 'Disabled');
                     } else {
-                        alert('Error: ' + (response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $btn.prop('disabled', false).text('Retry');
                     }
                 },
@@ -1180,9 +1457,10 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        refreshOverviewState();
+                        $btn.prop('disabled', false).text('🔴 Enable ALL Debug');
                     } else {
-                        alert('Error: ' + (response.data?.message || response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $btn.prop('disabled', false).text('🔴 Enable ALL Debug');
                     }
                 },
@@ -1212,9 +1490,10 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        refreshOverviewState();
+                        $btn.prop('disabled', false).text('🟢 Disable ALL Debug');
                     } else {
-                        alert('Error: ' + (response.data?.message || response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $btn.prop('disabled', false).text('🟢 Disable ALL Debug');
                     }
                 },
@@ -1241,10 +1520,10 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.data);
-                        location.reload();
+                        refreshOverviewState();
+                        $btn.prop('disabled', false).text('Delete debug.log');
                     } else {
-                        alert('Error: ' + (response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $btn.prop('disabled', false).text('Delete debug.log');
                     }
                 },
@@ -1271,10 +1550,10 @@ function display_wp_admin_settings_page() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.data);
-                        location.reload();
+                        refreshOverviewState();
+                        $btn.prop('disabled', false).text('Delete error_log');
                     } else {
-                        alert('Error: ' + (response.data || 'Unknown error'));
+                        alert('Error: ' + getAjaxErrorMessage(response));
                         $btn.prop('disabled', false).text('Delete error_log');
                     }
                 },
@@ -1298,8 +1577,7 @@ function render_tab_overview() {
     $wp_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
     $wp_debug_display = defined( 'WP_DEBUG_DISPLAY' ) && WP_DEBUG_DISPLAY;
     $wp_debug_log = defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
-    $display_errors_raw = ini_get( 'display_errors' );
-    $display_errors = $display_errors_raw && $display_errors_raw !== '0' && strtolower($display_errors_raw) !== 'off';
+    $display_errors = hws_is_display_errors_enabled();
     
     // WP-Config settings
     $disable_cron = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
@@ -1378,29 +1656,29 @@ function render_tab_overview() {
             <textarea id="hws-quick-setup-log" class="hws-quick-setup-log" readonly placeholder="Setup log will appear here..."></textarea>
             
             <!-- Secret Quick Setup URL -->
-            <div class="hws-secret-url-box" style="margin-top: 15px;">
+            <div class="hws-secret-url-box" id="hws-secret-setup-box" style="margin-top: 15px;">
                 <label>
                     <input type="checkbox" id="hws-toggle-secret-setup" <?php checked( $secret_setup_enabled ); ?>>
                     <strong>Enable Public Quick Setup URL</strong> (runs setup without admin login)
                 </label>
-                <?php if ( $secret_setup_enabled ) : ?>
+                <div id="hws-secret-setup-details" style="<?php echo $secret_setup_enabled ? '' : 'display:none;'; ?>">
                     <p style="margin: 10px 0 5px;"><strong>Quick Setup URL:</strong></p>
-                    <code><?php echo esc_html( $setup_url ); ?></code>
+                    <code id="hws-secret-setup-url"><?php echo esc_html( $setup_url ); ?></code>
                     <p style="color: #d63638; font-size: 12px; margin-top: 5px;">⚠️ Anyone with this URL can run Quick Setup. Disable when not needed.</p>
-                <?php endif; ?>
+                </div>
             </div>
             
             <!-- Secret Permalinks Purge URL -->
-            <div class="hws-secret-url-box" style="margin-top: 15px;">
+            <div class="hws-secret-url-box" id="hws-secret-permalinks-box" style="margin-top: 15px;">
                 <label>
                     <input type="checkbox" id="hws-toggle-secret-permalinks" <?php checked( $secret_permalinks_enabled ); ?>>
                     <strong>Enable Public Permalink Purge URL</strong> (flushes permalinks without admin login)
                 </label>
-                <?php if ( $secret_permalinks_enabled ) : ?>
+                <div id="hws-secret-permalinks-details" style="<?php echo $secret_permalinks_enabled ? '' : 'display:none;'; ?>">
                     <p style="margin: 10px 0 5px;"><strong>Purge Permalinks URL:</strong></p>
-                    <code><?php echo esc_html( $permalinks_url ); ?></code>
+                    <code id="hws-secret-permalinks-url"><?php echo esc_html( $permalinks_url ); ?></code>
                     <p style="color: #666; font-size: 12px; margin-top: 5px;">ℹ️ Use this URL to flush rewrite rules remotely (useful for terminal/scripts).</p>
-                <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -1416,26 +1694,26 @@ function render_tab_overview() {
             </div>
             
             <div class="hws-debug-controls">
-                <div class="hws-debug-toggle <?php echo $wp_debug ? 'on' : 'off'; ?>">
-                    <span>WP_DEBUG: <?php echo $wp_debug ? 'ON' : 'OFF'; ?></span>
+                <div class="hws-debug-toggle <?php echo $wp_debug ? 'on' : 'off'; ?>" data-config-toggle="WP_DEBUG">
+                    <span data-config-label="WP_DEBUG">WP_DEBUG: <?php echo $wp_debug ? 'ON' : 'OFF'; ?></span>
                     <button class="button modify-wp-config" data-constant="WP_DEBUG" data-value="<?php echo $wp_debug ? 'false' : 'true'; ?>">
                         <?php echo $wp_debug ? 'Disable' : 'Enable'; ?>
                     </button>
                 </div>
-                <div class="hws-debug-toggle <?php echo $wp_debug_display ? 'on' : 'off'; ?>">
-                    <span>WP_DEBUG_DISPLAY: <?php echo $wp_debug_display ? 'ON' : 'OFF'; ?></span>
+                <div class="hws-debug-toggle <?php echo $wp_debug_display ? 'on' : 'off'; ?>" data-config-toggle="WP_DEBUG_DISPLAY">
+                    <span data-config-label="WP_DEBUG_DISPLAY">WP_DEBUG_DISPLAY: <?php echo $wp_debug_display ? 'ON' : 'OFF'; ?></span>
                     <button class="button modify-wp-config" data-constant="WP_DEBUG_DISPLAY" data-value="<?php echo $wp_debug_display ? 'false' : 'true'; ?>">
                         <?php echo $wp_debug_display ? 'Disable' : 'Enable'; ?>
                     </button>
                 </div>
-                <div class="hws-debug-toggle <?php echo $wp_debug_log ? 'on' : 'off'; ?>">
-                    <span>WP_DEBUG_LOG: <?php echo $wp_debug_log ? 'ON' : 'OFF'; ?></span>
+                <div class="hws-debug-toggle <?php echo $wp_debug_log ? 'on' : 'off'; ?>" data-config-toggle="WP_DEBUG_LOG">
+                    <span data-config-label="WP_DEBUG_LOG">WP_DEBUG_LOG: <?php echo $wp_debug_log ? 'ON' : 'OFF'; ?></span>
                     <button class="button modify-wp-config" data-constant="WP_DEBUG_LOG" data-value="<?php echo $wp_debug_log ? 'false' : 'true'; ?>">
                         <?php echo $wp_debug_log ? 'Disable' : 'Enable'; ?>
                     </button>
                 </div>
-                <div class="hws-debug-toggle <?php echo $display_errors ? 'on' : 'off'; ?>">
-                    <span>display_errors: <?php echo $display_errors ? 'ON' : 'OFF'; ?></span>
+                <div class="hws-debug-toggle <?php echo $display_errors ? 'on' : 'off'; ?>" data-config-toggle="ini_display_errors">
+                    <span data-config-label="ini_display_errors">display_errors: <?php echo $display_errors ? 'ON' : 'OFF'; ?></span>
                     <button class="button modify-wp-config" data-constant="ini_display_errors" data-value="<?php echo $display_errors ? '0' : '1'; ?>">
                         <?php echo $display_errors ? 'Disable' : 'Enable'; ?>
                     </button>
@@ -1443,17 +1721,17 @@ function render_tab_overview() {
             </div>
             
             <!-- Secret URLs -->
-            <div class="hws-secret-url-box">
+            <div class="hws-secret-url-box" id="hws-secret-debug-box">
                 <label>
                     <input type="checkbox" id="hws-toggle-secret-urls" <?php checked( $secret_urls_enabled ); ?>>
                     <strong>Enable Secret Debug URLs</strong> (allows toggling debug via URL)
                 </label>
-                <?php if ( $secret_urls_enabled ) : ?>
+                <div id="hws-secret-debug-details" style="<?php echo $secret_urls_enabled ? '' : 'display:none;'; ?>">
                     <p style="margin: 10px 0 5px;"><strong>Toggle Debug On/Off:</strong></p>
-                    <code><?php echo esc_html( $debug_url ); ?></code>
+                    <code id="hws-secret-debug-url"><?php echo esc_html( $debug_url ); ?></code>
                     <p style="margin: 10px 0 5px;"><strong>View Fatal Errors (even when site is down):</strong></p>
-                    <code><?php echo esc_html( $fatal_url ); ?></code>
-                <?php endif; ?>
+                    <code id="hws-secret-fatal-url"><?php echo esc_html( $fatal_url ); ?></code>
+                </div>
             </div>
         </div>
     </div>
@@ -1463,17 +1741,17 @@ function render_tab_overview() {
         <div class="hws-panel-header">📝 WP-Config Settings</div>
         <div class="hws-panel-body">
             <div class="hws-debug-controls">
-                <div class="hws-debug-toggle <?php echo $disable_cron ? 'off' : 'on'; ?>">
-                    <span>DISABLE_WP_CRON: <?php echo $disable_cron ? 'TRUE (cron disabled - recommended)' : 'FALSE (cron enabled)'; ?></span>
+                <div class="hws-debug-toggle <?php echo $disable_cron ? 'off' : 'on'; ?>" data-config-toggle="DISABLE_WP_CRON">
+                    <span data-config-label="DISABLE_WP_CRON">DISABLE_WP_CRON: <?php echo $disable_cron ? 'TRUE (cron disabled - recommended)' : 'FALSE (cron enabled)'; ?></span>
                     <button class="button modify-wp-config" data-constant="DISABLE_WP_CRON" data-value="<?php echo $disable_cron ? 'false' : 'true'; ?>">
                         <?php echo $disable_cron ? 'Enable WP-Cron' : 'Disable WP-Cron'; ?>
                     </button>
                 </div>
-                <div class="hws-debug-toggle">
-                    <span>WP_MEMORY_LIMIT: <?php echo esc_html( $wp_memory_limit ); ?></span>
-                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="512M">Set to 512M</button>
-                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="1024M">Set to 1G</button>
-                    <button class="button modify-wp-config" data-constant="WP_MEMORY_LIMIT" data-value="4096M">Set to 4G</button>
+                <div class="hws-debug-toggle" data-config-toggle="WP_MEMORY_LIMIT">
+                    <span data-config-label="WP_MEMORY_LIMIT">WP_MEMORY_LIMIT: <?php echo esc_html( $wp_memory_limit ); ?></span>
+                    <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '512M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="512M">Set to 512M</button>
+                    <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '1024M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="1024M">Set to 1G</button>
+                    <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '4096M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="4096M">Set to 4G</button>
                 </div>
             </div>
         </div>
@@ -1493,25 +1771,25 @@ function render_tab_overview() {
             <div style="display: flex; gap: 20px; margin-bottom: 15px;">
                 <div>
                     <strong>debug.log:</strong> 
-                    <span style="color: <?php echo $debug_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
+                    <span data-log-size="debug" style="color: <?php echo $debug_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
                         <?php echo $debug_log_size; ?>
                     </span>
                 </div>
                 <div>
                     <strong>error_log:</strong> 
-                    <span style="color: <?php echo $error_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
+                    <span data-log-size="error" style="color: <?php echo $error_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
                         <?php echo $error_log_size; ?>
                     </span>
                 </div>
                 <div>
                     <strong>wp-admin/error_log:</strong> 
-                    <span style="color: <?php echo $admin_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
+                    <span data-log-size="admin_error" style="color: <?php echo $admin_log_size !== 'N/A' ? '#d63638' : '#00a32a'; ?>;">
                         <?php echo $admin_log_size; ?>
                     </span>
                 </div>
                 <div>
                     <strong>display_errors:</strong> 
-                    <span style="color: <?php echo $display_errors ? '#d63638' : '#00a32a'; ?>;">
+                    <span data-config-summary="ini_display_errors" style="color: <?php echo $display_errors ? '#d63638' : '#00a32a'; ?>;">
                         <?php echo $display_errors ? 'ON' : 'Off'; ?>
                     </span>
                 </div>
@@ -1616,6 +1894,33 @@ function render_tab_overview() {
             var id = $(this).closest('.hws-log-panel').attr('id');
             originalLogHTML[id] = $(this).html();
         });
+
+        window.hwsUpdateLogPanels = function(logs) {
+            function updatePanel(panelId, exists, emptyHtml) {
+                if (typeof exists === 'undefined') {
+                    return;
+                }
+
+                if (!exists) {
+                    $('#' + panelId + ' .hws-log-viewer').html(emptyHtml);
+                    originalLogHTML[panelId] = emptyHtml;
+                }
+            }
+
+            if (!logs) {
+                return;
+            }
+
+            updatePanel('log-panel-debug', logs.debug && logs.debug.exists, '<span style="color: #666;">debug.log not found</span>');
+            updatePanel('log-panel-error', logs.error && logs.error.exists, '<span style="color: #666;">error_log not found</span>');
+            updatePanel('log-panel-admin-error', logs.admin_error && logs.admin_error.exists, '<span style="color: #666;">wp-admin/error_log not found</span>');
+
+            if (logs.debug && logs.error && !logs.debug.exists && !logs.error.exists) {
+                var fatalEmpty = '<span style="color: #00a32a;">✅ No fatal or syntax errors found in either log.</span>';
+                $('#log-panel-fatal-syntax .hws-log-viewer').html(fatalEmpty);
+                originalLogHTML['log-panel-fatal-syntax'] = fatalEmpty;
+            }
+        };
         
         // Log tab switching
         $('.hws-log-tab').on('click', function() {
@@ -2115,12 +2420,12 @@ function render_summary_section() {
                     <?php echo $comments_count > 0 ? "⚠️ {$comments_count} comments" : '✅ No comments'; ?>
                 </p>
             </div>
-            <div class="hws-summary-card <?php echo ( $debug_log_size + $error_log_size ) > 0 ? 'warn' : ''; ?>">
+            <div class="hws-summary-card <?php echo ( $debug_log_size + $error_log_size ) > 0 ? 'warn' : ''; ?>" id="hws-summary-log-card">
                 <h4>Log Files</h4>
-                <p class="<?php echo $debug_log_size > 0 ? 'status-warn' : 'status-ok'; ?>">
+                <p class="<?php echo $debug_log_size > 0 ? 'status-warn' : 'status-ok'; ?>" data-summary-log="debug">
                     debug.log: <?php echo $debug_log_size > 0 ? '⚠️ ' . size_format( $debug_log_size ) : '✅ None'; ?>
                 </p>
-                <p class="<?php echo $error_log_size > 0 ? 'status-warn' : 'status-ok'; ?>">
+                <p class="<?php echo $error_log_size > 0 ? 'status-warn' : 'status-ok'; ?>" data-summary-log="error">
                     error_log: <?php echo $error_log_size > 0 ? '⚠️ ' . size_format( $error_log_size ) : '✅ None'; ?>
                 </p>
             </div>
@@ -2141,20 +2446,20 @@ function render_summary_section() {
         <div class="hws-summary-grid">
             <div class="hws-summary-card">
                 <h4>Debug Settings</h4>
-                <p class="<?php echo $wp_debug ? 'status-warn' : 'status-ok'; ?>">
+                <p class="<?php echo $wp_debug ? 'status-warn' : 'status-ok'; ?>" data-summary-setting="WP_DEBUG">
                     WP_DEBUG: <?php echo $wp_debug ? '⚠️ ON' : '✅ OFF'; ?>
                 </p>
-                <p class="<?php echo $wp_debug_log ? 'status-warn' : 'status-ok'; ?>">
+                <p class="<?php echo $wp_debug_log ? 'status-warn' : 'status-ok'; ?>" data-summary-setting="WP_DEBUG_LOG">
                     WP_DEBUG_LOG: <?php echo $wp_debug_log ? '⚠️ ON' : '✅ OFF'; ?>
                 </p>
-                <p class="<?php echo $wp_debug_display ? 'status-bad' : 'status-ok'; ?>">
+                <p class="<?php echo $wp_debug_display ? 'status-bad' : 'status-ok'; ?>" data-summary-setting="WP_DEBUG_DISPLAY">
                     WP_DEBUG_DISPLAY: <?php echo $wp_debug_display ? '❌ ON' : '✅ OFF'; ?>
                 </p>
             </div>
             <div class="hws-summary-card">
                 <h4>Memory & Cron</h4>
-                <p>WP_MEMORY_LIMIT: <strong><?php echo esc_html( $wp_memory_limit ); ?></strong></p>
-                <p class="<?php echo $disable_cron ? 'status-ok' : 'status-warn'; ?>">
+                <p data-summary-setting="WP_MEMORY_LIMIT">WP_MEMORY_LIMIT: <strong><?php echo esc_html( $wp_memory_limit ); ?></strong></p>
+                <p class="<?php echo $disable_cron ? 'status-ok' : 'status-warn'; ?>" data-summary-setting="DISABLE_WP_CRON">
                     DISABLE_WP_CRON: <?php echo $disable_cron ? '✅ TRUE (using real cron)' : '⚠️ FALSE'; ?>
                 </p>
             </div>
@@ -2577,6 +2882,8 @@ function ajax_quick_setup() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $log = hws_execute_quick_setup();
     
@@ -2584,6 +2891,16 @@ function ajax_quick_setup() {
     $log = strip_tags( $log );
     
     wp_send_json_success( [ 'log' => $log ] );
+}
+
+function ajax_get_overview_state() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    wp_send_json_success( hws_get_overview_state_payload() );
 }
 
 
@@ -2594,6 +2911,8 @@ function ajax_toggle_secret_urls() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     update_option( Dashboard_Config::OPT_SECRET_URLS_ENABLED, $enabled ? 'yes' : 'no' );
@@ -2609,6 +2928,8 @@ function ajax_toggle_secret_setup() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     update_option( Dashboard_Config::OPT_SECRET_SETUP_ENABLED, $enabled ? 'yes' : 'no' );
@@ -2624,6 +2945,8 @@ function ajax_toggle_secret_permalinks() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     update_option( Dashboard_Config::OPT_SECRET_PERMALINKS_ENABLED, $enabled ? 'yes' : 'no' );
@@ -2639,6 +2962,8 @@ function ajax_enable_all_auto_updates() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     // Get ALL plugins
     $all_plugins = array_keys( get_plugins() );
@@ -2663,6 +2988,8 @@ function ajax_toggle_all_debug() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $enable = isset( $_POST['enable'] ) && $_POST['enable'] === '1';
     $value = $enable ? 'true' : 'false';
@@ -2695,8 +3022,10 @@ function ajax_save_master_secret() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
-    $new_secret = isset( $_POST['secret'] ) ? sanitize_text_field( $_POST['secret'] ) : '';
+    $new_secret = isset( $_POST['secret'] ) ? sanitize_text_field( wp_unslash( $_POST['secret'] ) ) : '';
     
     // — Validate: must be at least 6 characters
     if ( strlen( $new_secret ) < 6 ) {
@@ -3226,7 +3555,6 @@ function render_site_icon_panel() {
                 $btn.prop('disabled', false).text(origText);
                 if (response.success) {
                     $('#hws-favicon-status').html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
-                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
                     $('#hws-favicon-status').html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
                 }
@@ -3260,7 +3588,6 @@ function render_site_icon_panel() {
                 }, function(response) {
                     if (response.success) {
                         $('#hws-favicon-status').html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
-                        setTimeout(function() { location.reload(); }, 1500);
                     } else {
                         $('#hws-favicon-status').html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
                     }
@@ -3282,6 +3609,8 @@ function ajax_copy_favicon() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
 
     $source = isset( $_POST['source'] ) ? sanitize_key( $_POST['source'] ) : '';
 

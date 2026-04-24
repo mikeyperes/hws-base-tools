@@ -41,16 +41,15 @@ function hws_login_secret(): string {
     if ( class_exists( __NAMESPACE__ . '\\Dashboard_Config' ) ) {
         return Dashboard_Config::get_secret_key();
     }
-    $val = get_option( 'hws_master_secret_key', '' );
-    return ( is_string( $val ) && $val !== '' ) ? $val : 'hexa2000!';
+
+    return hws_get_master_secret();
 }
 
 /**
  * Check if masked login public URLs are enabled (default: YES)
  */
 function are_login_urls_enabled(): bool {
-    $val = get_option( constant( __NAMESPACE__ . '\\HWS_OPT_LOGIN_URLS_ENABLED' ), 'yes' );
-    return $val === 'yes' || $val === true || $val === '1' || $val === 1;
+    return hws_option_is_enabled( constant( __NAMESPACE__ . '\\HWS_OPT_LOGIN_URLS_ENABLED' ), false );
 }
 
 /**
@@ -325,12 +324,68 @@ function hws_login_render_output( string $title, array $data, string $format = '
 add_action( 'wp_ajax_hws_toggle_login_urls', __NAMESPACE__ . '\\ajax_toggle_login_urls' );
 add_action( 'wp_ajax_hws_clear_login_log', __NAMESPACE__ . '\\ajax_clear_login_log' );
 add_action( 'wp_ajax_hws_login_mask_action', __NAMESPACE__ . '\\ajax_login_mask_action' );
+add_action( 'wp_ajax_hws_get_login_mask_state', __NAMESPACE__ . '\\ajax_get_login_mask_state' );
+
+/**
+ * Build the dashboard state payload for the masked login tab.
+ */
+function hws_get_login_mask_state_payload(): array {
+    $class_ok      = class_exists( __NAMESPACE__ . '\\Login_Masking' );
+    $opts          = $class_ok ? Login_Masking::opts() : [];
+    $slug          = $class_ok ? Login_Masking::slug() : 'unknown';
+    $login_url     = $class_ok ? Login_Masking::login_url() : home_url( '/' . $slug . '/' );
+    $urls_on       = are_login_urls_enabled();
+    $secret        = hws_login_secret();
+    $log           = hws_login_log_get( 100 );
+    $settings_link = admin_url( 'options-general.php?page=hws-login-masking' );
+    $json_url      = home_url( '/.well-known/hws-login.json' );
+    $url_rows      = [];
+
+    foreach ( get_login_url_keys() as $param => $cfg ) {
+        $full_url    = home_url( '/' ) . '?' . $param . '=' . $secret;
+        $url_rows[] = [
+            'label' => $cfg['label'],
+            'url'   => $full_url,
+        ];
+    }
+
+    return [
+        'enabled'           => ! empty( $opts['enabled'] ),
+        'login_url'         => $login_url,
+        'slug'              => $slug,
+        'hide_wp_admin'     => ! empty( $opts['hide_wp_admin'] ),
+        'well_known'        => ! empty( $opts['well_known'] ),
+        'json_url'          => $json_url,
+        'compat_wptoolkit'  => ! empty( $opts['compat_wptoolkit'] ),
+        'allowlist_ips'     => $opts['allowlist_ips'] ?? '',
+        'urls_enabled'      => $urls_on,
+        'url_rows'          => $url_rows,
+        'log_entries'       => array_values( $log ),
+        'settings_link'     => $settings_link,
+        'emergency_bypass'  => home_url( '/?hws=bypass' ),
+        'emergency_repair'  => home_url( '/?hws=repair' ),
+    ];
+}
+
+/**
+ * AJAX: Return fresh masked login dashboard state.
+ */
+function ajax_get_login_mask_state() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    wp_send_json_success( hws_get_login_mask_state_payload() );
+}
 
 /**
  * AJAX: Toggle login mask public URLs on/off
  */
 function ajax_toggle_login_urls() {
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    hws_require_ajax_nonce_or_error();
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     update_option( constant( __NAMESPACE__ . '\\HWS_OPT_LOGIN_URLS_ENABLED' ), $enabled ? 'yes' : 'no' );
     wp_send_json_success( [ 'enabled' => $enabled ] );
@@ -341,6 +396,7 @@ function ajax_toggle_login_urls() {
  */
 function ajax_clear_login_log() {
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    hws_require_ajax_nonce_or_error();
     hws_login_log_clear();
     wp_send_json_success( [ 'message' => 'Log cleared' ] );
 }
@@ -350,6 +406,7 @@ function ajax_clear_login_log() {
  */
 function ajax_login_mask_action() {
     if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    hws_require_ajax_nonce_or_error();
 
     $action_type = isset( $_POST['action_type'] ) ? sanitize_key( $_POST['action_type'] ) : '';
 
@@ -431,18 +488,8 @@ add_action( 'init', function() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function display_settings_masked_login() {
-    // — Get Login_Masking data
-    $class_ok = class_exists( __NAMESPACE__ . '\\Login_Masking' );
-    $opts     = $class_ok ? Login_Masking::opts() : [];
-    $slug     = $class_ok ? Login_Masking::slug() : 'unknown';
-    $login_url = $class_ok ? Login_Masking::login_url() : home_url( '/' . $slug . '/' );
-    $urls_on   = are_login_urls_enabled();
-    $secret    = hws_login_secret();
-    $url_keys  = get_login_url_keys();
-    $site      = home_url( '/' );
-    $log       = hws_login_log_get( 100 );
-    $settings_link = admin_url( 'options-general.php?page=hws-login-masking' );
-    $json_url  = home_url( '/.well-known/hws-login.json' );
+    $state         = hws_get_login_mask_state_payload();
+    $settings_link = $state['settings_link'];
     ?>
 
     <style>
@@ -495,35 +542,35 @@ function display_settings_masked_login() {
     <div class="hws-ml-section">
         <div class="hws-ml-section-header">
             <h4>📊 Status Overview</h4>
-            <span class="hws-ml-badge <?php echo ! empty( $opts['enabled'] ) ? 'hws-ml-badge-on' : 'hws-ml-badge-off'; ?>">
-                <?php echo ! empty( $opts['enabled'] ) ? '✅ ACTIVE' : '❌ DISABLED'; ?>
+            <span id="hws-ml-status-badge" class="hws-ml-badge <?php echo $state['enabled'] ? 'hws-ml-badge-on' : 'hws-ml-badge-off'; ?>">
+                <?php echo $state['enabled'] ? '✅ ACTIVE' : '❌ DISABLED'; ?>
             </span>
         </div>
         <div class="hws-ml-section-body">
             <div class="hws-ml-grid">
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">🔗 Login URL</div>
-                    <div class="hws-ml-stat-value"><a href="<?php echo esc_url( $login_url ); ?>" target="_blank"><?php echo esc_html( $login_url ); ?></a></div>
+                    <div id="hws-ml-login-url" class="hws-ml-stat-value"><a href="<?php echo esc_url( $state['login_url'] ); ?>" target="_blank"><?php echo esc_html( $state['login_url'] ); ?></a></div>
                 </div>
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">📝 Slug</div>
-                    <div class="hws-ml-stat-value"><code><?php echo esc_html( $slug ); ?></code></div>
+                    <div id="hws-ml-slug" class="hws-ml-stat-value"><code><?php echo esc_html( $state['slug'] ); ?></code></div>
                 </div>
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">🚫 Hide /wp-admin/</div>
-                    <div class="hws-ml-stat-value"><?php echo ! empty( $opts['hide_wp_admin'] ) ? '✅ Yes (404 for guests)' : '❌ No'; ?></div>
+                    <div id="hws-ml-hide-admin" class="hws-ml-stat-value"><?php echo $state['hide_wp_admin'] ? '✅ Yes (404 for guests)' : '❌ No'; ?></div>
                 </div>
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">🔍 .well-known Discovery</div>
-                    <div class="hws-ml-stat-value"><?php echo ! empty( $opts['well_known'] ) ? '✅ <a href="' . esc_url( $json_url ) . '" target="_blank">View JSON</a>' : '❌ Disabled'; ?></div>
+                    <div id="hws-ml-well-known" class="hws-ml-stat-value"><?php echo $state['well_known'] ? '✅ <a href="' . esc_url( $state['json_url'] ) . '" target="_blank">View JSON</a>' : '❌ Disabled'; ?></div>
                 </div>
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">🛠️ WP Toolkit Compat</div>
-                    <div class="hws-ml-stat-value"><?php echo ! empty( $opts['compat_wptoolkit'] ) ? '✅ Enabled' : '❌ Disabled'; ?></div>
+                    <div id="hws-ml-toolkit" class="hws-ml-stat-value"><?php echo $state['compat_wptoolkit'] ? '✅ Enabled' : '❌ Disabled'; ?></div>
                 </div>
                 <div class="hws-ml-stat">
                     <div class="hws-ml-stat-label">📋 IP Allowlist</div>
-                    <div class="hws-ml-stat-value"><?php echo ! empty( $opts['allowlist_ips'] ) ? '<code>' . esc_html( $opts['allowlist_ips'] ) . '</code>' : '<em>None set</em>'; ?></div>
+                    <div id="hws-ml-allowlist" class="hws-ml-stat-value"><?php echo ! empty( $state['allowlist_ips'] ) ? '<code>' . esc_html( $state['allowlist_ips'] ) . '</code>' : '<em>None set</em>'; ?></div>
                 </div>
             </div>
 
@@ -531,8 +578,8 @@ function display_settings_masked_login() {
             <div style="margin-top: 15px; padding: 12px; background: #fff8e5; border: 1px solid #f0c36d; border-radius: 6px;">
                 <strong style="font-size: 13px;">🚨 Emergency URLs (always work, no password needed):</strong>
                 <div style="margin-top: 8px; font-size: 13px;">
-                    <div style="margin-bottom: 4px;"><code><a href="<?php echo esc_url( home_url( '/?hws=bypass' ) ); ?>" target="_blank"><?php echo esc_html( home_url( '/?hws=bypass' ) ); ?></a></code> — Access native login</div>
-                    <div><code><a href="<?php echo esc_url( home_url( '/?hws=repair' ) ); ?>" target="_blank"><?php echo esc_html( home_url( '/?hws=repair' ) ); ?></a></code> — Fix rewrites & purge caches</div>
+                    <div style="margin-bottom: 4px;"><code><a id="hws-ml-bypass-url" href="<?php echo esc_url( $state['emergency_bypass'] ); ?>" target="_blank"><?php echo esc_html( $state['emergency_bypass'] ); ?></a></code> — Access native login</div>
+                    <div><code><a id="hws-ml-repair-url" href="<?php echo esc_url( $state['emergency_repair'] ); ?>" target="_blank"><?php echo esc_html( $state['emergency_repair'] ); ?></a></code> — Fix rewrites & purge caches</div>
                 </div>
             </div>
 
@@ -561,19 +608,17 @@ function display_settings_masked_login() {
         <div class="hws-ml-section-header">
             <h4>🔗 Public URLs (No Login Required)</h4>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-                <input type="checkbox" id="hws-ml-urls-toggle" <?php checked( $urls_on ); ?>> Enabled
+                <input type="checkbox" id="hws-ml-urls-toggle" <?php checked( $state['urls_enabled'] ); ?>> Enabled
             </label>
         </div>
         <div class="hws-ml-section-body">
             <p style="font-size:13px;color:#646970;margin:0 0 12px;">These URLs use the master secret password and return JSON by default. Append <code>&format=html</code> or <code>&format=text</code> for other formats.</p>
-            <div>
-                <?php foreach ( $url_keys as $param => $cfg ) :
-                    $full_url = $site . '?' . $param . '=' . $secret;
-                ?>
+            <div id="hws-ml-public-url-list">
+                <?php foreach ( $state['url_rows'] as $row ) : ?>
                     <div class="hws-ml-url-row">
-                        <strong style="min-width:220px;"><?php echo esc_html( $cfg['label'] ); ?>:</strong>
-                        <code><?php echo esc_html( $full_url ); ?></code>
-                        <a href="<?php echo esc_url( $full_url ); ?>" target="_blank">Open ↗</a>
+                        <strong style="min-width:220px;"><?php echo esc_html( $row['label'] ); ?>:</strong>
+                        <code><?php echo esc_html( $row['url'] ); ?></code>
+                        <a href="<?php echo esc_url( $row['url'] ); ?>" target="_blank">Open ↗</a>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -583,15 +628,15 @@ function display_settings_masked_login() {
     <!-- ──────── Activity Log ──────── -->
     <div class="hws-ml-section">
         <div class="hws-ml-section-header">
-            <h4>📋 Activity Log (<?php echo count( $log ); ?> entries)</h4>
+            <h4>📋 Activity Log (<span id="hws-ml-log-count"><?php echo count( $state['log_entries'] ); ?></span> entries)</h4>
             <button type="button" class="hws-ml-btn hws-ml-btn-danger" id="hws-ml-clear-log" style="font-size:12px;padding:4px 10px;">🗑️ Clear Log</button>
         </div>
-        <div class="hws-ml-section-body">
-            <?php if ( empty( $log ) ) : ?>
+        <div id="hws-ml-log-body" class="hws-ml-section-body">
+            <?php if ( empty( $state['log_entries'] ) ) : ?>
                 <p style="color:#646970;font-style:italic;">No activity logged yet. Events like blocked access attempts, emergency actions, and public URL usage will appear here.</p>
             <?php else : ?>
                 <div class="hws-ml-log">
-                    <?php foreach ( $log as $entry ) :
+                    <?php foreach ( $state['log_entries'] as $entry ) :
                         $type_class = 'hws-ml-log-type-' . ( $entry['type'] ?? 'info' );
                         $time = isset( $entry['time'] ) ? date( 'M j H:i:s', strtotime( $entry['time'] ) ) : '?';
                         $ip   = $entry['ip'] ?? '';
@@ -613,6 +658,96 @@ function display_settings_masked_login() {
     <script>
     jQuery(document).ready(function($) {
         var $status = $('#hws-ml-action-status');
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function renderLoginMaskLog(entries) {
+            if (!entries || !entries.length) {
+                return '<p style="color:#646970;font-style:italic;">No activity logged yet. Events like blocked access attempts, emergency actions, and public URL usage will appear here.</p>';
+            }
+
+            var html = '<div class="hws-ml-log">';
+
+            entries.forEach(function(entry) {
+                var time = entry.time ? new Date(entry.time).toLocaleString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }) : '?';
+                var type = (entry.type || 'info').toLowerCase();
+                var suffix = '';
+
+                if (entry.ip) {
+                    suffix = ' <span class="hws-ml-log-ip">(' + escapeHtml(entry.ip);
+                    if (entry.ua) {
+                        suffix += ' | UA: ' + escapeHtml(entry.ua);
+                    }
+                    suffix += ')</span>';
+                }
+
+                html += '<div class="hws-ml-log-entry">';
+                html += '<span class="hws-ml-log-time">' + escapeHtml(time) + '</span>';
+                html += '<span class="hws-ml-log-type-' + escapeHtml(type) + '">[' + escapeHtml(type.toUpperCase()) + ']</span> ';
+                html += escapeHtml(entry.message || '') + suffix;
+                html += '</div>';
+            });
+
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderLoginMaskUrls(urlRows) {
+            if (!urlRows || !urlRows.length) {
+                return '<p style="color:#646970;font-style:italic;">No public URLs available.</p>';
+            }
+
+            return urlRows.map(function(row) {
+                return '<div class="hws-ml-url-row">' +
+                    '<strong style="min-width:220px;">' + escapeHtml(row.label) + ':</strong>' +
+                    '<code>' + escapeHtml(row.url) + '</code>' +
+                    '<a href="' + escapeHtml(row.url) + '" target="_blank">Open ↗</a>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function applyLoginMaskState(state) {
+            $('#hws-ml-status-badge')
+                .toggleClass('hws-ml-badge-on', !!state.enabled)
+                .toggleClass('hws-ml-badge-off', !state.enabled)
+                .text(state.enabled ? '✅ ACTIVE' : '❌ DISABLED');
+
+            $('#hws-ml-login-url').html('<a href="' + escapeHtml(state.login_url) + '" target="_blank">' + escapeHtml(state.login_url) + '</a>');
+            $('#hws-ml-slug').html('<code>' + escapeHtml(state.slug) + '</code>');
+            $('#hws-ml-hide-admin').text(state.hide_wp_admin ? '✅ Yes (404 for guests)' : '❌ No');
+            $('#hws-ml-well-known').html(state.well_known
+                ? '✅ <a href="' + escapeHtml(state.json_url) + '" target="_blank">View JSON</a>'
+                : '❌ Disabled');
+            $('#hws-ml-toolkit').text(state.compat_wptoolkit ? '✅ Enabled' : '❌ Disabled');
+            $('#hws-ml-allowlist').html(state.allowlist_ips ? '<code>' + escapeHtml(state.allowlist_ips) + '</code>' : '<em>None set</em>');
+            $('#hws-ml-bypass-url').attr('href', state.emergency_bypass).text(state.emergency_bypass);
+            $('#hws-ml-repair-url').attr('href', state.emergency_repair).text(state.emergency_repair);
+            $('#hws-ml-urls-toggle').prop('checked', !!state.urls_enabled);
+            $('#hws-ml-public-url-list').html(renderLoginMaskUrls(state.url_rows));
+            $('#hws-ml-log-count').text((state.log_entries || []).length);
+            $('#hws-ml-log-body').html(renderLoginMaskLog(state.log_entries || []));
+        }
+
+        function refreshLoginMaskState() {
+            return $.post(ajaxurl, {
+                action: 'hws_get_login_mask_state',
+                nonce: hwsNonce
+            }).done(function(response) {
+                if (response && response.success && response.data) {
+                    applyLoginMaskState(response.data);
+                }
+            });
+        }
 
         // — Quick action buttons
         $(document).on('click', '[data-ml-action]', function() {
@@ -637,8 +772,7 @@ function display_settings_masked_login() {
                         var d = response.data;
                         var msg = d.message || JSON.stringify(d);
                         $status.html('<span style="color:#00a32a;">✅ ' + msg + '</span>');
-                        // — Reload after 1.5s to update status display
-                        setTimeout(function() { location.reload(); }, 1500);
+                        refreshLoginMaskState();
                     } else {
                         $status.html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
                     }
@@ -657,6 +791,17 @@ function display_settings_masked_login() {
                 action: 'hws_toggle_login_urls',
                 enabled: enabled,
                 nonce: hwsNonce
+            }).done(function(response) {
+                if (response && response.success) {
+                    $status.html('<span style="color:#00a32a;">✅ Public URLs ' + (enabled ? 'enabled' : 'disabled') + '</span>');
+                    refreshLoginMaskState();
+                } else {
+                    $status.html('<span style="color:#d63638;">❌ Failed to update public URLs</span>');
+                    $('#hws-ml-urls-toggle').prop('checked', !enabled);
+                }
+            }).fail(function() {
+                $status.html('<span style="color:#d63638;">❌ AJAX error</span>');
+                $('#hws-ml-urls-toggle').prop('checked', !enabled);
             });
         });
 
@@ -669,8 +814,13 @@ function display_settings_masked_login() {
                 action: 'hws_clear_login_log',
                 nonce: hwsNonce
             }, function(response) {
-                if (response.success) location.reload();
-                else $btn.prop('disabled', false);
+                $btn.prop('disabled', false);
+                if (response.success) {
+                    $status.html('<span style="color:#00a32a;">✅ ' + (response.data.message || 'Log cleared') + '</span>');
+                    refreshLoginMaskState();
+                } else {
+                    $status.html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed to clear log') + '</span>');
+                }
             });
         });
     });

@@ -544,9 +544,6 @@ function render_tab_plugins() {
                 success: function(response) {
                     if (response.success) {
                         $btn.text('✅ ' + response.data.message);
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1500);
                     } else {
                         $btn.prop('disabled', false).text('Enable Auto-Updates for All');
                         alert('Error: ' + (response.data || 'Unknown error'));
@@ -590,10 +587,7 @@ function render_tab_plugins() {
             var installNext = function(index) {
                 if (index >= selectedPlugins.length) {
                     $log.append('<br><strong style="color: green;">✅ All installations complete!</strong>');
-                    $btn.text('✅ Complete - Reloading...');
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
+                    $btn.text('✅ Complete');
                     return;
                 }
                 

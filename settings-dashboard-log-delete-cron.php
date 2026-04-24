@@ -74,6 +74,7 @@ function hws_log_cleaner_init() {
     add_action( 'wp_ajax_delete_debug_log', __NAMESPACE__ . '\\hws_log_cleaner_ajax_delete_debug' );
     add_action( 'wp_ajax_delete_error_log', __NAMESPACE__ . '\\hws_log_cleaner_ajax_delete_error' );
     add_action( 'wp_ajax_hws_base_tools_run_log_cleaner', __NAMESPACE__ . '\\hws_log_cleaner_ajax_run_now' );
+    add_action( 'wp_ajax_hws_get_log_cleaner_state', __NAMESPACE__ . '\\hws_log_cleaner_ajax_get_state' );
     
     // Register cron hook
     add_action( Log_Cleaner_Config::CRON_HOOK, __NAMESPACE__ . '\\hws_log_cleaner_run' );
@@ -84,6 +85,20 @@ function hws_log_cleaner_init() {
     }
 }
 add_action( 'init', __NAMESPACE__ . '\\hws_log_cleaner_init' );
+
+/**
+ * AJAX: Return fresh dashboard state for the log cleaner tab.
+ */
+function hws_log_cleaner_ajax_get_state() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+        return;
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    wp_send_json_success( hws_log_cleaner_get_status() );
+}
 
 
 /**
@@ -230,6 +245,8 @@ function hws_log_cleaner_ajax_toggle() {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
+
+        hws_require_ajax_nonce_or_error();
         
         $status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : '';
         $enabled = ( $status === 'enabled' );
@@ -258,6 +275,8 @@ function hws_log_cleaner_ajax_update_settings() {
             wp_send_json_error( [ 'message' => 'Unauthorized' ] );
             return;
         }
+
+        hws_require_ajax_nonce_or_error();
         
         $interval   = isset( $_POST['interval'] ) ? absint( $_POST['interval'] ) : Log_Cleaner_Config::DEFAULT_INTERVAL;
         $size_limit = isset( $_POST['size_limit'] ) ? absint( $_POST['size_limit'] ) : Log_Cleaner_Config::DEFAULT_SIZE_LIMIT;
@@ -294,6 +313,8 @@ function hws_log_cleaner_ajax_delete_debug() {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
+
+        hws_require_ajax_nonce_or_error();
         
         $log_paths = Log_Cleaner_Config::get_log_paths();
         $path = $log_paths['debug_log'];
@@ -325,6 +346,8 @@ function hws_log_cleaner_ajax_delete_error() {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
+
+        hws_require_ajax_nonce_or_error();
         
         $log_paths = Log_Cleaner_Config::get_log_paths();
         $path = $log_paths['error_log'];
@@ -356,6 +379,8 @@ function hws_log_cleaner_ajax_run_now() {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
+
+        hws_require_ajax_nonce_or_error();
         
         $report = hws_log_cleaner_run();
         
@@ -612,47 +637,47 @@ function display_settings_log_cleaner() {
         
         <!-- Status Cards -->
         <div class="hws-log-stats-grid">
-            <div class="hws-log-stat-card <?php echo $status['enabled'] ? 'status-enabled' : 'status-disabled'; ?>">
-                <div class="stat-value"><?php echo $status['enabled'] ? '✅ ON' : '❌ OFF'; ?></div>
+            <div class="hws-log-stat-card <?php echo $status['enabled'] ? 'status-enabled' : 'status-disabled'; ?>" data-log-card="enabled">
+                <div class="stat-value" data-log-stat="enabled"><?php echo $status['enabled'] ? '✅ ON' : '❌ OFF'; ?></div>
                 <div class="stat-label">Auto-Clean</div>
             </div>
             <div class="hws-log-stat-card">
-                <div class="stat-value"><?php echo $status['interval']; ?> days</div>
+                <div class="stat-value" data-log-stat="interval"><?php echo $status['interval']; ?> days</div>
                 <div class="stat-label">Interval</div>
             </div>
             <div class="hws-log-stat-card">
-                <div class="stat-value"><?php echo $status['size_limit']; ?> MB</div>
+                <div class="stat-value" data-log-stat="size_limit"><?php echo $status['size_limit']; ?> MB</div>
                 <div class="stat-label">Size Limit</div>
             </div>
-            <div class="hws-log-stat-card <?php echo $cron['is_scheduled'] ? 'status-ok' : 'status-warning'; ?>">
-                <div class="stat-value"><?php echo $cron['is_scheduled'] ? '✅' : '⚠️'; ?></div>
+            <div class="hws-log-stat-card <?php echo $cron['is_scheduled'] ? 'status-ok' : 'status-warning'; ?>" data-log-card="scheduled">
+                <div class="stat-value" data-log-stat="scheduled"><?php echo $cron['is_scheduled'] ? '✅' : '⚠️'; ?></div>
                 <div class="stat-label">Cron Scheduled</div>
             </div>
             <div class="hws-log-stat-card">
-                <div class="stat-value" style="font-size: 14px;"><?php echo $status['last_run'] !== 'Never' ? date( 'M j', strtotime( $status['last_run'] ) ) : 'Never'; ?></div>
+                <div class="stat-value" data-log-stat="last_run" style="font-size: 14px;"><?php echo $status['last_run'] !== 'Never' ? date( 'M j', strtotime( $status['last_run'] ) ) : 'Never'; ?></div>
                 <div class="stat-label">Last Run</div>
             </div>
         </div>
 
         <!-- Cron Job Status Panel -->
-        <div class="hws-cron-status-box <?php echo $cron['cron_healthy'] ? 'cron-healthy' : 'cron-unhealthy'; ?>">
+        <div id="hws-log-cron-box" class="hws-cron-status-box <?php echo $cron['cron_healthy'] ? 'cron-healthy' : 'cron-unhealthy'; ?>">
             <h4>⏰ WordPress Cron Status</h4>
             
             <div class="hws-cron-detail">
                 <span class="label">Hook Name:</span>
-                <span class="value"><?php echo esc_html( $cron['hook_name'] ); ?></span>
+                <span id="hws-log-cron-hook" class="value"><?php echo esc_html( $cron['hook_name'] ); ?></span>
             </div>
             
             <div class="hws-cron-detail">
                 <span class="label">Scheduled:</span>
-                <span class="value <?php echo $cron['is_scheduled'] ? 'ok' : 'error'; ?>">
+                <span id="hws-log-cron-scheduled" class="value <?php echo $cron['is_scheduled'] ? 'ok' : 'error'; ?>">
                     <?php echo $cron['is_scheduled'] ? 'Yes ✅' : 'No ❌'; ?>
                 </span>
             </div>
             
             <div class="hws-cron-detail">
                 <span class="label">Next Run:</span>
-                <span class="value <?php echo $cron['is_scheduled'] ? 'ok' : 'warning'; ?>">
+                <span id="hws-log-cron-next" class="value <?php echo $cron['is_scheduled'] ? 'ok' : 'warning'; ?>">
                     <?php 
                     if ( $cron['next_run_datetime'] ) {
                         echo esc_html( $cron['next_run_datetime'] );
@@ -666,14 +691,14 @@ function display_settings_log_cleaner() {
             
             <div class="hws-cron-detail">
                 <span class="label">Callback Registered:</span>
-                <span class="value <?php echo $cron['callback_registered'] ? 'ok' : 'error'; ?>">
+                <span id="hws-log-cron-callback" class="value <?php echo $cron['callback_registered'] ? 'ok' : 'error'; ?>">
                     <?php echo $cron['callback_registered'] ? 'Yes ✅' : 'No ❌'; ?>
                 </span>
             </div>
             
             <div class="hws-cron-detail">
                 <span class="label">WP Cron Status:</span>
-                <span class="value <?php echo $cron['wp_cron_disabled'] ? 'warning' : 'ok'; ?>">
+                <span id="hws-log-cron-wp" class="value <?php echo $cron['wp_cron_disabled'] ? 'warning' : 'ok'; ?>">
                     <?php 
                     if ( $cron['wp_cron_disabled'] ) {
                         echo 'Disabled ⚠️ <small>(DISABLE_WP_CRON is true)</small>';
@@ -687,14 +712,19 @@ function display_settings_log_cleaner() {
             </div>
             
             <?php if ( $cron['event_count'] > 0 ) : ?>
-            <div class="hws-cron-detail">
+            <div id="hws-log-cron-events-row" class="hws-cron-detail">
                 <span class="label">Scheduled Events:</span>
-                <span class="value"><?php echo $cron['event_count']; ?> event(s)</span>
+                <span id="hws-log-cron-events" class="value"><?php echo $cron['event_count']; ?> event(s)</span>
+            </div>
+            <?php else : ?>
+            <div id="hws-log-cron-events-row" class="hws-cron-detail" style="display:none;">
+                <span class="label">Scheduled Events:</span>
+                <span id="hws-log-cron-events" class="value"></span>
             </div>
             <?php endif; ?>
             
             <?php if ( ! $cron['cron_healthy'] ) : ?>
-            <p style="margin: 10px 0 0; padding: 8px; background: rgba(214,54,56,0.1); border-radius: 3px; font-size: 12px;">
+            <p id="hws-log-cron-issue" style="margin: 10px 0 0; padding: 8px; background: rgba(214,54,56,0.1); border-radius: 3px; font-size: 12px;">
                 <strong>⚠️ Issue Detected:</strong>
                 <?php 
                 if ( $cron['wp_cron_disabled'] ) {
@@ -706,6 +736,8 @@ function display_settings_log_cleaner() {
                 }
                 ?>
             </p>
+            <?php else : ?>
+            <p id="hws-log-cron-issue" style="display:none;margin: 10px 0 0; padding: 8px; background: rgba(214,54,56,0.1); border-radius: 3px; font-size: 12px;"></p>
             <?php endif; ?>
         </div>
 
@@ -725,18 +757,18 @@ function display_settings_log_cleaner() {
                 <?php foreach ( $status['files'] as $key => $file ) : 
                     $exceeds_limit = $file['size_bytes'] > $size_limit_bytes;
                 ?>
-                <tr>
-                    <td><strong><?php echo $key === 'debug_log' ? 'debug.log' : 'error_log'; ?></strong></td>
+                <tr data-log-row="<?php echo esc_attr( $key ); ?>">
+                    <td><strong><?php echo $key === 'debug_log' ? 'debug.log' : ( $key === 'admin_log' ? 'wp-admin/error_log' : 'error_log' ); ?></strong></td>
                     <td><code style="font-size: 11px;"><?php echo esc_html( $file['path'] ); ?></code></td>
-                    <td>
+                    <td data-log-file-status="<?php echo esc_attr( $key ); ?>">
                         <?php echo $file['exists'] ? '✅ Exists' : '❌ Not found'; ?>
                         <?php if ( $file['exists'] && ! $file['writable'] ) echo '<br><small style="color: #d63638;">⚠️ Not writable</small>'; ?>
                     </td>
-                    <td class="<?php echo $exceeds_limit ? 'hws-file-size-warning' : 'hws-file-size-ok'; ?>">
+                    <td data-log-file-size="<?php echo esc_attr( $key ); ?>" class="<?php echo $exceeds_limit ? 'hws-file-size-warning' : 'hws-file-size-ok'; ?>">
                         <?php echo $file['size']; ?>
                         <?php if ( $exceeds_limit ) echo ' ⚠️'; ?>
                     </td>
-                    <td>
+                    <td data-log-file-action="<?php echo esc_attr( $key ); ?>">
                         <?php if ( $file['exists'] ) : ?>
                         <button type="button" class="button button-small hws-delete-log-btn" 
                                 data-log="<?php echo $key; ?>" data-size="<?php echo $file['size']; ?>">
@@ -811,7 +843,163 @@ function display_settings_log_cleaner() {
     <script>
     jQuery(document).ready(function($) {
         var $output = $('#hws-log-cleaner-output');
-        var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
+        var logCleanerNonce = window.hwsNonce || '<?php echo esc_js( wp_create_nonce( HWS_AJAX_NONCE ) ); ?>';
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function formatLogCleanerLastReport(report) {
+            if (!report || typeof report !== 'object' || !Object.keys(report).length) {
+                return 'No activity yet. Enable auto-clean or click \'Run Now\'.\n';
+            }
+
+            var lines = [];
+            lines.push('═══ Last Run Report ═══');
+            lines.push('Time: ' + (report.run_time || 'Unknown'));
+            lines.push('Size limit: ' + (report.size_limit || 'Unknown'));
+
+            if (report.files_deleted && report.files_deleted.length) {
+                lines.push('Deleted:');
+                report.files_deleted.forEach(function(file) {
+                    lines.push('  ✓ ' + file.file + ' (' + file.size + ')');
+                });
+            } else {
+                lines.push('No files deleted (all under limit)');
+            }
+
+            if (report.errors && report.errors.length) {
+                lines.push('Errors:');
+                report.errors.forEach(function(error) {
+                    lines.push('  ⚠️ ' + error);
+                });
+            }
+
+            return lines.join('\n') + '\n';
+        }
+
+        function formatLogCleanerIssue(cron) {
+            if (cron.wp_cron_disabled) {
+                return 'WP-Cron is disabled. Consider setting up a real server cron job or enable WP-Cron.';
+            }
+            if (!cron.is_scheduled) {
+                return 'The cron job is not scheduled. Try toggling the auto-clean setting off and on again.';
+            }
+            if (!cron.callback_registered) {
+                return 'The callback function is not registered. Try deactivating and reactivating the plugin.';
+            }
+            return '';
+        }
+
+        function getLogCleanerFileLabel(key) {
+            if (key === 'debug_log') {
+                return 'debug.log';
+            }
+            if (key === 'admin_log') {
+                return 'wp-admin/error_log';
+            }
+            return 'error_log';
+        }
+
+        function applyLogCleanerState(state, updateOutput) {
+            var cron = state.cron || {};
+            var sizeLimitBytes = parseInt(state.size_limit, 10) * 1024 * 1024;
+
+            $('[data-log-stat="enabled"]').text(state.enabled ? '✅ ON' : '❌ OFF');
+            $('[data-log-stat="interval"]').text(state.interval + ' days');
+            $('[data-log-stat="size_limit"]').text(state.size_limit + ' MB');
+            $('[data-log-stat="scheduled"]').text(cron.is_scheduled ? '✅' : '⚠️');
+            $('[data-log-stat="last_run"]').text(state.last_run && state.last_run !== 'Never'
+                ? new Date(state.last_run.replace(' ', 'T')).toLocaleString([], { month: 'short', day: 'numeric' })
+                : 'Never');
+
+            $('[data-log-card="enabled"]')
+                .toggleClass('status-enabled', !!state.enabled)
+                .toggleClass('status-disabled', !state.enabled);
+            $('[data-log-card="scheduled"]')
+                .toggleClass('status-ok', !!cron.is_scheduled)
+                .toggleClass('status-warning', !cron.is_scheduled);
+
+            $('#hws-log-enabled').prop('checked', !!state.enabled);
+            $('#hws-log-interval').val(state.interval);
+            $('#hws-log-size-limit').val(state.size_limit);
+
+            $('#hws-log-cron-box')
+                .toggleClass('cron-healthy', !!cron.cron_healthy)
+                .toggleClass('cron-unhealthy', !cron.cron_healthy);
+            $('#hws-log-cron-hook').text(cron.hook_name || '');
+            $('#hws-log-cron-scheduled')
+                .removeClass('ok error warning')
+                .addClass(cron.is_scheduled ? 'ok' : 'error')
+                .text(cron.is_scheduled ? 'Yes ✅' : 'No ❌');
+            $('#hws-log-cron-next')
+                .removeClass('ok error warning')
+                .addClass(cron.is_scheduled ? 'ok' : 'warning')
+                .html(cron.next_run_datetime
+                    ? escapeHtml(cron.next_run_datetime) + ' <small style="color: #666;">(' + escapeHtml(cron.next_run_relative || '') + ')</small>'
+                    : 'Not scheduled');
+            $('#hws-log-cron-callback')
+                .removeClass('ok error warning')
+                .addClass(cron.callback_registered ? 'ok' : 'error')
+                .text(cron.callback_registered ? 'Yes ✅' : 'No ❌');
+            $('#hws-log-cron-wp')
+                .removeClass('ok error warning')
+                .addClass(cron.wp_cron_disabled ? 'warning' : 'ok')
+                .html(cron.wp_cron_disabled
+                    ? 'Disabled ⚠️ <small>(DISABLE_WP_CRON is true)</small>'
+                    : (cron.alternate_cron ? 'Alternate Mode 🔄' : 'Normal ✅'));
+
+            $('#hws-log-cron-events-row').toggle(!!cron.event_count);
+            $('#hws-log-cron-events').text((cron.event_count || 0) + ' event(s)');
+
+            var issue = formatLogCleanerIssue(cron);
+            $('#hws-log-cron-issue').toggle(!!issue).html(issue ? '<strong>⚠️ Issue Detected:</strong> ' + escapeHtml(issue) : '');
+
+            $.each(state.files || {}, function(key, file) {
+                var exceedsLimit = (file.size_bytes || 0) > sizeLimitBytes;
+                var $statusCell = $('[data-log-file-status="' + key + '"]');
+                var $sizeCell = $('[data-log-file-size="' + key + '"]');
+                var $actionCell = $('[data-log-file-action="' + key + '"]');
+
+                $statusCell.html(file.exists
+                    ? '✅ Exists' + (!file.writable ? '<br><small style="color: #d63638;">⚠️ Not writable</small>' : '')
+                    : '❌ Not found');
+
+                $sizeCell
+                    .toggleClass('hws-file-size-warning', exceedsLimit)
+                    .toggleClass('hws-file-size-ok', !exceedsLimit)
+                    .html(escapeHtml(file.size) + (exceedsLimit ? ' ⚠️' : ''));
+
+                if (file.exists) {
+                    $actionCell.html(
+                        '<button type="button" class="button button-small hws-delete-log-btn" data-log="' + escapeHtml(key) + '" data-size="' + escapeHtml(file.size) + '">' +
+                        '🗑️ Delete' +
+                        '</button>'
+                    );
+                } else {
+                    $actionCell.html('<span style="color: #999;">N/A</span>');
+                }
+            });
+
+            if (updateOutput) {
+                $output.val(formatLogCleanerLastReport(state.last_report));
+            }
+        }
+
+        function refreshLogCleanerState(updateOutput) {
+            return $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_get_log_cleaner_state',
+                    nonce: logCleanerNonce
+                }
+            }).done(function(response) {
+                if (response && response.success && response.data) {
+                    applyLogCleanerState(response.data, updateOutput);
+                }
+            });
+        }
         
         function appendLog(message) {
             var timestamp = new Date().toLocaleTimeString();
@@ -828,13 +1016,12 @@ function display_settings_log_cleaner() {
                 data: {
                     action: 'hws_base_tools_toggle_auto_delete',
                     status: enabled ? 'enabled' : 'disabled',
-                    nonce: hwsNonce
+                    nonce: logCleanerNonce
                 },
                 success: function(response) {
                     if (response.success) {
                         appendLog('Auto-clean ' + (enabled ? 'enabled ✅' : 'disabled ❌'));
-                        // Reload to update cron status
-                        setTimeout(function() { location.reload(); }, 1000);
+                        refreshLogCleanerState(false);
                     } else {
                         appendLog('Error: ' + (response.data || 'Unknown error'));
                     }
@@ -860,12 +1047,13 @@ function display_settings_log_cleaner() {
                     action: 'hws_base_tools_update_log_settings',
                     interval: interval,
                     size_limit: sizeLimit,
-                    nonce: hwsNonce
+                    nonce: logCleanerNonce
                 },
                 success: function(response) {
                     $btn.prop('disabled', false).text('💾 Save Settings');
                     if (response.success) {
                         appendLog('Settings saved: every ' + interval + ' days, ' + sizeLimit + ' MB limit');
+                        refreshLogCleanerState(false);
                     } else {
                         appendLog('Error: ' + (response.data.message || 'Unknown error'));
                     }
@@ -888,7 +1076,7 @@ function display_settings_log_cleaner() {
                 type: 'POST',
                 data: {
                     action: 'hws_base_tools_run_log_cleaner',
-                    nonce: hwsNonce
+                    nonce: logCleanerNonce
                 },
                 success: function(response) {
                     $btn.prop('disabled', false).text('▶️ Run Now');
@@ -899,8 +1087,7 @@ function display_settings_log_cleaner() {
                                 appendLog('  Deleted: ' + f.file + ' (' + f.size + ')');
                             });
                         }
-                        // Reload to update UI
-                        setTimeout(function() { location.reload(); }, 1500);
+                        refreshLogCleanerState(true);
                     } else {
                         appendLog('Error: ' + (response.data || 'Unknown error'));
                     }
@@ -931,14 +1118,12 @@ function display_settings_log_cleaner() {
                 type: 'POST',
                 data: {
                     action: action,
-                    nonce: hwsNonce
+                    nonce: logCleanerNonce
                 },
                 success: function(response) {
                     if (response.success) {
                         appendLog('✅ ' + response.data);
-                        $btn.closest('tr').find('td:nth-child(3)').html('❌ Not found');
-                        $btn.closest('tr').find('td:nth-child(4)').html('N/A').removeClass('hws-file-size-warning');
-                        $btn.replaceWith('<span style="color: #999;">Deleted</span>');
+                        refreshLogCleanerState(true);
                     } else {
                         $btn.prop('disabled', false).text('🗑️ Delete');
                         appendLog('Error: ' + (response.data || 'Unknown error'));

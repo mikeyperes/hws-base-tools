@@ -110,7 +110,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.2 (Current)
+### v10.9.3 (Current)
+- Added automatic footer text injection from Website Settings
+- Injects quietly into common footer containers with a safe body fallback
+- Keeps footer text styling inherited and low-contrast for a more seamless look
+
+### v10.9.2
 - Fixed Redis redeclaration crash (function_exists guards)
 - Fixed LiteSpeed panel undefined array key errors (null-coalescing)
 - Fixed Cloudflare detection (HTTP headers first, nameservers fallback)

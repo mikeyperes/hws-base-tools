@@ -135,6 +135,8 @@ function ajax_get_comments_stats() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     wp_send_json_success( get_comments_stats() );
 }
@@ -146,6 +148,8 @@ function toggle_wordpress_comments_batch() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     global $wpdb;
     
@@ -220,6 +224,8 @@ function toggle_wordpress_pingbacks_batch() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     global $wpdb;
     
@@ -298,6 +304,8 @@ function ajax_delete_comments_batch() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     global $wpdb;
     
@@ -436,28 +444,28 @@ function display_settings_comments_dashboard() {
         
         <!-- Stats Grid -->
         <div class="hws-stats-grid">
-            <div class="hws-stat-card <?php echo $stats['comments_open'] > 0 ? 'status-bad' : 'status-good'; ?>">
-                <div class="stat-value"><?php echo $stats['comments_open']; ?> / <?php echo $stats['total_posts']; ?></div>
+            <div class="hws-stat-card <?php echo $stats['comments_open'] > 0 ? 'status-bad' : 'status-good'; ?>" data-comments-stat-card="comments_open">
+                <div class="stat-value" data-comments-stat="comments_open"><?php echo $stats['comments_open']; ?> / <?php echo $stats['total_posts']; ?></div>
                 <div class="stat-label">Posts with Comments Open</div>
             </div>
-            <div class="hws-stat-card <?php echo $stats['pings_open'] > 0 ? 'status-bad' : 'status-good'; ?>">
-                <div class="stat-value"><?php echo $stats['pings_open']; ?> / <?php echo $stats['total_posts']; ?></div>
+            <div class="hws-stat-card <?php echo $stats['pings_open'] > 0 ? 'status-bad' : 'status-good'; ?>" data-comments-stat-card="pings_open">
+                <div class="stat-value" data-comments-stat="pings_open"><?php echo $stats['pings_open']; ?> / <?php echo $stats['total_posts']; ?></div>
                 <div class="stat-label">Posts with Pingbacks Open</div>
             </div>
-            <div class="hws-stat-card status-neutral">
-                <div class="stat-value"><?php echo $stats['total_comments']; ?></div>
+            <div class="hws-stat-card status-neutral" data-comments-stat-card="total_comments">
+                <div class="stat-value" data-comments-stat="total_comments"><?php echo $stats['total_comments']; ?></div>
                 <div class="stat-label">Total Comments</div>
             </div>
-            <div class="hws-stat-card <?php echo $stats['pending_comments'] > 0 ? 'status-bad' : 'status-good'; ?>">
-                <div class="stat-value"><?php echo $stats['pending_comments']; ?></div>
+            <div class="hws-stat-card <?php echo $stats['pending_comments'] > 0 ? 'status-bad' : 'status-good'; ?>" data-comments-stat-card="pending_comments">
+                <div class="stat-value" data-comments-stat="pending_comments"><?php echo $stats['pending_comments']; ?></div>
                 <div class="stat-label">Pending Moderation</div>
             </div>
-            <div class="hws-stat-card <?php echo $stats['spam_comments'] > 0 ? 'status-bad' : 'status-good'; ?>">
-                <div class="stat-value"><?php echo $stats['spam_comments']; ?></div>
+            <div class="hws-stat-card <?php echo $stats['spam_comments'] > 0 ? 'status-bad' : 'status-good'; ?>" data-comments-stat-card="spam_comments">
+                <div class="stat-value" data-comments-stat="spam_comments"><?php echo $stats['spam_comments']; ?></div>
                 <div class="stat-label">Spam Comments</div>
             </div>
-            <div class="hws-stat-card <?php echo $stats['future_comments'] === 'open' ? 'status-bad' : 'status-good'; ?>">
-                <div class="stat-value"><?php echo strtoupper( $stats['future_comments'] ); ?></div>
+            <div class="hws-stat-card <?php echo $stats['future_comments'] === 'open' ? 'status-bad' : 'status-good'; ?>" data-comments-stat-card="future_comments">
+                <div class="stat-value" data-comments-stat="future_comments"><?php echo strtoupper( $stats['future_comments'] ); ?></div>
                 <div class="stat-label">New Posts Default</div>
             </div>
         </div>
@@ -504,13 +512,12 @@ function display_settings_comments_dashboard() {
         </div>
 
         <!-- Delete Comments Section -->
-        <?php if ( $stats['spam_comments'] > 0 || $stats['pending_comments'] > 0 || $stats['total_comments'] > 0 ) : ?>
-        <div class="hws-action-group" style="margin-top: 20px; border-left: 4px solid #d63638;">
+        <div id="hws-comments-delete-section" class="hws-action-group" style="margin-top: 20px; border-left: 4px solid #d63638;<?php echo ( $stats['spam_comments'] > 0 || $stats['pending_comments'] > 0 || $stats['total_comments'] > 0 ) ? '' : ' display:none;'; ?>">
             <h4>🗑️ Delete Comments</h4>
             <p style="color: #646970; margin-bottom: 10px;">
                 <strong>Warning:</strong> This will permanently delete comments. This cannot be undone.
             </p>
-            <div class="hws-action-buttons">
+            <div id="hws-comments-delete-buttons" class="hws-action-buttons">
                 <?php if ( $stats['spam_comments'] > 0 ) : ?>
                 <button type="button" class="button" id="hws-delete-spam"
                         data-type="spam" data-count="<?php echo $stats['spam_comments']; ?>">
@@ -533,11 +540,92 @@ function display_settings_comments_dashboard() {
             </div>
             <textarea id="hws-delete-log" class="hws-progress-log" disabled placeholder="Deletion progress will appear here..."></textarea>
         </div>
-        <?php endif; ?>
     </div>
 
     <script>
     jQuery(document).ready(function($) {
+        var commentsNonce = typeof window.hwsNonce !== 'undefined'
+            ? window.hwsNonce
+            : '<?php echo esc_js( wp_create_nonce( HWS_AJAX_NONCE ) ); ?>';
+
+        function setCommentsCardState(key, isBad) {
+            var $card = $('[data-comments-stat-card="' + key + '"]');
+            if (!$card.length) {
+                return;
+            }
+
+            if (key === 'total_comments') {
+                return;
+            }
+
+            $card.toggleClass('status-bad', !!isBad);
+            $card.toggleClass('status-good', !isBad);
+        }
+
+        function renderDeleteButtons(stats) {
+            var buttons = [];
+
+            if (stats.spam_comments > 0) {
+                buttons.push(
+                    '<button type="button" class="button" id="hws-delete-spam" data-type="spam" data-count="' + stats.spam_comments + '">' +
+                    'Delete Spam (' + stats.spam_comments + ')' +
+                    '</button>'
+                );
+            }
+
+            if (stats.pending_comments > 0) {
+                buttons.push(
+                    '<button type="button" class="button" id="hws-delete-pending" data-type="pending" data-count="' + stats.pending_comments + '">' +
+                    'Delete Pending (' + stats.pending_comments + ')' +
+                    '</button>'
+                );
+            }
+
+            if (stats.total_comments > 0) {
+                buttons.push(
+                    '<button type="button" class="button button-link-delete" id="hws-delete-all" data-type="all" data-count="' + stats.total_comments + '" style="color: #d63638;">' +
+                    'Delete ALL Comments (' + stats.total_comments + ')' +
+                    '</button>'
+                );
+            }
+
+            return buttons.join('');
+        }
+
+        function applyCommentsStats(stats) {
+            $('[data-comments-stat="comments_open"]').text(stats.comments_open + ' / ' + stats.total_posts);
+            $('[data-comments-stat="pings_open"]').text(stats.pings_open + ' / ' + stats.total_posts);
+            $('[data-comments-stat="total_comments"]').text(stats.total_comments);
+            $('[data-comments-stat="pending_comments"]').text(stats.pending_comments);
+            $('[data-comments-stat="spam_comments"]').text(stats.spam_comments);
+            $('[data-comments-stat="future_comments"]').text(String(stats.future_comments || '').toUpperCase());
+
+            setCommentsCardState('comments_open', stats.comments_open > 0);
+            setCommentsCardState('pings_open', stats.pings_open > 0);
+            setCommentsCardState('pending_comments', stats.pending_comments > 0);
+            setCommentsCardState('spam_comments', stats.spam_comments > 0);
+            setCommentsCardState('future_comments', stats.future_comments === 'open');
+
+            var hasDeleteButtons = stats.spam_comments > 0 || stats.pending_comments > 0 || stats.total_comments > 0;
+            $('#hws-comments-delete-section').toggle(hasDeleteButtons);
+            $('#hws-comments-delete-buttons').html(renderDeleteButtons(stats));
+        }
+
+        function refreshCommentsState() {
+            return $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'hws_base_tools_get_comments_stats',
+                    nonce: commentsNonce
+                }
+            }).done(function(response) {
+                if (response && response.success && response.data) {
+                    applyCommentsStats(response.data);
+                }
+            });
+        }
+
         // Batch processing function
         function processBatch(type, action, $log) {
             var ajaxAction = 'hws_base_tools_toggle_wordpress_' + type + '_batch';
@@ -549,7 +637,8 @@ function display_settings_comments_dashboard() {
                     data: {
                         action: ajaxAction,
                         state: action,
-                        batch_size: 50
+                        batch_size: 50,
+                        nonce: commentsNonce
                     },
                     success: function(response) {
                         if (!response.success) {
@@ -567,8 +656,7 @@ function display_settings_comments_dashboard() {
                             setTimeout(runBatch, 100);
                         } else {
                             $log.val($log.val() + '\n✅ Complete! All ' + type + ' ' + action + 'd.');
-                            // Reload stats
-                            setTimeout(function() { location.reload(); }, 1500);
+                            refreshCommentsState();
                         }
                     },
                     error: function(xhr, status, error) {
@@ -591,7 +679,8 @@ function display_settings_comments_dashboard() {
                     data: {
                         action: 'hws_base_tools_delete_comments_batch',
                         type: type,
-                        batch_size: 50
+                        batch_size: 50,
+                        nonce: commentsNonce
                     },
                     success: function(response) {
                         if (!response.success) {
@@ -608,7 +697,7 @@ function display_settings_comments_dashboard() {
                             setTimeout(runDelete, 100);
                         } else {
                             $log.val($log.val() + '\n✅ Complete! All ' + type + ' comments deleted.');
-                            setTimeout(function() { location.reload(); }, 1500);
+                            refreshCommentsState();
                         }
                     },
                     error: function(xhr, status, error) {

@@ -280,6 +280,8 @@ function ajax_delete_backups() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $delete_all = isset( $_POST['delete_all'] ) && $_POST['delete_all'];
     $plugin = isset( $_POST['plugin'] ) ? sanitize_text_field( $_POST['plugin'] ) : '';
@@ -333,6 +335,8 @@ function ajax_backup_cleaner_toggle() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $enabled = isset( $_POST['enabled'] ) && $_POST['enabled'] === '1';
     update_option( Backup_Cleaner_Config::OPT_ENABLED, $enabled );
@@ -343,7 +347,11 @@ function ajax_backup_cleaner_toggle() {
         hws_backup_cleaner_unschedule();
     }
     
-    wp_send_json_success( [ 'enabled' => $enabled ] );
+    wp_send_json_success( [
+        'enabled'     => $enabled,
+        'settings'    => Backup_Cleaner_Config::get_settings(),
+        'cron_status' => hws_backup_cleaner_get_cron_status(),
+    ] );
 }
 
 
@@ -354,13 +362,19 @@ function ajax_backup_cleaner_update() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $days = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : Backup_Cleaner_Config::DEFAULT_DAYS;
     $days = max( 1, min( 30, $days ) );
     
     update_option( Backup_Cleaner_Config::OPT_DAYS, $days );
     
-    wp_send_json_success( [ 'days' => $days ] );
+    wp_send_json_success( [
+        'days'        => $days,
+        'settings'    => Backup_Cleaner_Config::get_settings(),
+        'cron_status' => hws_backup_cleaner_get_cron_status(),
+    ] );
 }
 
 
@@ -371,10 +385,15 @@ function ajax_backup_cleaner_run() {
     if ( ! current_user_can( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
+
+    hws_require_ajax_nonce_or_error();
     
     $report = hws_backup_cleaner_run();
     
-    wp_send_json_success( $report );
+    wp_send_json_success( array_merge( $report, [
+        'settings'    => Backup_Cleaner_Config::get_settings(),
+        'cron_status' => hws_backup_cleaner_get_cron_status(),
+    ] ) );
 }
 
 
@@ -407,19 +426,19 @@ function render_tab_backups() {
     <!-- Summary -->
     <div class="hws-status-grid">
         <div class="hws-status-card <?php echo count( $backups ) > 0 ? 'warn' : 'good'; ?>">
-            <div class="value"><?php echo count( $backups ); ?></div>
+            <div id="hws-backup-count" class="value"><?php echo count( $backups ); ?></div>
             <div class="label">Backup Files</div>
         </div>
         <div class="hws-status-card <?php echo $total_size > 100 * 1024 * 1024 ? 'bad' : ''; ?>">
-            <div class="value"><?php echo size_format( $total_size ); ?></div>
+            <div id="hws-backup-total-size" class="value"><?php echo size_format( $total_size ); ?></div>
             <div class="label">Total Size</div>
         </div>
         <div class="hws-status-card <?php echo $settings['enabled'] ? 'good' : 'warn'; ?>">
-            <div class="value"><?php echo $settings['enabled'] ? '✅ ON' : '❌ OFF'; ?></div>
+            <div id="hws-backup-auto-clean" class="value"><?php echo $settings['enabled'] ? '✅ ON' : '❌ OFF'; ?></div>
             <div class="label">Auto-Clean</div>
         </div>
         <div class="hws-status-card">
-            <div class="value"><?php echo $settings['days']; ?> days</div>
+            <div id="hws-backup-max-age" class="value"><?php echo $settings['days']; ?> days</div>
             <div class="label">Max Age</div>
         </div>
     </div>
@@ -444,19 +463,24 @@ function render_tab_backups() {
                     <button type="button" id="backup-cleaner-save" class="hws-btn">💾 Save Settings</button>
                     <button type="button" id="backup-cleaner-run" class="hws-btn hws-btn-secondary">▶️ Run Now</button>
                 </div>
+                <div id="hws-backup-cleaner-status" style="margin-top:10px;font-size:13px;color:#646970;"></div>
             </div>
             
             <!-- Cron Status -->
-            <div style="padding: 15px; background: <?php echo $cron_status['is_scheduled'] ? '#edfaef' : '#fcf0f1'; ?>; border-radius: 6px; margin-top: 15px;">
+            <div id="hws-backup-cron-box" style="padding: 15px; background: <?php echo $cron_status['is_scheduled'] ? '#edfaef' : '#fcf0f1'; ?>; border-radius: 6px; margin-top: 15px;">
                 <h4 style="margin: 0 0 10px;">⏰ Cron Status</h4>
                 <p><strong>Hook:</strong> <?php echo esc_html( $cron_status['hook'] ); ?></p>
-                <p><strong>Scheduled:</strong> <?php echo $cron_status['is_scheduled'] ? '✅ Yes' : '❌ No'; ?></p>
+                <p id="hws-backup-cron-scheduled"><strong>Scheduled:</strong> <?php echo $cron_status['is_scheduled'] ? '✅ Yes' : '❌ No'; ?></p>
                 <?php if ( $cron_status['next_run'] ) : ?>
-                    <p><strong>Next Run:</strong> <?php echo esc_html( $cron_status['next_run'] ); ?> (in <?php echo esc_html( $cron_status['next_run_human'] ); ?>)</p>
+                    <p id="hws-backup-cron-next"><strong>Next Run:</strong> <?php echo esc_html( $cron_status['next_run'] ); ?> (in <?php echo esc_html( $cron_status['next_run_human'] ); ?>)</p>
+                <?php else : ?>
+                    <p id="hws-backup-cron-next" style="display:none;"></p>
                 <?php endif; ?>
-                <p><strong>Last Run:</strong> <?php echo esc_html( $settings['last_run'] ); ?></p>
+                <p id="hws-backup-last-run"><strong>Last Run:</strong> <?php echo esc_html( $settings['last_run'] ); ?></p>
                 <?php if ( $cron_status['wp_cron_disabled'] ) : ?>
-                    <p style="color: #d63638;">⚠️ WP-Cron is disabled. Consider setting up a server cron job.</p>
+                    <p id="hws-backup-cron-warning" style="color: #d63638;">⚠️ WP-Cron is disabled. Consider setting up a server cron job.</p>
+                <?php else : ?>
+                    <p id="hws-backup-cron-warning" style="color: #d63638; display:none;"></p>
                 <?php endif; ?>
             </div>
             
@@ -464,7 +488,7 @@ function render_tab_backups() {
             <?php if ( ! empty( $settings['last_report'] ) ) : 
                 $report = $settings['last_report'];
             ?>
-            <div style="margin-top: 15px; padding: 15px; background: #f6f7f7; border-radius: 6px;">
+            <div id="hws-backup-last-report" style="margin-top: 15px; padding: 15px; background: #f6f7f7; border-radius: 6px;">
                 <h4 style="margin: 0 0 10px;">📋 Last Run Report</h4>
                 <p><strong>Time:</strong> <?php echo esc_html( $report['run_time'] ?? 'N/A' ); ?></p>
                 <p><strong>Files Scanned:</strong> <?php echo esc_html( $report['scanned'] ?? 0 ); ?></p>
@@ -477,25 +501,28 @@ function render_tab_backups() {
                     </ul>
                 <?php endif; ?>
             </div>
+            <?php else : ?>
+            <div id="hws-backup-last-report" style="display:none;margin-top: 15px; padding: 15px; background: #f6f7f7; border-radius: 6px;"></div>
             <?php endif; ?>
         </div>
     </div>
     
     <!-- Backup Files List -->
-    <?php if ( empty( $backups ) ) : ?>
-        <div class="hws-panel">
-            <div class="hws-panel-body" style="text-align: center; padding: 40px;">
-                <p style="font-size: 48px; margin: 0;">✅</p>
-                <p style="font-size: 18px; color: #00a32a;">No backup files found!</p>
-                <p style="color: #666;">Your site is clean of old backup files.</p>
-            </div>
+    <div id="hws-backups-empty-state" class="hws-panel" style="<?php echo empty( $backups ) ? '' : 'display:none;'; ?>">
+        <div class="hws-panel-body" style="text-align: center; padding: 40px;">
+            <p style="font-size: 48px; margin: 0;">✅</p>
+            <p style="font-size: 18px; color: #00a32a;">No backup files found!</p>
+            <p style="color: #666;">Your site is clean of old backup files.</p>
         </div>
-    <?php else : ?>
+    </div>
+
+    <div id="hws-backups-list" style="<?php echo empty( $backups ) ? 'display:none;' : ''; ?>">
+    <?php if ( ! empty( $backups ) ) : ?>
         <?php foreach ( $grouped as $plugin_key => $plugin_data ) : ?>
-            <div class="hws-panel">
+            <div class="hws-panel" data-backup-plugin-panel="<?php echo esc_attr( $plugin_key ); ?>" data-backup-plugin-name="<?php echo esc_attr( $plugin_data['name'] ); ?>">
                 <div class="hws-panel-header">
                     💾 <?php echo esc_html( $plugin_data['name'] ); ?>
-                    <span style="float: right; font-weight: normal; font-size: 13px;">
+                    <span data-backup-plugin-summary="<?php echo esc_attr( $plugin_key ); ?>" style="float: right; font-weight: normal; font-size: 13px;">
                         <?php echo count( $plugin_data['files'] ); ?> files (<?php echo size_format( $plugin_data['total'] ); ?>)
                     </span>
                 </div>
@@ -512,7 +539,7 @@ function render_tab_backups() {
                         </thead>
                         <tbody>
                             <?php foreach ( $plugin_data['files'] as $backup ) : ?>
-                                <tr>
+                                <tr data-backup-file-row="<?php echo esc_attr( $backup['path'] ); ?>" data-backup-plugin="<?php echo esc_attr( $plugin_key ); ?>" data-backup-file-name="<?php echo esc_attr( $backup['file'] ); ?>" data-backup-size-bytes="<?php echo esc_attr( $backup['size'] ); ?>">
                                     <td><code style="font-size: 11px;"><?php echo esc_html( $backup['file'] ); ?></code></td>
                                     <td><?php echo esc_html( $backup['size_human'] ); ?></td>
                                     <td class="<?php echo $backup['age_days'] >= $settings['days'] ? 'status-bad' : ''; ?>">
@@ -542,17 +569,153 @@ function render_tab_backups() {
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
+    </div>
     
     <script>
     jQuery(document).ready(function($) {
-        var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
+        var backupNonce = window.hwsNonce || '<?php echo esc_js( wp_create_nonce( HWS_AJAX_NONCE ) ); ?>';
+
+        function formatBytes(bytes) {
+            var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            var value = Number(bytes) || 0;
+            var unitIndex = 0;
+
+            while (value >= 1024 && unitIndex < units.length - 1) {
+                value = value / 1024;
+                unitIndex++;
+            }
+
+            return (unitIndex === 0 ? value : value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)) + ' ' + units[unitIndex];
+        }
+
+        function escapeHtml(value) {
+            return $('<div>').text(value == null ? '' : value).html();
+        }
+
+        function refreshBackupSummary() {
+            var totalFiles = $('[data-backup-file-row]').length;
+            var totalBytes = 0;
+
+            $('[data-backup-file-row]').each(function() {
+                totalBytes += parseInt($(this).data('backup-size-bytes'), 10) || 0;
+            });
+
+            $('#hws-backup-count').text(totalFiles);
+            $('#hws-backup-total-size').text(formatBytes(totalBytes));
+            $('#hws-backups-empty-state').toggle(totalFiles === 0);
+            $('#hws-backups-list').toggle(totalFiles > 0);
+
+            $('[data-backup-plugin-panel]').each(function() {
+                var $panel = $(this);
+                var plugin = $panel.data('backup-plugin-panel');
+                var $rows = $panel.find('[data-backup-file-row]');
+                var pluginBytes = 0;
+
+                $rows.each(function() {
+                    pluginBytes += parseInt($(this).data('backup-size-bytes'), 10) || 0;
+                });
+
+                if ($rows.length === 0) {
+                    $panel.remove();
+                    return;
+                }
+
+                $('[data-backup-plugin-summary="' + plugin + '"]').text($rows.length + ' files (' + formatBytes(pluginBytes) + ')');
+            });
+        }
+
+        function renderBackupReport(report) {
+            if (!report || typeof report !== 'object') {
+                return '';
+            }
+
+            var html = '<h4 style="margin: 0 0 10px;">📋 Last Run Report</h4>';
+            html += '<p><strong>Time:</strong> ' + escapeHtml(report.run_time || 'N/A') + '</p>';
+            html += '<p><strong>Files Scanned:</strong> ' + escapeHtml(report.scanned || 0) + '</p>';
+            html += '<p><strong>Files Deleted:</strong> ' + escapeHtml((report.deleted || []).length) + '</p>';
+
+            if (report.deleted && report.deleted.length) {
+                html += '<ul style="margin: 5px 0 0 20px; font-size: 12px;">';
+                report.deleted.forEach(function(item) {
+                    html += '<li>' + escapeHtml(item.file) + ' (' + escapeHtml(item.size) + ', ' + escapeHtml(item.age) + ' old)</li>';
+                });
+                html += '</ul>';
+            }
+
+            return html;
+        }
+
+        function applyBackupState(data) {
+            var settings = data.settings || {};
+            var cronStatus = data.cron_status || {};
+
+            $('#backup-cleaner-enabled').prop('checked', !!settings.enabled);
+            $('#backup-cleaner-days').val(settings.days || <?php echo (int) Backup_Cleaner_Config::DEFAULT_DAYS; ?>);
+            $('#hws-backup-auto-clean').text(settings.enabled ? '✅ ON' : '❌ OFF');
+            $('#hws-backup-max-age').text((settings.days || <?php echo (int) Backup_Cleaner_Config::DEFAULT_DAYS; ?>) + ' days');
+            $('#hws-backup-cron-box').css('background', cronStatus.is_scheduled ? '#edfaef' : '#fcf0f1');
+            $('#hws-backup-cron-scheduled').html('<strong>Scheduled:</strong> ' + (cronStatus.is_scheduled ? '✅ Yes' : '❌ No'));
+            $('#hws-backup-last-run').html('<strong>Last Run:</strong> ' + escapeHtml(settings.last_run || 'Never'));
+
+            if (cronStatus.next_run) {
+                $('#hws-backup-cron-next')
+                    .show()
+                    .html('<strong>Next Run:</strong> ' + escapeHtml(cronStatus.next_run) + ' (in ' + escapeHtml(cronStatus.next_run_human || '') + ')');
+            } else {
+                $('#hws-backup-cron-next').hide().text('');
+            }
+
+            if (cronStatus.wp_cron_disabled) {
+                $('#hws-backup-cron-warning').show().text('⚠️ WP-Cron is disabled. Consider setting up a server cron job.');
+            } else {
+                $('#hws-backup-cron-warning').hide().text('');
+            }
+
+            if (settings.last_report && Object.keys(settings.last_report).length) {
+                $('#hws-backup-last-report').show().html(renderBackupReport(settings.last_report));
+            } else {
+                $('#hws-backup-last-report').hide().html('');
+            }
+        }
+
+        function removeBackupRowsByPaths(paths) {
+            (paths || []).forEach(function(path) {
+                $('[data-backup-file-row="' + path.replace(/"/g, '\\"') + '"]').remove();
+            });
+            refreshBackupSummary();
+        }
+
+        function removeBackupRowsByReport(deletedRows) {
+            (deletedRows || []).forEach(function(item) {
+                $('[data-backup-file-row]').filter(function() {
+                    var $row = $(this);
+                    var pluginName = $row.closest('[data-backup-plugin-panel]').data('backup-plugin-name');
+                    return $row.data('backup-file-name') === item.file && pluginName === item.plugin;
+                }).remove();
+            });
+            refreshBackupSummary();
+        }
+
+        window.hwsBackupUi = {
+            applyState: applyBackupState,
+            removeRowsByPaths: removeBackupRowsByPaths,
+            refreshSummary: refreshBackupSummary
+        };
         
         // Toggle backup cleaner
         $('#backup-cleaner-enabled').on('change', function() {
+            var enabled = $(this).is(':checked') ? 1 : 0;
             $.post(ajaxurl, {
                 action: 'hws_backup_cleaner_toggle',
-                enabled: $(this).is(':checked') ? 1 : 0,
-                nonce: hwsNonce
+                enabled: enabled,
+                nonce: backupNonce
+            }, function(response) {
+                if (response && response.success) {
+                    applyBackupState(response.data);
+                    $('#hws-backup-cleaner-status').html('<span style="color:#00a32a;">✅ Auto-clean ' + (enabled ? 'enabled' : 'disabled') + '</span>');
+                } else {
+                    $('#hws-backup-cleaner-status').html('<span style="color:#d63638;">❌ Failed to update auto-clean setting</span>');
+                }
             });
         });
         
@@ -563,10 +726,15 @@ function render_tab_backups() {
             $.post(ajaxurl, {
                 action: 'hws_backup_cleaner_update',
                 days: $('#backup-cleaner-days').val(),
-                nonce: hwsNonce
-            }, function() {
+                nonce: backupNonce
+            }, function(response) {
                 $btn.prop('disabled', false).text('💾 Save Settings');
-                alert('Settings saved!');
+                if (response && response.success) {
+                    applyBackupState(response.data);
+                    $('#hws-backup-cleaner-status').html('<span style="color:#00a32a;">✅ Settings saved</span>');
+                } else {
+                    $('#hws-backup-cleaner-status').html('<span style="color:#d63638;">❌ Failed to save settings</span>');
+                }
             });
         });
         
@@ -576,15 +744,15 @@ function render_tab_backups() {
             $btn.prop('disabled', true).text('Running...');
             $.post(ajaxurl, {
                 action: 'hws_backup_cleaner_run',
-                nonce: hwsNonce
+                nonce: backupNonce
             }, function(response) {
                 $btn.prop('disabled', false).text('▶️ Run Now');
                 if (response.success) {
-                    var msg = 'Scanned ' + response.data.scanned + ' files, deleted ' + response.data.deleted.length;
-                    alert(msg);
-                    if (response.data.deleted.length > 0) {
-                        location.reload();
-                    }
+                    applyBackupState(response.data);
+                    removeBackupRowsByReport(response.data.deleted || []);
+                    $('#hws-backup-cleaner-status').html('<span style="color:#00a32a;">✅ Scanned ' + response.data.scanned + ' files, deleted ' + (response.data.deleted || []).length + '</span>');
+                } else {
+                    $('#hws-backup-cleaner-status').html('<span style="color:#d63638;">❌ Failed to run backup cleaner</span>');
                 }
             });
         });
