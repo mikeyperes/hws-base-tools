@@ -110,7 +110,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.3 (Current)
+### v10.9.4 (Current)
+- Changed footer text auto-injection into an optional snippet toggle
+- Default state is off until enabled in the Snippets screen
+
+### v10.9.3
 - Added automatic footer text injection from Website Settings
 - Injects quietly into common footer containers with a safe body fallback
 - Keeps footer text styling inherited and low-contrast for a more seamless look

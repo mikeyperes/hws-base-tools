@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.9.3
+Version: 10.9.4
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -322,9 +322,6 @@ include_once("snippet-elementor-social-icons.php");
 
 
 include_once("snippet-footer-text.php");
-if ( function_exists( __NAMESPACE__ . '\\enable_footer_text_auto_injection' ) ) {
-    enable_footer_text_auto_injection();
-}
 include_once("shortcodes.php");
 include_once("register-elementor-queries.php");
 //include_once("shortcodes.php");
@@ -539,6 +536,17 @@ function get_snippets($type = "")
         'function' => 'enable_elementor_social_icon_cleanup',
         'scope_admin_only' => false,
         'recommended' => true
+    ],
+    [
+        'id' => 'enable_footer_text_auto_injection',
+        'name' => 'Auto Inject Footer Text',
+        'description' => 'Automatically places the Website Settings footer text into the site footer when enabled.',
+        'info' => 'Default: off.<br>
+            Uses the existing <code>Footer Text</code> field on <code>Website Settings</code>.<br>
+            Attempts to mount inside the real footer first, then falls back safely if the theme markup is inconsistent.<br>
+            Styling stays quiet and inherited so it blends into the site instead of looking like a banner.',
+        'function' => 'enable_footer_text_auto_injection',
+        'scope_admin_only' => false
     ],
     [
         'id' => 'enable_wp_admin_logo',
