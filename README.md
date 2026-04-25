@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.7 (Current)
+### v10.9.8 (Current)
+- Removed the separate Footer Text shortcode panel and moved the shortcode into the footer editor instructions
+
+### v10.9.7
 - Added the actual footer text editor directly into the Footer Text tab
 - Added shortcode information to the Footer Text tab
 - Simplified the wording around live visibility so the tab reads plainly

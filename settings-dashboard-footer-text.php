@@ -68,7 +68,6 @@ function display_settings_footer_text() {
     $footer_markup   = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_markup' )
         ? hws_get_footer_text_markup()
         : '';
-    $website_settings_url = admin_url( 'admin.php?page=website-settings' );
     $shortcode = '[website_content field="website_footer_text"]';
     ?>
     <style>
@@ -191,34 +190,19 @@ function display_settings_footer_text() {
             margin-top: 14px;
         }
 
-        .hws-footer-text-shortcode-box {
-            background: #f8fafc;
-            border: 1px solid #d7dee7;
-            border-radius: 10px;
-            padding: 16px;
-        }
-
-        .hws-footer-text-shortcode-box h4 {
-            margin: 0 0 8px;
-            font-size: 15px;
-            color: #1d2327;
-        }
-
-        .hws-footer-text-shortcode-box p {
-            margin: 0 0 10px;
+        .hws-footer-text-editor-note {
+            margin: 0 0 14px;
             color: #50575e;
             font-size: 13px;
             line-height: 1.6;
         }
 
-        .hws-footer-text-shortcode-box code {
-            display: block;
-            padding: 10px 12px;
+        .hws-footer-text-editor-note code {
             background: #fff;
             border: 1px solid #dcdcde;
-            border-radius: 8px;
+            border-radius: 6px;
+            padding: 2px 6px;
             font-size: 12px;
-            word-break: break-all;
         }
 
         .hws-footer-text-template-grid {
@@ -353,7 +337,10 @@ function display_settings_footer_text() {
     <div class="hws-footer-text-panel">
         <div class="hws-footer-text-panel-header">Footer Text Content</div>
         <div class="hws-footer-text-panel-body">
-            <p style="margin:0 0 14px; color:#50575e; font-size:13px; line-height:1.6;">This is the actual footer text field. You no longer need to leave this tab to edit it.</p>
+            <p class="hws-footer-text-editor-note">
+                Edit the actual footer text here.
+                Shortcode: <code><?php echo esc_html( $shortcode ); ?></code>
+            </p>
             <div class="hws-footer-text-editor-wrap">
                 <?php
                 wp_editor(
@@ -394,17 +381,6 @@ function display_settings_footer_text() {
                 <?php endforeach; ?>
             </div>
             <div class="hws-footer-text-saving" id="hws-footer-text-saving"></div>
-        </div>
-    </div>
-
-    <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Shortcode</div>
-        <div class="hws-footer-text-panel-body">
-            <div class="hws-footer-text-shortcode-box">
-                <h4>Use The Same Footer Text Anywhere</h4>
-                <p>Paste this shortcode into Elementor, Gutenberg, a widget, or a template if you want the same footer text somewhere else on the site.</p>
-                <code><?php echo esc_html( $shortcode ); ?></code>
-            </div>
         </div>
     </div>
 
