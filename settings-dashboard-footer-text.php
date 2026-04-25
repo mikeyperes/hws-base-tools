@@ -190,6 +190,18 @@ function display_settings_footer_text() {
             margin-top: 14px;
         }
 
+        .hws-footer-text-inline-preview {
+            margin-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 18px;
+        }
+
+        .hws-footer-text-inline-preview h4 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #1d2327;
+        }
+
         .hws-footer-text-editor-note {
             margin: 0 0 14px;
             color: #50575e;
@@ -286,6 +298,18 @@ function display_settings_footer_text() {
             color: #1d2327;
         }
 
+        .hws-footer-text-preview-live.hws-footer-text--fine-divider {
+            border-top: 2px solid #d7dee7;
+            padding-top: 20px;
+        }
+
+        .hws-footer-text-preview-live.hws-footer-text--fine-print {
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.75;
+        }
+
         .hws-footer-text-preview-live-empty {
             color: #646970;
             font-size: 13px;
@@ -360,6 +384,18 @@ function display_settings_footer_text() {
                 <button type="button" class="button button-primary" id="hws-footer-text-save-content">Save Footer Text</button>
                 <span style="color:#646970; font-size:12px;">This saves the same content used by the shortcode and the auto-injected footer.</span>
             </div>
+            <div class="hws-footer-text-inline-preview">
+                <h4>Live Preview</h4>
+                <div class="hws-footer-text-preview-live hws-footer-text--<?php echo esc_attr( $active_template ); ?>" id="hws-footer-text-preview-live">
+                    <?php if ( $footer_markup ) : ?>
+                        <?php echo $footer_markup; ?>
+                    <?php else : ?>
+                        <div class="hws-footer-text-preview-live-empty">
+                            No footer text is currently set yet. Write it above and save it here.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -381,21 +417,6 @@ function display_settings_footer_text() {
                 <?php endforeach; ?>
             </div>
             <div class="hws-footer-text-saving" id="hws-footer-text-saving"></div>
-        </div>
-    </div>
-
-    <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Current Preview</div>
-        <div class="hws-footer-text-panel-body">
-            <div class="hws-footer-text-preview-live" id="hws-footer-text-preview-live">
-                <?php if ( $footer_markup ) : ?>
-                    <?php echo $footer_markup; ?>
-                <?php else : ?>
-                    <div class="hws-footer-text-preview-live-empty">
-                        No footer text is currently set yet. Write it above and save it here.
-                    </div>
-                <?php endif; ?>
-            </div>
         </div>
     </div>
 
@@ -422,13 +443,53 @@ function display_settings_footer_text() {
             return $('#hws_footer_text_editor').val() || '';
         }
 
+        function getSelectedTemplate() {
+            return $templateInputs.filter(':checked').val() || 'quiet-inline';
+        }
+
+        function hasMeaningfulContent(html) {
+            var text = $('<div>').html(html || '').text().replace(/\u00a0/g, ' ').trim();
+            return text.length > 0;
+        }
+
+        function applyPreviewTemplate() {
+            var template = getSelectedTemplate();
+            $preview.removeClass('hws-footer-text--quiet-inline hws-footer-text--fine-divider hws-footer-text--fine-print')
+                .addClass('hws-footer-text--' + template);
+        }
+
         function refreshPreview(html, hasContent) {
+            applyPreviewTemplate();
+
             if (hasContent && html) {
                 $preview.html(html);
                 return;
             }
 
             $preview.html('<div class="hws-footer-text-preview-live-empty">No footer text is currently set yet. Write it above and save it here.</div>');
+        }
+
+        function updatePreviewFromEditor() {
+            var html = getEditorContent();
+            refreshPreview(html, hasMeaningfulContent(html));
+        }
+
+        function bindTinyMcePreview() {
+            if (!(window.tinymce && tinymce.get('hws_footer_text_editor'))) {
+                window.setTimeout(bindTinyMcePreview, 300);
+                return;
+            }
+
+            var editor = tinymce.get('hws_footer_text_editor');
+
+            if (editor._hwsPreviewBound) {
+                return;
+            }
+
+            editor._hwsPreviewBound = true;
+            editor.on('keyup change input SetContent Paste Undo Redo', function() {
+                updatePreviewFromEditor();
+            });
         }
 
         function saveFooterTextSettings(includeContent) {
@@ -481,8 +542,18 @@ function display_settings_footer_text() {
         }
 
         $toggle.on('change', function() { saveFooterTextSettings(false); });
-        $templateInputs.on('change', function() { saveFooterTextSettings(false); });
+        $templateInputs.on('change', function() {
+            applyPreviewTemplate();
+            saveFooterTextSettings(false);
+        });
         $saveContent.on('click', function() { saveFooterTextSettings(true); });
+        $('#hws_footer_text_editor').on('input keyup change', function() {
+            updatePreviewFromEditor();
+        });
+
+        applyPreviewTemplate();
+        updatePreviewFromEditor();
+        bindTinyMcePreview();
     });
     </script>
     <?php

@@ -110,7 +110,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.8 (Current)
+### v10.9.9 (Current)
+- Moved the Footer Text preview into the footer content section
+- Made the Footer Text preview update live while typing and when switching templates
+
+### v10.9.8
 - Removed the separate Footer Text shortcode panel and moved the shortcode into the footer editor instructions
 
 ### v10.9.7
