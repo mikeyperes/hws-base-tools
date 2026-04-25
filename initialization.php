@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.9.5
+Version: 10.9.6
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -290,6 +290,7 @@ include_once("settings-dashboard-log-delete-cron.php");  // Log file cleaner
 include_once("settings-dashboard-elementor-db-cron.php"); // Elementor DB auto-updater
 include_once("settings-dashboard-snippets.php");
 include_once("settings-dashboard-website-types.php");  // Website type presets
+include_once("settings-dashboard-footer-text.php");    // Footer text module settings
 include_once("settings-dashboard-ui-cleanup.php");     // UI Cleanup (hide profile elements)
 include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-plugin-info.php");
@@ -540,11 +541,10 @@ function get_snippets($type = "")
     [
         'id' => 'enable_footer_text_auto_injection',
         'name' => 'Auto Inject Footer Text',
-        'description' => 'Automatically places the Website Settings footer text into the site footer when enabled.',
-        'info' => 'Default: off.<br>
-            Uses the existing <code>Footer Text</code> field on <code>Website Settings</code>.<br>
-            Attempts to mount inside the real footer first, then falls back safely if the theme markup is inconsistent.<br>
-            Styling stays quiet and inherited so it blends into the site instead of looking like a banner.',
+        'description' => 'Enables the footer text module and unlocks its dedicated dashboard tab.',
+        'info' => 'This toggle enables the module/library only.<br>
+            Actual frontend output is controlled separately inside the new <code>Footer Text</code> tab.<br>
+            Default frontend output remains off until enabled there.',
         'function' => 'enable_footer_text_auto_injection',
         'scope_admin_only' => false
     ],

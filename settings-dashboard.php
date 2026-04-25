@@ -467,6 +467,13 @@ function display_wp_admin_settings_page() {
         'system-checks' => '🔍 System Checks',
         'plugins'       => '🔌 Plugins',
         'snippets'      => '✂️ Snippets',
+    ];
+
+    if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
+        $tabs['footer-text'] = '🦶 Footer Text';
+    }
+
+    $tabs += [
         'website-types' => '🌐 Website Types',
         'ui-cleanup'    => '🧹 UI Cleanup',
         'config'        => '⚙️ Configuration',
@@ -839,6 +846,11 @@ function display_wp_admin_settings_page() {
                     case 'masked-login':
                         if ( function_exists( __NAMESPACE__ . '\\display_settings_masked_login' ) ) {
                             display_settings_masked_login();
+                        }
+                        break;
+                    case 'footer-text':
+                        if ( function_exists( __NAMESPACE__ . '\\display_settings_footer_text' ) ) {
+                            display_settings_footer_text();
                         }
                         break;
                 }

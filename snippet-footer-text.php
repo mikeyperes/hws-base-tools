@@ -9,7 +9,47 @@ if ( ! defined( 'ABSPATH' ) ) {
  * actual footer, with a quiet fallback when theme markup is inconsistent.
  */
 function enable_footer_text_auto_injection() {
+    if ( is_admin() || ! hws_is_footer_text_feature_enabled() ) {
+        return;
+    }
+
     add_action( 'wp_footer', __NAMESPACE__ . '\\hws_render_footer_text_in_footer', 25 );
+}
+
+function hws_is_footer_text_module_enabled(): bool {
+    return (bool) get_option( 'enable_footer_text_auto_injection', false );
+}
+
+function hws_is_footer_text_feature_enabled(): bool {
+    return (bool) get_option( 'hws_footer_text_feature_enabled', false );
+}
+
+function hws_get_footer_text_templates(): array {
+    return [
+        'quiet-inline' => [
+            'label'       => 'Quiet Inline',
+            'description' => 'Plain inherited footer text with no decorative container.',
+        ],
+        'fine-divider' => [
+            'label'       => 'Fine Divider',
+            'description' => 'Adds a subtle divider line and a little breathing room above the text.',
+        ],
+        'fine-print' => [
+            'label'       => 'Fine Print',
+            'description' => 'Slightly smaller, centered footer copy for a more understated legal-style look.',
+        ],
+    ];
+}
+
+function hws_get_footer_text_template(): string {
+    $templates = hws_get_footer_text_templates();
+    $template  = get_option( 'hws_footer_text_template', 'quiet-inline' );
+
+    if ( ! is_string( $template ) || ! isset( $templates[ $template ] ) ) {
+        return 'quiet-inline';
+    }
+
+    return $template;
 }
 
 function hws_render_footer_text_in_footer() {
@@ -24,8 +64,9 @@ function hws_render_footer_text_in_footer() {
     }
 
     $plain_text = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $footer_html ) ) );
+    $template   = hws_get_footer_text_template();
     $config = [
-        'plainText'      => $plain_text,
+        'plainText'       => $plain_text,
         'footerSelectors' => [
             'footer[role="contentinfo"]',
             'footer#colophon',
@@ -48,6 +89,7 @@ function hws_render_footer_text_in_footer() {
             '.container',
             '.wrap',
         ],
+        'template' => $template,
     ];
     ?>
     <style id="hws-footer-text-style">
@@ -64,6 +106,23 @@ function hws_render_footer_text_in_footer() {
             color: inherit;
             opacity: 0.9;
             text-align: inherit;
+        }
+
+        #hws-footer-text-root.hws-footer-text--quiet-inline {
+            opacity: 0.9;
+        }
+
+        #hws-footer-text-root.hws-footer-text--fine-divider {
+            padding-top: 0.85rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.12);
+            opacity: 0.84;
+        }
+
+        #hws-footer-text-root.hws-footer-text--fine-print {
+            font-size: 0.88em;
+            line-height: 1.7;
+            text-align: center;
+            opacity: 0.78;
         }
 
         #hws-footer-text-root p {
@@ -83,8 +142,12 @@ function hws_render_footer_text_in_footer() {
         #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"] {
             padding: 0 1rem 1rem;
         }
+
+        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--fine-divider {
+            margin-top: 1rem;
+        }
     </style>
-    <div id="hws-footer-text-root" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
+    <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
     <script id="hws-footer-text-script">
     (function() {
         var root = document.getElementById('hws-footer-text-root');

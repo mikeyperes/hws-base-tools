@@ -110,7 +110,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.5 (Current)
+### v10.9.6 (Current)
+- Changed the footer text feature into a two-step module: snippet toggle unlocks the module, while a dedicated Footer Text tab controls real frontend output
+- Added a dedicated Footer Text dashboard tab with its own enable/disable switch
+- Added minimalist template choices for footer text rendering
+
+### v10.9.5
 - Fixed the admin dashboard white page on `hws-core-tools` caused by a nonce constant namespace bug in the legacy event bridge
 
 ### v10.9.4
