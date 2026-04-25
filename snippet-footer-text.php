@@ -52,6 +52,46 @@ function hws_get_footer_text_template(): string {
     return $template;
 }
 
+function hws_get_footer_text_raw(): string {
+    if ( ! function_exists( 'get_field' ) ) {
+        return '';
+    }
+
+    $footer_text = get_field( 'website_footer_text', 'option' );
+
+    if ( empty( $footer_text ) ) {
+        $website_settings = get_field( 'website', 'option' );
+
+        if ( is_array( $website_settings ) && ! empty( $website_settings['footer_text'] ) ) {
+            $footer_text = $website_settings['footer_text'];
+        }
+    }
+
+    return is_string( $footer_text ) ? $footer_text : '';
+}
+
+function hws_save_footer_text_raw( string $content ): bool {
+    $content = trim( $content );
+
+    if ( function_exists( 'update_field' ) ) {
+        update_field( 'website_footer_text', $content, 'option' );
+
+        if ( hws_get_footer_text_raw() === $content ) {
+            return true;
+        }
+
+        update_field( 'field_68420a173f1aa', $content, 'option' );
+
+        if ( hws_get_footer_text_raw() === $content ) {
+            return true;
+        }
+    }
+
+    update_option( 'options_website_footer_text', $content );
+
+    return true;
+}
+
 function hws_render_footer_text_in_footer() {
     if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || is_feed() || is_embed() || is_preview() ) {
         return;
@@ -273,25 +313,11 @@ function hws_render_footer_text_in_footer() {
 function hws_get_footer_text_markup(): string {
     static $is_rendering = false;
 
-    if ( $is_rendering || ! function_exists( 'get_field' ) ) {
+    if ( $is_rendering ) {
         return '';
     }
 
-    $footer_text = get_field( 'website_footer_text', 'option' );
-
-    if ( empty( $footer_text ) ) {
-        $website_settings = get_field( 'website', 'option' );
-
-        if ( is_array( $website_settings ) && ! empty( $website_settings['footer_text'] ) ) {
-            $footer_text = $website_settings['footer_text'];
-        }
-    }
-
-    if ( ! is_string( $footer_text ) ) {
-        return '';
-    }
-
-    $footer_text = trim( $footer_text );
+    $footer_text = trim( hws_get_footer_text_raw() );
 
     if ( '' === $footer_text ) {
         return '';

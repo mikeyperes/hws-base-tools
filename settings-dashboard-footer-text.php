@@ -16,6 +16,7 @@ function ajax_save_footer_text_settings() {
 
     $enabled  = ! empty( $_POST['enabled'] );
     $template = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'quiet-inline';
+    $content  = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : null;
     $templates = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_templates' )
         ? hws_get_footer_text_templates()
         : [];
@@ -27,10 +28,20 @@ function ajax_save_footer_text_settings() {
     update_option( 'hws_footer_text_feature_enabled', $enabled ? '1' : '0' );
     update_option( 'hws_footer_text_template', $template );
 
+    if ( null !== $content && function_exists( __NAMESPACE__ . '\\hws_save_footer_text_raw' ) ) {
+        hws_save_footer_text_raw( $content );
+    }
+
+    $rendered_html = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_markup' )
+        ? hws_get_footer_text_markup()
+        : '';
+
     wp_send_json_success( [
-        'enabled'  => $enabled,
-        'template' => $template,
-        'label'    => $templates[ $template ]['label'] ?? 'Quiet Inline',
+        'enabled'       => $enabled,
+        'template'      => $template,
+        'label'         => $templates[ $template ]['label'] ?? 'Quiet Inline',
+        'rendered_html' => $rendered_html,
+        'has_content'   => '' !== trim( wp_strip_all_tags( $rendered_html ) ),
     ] );
 }
 
@@ -51,10 +62,14 @@ function display_settings_footer_text() {
     $active_template = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_template' )
         ? hws_get_footer_text_template()
         : 'quiet-inline';
+    $footer_text_raw = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_raw' )
+        ? hws_get_footer_text_raw()
+        : '';
     $footer_markup   = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_markup' )
         ? hws_get_footer_text_markup()
         : '';
     $website_settings_url = admin_url( 'admin.php?page=website-settings' );
+    $shortcode = '[website_content field="website_footer_text"]';
     ?>
     <style>
         .hws-footer-text-hero {
@@ -165,6 +180,47 @@ function display_settings_footer_text() {
             color: #646970;
         }
 
+        .hws-footer-text-editor-wrap {
+            margin-top: 14px;
+        }
+
+        .hws-footer-text-editor-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .hws-footer-text-shortcode-box {
+            background: #f8fafc;
+            border: 1px solid #d7dee7;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .hws-footer-text-shortcode-box h4 {
+            margin: 0 0 8px;
+            font-size: 15px;
+            color: #1d2327;
+        }
+
+        .hws-footer-text-shortcode-box p {
+            margin: 0 0 10px;
+            color: #50575e;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .hws-footer-text-shortcode-box code {
+            display: block;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid #dcdcde;
+            border-radius: 8px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
         .hws-footer-text-template-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -261,33 +317,33 @@ function display_settings_footer_text() {
     </style>
 
     <div class="hws-footer-text-hero">
-        <h3>Footer Text Module</h3>
-        <p>The snippet toggle only unlocks this module. Use the controls below to decide whether the footer text actually renders on the site and which minimalist template it should use.</p>
+        <h3>Footer Text</h3>
+        <p>Write the footer text here, decide if it should be visible on the live site, and choose how quietly it should look in the footer.</p>
     </div>
 
     <div class="hws-footer-text-grid">
         <div class="hws-footer-text-card">
             <div class="value"><?php echo $feature_enabled ? 'On' : 'Off'; ?></div>
-            <div class="label">Output Status</div>
+            <div class="label">Live Website</div>
         </div>
         <div class="hws-footer-text-card">
             <div class="value"><?php echo esc_html( $templates[ $active_template ]['label'] ?? 'Quiet Inline' ); ?></div>
-            <div class="label">Selected Template</div>
+            <div class="label">Current Style</div>
         </div>
         <div class="hws-footer-text-card">
             <div class="value"><?php echo $footer_markup ? 'Ready' : 'Empty'; ?></div>
-            <div class="label">Footer Content</div>
+            <div class="label">Saved Text</div>
         </div>
     </div>
 
     <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Output Control</div>
+        <div class="hws-footer-text-panel-header">Show On Website</div>
         <div class="hws-footer-text-panel-body">
             <div class="hws-footer-text-toggle-row">
                 <div class="hws-footer-text-toggle-copy">
-                    <h4>Render Footer Text On The Frontend</h4>
-                    <p>Leave the module enabled in Snippets, but control the real frontend output here.</p>
-                    <span class="hws-footer-text-status <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status"><?php echo $feature_enabled ? 'Frontend output enabled' : 'Frontend output disabled'; ?></span>
+                    <h4>Show This Footer Text On The Live Site</h4>
+                    <p>Turn this on to display the saved footer text in the website footer. Turn it off to keep the text saved but hidden.</p>
+                    <span class="hws-footer-text-status <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status"><?php echo $feature_enabled ? 'Visible on the live site' : 'Hidden on the live site'; ?></span>
                 </div>
                 <?php echo render_toggle_switch( 'hws-footer-text-feature-enabled', '', $feature_enabled ); ?>
             </div>
@@ -295,7 +351,33 @@ function display_settings_footer_text() {
     </div>
 
     <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Template</div>
+        <div class="hws-footer-text-panel-header">Footer Text Content</div>
+        <div class="hws-footer-text-panel-body">
+            <p style="margin:0 0 14px; color:#50575e; font-size:13px; line-height:1.6;">This is the actual footer text field. You no longer need to leave this tab to edit it.</p>
+            <div class="hws-footer-text-editor-wrap">
+                <?php
+                wp_editor(
+                    $footer_text_raw,
+                    'hws_footer_text_editor',
+                    [
+                        'textarea_name' => 'hws_footer_text_editor',
+                        'textarea_rows' => 10,
+                        'media_buttons' => true,
+                        'teeny'         => false,
+                        'quicktags'     => true,
+                    ]
+                );
+                ?>
+            </div>
+            <div class="hws-footer-text-editor-actions">
+                <button type="button" class="button button-primary" id="hws-footer-text-save-content">Save Footer Text</button>
+                <span style="color:#646970; font-size:12px;">This saves the same content used by the shortcode and the auto-injected footer.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="hws-footer-text-panel">
+        <div class="hws-footer-text-panel-header">Choose A Style</div>
         <div class="hws-footer-text-panel-body">
             <div class="hws-footer-text-template-grid">
                 <?php foreach ( $templates as $template_key => $template ) : ?>
@@ -316,14 +398,25 @@ function display_settings_footer_text() {
     </div>
 
     <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Current Footer Text Content</div>
+        <div class="hws-footer-text-panel-header">Shortcode</div>
         <div class="hws-footer-text-panel-body">
-            <div class="hws-footer-text-preview-live">
+            <div class="hws-footer-text-shortcode-box">
+                <h4>Use The Same Footer Text Anywhere</h4>
+                <p>Paste this shortcode into Elementor, Gutenberg, a widget, or a template if you want the same footer text somewhere else on the site.</p>
+                <code><?php echo esc_html( $shortcode ); ?></code>
+            </div>
+        </div>
+    </div>
+
+    <div class="hws-footer-text-panel">
+        <div class="hws-footer-text-panel-header">Current Preview</div>
+        <div class="hws-footer-text-panel-body">
+            <div class="hws-footer-text-preview-live" id="hws-footer-text-preview-live">
                 <?php if ( $footer_markup ) : ?>
                     <?php echo $footer_markup; ?>
                 <?php else : ?>
                     <div class="hws-footer-text-preview-live-empty">
-                        No footer text is currently set. Add content on <a href="<?php echo esc_url( $website_settings_url ); ?>" target="_blank">Website Settings</a> and then enable output here.
+                        No footer text is currently set yet. Write it above and save it here.
                     </div>
                 <?php endif; ?>
             </div>
@@ -336,41 +429,70 @@ function display_settings_footer_text() {
         var $templateInputs = $('input[name="hws-footer-text-template"]');
         var $status = $('#hws-footer-text-status');
         var $saving = $('#hws-footer-text-saving');
+        var $preview = $('#hws-footer-text-preview-live');
+        var $saveContent = $('#hws-footer-text-save-content');
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
             $templateInputs.prop('disabled', isBusy);
+            $saveContent.prop('disabled', isBusy);
         }
 
-        function saveFooterTextSettings() {
+        function getEditorContent() {
+            if (window.tinymce && tinymce.get('hws_footer_text_editor')) {
+                return tinymce.get('hws_footer_text_editor').getContent();
+            }
+
+            return $('#hws_footer_text_editor').val() || '';
+        }
+
+        function refreshPreview(html, hasContent) {
+            if (hasContent && html) {
+                $preview.html(html);
+                return;
+            }
+
+            $preview.html('<div class="hws-footer-text-preview-live-empty">No footer text is currently set yet. Write it above and save it here.</div>');
+        }
+
+        function saveFooterTextSettings(includeContent) {
             var enabled = $toggle.is(':checked') ? 1 : 0;
             var template = $templateInputs.filter(':checked').val() || 'quiet-inline';
+            var payload = {
+                action: 'hws_footer_text_save_settings',
+                nonce: hwsNonce,
+                enabled: enabled,
+                template: template
+            };
+
+            if (includeContent) {
+                payload.content = getEditorContent();
+            }
 
             setBusy(true);
-            $saving.text('Saving…');
+            $saving.text(includeContent ? 'Saving footer text…' : 'Saving…');
 
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
                 dataType: 'json',
-                data: {
-                    action: 'hws_footer_text_save_settings',
-                    nonce: hwsNonce,
-                    enabled: enabled,
-                    template: template
-                }
+                data: payload
             }).done(function(response) {
                 if (!response || !response.success) {
                     throw response;
                 }
 
                 if (enabled) {
-                    $status.removeClass('off').addClass('on').text('Frontend output enabled');
+                    $status.removeClass('off').addClass('on').text('Visible on the live site');
                 } else {
-                    $status.removeClass('on').addClass('off').text('Frontend output disabled');
+                    $status.removeClass('on').addClass('off').text('Hidden on the live site');
                 }
 
-                $saving.text('Saved.');
+                if (includeContent) {
+                    refreshPreview(response.data.rendered_html, response.data.has_content);
+                }
+
+                $saving.text(includeContent ? 'Footer text saved.' : 'Saved.');
                 window.setTimeout(function() {
                     $saving.text('');
                 }, 1200);
@@ -382,8 +504,9 @@ function display_settings_footer_text() {
             });
         }
 
-        $toggle.on('change', saveFooterTextSettings);
-        $templateInputs.on('change', saveFooterTextSettings);
+        $toggle.on('change', function() { saveFooterTextSettings(false); });
+        $templateInputs.on('change', function() { saveFooterTextSettings(false); });
+        $saveContent.on('click', function() { saveFooterTextSettings(true); });
     });
     </script>
     <?php

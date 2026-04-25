@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.9.6
+Version: 10.9.7
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -540,11 +540,10 @@ function get_snippets($type = "")
     ],
     [
         'id' => 'enable_footer_text_auto_injection',
-        'name' => 'Auto Inject Footer Text',
-        'description' => 'Enables the footer text module and unlocks its dedicated dashboard tab.',
-        'info' => 'This toggle enables the module/library only.<br>
-            Actual frontend output is controlled separately inside the new <code>Footer Text</code> tab.<br>
-            Default frontend output remains off until enabled there.',
+        'name' => 'Footer Text Module',
+        'description' => 'Unlocks the Footer Text tab and loads the footer text feature.',
+        'info' => 'This does not show anything on the website by itself.<br>
+            Use the <code>Footer Text</code> tab to write the content, turn live display on or off, and choose a style.',
         'function' => 'enable_footer_text_auto_injection',
         'scope_admin_only' => false
     ],

@@ -110,7 +110,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.6 (Current)
+### v10.9.7 (Current)
+- Added the actual footer text editor directly into the Footer Text tab
+- Added shortcode information to the Footer Text tab
+- Simplified the wording around live visibility so the tab reads plainly
+
+### v10.9.6
 - Changed the footer text feature into a two-step module: snippet toggle unlocks the module, while a dedicated Footer Text tab controls real frontend output
 - Added a dedicated Footer Text dashboard tab with its own enable/disable switch
 - Added minimalist template choices for footer text rendering
