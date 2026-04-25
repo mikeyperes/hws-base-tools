@@ -39,7 +39,7 @@ final class LegacyEventBridge implements Module {
         }
         ?>
         <script>
-        window.hwsNonce = window.hwsNonce || '<?php echo esc_js( wp_create_nonce( HWS_AJAX_NONCE ) ); ?>';
+        window.hwsNonce = window.hwsNonce || '<?php echo esc_js( \hws_base_tools\hws_create_nonce() ); ?>';
         window.hws_base_tools = window.hws_base_tools || {};
 
         (function($) {

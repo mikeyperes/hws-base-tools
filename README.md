@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.4 (Current)
+### v10.9.5 (Current)
+- Fixed the admin dashboard white page on `hws-core-tools` caused by a nonce constant namespace bug in the legacy event bridge
+
+### v10.9.4
 - Changed footer text auto-injection into an optional snippet toggle
 - Default state is off until enabled in the Snippets screen
 
