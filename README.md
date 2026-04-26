@@ -110,7 +110,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.9.9 (Current)
+### v10.10.0 (Current)
+- Redesigned the Footer Text settings page: visibility toggle moved into the page header, dropped the duplicate stat cards and the standalone visibility panel, replaced the bottom style picker with a compact pill row above the editor, and put the editor and live preview side-by-side at wider widths
+- Removed the fake static template card previews (the live preview is now the only preview, so it cannot disagree with the user's actual content)
+- Added a one-click Copy button for the footer text shortcode
+
+### v10.9.9
 - Moved the Footer Text preview into the footer content section
 - Made the Footer Text preview update live while typing and when switching templates
 

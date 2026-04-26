@@ -69,365 +69,333 @@ function display_settings_footer_text() {
         ? hws_get_footer_text_markup()
         : '';
     $shortcode = '[website_content field="website_footer_text"]';
+
+    $template_meta_for_js = [];
+    foreach ( $templates as $key => $template ) {
+        $template_meta_for_js[ $key ] = [
+            'label'       => $template['label'] ?? '',
+            'description' => $template['description'] ?? '',
+        ];
+    }
     ?>
     <style>
-        .hws-footer-text-hero {
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid #d7dee7;
-            border-radius: 10px;
-            padding: 20px 24px;
-            margin-bottom: 22px;
-        }
-
-        .hws-footer-text-hero h3 {
-            margin: 0 0 8px;
-            font-size: 18px;
+        .hws-ft-wrap {
+            max-width: 1200px;
+            margin: 18px 0 32px;
             color: #1d2327;
         }
 
-        .hws-footer-text-hero p {
-            margin: 0;
-            color: #50575e;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .hws-footer-text-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-            margin-bottom: 22px;
-        }
-
-        .hws-footer-text-card {
+        .hws-ft-card {
             background: #fff;
             border: 1px solid #dcdcde;
-            border-radius: 10px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 20px 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
         }
 
-        .hws-footer-text-card .value {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1d2327;
-        }
-
-        .hws-footer-text-card .label {
-            margin-top: 4px;
-            color: #646970;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .hws-footer-text-panel {
-            background: #fff;
-            border: 1px solid #dcdcde;
-            border-radius: 10px;
-            margin-bottom: 22px;
-            overflow: hidden;
-        }
-
-        .hws-footer-text-panel-header {
-            background: #f6f7f7;
-            border-bottom: 1px solid #dcdcde;
-            padding: 14px 18px;
-            font-weight: 600;
-            color: #1d2327;
-        }
-
-        .hws-footer-text-panel-body {
-            padding: 18px;
-        }
-
-        .hws-footer-text-toggle-row {
+        .hws-ft-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 24px;
+            flex-wrap: wrap;
         }
 
-        .hws-footer-text-toggle-copy h4 {
+        .hws-ft-header-text { min-width: 0; }
+
+        .hws-ft-header h2 {
             margin: 0 0 4px;
-            font-size: 15px;
+            font-size: 18px;
+            line-height: 1.3;
             color: #1d2327;
         }
 
-        .hws-footer-text-toggle-copy p {
+        .hws-ft-tagline {
             margin: 0;
-            color: #646970;
+            color: #50575e;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.55;
         }
 
-        .hws-footer-text-status {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .hws-footer-text-status.on {
-            background: #edfaef;
-            color: #116329;
-        }
-
-        .hws-footer-text-status.off {
-            background: #f6f7f7;
-            color: #646970;
-        }
-
-        .hws-footer-text-editor-wrap {
-            margin-top: 14px;
-        }
-
-        .hws-footer-text-editor-actions {
+        .hws-ft-header-toggle {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-top: 14px;
+            white-space: nowrap;
         }
 
-        .hws-footer-text-inline-preview {
-            margin-top: 18px;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 18px;
+        .hws-ft-status-text {
+            font-size: 13px;
+            font-weight: 500;
         }
 
-        .hws-footer-text-inline-preview h4 {
-            margin: 0 0 10px;
-            font-size: 14px;
+        .hws-ft-status-text.on  { color: #116329; }
+        .hws-ft-status-text.off { color: #646970; }
+
+        .hws-ft-section-title {
+            margin: 0 0 4px;
+            font-size: 12px;
+            font-weight: 600;
             color: #1d2327;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
-        .hws-footer-text-editor-note {
+        .hws-ft-section-help {
             margin: 0 0 14px;
             color: #50575e;
             font-size: 13px;
-            line-height: 1.6;
+            line-height: 1.55;
         }
 
-        .hws-footer-text-editor-note code {
-            background: #fff;
-            border: 1px solid #dcdcde;
-            border-radius: 6px;
-            padding: 2px 6px;
-            font-size: 12px;
+        .hws-ft-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 10px;
         }
 
-        .hws-footer-text-template-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-        }
+        .hws-ft-pill { position: relative; }
 
-        .hws-footer-template-option {
-            position: relative;
-        }
-
-        .hws-footer-template-option input {
+        .hws-ft-pill input {
             position: absolute;
             opacity: 0;
             pointer-events: none;
         }
 
-        .hws-footer-template-card {
+        .hws-ft-pill-label {
+            display: inline-block;
+            padding: 8px 16px;
+            border: 1px solid #c3c4c7;
+            border-radius: 999px;
+            background: #f6f7f7;
+            color: #50575e;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+
+        .hws-ft-pill-label:hover { background: #eef0f1; color: #1d2327; }
+
+        .hws-ft-pill input:checked + .hws-ft-pill-label {
+            background: #2271b1;
+            border-color: #2271b1;
+            color: #fff;
+            box-shadow: 0 0 0 1px #2271b1;
+        }
+
+        .hws-ft-pill input:focus-visible + .hws-ft-pill-label {
+            outline: 2px solid #2271b1;
+            outline-offset: 2px;
+        }
+
+        .hws-ft-pill-help {
+            margin: 0;
+            color: #50575e;
+            font-size: 12.5px;
+            min-height: 18px;
+        }
+
+        .hws-ft-edit-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 22px;
+        }
+
+        @media (min-width: 960px) {
+            .hws-ft-edit-grid {
+                grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+            }
+        }
+
+        .hws-ft-col-title {
+            margin: 0 0 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #646970;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .hws-ft-editor-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hws-ft-saving {
+            font-size: 12.5px;
+            color: #2271b1;
+            min-height: 18px;
+        }
+
+        .hws-ft-saving.error { color: #b32d2e; }
+
+        .hws-ft-shortcode {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 12.5px;
+            color: #646970;
+        }
+
+        .hws-ft-shortcode code {
+            background: #f6f7f7;
+            border: 1px solid #dcdcde;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 12px;
+            color: #1d2327;
+        }
+
+        .hws-ft-copy.button {
+            font-size: 12px;
+            padding: 0 10px;
+            line-height: 24px;
+            height: 26px;
+            min-height: 26px;
+        }
+
+        .hws-ft-copy.button.copied {
+            color: #116329;
+            border-color: #116329;
+        }
+
+        .hws-ft-preview {
             border: 1px solid #dcdcde;
             border-radius: 10px;
             background: #fff;
-            padding: 14px;
-            cursor: pointer;
-            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-            min-height: 210px;
-        }
-
-        .hws-footer-template-option input:checked + .hws-footer-template-card {
-            border-color: #2271b1;
-            box-shadow: 0 0 0 1px #2271b1;
-            transform: translateY(-1px);
-        }
-
-        .hws-footer-template-card h4 {
-            margin: 0 0 6px;
+            padding: 18px 20px;
+            min-height: 140px;
             color: #1d2327;
-            font-size: 15px;
-        }
-
-        .hws-footer-template-card p {
-            margin: 0 0 14px;
-            color: #646970;
-            font-size: 13px;
-            line-height: 1.55;
-        }
-
-        .hws-footer-template-preview {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: #fbfbfc;
-            padding: 14px;
-            color: #4b5563;
-            font-size: 12.5px;
+            font-size: 14px;
             line-height: 1.65;
         }
 
-        .hws-footer-template-preview p {
-            margin: 0;
-            color: inherit;
-            font-size: inherit;
-            line-height: inherit;
-        }
-
-        .hws-footer-template-preview.divider {
+        .hws-ft-preview.hws-footer-text--fine-divider {
             border-top: 2px solid #d7dee7;
-            padding-top: 16px;
         }
 
-        .hws-footer-template-preview.fine-print {
+        .hws-ft-preview.hws-footer-text--fine-print {
             text-align: center;
-            font-size: 11.5px;
-            color: #6b7280;
-        }
-
-        .hws-footer-text-preview-live {
-            border: 1px solid #dcdcde;
-            border-radius: 10px;
-            background: #fff;
-            padding: 18px;
-            color: #1d2327;
-        }
-
-        .hws-footer-text-preview-live.hws-footer-text--fine-divider {
-            border-top: 2px solid #d7dee7;
-            padding-top: 20px;
-        }
-
-        .hws-footer-text-preview-live.hws-footer-text--fine-print {
-            text-align: center;
-            font-size: 12px;
+            font-size: 12.5px;
             color: #6b7280;
             line-height: 1.75;
         }
 
-        .hws-footer-text-preview-live-empty {
-            color: #646970;
+        .hws-ft-preview p { margin: 0 0 0.6em; }
+        .hws-ft-preview p:last-child { margin-bottom: 0; }
+
+        .hws-ft-preview a {
+            color: #2271b1;
+            text-decoration: underline;
+            text-underline-offset: 0.12em;
+        }
+
+        .hws-ft-preview-empty {
+            color: #8a8f94;
             font-size: 13px;
+            font-style: italic;
             line-height: 1.6;
         }
 
-        .hws-footer-text-saving {
-            margin-top: 12px;
-            font-size: 13px;
-            color: #2271b1;
-            min-height: 18px;
+        @media (max-width: 600px) {
+            .hws-ft-card { padding: 16px; }
+            .hws-ft-header { gap: 14px; }
+            .hws-ft-header-toggle { width: 100%; justify-content: space-between; }
         }
     </style>
 
-    <div class="hws-footer-text-hero">
-        <h3>Footer Text</h3>
-        <p>Write the footer text here, decide if it should be visible on the live site, and choose how quietly it should look in the footer.</p>
-    </div>
+    <div class="hws-ft-wrap">
 
-    <div class="hws-footer-text-grid">
-        <div class="hws-footer-text-card">
-            <div class="value"><?php echo $feature_enabled ? 'On' : 'Off'; ?></div>
-            <div class="label">Live Website</div>
-        </div>
-        <div class="hws-footer-text-card">
-            <div class="value"><?php echo esc_html( $templates[ $active_template ]['label'] ?? 'Quiet Inline' ); ?></div>
-            <div class="label">Current Style</div>
-        </div>
-        <div class="hws-footer-text-card">
-            <div class="value"><?php echo $footer_markup ? 'Ready' : 'Empty'; ?></div>
-            <div class="label">Saved Text</div>
-        </div>
-    </div>
-
-    <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Show On Website</div>
-        <div class="hws-footer-text-panel-body">
-            <div class="hws-footer-text-toggle-row">
-                <div class="hws-footer-text-toggle-copy">
-                    <h4>Show This Footer Text On The Live Site</h4>
-                    <p>Turn this on to display the saved footer text in the website footer. Turn it off to keep the text saved but hidden.</p>
-                    <span class="hws-footer-text-status <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status"><?php echo $feature_enabled ? 'Visible on the live site' : 'Hidden on the live site'; ?></span>
-                </div>
+        <div class="hws-ft-card hws-ft-header">
+            <div class="hws-ft-header-text">
+                <h2>Footer Text</h2>
+                <p class="hws-ft-tagline">Edit the footer text, choose a style, and toggle whether it shows on the live site.</p>
+            </div>
+            <div class="hws-ft-header-toggle">
+                <span class="hws-ft-status-text <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status">
+                    <?php echo $feature_enabled ? 'Visible on the live site' : 'Hidden on the live site'; ?>
+                </span>
                 <?php echo render_toggle_switch( 'hws-footer-text-feature-enabled', '', $feature_enabled ); ?>
             </div>
         </div>
-    </div>
 
-    <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Footer Text Content</div>
-        <div class="hws-footer-text-panel-body">
-            <p class="hws-footer-text-editor-note">
-                Edit the actual footer text here.
-                Shortcode: <code><?php echo esc_html( $shortcode ); ?></code>
-            </p>
-            <div class="hws-footer-text-editor-wrap">
-                <?php
-                wp_editor(
-                    $footer_text_raw,
-                    'hws_footer_text_editor',
-                    [
-                        'textarea_name' => 'hws_footer_text_editor',
-                        'textarea_rows' => 10,
-                        'media_buttons' => true,
-                        'teeny'         => false,
-                        'quicktags'     => true,
-                    ]
-                );
-                ?>
-            </div>
-            <div class="hws-footer-text-editor-actions">
-                <button type="button" class="button button-primary" id="hws-footer-text-save-content">Save Footer Text</button>
-                <span style="color:#646970; font-size:12px;">This saves the same content used by the shortcode and the auto-injected footer.</span>
-            </div>
-            <div class="hws-footer-text-inline-preview">
-                <h4>Live Preview</h4>
-                <div class="hws-footer-text-preview-live hws-footer-text--<?php echo esc_attr( $active_template ); ?>" id="hws-footer-text-preview-live">
-                    <?php if ( $footer_markup ) : ?>
-                        <?php echo $footer_markup; ?>
-                    <?php else : ?>
-                        <div class="hws-footer-text-preview-live-empty">
-                            No footer text is currently set yet. Write it above and save it here.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="hws-footer-text-panel">
-        <div class="hws-footer-text-panel-header">Choose A Style</div>
-        <div class="hws-footer-text-panel-body">
-            <div class="hws-footer-text-template-grid">
+        <div class="hws-ft-card">
+            <h3 class="hws-ft-section-title">Style</h3>
+            <p class="hws-ft-section-help">Pick how the footer text is presented. The live preview below updates immediately.</p>
+            <div class="hws-ft-pills" role="radiogroup" aria-label="Footer text style">
                 <?php foreach ( $templates as $template_key => $template ) : ?>
-                    <label class="hws-footer-template-option">
+                    <label class="hws-ft-pill">
                         <input type="radio" name="hws-footer-text-template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $active_template, $template_key ); ?>>
-                        <div class="hws-footer-template-card">
-                            <h4><?php echo esc_html( $template['label'] ); ?></h4>
-                            <p><?php echo esc_html( $template['description'] ); ?></p>
-                            <div class="hws-footer-template-preview <?php echo esc_attr( $template_key === 'fine-divider' ? 'divider' : ( $template_key === 'fine-print' ? 'fine-print' : '' ) ); ?>">
-                                <p>Copyright <?php echo esc_html( gmdate( 'Y' ) ); ?> Zach Eikenberry. All rights reserved.</p>
-                            </div>
-                        </div>
+                        <span class="hws-ft-pill-label"><?php echo esc_html( $template['label'] ); ?></span>
                     </label>
                 <?php endforeach; ?>
             </div>
-            <div class="hws-footer-text-saving" id="hws-footer-text-saving"></div>
+            <p class="hws-ft-pill-help" id="hws-footer-text-style-help">
+                <?php echo esc_html( $templates[ $active_template ]['description'] ?? '' ); ?>
+            </p>
+        </div>
+
+        <div class="hws-ft-card">
+            <div class="hws-ft-edit-grid">
+                <div>
+                    <h3 class="hws-ft-col-title">Editor</h3>
+                    <?php
+                    wp_editor(
+                        $footer_text_raw,
+                        'hws_footer_text_editor',
+                        [
+                            'textarea_name' => 'hws_footer_text_editor',
+                            'textarea_rows' => 10,
+                            'media_buttons' => true,
+                            'teeny'         => false,
+                            'quicktags'     => true,
+                        ]
+                    );
+                    ?>
+                    <div class="hws-ft-editor-actions">
+                        <button type="button" class="button button-primary" id="hws-footer-text-save-content">Save Footer Text</button>
+                        <span class="hws-ft-saving" id="hws-footer-text-saving" aria-live="polite"></span>
+                    </div>
+                    <div class="hws-ft-shortcode">
+                        <span>Shortcode:</span>
+                        <code id="hws-footer-text-shortcode"><?php echo esc_html( $shortcode ); ?></code>
+                        <button type="button" class="button hws-ft-copy" id="hws-footer-text-copy" data-default="Copy" data-copied="Copied">Copy</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="hws-ft-col-title">Live Preview</h3>
+                    <div class="hws-ft-preview hws-footer-text--<?php echo esc_attr( $active_template ); ?>" id="hws-footer-text-preview-live" aria-live="polite">
+                        <?php if ( $footer_markup ) : ?>
+                            <?php echo $footer_markup; ?>
+                        <?php else : ?>
+                            <div class="hws-ft-preview-empty">No footer text yet. Type on the left and the preview will update here.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
     jQuery(function($) {
-        var $toggle = $('#hws-footer-text-feature-enabled');
+        var $toggle         = $('#hws-footer-text-feature-enabled');
         var $templateInputs = $('input[name="hws-footer-text-template"]');
-        var $status = $('#hws-footer-text-status');
-        var $saving = $('#hws-footer-text-saving');
-        var $preview = $('#hws-footer-text-preview-live');
-        var $saveContent = $('#hws-footer-text-save-content');
+        var $status         = $('#hws-footer-text-status');
+        var $saving         = $('#hws-footer-text-saving');
+        var $preview        = $('#hws-footer-text-preview-live');
+        var $saveContent    = $('#hws-footer-text-save-content');
+        var $styleHelp      = $('#hws-footer-text-style-help');
+        var $copyBtn        = $('#hws-footer-text-copy');
+        var templateMeta    = <?php echo wp_json_encode( $template_meta_for_js ); ?>;
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
@@ -439,7 +407,6 @@ function display_settings_footer_text() {
             if (window.tinymce && tinymce.get('hws_footer_text_editor')) {
                 return tinymce.get('hws_footer_text_editor').getContent();
             }
-
             return $('#hws_footer_text_editor').val() || '';
         }
 
@@ -448,7 +415,7 @@ function display_settings_footer_text() {
         }
 
         function hasMeaningfulContent(html) {
-            var text = $('<div>').html(html || '').text().replace(/\u00a0/g, ' ').trim();
+            var text = $('<div>').html(html || '').text().replace(/ /g, ' ').trim();
             return text.length > 0;
         }
 
@@ -456,17 +423,18 @@ function display_settings_footer_text() {
             var template = getSelectedTemplate();
             $preview.removeClass('hws-footer-text--quiet-inline hws-footer-text--fine-divider hws-footer-text--fine-print')
                 .addClass('hws-footer-text--' + template);
+            if (templateMeta && templateMeta[template]) {
+                $styleHelp.text(templateMeta[template].description || '');
+            }
         }
 
         function refreshPreview(html, hasContent) {
             applyPreviewTemplate();
-
             if (hasContent && html) {
                 $preview.html(html);
                 return;
             }
-
-            $preview.html('<div class="hws-footer-text-preview-live-empty">No footer text is currently set yet. Write it above and save it here.</div>');
+            $preview.html('<div class="hws-ft-preview-empty">No footer text yet. Type on the left and the preview will update here.</div>');
         }
 
         function updatePreviewFromEditor() {
@@ -479,35 +447,34 @@ function display_settings_footer_text() {
                 window.setTimeout(bindTinyMcePreview, 300);
                 return;
             }
-
             var editor = tinymce.get('hws_footer_text_editor');
-
-            if (editor._hwsPreviewBound) {
-                return;
-            }
-
+            if (editor._hwsPreviewBound) return;
             editor._hwsPreviewBound = true;
             editor.on('keyup change input SetContent Paste Undo Redo', function() {
                 updatePreviewFromEditor();
             });
         }
 
+        function showSaving(msg, isError) {
+            $saving.removeClass('error');
+            if (isError) $saving.addClass('error');
+            $saving.text(msg || '');
+        }
+
         function saveFooterTextSettings(includeContent) {
-            var enabled = $toggle.is(':checked') ? 1 : 0;
-            var template = $templateInputs.filter(':checked').val() || 'quiet-inline';
-            var payload = {
+            var enabled  = $toggle.is(':checked') ? 1 : 0;
+            var template = getSelectedTemplate();
+            var payload  = {
                 action: 'hws_footer_text_save_settings',
                 nonce: hwsNonce,
                 enabled: enabled,
                 template: template
             };
 
-            if (includeContent) {
-                payload.content = getEditorContent();
-            }
+            if (includeContent) payload.content = getEditorContent();
 
             setBusy(true);
-            $saving.text(includeContent ? 'Saving footer text…' : 'Saving…');
+            showSaving(includeContent ? 'Saving footer text…' : 'Saving…', false);
 
             $.ajax({
                 url: ajaxurl,
@@ -515,9 +482,7 @@ function display_settings_footer_text() {
                 dataType: 'json',
                 data: payload
             }).done(function(response) {
-                if (!response || !response.success) {
-                    throw response;
-                }
+                if (!response || !response.success) { throw response; }
 
                 if (enabled) {
                     $status.removeClass('off').addClass('on').text('Visible on the live site');
@@ -529,26 +494,56 @@ function display_settings_footer_text() {
                     refreshPreview(response.data.rendered_html, response.data.has_content);
                 }
 
-                $saving.text(includeContent ? 'Footer text saved.' : 'Saved.');
-                window.setTimeout(function() {
-                    $saving.text('');
-                }, 1200);
+                showSaving(includeContent ? 'Footer text saved.' : 'Saved.', false);
+                window.setTimeout(function() { showSaving('', false); }, 1500);
             }).fail(function(response) {
                 console.error('Footer text settings save failed', response);
-                $saving.text('Save failed. Refresh and try again.');
+                showSaving('Save failed. Refresh and try again.', true);
             }).always(function() {
                 setBusy(false);
             });
         }
 
         $toggle.on('change', function() { saveFooterTextSettings(false); });
+
         $templateInputs.on('change', function() {
             applyPreviewTemplate();
             saveFooterTextSettings(false);
         });
+
         $saveContent.on('click', function() { saveFooterTextSettings(true); });
+
         $('#hws_footer_text_editor').on('input keyup change', function() {
             updatePreviewFromEditor();
+        });
+
+        $copyBtn.on('click', function() {
+            var btn = $(this);
+            var text = $('#hws-footer-text-shortcode').text();
+            var done = function(ok) {
+                if (!ok) { btn.text('Copy failed'); return; }
+                btn.addClass('copied').text(btn.data('copied') || 'Copied');
+                window.setTimeout(function() {
+                    btn.removeClass('copied').text(btn.data('default') || 'Copy');
+                }, 1200);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() { done(true); }, function() { done(false); });
+                return;
+            }
+
+            try {
+                var temp = document.createElement('textarea');
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                var ok = document.execCommand('copy');
+                document.body.removeChild(temp);
+                done(ok);
+            } catch (err) {
+                done(false);
+            }
         });
 
         applyPreviewTemplate();
