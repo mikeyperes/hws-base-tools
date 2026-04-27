@@ -39,7 +39,7 @@ function ajax_save_footer_text_settings() {
     wp_send_json_success( [
         'enabled'       => $enabled,
         'template'      => $template,
-        'label'         => $templates[ $template ]['label'] ?? 'Quiet Inline',
+        'label'         => $templates[ $template ]['label'] ?? 'Plain',
         'rendered_html' => $rendered_html,
         'has_content'   => '' !== trim( wp_strip_all_tags( $rendered_html ) ),
     ] );
@@ -47,7 +47,7 @@ function ajax_save_footer_text_settings() {
 
 function display_settings_footer_text() {
     if ( ! function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) || ! hws_is_footer_text_module_enabled() ) {
-        echo '<div class="notice notice-warning"><p>Enable the <strong>Auto Inject Footer Text</strong> snippet first to unlock this module.</p></div>';
+        echo '<div class="notice notice-warning"><p>Enable the <strong>Footer Text Module</strong> snippet first to unlock this module.</p></div>';
         return;
     }
 
@@ -149,53 +149,93 @@ function display_settings_footer_text() {
             line-height: 1.55;
         }
 
-        .hws-ft-pills {
+        .hws-ft-list {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 8px;
-            margin: 0 0 10px;
-        }
-
-        .hws-ft-pill { position: relative; }
-
-        .hws-ft-pill input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .hws-ft-pill-label {
-            display: inline-block;
-            padding: 8px 16px;
-            border: 1px solid #c3c4c7;
-            border-radius: 999px;
-            background: #f6f7f7;
-            color: #50575e;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
-        }
-
-        .hws-ft-pill-label:hover { background: #eef0f1; color: #1d2327; }
-
-        .hws-ft-pill input:checked + .hws-ft-pill-label {
-            background: #2271b1;
-            border-color: #2271b1;
-            color: #fff;
-            box-shadow: 0 0 0 1px #2271b1;
-        }
-
-        .hws-ft-pill input:focus-visible + .hws-ft-pill-label {
-            outline: 2px solid #2271b1;
-            outline-offset: 2px;
-        }
-
-        .hws-ft-pill-help {
             margin: 0;
-            color: #50575e;
+        }
+
+        .hws-ft-item {
+            display: grid;
+            grid-template-columns: 22px minmax(180px, 1.1fr) minmax(0, 1.6fr);
+            align-items: center;
+            gap: 20px;
+            padding: 15px 18px;
+            border: 1px solid #d7dbe0;
+            border-radius: 14px;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+            transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+
+        .hws-ft-item:hover {
+            background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+            border-color: #c8d0d9;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .hws-ft-item:has(input:checked) {
+            border-color: #2271b1;
+            box-shadow: 0 0 0 1px #2271b1, 0 14px 30px rgba(34, 113, 177, 0.08);
+            background: linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
+        }
+
+        .hws-ft-item input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .hws-ft-item-body { min-width: 0; }
+
+        .hws-ft-item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1d2327;
+            line-height: 1.35;
+        }
+
+        .hws-ft-item:has(input:checked) .hws-ft-item-name { color: #135e96; }
+
+        .hws-ft-item-desc {
             font-size: 12.5px;
-            min-height: 18px;
+            color: #646970;
+            margin-top: 3px;
+            line-height: 1.55;
+        }
+
+        .hws-ft-item-mini {
+            border: 1px solid #e7eaee;
+            border-radius: 12px;
+            padding: 14px 18px;
+            background: linear-gradient(180deg, #fcfcfd 0%, #f7f8fa 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+            color: #1d2327;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow: hidden;
+            min-width: 0;
+            min-height: 74px;
+            box-sizing: border-box;
+        }
+
+        .hws-ft-item-mini p { margin: 0 0 0.4em; }
+        .hws-ft-item-mini p:last-child { margin-bottom: 0; }
+
+        .hws-ft-item-mini-empty {
+            color: #8a8f94;
+            font-style: italic;
+            font-size: 12.5px;
+        }
+
+        @media (max-width: 720px) {
+            .hws-ft-item {
+                grid-template-columns: 22px 1fr;
+            }
+            .hws-ft-item-mini {
+                grid-column: 1 / -1;
+            }
         }
 
         .hws-ft-edit-grid {
@@ -268,25 +308,15 @@ function display_settings_footer_text() {
         }
 
         .hws-ft-preview {
-            border: 1px solid #dcdcde;
-            border-radius: 10px;
-            background: #fff;
-            padding: 18px 20px;
-            min-height: 140px;
+            border: 1px solid #d7dbe0;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%);
+            padding: 22px 24px;
+            min-height: 170px;
             color: #1d2327;
             font-size: 14px;
             line-height: 1.65;
-        }
-
-        .hws-ft-preview.hws-footer-text--fine-divider {
-            border-top: 2px solid #d7dee7;
-        }
-
-        .hws-ft-preview.hws-footer-text--fine-print {
-            text-align: center;
-            font-size: 12.5px;
-            color: #6b7280;
-            line-height: 1.75;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 12px 26px rgba(15, 23, 42, 0.04);
         }
 
         .hws-ft-preview p { margin: 0 0 0.6em; }
@@ -297,6 +327,9 @@ function display_settings_footer_text() {
             text-decoration: underline;
             text-underline-offset: 0.12em;
         }
+
+        <?php echo hws_get_footer_text_template_css( 'admin' ); ?>
+        <?php echo hws_get_footer_text_template_css( 'admin-mini' ); ?>
 
         .hws-ft-preview-empty {
             color: #8a8f94;
@@ -329,18 +362,25 @@ function display_settings_footer_text() {
 
         <div class="hws-ft-card">
             <h3 class="hws-ft-section-title">Style</h3>
-            <p class="hws-ft-section-help">Pick how the footer text is presented. The live preview below updates immediately.</p>
-            <div class="hws-ft-pills" role="radiogroup" aria-label="Footer text style">
+            <p class="hws-ft-section-help">Pick a template. Some stay nearly invisible. Others add structure and polish without making the footer feel like a promo block.</p>
+            <div class="hws-ft-list" role="radiogroup" aria-label="Footer text style">
                 <?php foreach ( $templates as $template_key => $template ) : ?>
-                    <label class="hws-ft-pill">
+                    <label class="hws-ft-item">
                         <input type="radio" name="hws-footer-text-template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $active_template, $template_key ); ?>>
-                        <span class="hws-ft-pill-label"><?php echo esc_html( $template['label'] ); ?></span>
+                        <div class="hws-ft-item-body">
+                            <div class="hws-ft-item-name"><?php echo esc_html( $template['label'] ); ?></div>
+                            <div class="hws-ft-item-desc"><?php echo esc_html( $template['description'] ); ?></div>
+                        </div>
+                        <div class="hws-ft-item-mini hws-footer-text--<?php echo esc_attr( $template_key ); ?>" data-hws-mini="<?php echo esc_attr( $template_key ); ?>">
+                            <?php if ( $footer_markup ) : ?>
+                                <?php echo $footer_markup; ?>
+                            <?php else : ?>
+                                <span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>
+                            <?php endif; ?>
+                        </div>
                     </label>
                 <?php endforeach; ?>
             </div>
-            <p class="hws-ft-pill-help" id="hws-footer-text-style-help">
-                <?php echo esc_html( $templates[ $active_template ]['description'] ?? '' ); ?>
-            </p>
         </div>
 
         <div class="hws-ft-card">
@@ -392,10 +432,11 @@ function display_settings_footer_text() {
         var $status         = $('#hws-footer-text-status');
         var $saving         = $('#hws-footer-text-saving');
         var $preview        = $('#hws-footer-text-preview-live');
+        var $miniPreviews   = $('.hws-ft-item-mini');
         var $saveContent    = $('#hws-footer-text-save-content');
-        var $styleHelp      = $('#hws-footer-text-style-help');
         var $copyBtn        = $('#hws-footer-text-copy');
         var templateMeta    = <?php echo wp_json_encode( $template_meta_for_js ); ?>;
+        var miniEmptyHtml   = '<span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>';
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
@@ -419,22 +460,37 @@ function display_settings_footer_text() {
             return text.length > 0;
         }
 
+        var allTemplateClasses = Object.keys(templateMeta || {}).map(function(k) {
+            return 'hws-footer-text--' + k;
+        }).join(' ');
+
         function applyPreviewTemplate() {
             var template = getSelectedTemplate();
-            $preview.removeClass('hws-footer-text--quiet-inline hws-footer-text--fine-divider hws-footer-text--fine-print')
-                .addClass('hws-footer-text--' + template);
-            if (templateMeta && templateMeta[template]) {
-                $styleHelp.text(templateMeta[template].description || '');
+            if (allTemplateClasses) {
+                $preview.removeClass(allTemplateClasses);
             }
+            $preview.addClass('hws-footer-text--' + template);
+        }
+
+        function refreshMiniPreviews(html, hasContent) {
+            $miniPreviews.each(function() {
+                var $mini = $(this);
+                if (hasContent && html) {
+                    $mini.html(html);
+                } else {
+                    $mini.html(miniEmptyHtml);
+                }
+            });
         }
 
         function refreshPreview(html, hasContent) {
             applyPreviewTemplate();
             if (hasContent && html) {
                 $preview.html(html);
-                return;
+            } else {
+                $preview.html('<div class="hws-ft-preview-empty">No footer text yet. Type on the left and the preview will update here.</div>');
             }
-            $preview.html('<div class="hws-ft-preview-empty">No footer text yet. Type on the left and the preview will update here.</div>');
+            refreshMiniPreviews(html, hasContent);
         }
 
         function updatePreviewFromEditor() {

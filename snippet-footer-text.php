@@ -27,18 +27,113 @@ function hws_is_footer_text_feature_enabled(): bool {
 function hws_get_footer_text_templates(): array {
     return [
         'quiet-inline' => [
-            'label'       => 'Quiet Inline',
-            'description' => 'Plain inherited footer text with no decorative container.',
+            'label'       => 'Plain',
+            'description' => 'Bare minimum. No framing, no box, just the saved copy sitting cleanly in the footer.',
         ],
         'fine-divider' => [
-            'label'       => 'Fine Divider',
-            'description' => 'Adds a subtle divider line and a little breathing room above the text.',
+            'label'       => 'Top Divider',
+            'description' => 'Refined top rule with breathing room, for a quiet but finished footer edge.',
         ],
         'fine-print' => [
-            'label'       => 'Fine Print',
-            'description' => 'Slightly smaller, centered footer copy for a more understated legal-style look.',
+            'label'       => 'Legal Small',
+            'description' => 'Small centered legal-copy treatment with softer contrast and tighter discipline.',
+        ],
+        'boxed-card' => [
+            'label'       => 'Soft Panel',
+            'description' => 'Rounded panel with a soft surface and subtle depth, without turning into a banner.',
+        ],
+        'accent-bar' => [
+            'label'       => 'Signature Bar',
+            'description' => 'Short accent rule above the text for a sharper, more intentional sign-off.',
+        ],
+        'stamp' => [
+            'label'       => 'Micro Stamp',
+            'description' => 'Compact uppercase capsule with tracking, useful when the footer needs to feel branded.',
+        ],
+        'italic-tagline' => [
+            'label'       => 'Editorial Line',
+            'description' => 'Centered italic line with a little poise, like a restrained editorial closing note.',
+        ],
+        'two-column' => [
+            'label'       => 'Journal Columns',
+            'description' => 'Longer copy breaks into neat columns on wide screens, with a restrained publication feel.',
+        ],
+        'pull-quote' => [
+            'label'       => 'Side Note',
+            'description' => 'Inline-note treatment with a left rail and slightly elevated voice.',
+        ],
+        'soft-shadow' => [
+            'label'       => 'Elevated Card',
+            'description' => 'The most designed option: rounded, lifted, and polished without looking loud.',
         ],
     ];
+}
+
+/**
+ * Returns per-template CSS as a string. Single source of truth so the admin
+ * Live Preview and the frontend renderer cannot disagree.
+ *
+ * @param string $scope 'frontend' for the live site (#hws-footer-text-root)
+ *                      or 'admin' for the settings preview (.hws-ft-preview).
+ */
+function hws_get_footer_text_template_css( string $scope = 'frontend' ): string {
+    if ( 'admin-mini' === $scope ) {
+        $prefix = '.hws-ft-item-mini';
+    } elseif ( 'admin' === $scope ) {
+        $prefix = '.hws-ft-preview';
+    } else {
+        $prefix = '#hws-footer-text-root';
+    }
+
+    $is_admin_scope = in_array( $scope, [ 'admin', 'admin-mini' ], true );
+    $is_mini_scope  = 'admin-mini' === $scope;
+
+    $rule = function( string $key ) use ( $prefix ): string {
+        return $prefix . '.hws-footer-text--' . $key;
+    };
+
+    $line_color       = $is_admin_scope ? 'rgba(15, 23, 42, 0.18)' : 'rgba(15, 23, 42, 0.14)';
+    $frame_color      = $is_admin_scope ? 'rgba(15, 23, 42, 0.10)' : 'rgba(15, 23, 42, 0.13)';
+    $surface_soft     = $is_admin_scope ? 'rgba(15, 23, 42, 0.04)' : 'rgba(15, 23, 42, 0.06)';
+    $surface_strong   = $is_admin_scope ? 'rgba(15, 23, 42, 0.065)' : 'rgba(15, 23, 42, 0.085)';
+    $shadow_soft      = $is_mini_scope ? '0 8px 18px rgba(15, 23, 42, 0.06)' : '0 16px 34px rgba(15, 23, 42, 0.08)';
+    $shadow_strong    = $is_mini_scope ? '0 12px 22px rgba(15, 23, 42, 0.09)' : '0 22px 48px rgba(15, 23, 42, 0.14)';
+    $panel_padding    = $is_mini_scope ? '0.8rem 1rem' : '1rem 1.2rem';
+    $card_padding     = $is_mini_scope ? '0.95rem 1.05rem' : '1.15rem 1.35rem';
+    $panel_radius     = $is_mini_scope ? '14px' : '18px';
+    $card_radius      = $is_mini_scope ? '16px' : '22px';
+    $column_gap       = $is_mini_scope ? '1.4rem' : '2.2rem';
+    $bar_width        = $is_mini_scope ? '54px' : '68px';
+    $center_bar_width = $is_mini_scope ? '42px' : '54px';
+
+    $css = '';
+
+    $css .= $rule( 'quiet-inline' ) . " { max-width: 42rem; opacity: 0.8; }\n";
+
+    $css .= $rule( 'fine-divider' ) . " { max-width: 40rem; padding-top: 1.05rem; position: relative; }\n";
+    $css .= $rule( 'fine-divider' ) . "::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: " . $line_color . "; }\n";
+    $css .= $rule( 'fine-divider' ) . "::after { content: ''; position: absolute; top: 0; left: 0; width: " . $bar_width . "; height: 2px; border-radius: 999px; background: currentColor; opacity: 0.4; }\n";
+
+    $css .= $rule( 'fine-print' ) . " { max-width: 38rem; margin-inline: auto; font-size: 0.79em; line-height: 1.9; text-align: center; letter-spacing: 0.01em; opacity: 0.68; }\n";
+
+    $css .= $rule( 'boxed-card' ) . " { max-width: 44rem; margin-inline: auto; padding: " . $panel_padding . "; border-radius: " . $panel_radius . "; border: 1px solid " . $frame_color . "; background: linear-gradient(180deg, " . $surface_soft . " 0%, " . $surface_strong . " 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48), " . $shadow_soft . "; }\n";
+
+    $css .= $rule( 'accent-bar' ) . " { max-width: 36rem; padding-top: 1rem; position: relative; }\n";
+    $css .= $rule( 'accent-bar' ) . "::before { content: ''; position: absolute; top: 0; left: 0; width: " . $bar_width . "; height: 3px; background: currentColor; opacity: 0.78; border-radius: 999px; }\n";
+
+    $css .= $rule( 'stamp' ) . " { max-width: 30rem; margin-inline: auto; padding: 0.55rem 0.95rem; border-radius: 999px; border: 1px solid " . $frame_color . "; background: " . $surface_soft . "; font-size: 0.72em; letter-spacing: 0.22em; text-transform: uppercase; text-align: center; line-height: 1.8; opacity: 0.82; font-weight: 600; }\n";
+
+    $css .= $rule( 'italic-tagline' ) . " { max-width: 34rem; margin-inline: auto; padding-top: 0.95rem; position: relative; font-size: 1.05em; font-style: italic; text-align: center; line-height: 1.8; opacity: 0.92; }\n";
+    $css .= $rule( 'italic-tagline' ) . "::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: " . $center_bar_width . "; height: 1px; background: currentColor; opacity: 0.3; }\n";
+
+    $css .= $rule( 'two-column' ) . " { max-width: 48rem; margin-inline: auto; font-size: 0.92em; line-height: 1.85; }\n";
+    $css .= "@media (min-width: 720px) { " . $rule( 'two-column' ) . " { column-count: 2; column-gap: " . $column_gap . "; column-rule: 1px solid " . $line_color . "; } }\n";
+
+    $css .= $rule( 'pull-quote' ) . " { max-width: 40rem; margin-inline: auto; padding: 0.45rem 0 0.45rem 1.05rem; border-left: 3px solid currentColor; background: linear-gradient(90deg, " . $surface_soft . " 0%, rgba(15, 23, 42, 0) 68%); font-size: 1.02em; line-height: 1.8; font-style: italic; opacity: 0.93; }\n";
+
+    $css .= $rule( 'soft-shadow' ) . " { max-width: 44rem; margin-inline: auto; padding: " . $card_padding . "; border-radius: " . $card_radius . "; border: 1px solid rgba(255, 255, 255, 0.22); background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), " . $shadow_strong . "; backdrop-filter: blur(10px); }\n";
+
+    return $css;
 }
 
 function hws_get_footer_text_template(): string {
@@ -144,25 +239,7 @@ function hws_render_footer_text_in_footer() {
             font-size: 0.95em;
             line-height: 1.65;
             color: inherit;
-            opacity: 0.9;
             text-align: inherit;
-        }
-
-        #hws-footer-text-root.hws-footer-text--quiet-inline {
-            opacity: 0.9;
-        }
-
-        #hws-footer-text-root.hws-footer-text--fine-divider {
-            padding-top: 0.85rem;
-            border-top: 1px solid rgba(0, 0, 0, 0.12);
-            opacity: 0.84;
-        }
-
-        #hws-footer-text-root.hws-footer-text--fine-print {
-            font-size: 0.88em;
-            line-height: 1.7;
-            text-align: center;
-            opacity: 0.78;
         }
 
         #hws-footer-text-root p {
@@ -183,9 +260,14 @@ function hws_render_footer_text_in_footer() {
             padding: 0 1rem 1rem;
         }
 
-        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--fine-divider {
+        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--fine-divider,
+        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--accent-bar,
+        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--boxed-card,
+        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--soft-shadow {
             margin-top: 1rem;
         }
+
+        <?php echo hws_get_footer_text_template_css( 'frontend' ); ?>
     </style>
     <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
     <script id="hws-footer-text-script">

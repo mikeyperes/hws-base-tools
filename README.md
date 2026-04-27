@@ -110,7 +110,23 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.10.0 (Current)
+### v10.13.0 (Current)
+- Reworked the Footer Text design library so the templates no longer read like placeholders: kept a few minimalist options, but upgraded the rest into more deliberate panel, editorial, note, and card treatments
+- Renamed the style set to clearer, more curated labels: Plain, Top Divider, Legal Small, Soft Panel, Signature Bar, Micro Stamp, Editorial Line, Journal Columns, Side Note, and Elevated Card
+- Tightened the admin picker stage so the per-row previews and live preview better show the design differences instead of collapsing into the same generic white box
+
+### v10.12.0
+- Footer Text template picker is now a vertical 1-per-row list — each row shows your saved footer text rendered with that template's CSS, so you can see all 10 styles applied to your real content at the same time
+- Renamed templates to action-oriented names: Plain, Top Divider, Smaller Centered, Boxed, Accent Bar, Uppercase Spaced, Italic Centered, Two Columns, Pull Quote, Shadow Card
+- Punched up the visual contrast of every template so differences are obvious at a glance (e.g. Boxed now uses a real `#f3f4f6` panel, Shadow Card has a stronger drop shadow)
+- Added an `admin-mini` CSS scope to the shared template helper so the per-row mini-previews share the same source of truth as the admin Live Preview and the live-site footer
+
+### v10.11.0
+- Expanded the Footer Text style library from 3 to 10 templates: Quiet Inline, Hairline Divider, Fine Print, Boxed Card, Accent Bar, Stamp, Italic Tagline, Two-Column, Pull Quote, and Soft Shadow — each with distinct CSS
+- Added a single CSS helper (`hws_get_footer_text_template_css`) so the admin Live Preview and the live-site footer share one source of truth and cannot drift apart
+- Made the admin preview JS class-strip data-driven from the template registry, so future template additions need no JS changes
+
+### v10.10.0
 - Redesigned the Footer Text settings page: visibility toggle moved into the page header, dropped the duplicate stat cards and the standalone visibility panel, replaced the bottom style picker with a compact pill row above the editor, and put the editor and live preview side-by-side at wider widths
 - Removed the fake static template card previews (the live preview is now the only preview, so it cannot disagree with the user's actual content)
 - Added a one-click Copy button for the footer text shortcode
