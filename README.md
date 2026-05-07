@@ -110,7 +110,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.13.0 (Current)
+### v10.13.1 (Current)
+- Footer Text saves now purge frontend caches, so the live site updates immediately instead of waiting on a stale LiteSpeed snapshot
+- Saving the underlying Website Settings options page also purges cache for footer text changes made outside the Footer Text tab
+
+### v10.13.0
 - Reworked the Footer Text design library so the templates no longer read like placeholders: kept a few minimalist options, but upgraded the rest into more deliberate panel, editorial, note, and card treatments
 - Renamed the style set to clearer, more curated labels: Plain, Top Divider, Legal Small, Soft Panel, Signature Bar, Micro Stamp, Editorial Line, Journal Columns, Side Note, and Elevated Card
 - Tightened the admin picker stage so the per-row previews and live preview better show the design differences instead of collapsing into the same generic white box
