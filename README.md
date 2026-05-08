@@ -110,7 +110,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.0 (Current)
+### v10.14.1 (Current)
+- Footer Text now supports per-band alignment: Left, Center, or Right. The choice applies to any of the 10 templates.
+- Decorative accents shift to match the alignment, so when text aligns left the keyline accent, hairline rule, monolith bar, editorial rule, and colophon rules all anchor to the left edge (and right with right alignment).
+- Admin picker shows a dedicated Alignment control above the Style picker. The mini previews and live preview update instantly as alignment changes.
+
+### v10.14.0
 - Footer Text templates fully rewritten and remounted as a full-width band at the very bottom of the theme footer, so they read as a natural extension of the footer instead of a panel jammed into an existing column
 - Renamed and redesigned the entire 10-template set to a coherent intensity ladder: Whisper, Hairline, Colophon (minimal), Bookend, Keyline (light), Editorial, Broadsheet (medium), Marquee, Spotlight, Monolith (heavy)
 - Heavy templates now render as opaque dark bands with white-on-dark typography that work consistently regardless of the host theme footer colour

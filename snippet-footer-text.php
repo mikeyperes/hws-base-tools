@@ -206,6 +206,51 @@ function hws_get_footer_text_template_css( string $scope = 'frontend' ): string 
         $css .= $rule( $key ) . " a:hover, " . $rule( $key ) . " a:focus { border-bottom-color:#ffffff !important; opacity:1; }\n";
     }
 
+    // ========== ALIGNMENT OVERRIDES =========================================
+    // Default text-align is set per template (mostly center). For left/right,
+    // re-anchor the text and shift centered decorative accents to match.
+    $offset = $is_mini ? '12px' : '24px';
+
+    // ---- LEFT ALIGNMENT -----------------------------------------------------
+    $css .= $prefix . ".hws-ft-align--left { text-align:left; }\n";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--whisper, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--bookend, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--keyline, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--editorial, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--broadsheet, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--marquee, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--spotlight, ";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--monolith { text-align:left; }\n";
+    // Centered top accents shift to left edge offset.
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--hairline::before { left:" . $offset . "; right:auto; transform:none; width:min(280px, 40%); }\n";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--keyline::before { left:" . $offset . "; transform:none; }\n";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--editorial::before { left:" . $offset . "; transform:none; }\n";
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--monolith::before { left:" . $offset . "; transform:none; }\n";
+    // Colophon rules anchor to left.
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--colophon::before, " . $prefix . ".hws-ft-align--left.hws-footer-text--colophon::after { margin-left:" . $offset . "; margin-right:0; }\n";
+    // Broadsheet inner content un-centers.
+    $css .= $prefix . ".hws-ft-align--left.hws-footer-text--broadsheet > * { margin-left:0; margin-right:auto; }\n";
+
+    // ---- RIGHT ALIGNMENT ----------------------------------------------------
+    $css .= $prefix . ".hws-ft-align--right { text-align:right; }\n";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--whisper, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--bookend, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--keyline, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--editorial, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--broadsheet, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--marquee, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--spotlight, ";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--monolith { text-align:right; }\n";
+    // Centered top accents shift to right edge offset.
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--hairline::before { left:auto; right:" . $offset . "; transform:none; width:min(280px, 40%); }\n";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--keyline::before { left:auto; right:" . $offset . "; transform:none; }\n";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--editorial::before { left:auto; right:" . $offset . "; transform:none; }\n";
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--monolith::before { left:auto; right:" . $offset . "; transform:none; }\n";
+    // Colophon rules anchor to right.
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--colophon::before, " . $prefix . ".hws-ft-align--right.hws-footer-text--colophon::after { margin-left:auto; margin-right:" . $offset . "; }\n";
+    // Broadsheet inner content un-centers to right.
+    $css .= $prefix . ".hws-ft-align--right.hws-footer-text--broadsheet > * { margin-left:auto; margin-right:0; }\n";
+
     return $css;
 }
 
@@ -227,6 +272,25 @@ function hws_get_footer_text_template(): string {
     }
 
     return $template;
+}
+
+function hws_get_footer_text_alignments(): array {
+    return [
+        'left'   => 'Left',
+        'center' => 'Center',
+        'right'  => 'Right',
+    ];
+}
+
+function hws_get_footer_text_alignment(): string {
+    $alignment = get_option( 'hws_footer_text_alignment', 'center' );
+    $valid     = hws_get_footer_text_alignments();
+
+    if ( ! is_string( $alignment ) || ! isset( $valid[ $alignment ] ) ) {
+        return 'center';
+    }
+
+    return $alignment;
 }
 
 function hws_get_footer_text_raw(): string {
@@ -282,6 +346,7 @@ function hws_render_footer_text_in_footer() {
 
     $plain_text = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $footer_html ) ) );
     $template   = hws_get_footer_text_template();
+    $alignment  = hws_get_footer_text_alignment();
     $config = [
         'plainText'       => $plain_text,
         'footerSelectors' => [
@@ -295,7 +360,8 @@ function hws_render_footer_text_in_footer() {
             '[role="contentinfo"]',
             'footer',
         ],
-        'template' => $template,
+        'template'  => $template,
+        'alignment' => $alignment,
     ];
     ?>
     <style id="hws-footer-text-style">
@@ -323,7 +389,7 @@ function hws_render_footer_text_in_footer() {
 
         <?php echo hws_get_footer_text_template_css( 'frontend' ); ?>
     </style>
-    <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-template="<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
+    <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?> hws-ft-align--<?php echo esc_attr( $alignment ); ?>" data-hws-footer-text-template="<?php echo esc_attr( $template ); ?>" data-hws-footer-text-alignment="<?php echo esc_attr( $alignment ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
     <script id="hws-footer-text-script" data-no-optimize="1" data-cfasync="false">
     (function() {
         var root = document.getElementById('hws-footer-text-root');

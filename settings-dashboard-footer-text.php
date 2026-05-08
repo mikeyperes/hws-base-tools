@@ -60,12 +60,16 @@ function ajax_save_footer_text_settings() {
 
     hws_require_ajax_nonce_or_error();
 
-    $enabled  = ! empty( $_POST['enabled'] );
-    $template = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'whisper';
-    $content  = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : null;
+    $enabled   = ! empty( $_POST['enabled'] );
+    $template  = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'whisper';
+    $alignment = isset( $_POST['alignment'] ) ? sanitize_key( wp_unslash( $_POST['alignment'] ) ) : 'center';
+    $content   = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : null;
     $templates = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_templates' )
         ? hws_get_footer_text_templates()
         : [];
+    $alignments = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_alignments' )
+        ? hws_get_footer_text_alignments()
+        : [ 'left' => 'Left', 'center' => 'Center', 'right' => 'Right' ];
 
     // Migrate legacy keys before validating.
     if ( function_exists( __NAMESPACE__ . '\\hws_footer_text_legacy_template_map' ) ) {
@@ -79,8 +83,13 @@ function ajax_save_footer_text_settings() {
         $template = 'whisper';
     }
 
+    if ( ! isset( $alignments[ $alignment ] ) ) {
+        $alignment = 'center';
+    }
+
     update_option( 'hws_footer_text_feature_enabled', $enabled ? '1' : '0' );
     update_option( 'hws_footer_text_template', $template );
+    update_option( 'hws_footer_text_alignment', $alignment );
 
     if ( null !== $content && function_exists( __NAMESPACE__ . '\\hws_save_footer_text_raw' ) ) {
         hws_save_footer_text_raw( $content );
@@ -95,6 +104,7 @@ function ajax_save_footer_text_settings() {
     wp_send_json_success( [
         'enabled'       => $enabled,
         'template'      => $template,
+        'alignment'     => $alignment,
         'label'         => $templates[ $template ]['label'] ?? 'Whisper',
         'rendered_html' => $rendered_html,
         'has_content'   => '' !== trim( wp_strip_all_tags( $rendered_html ) ),
@@ -118,6 +128,12 @@ function display_settings_footer_text() {
     $active_template = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_template' )
         ? hws_get_footer_text_template()
         : 'whisper';
+    $active_alignment = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_alignment' )
+        ? hws_get_footer_text_alignment()
+        : 'center';
+    $alignments = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_alignments' )
+        ? hws_get_footer_text_alignments()
+        : [ 'left' => 'Left', 'center' => 'Center', 'right' => 'Right' ];
     $footer_text_raw = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_raw' )
         ? hws_get_footer_text_raw()
         : '';
@@ -423,10 +439,64 @@ function display_settings_footer_text() {
         <?php echo hws_get_footer_text_template_css( 'admin' ); ?>
         <?php echo hws_get_footer_text_template_css( 'admin-mini' ); ?>
 
+        .hws-ft-align-row {
+            display: inline-flex;
+            border: 1px solid #d7dbe0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+        }
+
+        .hws-ft-align-row label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #50575e;
+            cursor: pointer;
+            border-right: 1px solid #e7eaee;
+            background: #fff;
+            transition: background-color .15s ease, color .15s ease;
+            line-height: 1.2;
+        }
+
+        .hws-ft-align-row label:last-child { border-right: 0; }
+        .hws-ft-align-row label:hover { background: #f6f7f9; color: #1d2327; }
+
+        .hws-ft-align-row input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
+            margin: 0;
+        }
+
+        .hws-ft-align-row label:has(input:checked) {
+            background: linear-gradient(180deg, #f8fbff 0%, #eaf3ff 100%);
+            color: #135e96;
+            box-shadow: inset 0 0 0 1px #2271b1;
+        }
+
+        .hws-ft-align-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+        }
+
+        .hws-ft-align-icon svg { width: 14px; height: 14px; display: block; }
+
         @media (max-width: 600px) {
             .hws-ft-card { padding: 16px; }
             .hws-ft-header { gap: 14px; }
             .hws-ft-header-toggle { width: 100%; justify-content: space-between; }
+            .hws-ft-align-row { flex-wrap: wrap; }
+            .hws-ft-align-row label { flex: 1 1 0; justify-content: center; }
         }
     </style>
 
@@ -446,6 +516,26 @@ function display_settings_footer_text() {
         </div>
 
         <div class="hws-ft-card">
+            <h3 class="hws-ft-section-title">Alignment</h3>
+            <p class="hws-ft-section-help">Where the text sits within the band. Centered reads as a sign-off; left lines up with the start of your content; right works for short signatures or version stamps.</p>
+            <div class="hws-ft-align-row" role="radiogroup" aria-label="Footer text alignment">
+                <?php
+                $align_icons = [
+                    'left'   => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="10" y2="8"/><line x1="2" y1="12" x2="12" y2="12"/></svg>',
+                    'center' => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="4" y1="8" x2="12" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>',
+                    'right'  => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="4" y1="12" x2="14" y2="12"/></svg>',
+                ];
+                foreach ( $alignments as $align_key => $align_label ) : ?>
+                    <label>
+                        <span class="hws-ft-align-icon"><?php echo $align_icons[ $align_key ] ?? ''; ?></span>
+                        <input type="radio" name="hws-footer-text-alignment" value="<?php echo esc_attr( $align_key ); ?>" <?php checked( $active_alignment, $align_key ); ?>>
+                        <?php echo esc_html( $align_label ); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="hws-ft-card">
             <h3 class="hws-ft-section-title">Style</h3>
             <p class="hws-ft-section-help">Pick a template. Minimal styles disappear into the footer. Heavy styles render as bold dark bands. All extend the existing footer rather than sitting on top of it.</p>
             <div class="hws-ft-list" role="radiogroup" aria-label="Footer text style">
@@ -459,7 +549,7 @@ function display_settings_footer_text() {
                             </div>
                             <div class="hws-ft-item-desc"><?php echo esc_html( $template['description'] ); ?></div>
                         </div>
-                        <div class="hws-ft-item-mini hws-footer-text--<?php echo esc_attr( $template_key ); ?>" data-hws-mini="<?php echo esc_attr( $template_key ); ?>">
+                        <div class="hws-ft-item-mini hws-footer-text--<?php echo esc_attr( $template_key ); ?> hws-ft-align--<?php echo esc_attr( $active_alignment ); ?>" data-hws-mini="<?php echo esc_attr( $template_key ); ?>">
                             <?php if ( $footer_markup ) : ?>
                                 <?php echo $footer_markup; ?>
                             <?php else : ?>
@@ -501,7 +591,7 @@ function display_settings_footer_text() {
 
                 <div>
                     <h3 class="hws-ft-col-title">Live Preview</h3>
-                    <div class="hws-ft-preview hws-footer-text--<?php echo esc_attr( $active_template ); ?>" id="hws-footer-text-preview-live" aria-live="polite">
+                    <div class="hws-ft-preview hws-footer-text--<?php echo esc_attr( $active_template ); ?> hws-ft-align--<?php echo esc_attr( $active_alignment ); ?>" id="hws-footer-text-preview-live" aria-live="polite">
                         <?php if ( $footer_markup ) : ?>
                             <?php echo $footer_markup; ?>
                         <?php else : ?>
@@ -515,21 +605,28 @@ function display_settings_footer_text() {
 
     <script>
     jQuery(function($) {
-        var $toggle         = $('#hws-footer-text-feature-enabled');
-        var $templateInputs = $('input[name="hws-footer-text-template"]');
-        var $status         = $('#hws-footer-text-status');
-        var $saving         = $('#hws-footer-text-saving');
-        var $preview        = $('#hws-footer-text-preview-live');
-        var $miniPreviews   = $('.hws-ft-item-mini');
-        var $saveContent    = $('#hws-footer-text-save-content');
-        var $copyBtn        = $('#hws-footer-text-copy');
-        var templateMeta    = <?php echo wp_json_encode( $template_meta_for_js ); ?>;
-        var miniEmptyHtml   = '<span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>';
+        var $toggle          = $('#hws-footer-text-feature-enabled');
+        var $templateInputs  = $('input[name="hws-footer-text-template"]');
+        var $alignmentInputs = $('input[name="hws-footer-text-alignment"]');
+        var $status          = $('#hws-footer-text-status');
+        var $saving          = $('#hws-footer-text-saving');
+        var $preview         = $('#hws-footer-text-preview-live');
+        var $miniPreviews    = $('.hws-ft-item-mini');
+        var $saveContent     = $('#hws-footer-text-save-content');
+        var $copyBtn         = $('#hws-footer-text-copy');
+        var templateMeta     = <?php echo wp_json_encode( $template_meta_for_js ); ?>;
+        var miniEmptyHtml    = '<span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>';
+        var allAlignClasses  = 'hws-ft-align--left hws-ft-align--center hws-ft-align--right';
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
             $templateInputs.prop('disabled', isBusy);
+            $alignmentInputs.prop('disabled', isBusy);
             $saveContent.prop('disabled', isBusy);
+        }
+
+        function getSelectedAlignment() {
+            return $alignmentInputs.filter(':checked').val() || 'center';
         }
 
         function getEditorContent() {
@@ -553,11 +650,19 @@ function display_settings_footer_text() {
         }).join(' ');
 
         function applyPreviewTemplate() {
-            var template = getSelectedTemplate();
+            var template  = getSelectedTemplate();
+            var alignment = getSelectedAlignment();
             if (allTemplateClasses) {
                 $preview.removeClass(allTemplateClasses);
             }
+            $preview.removeClass(allAlignClasses);
             $preview.addClass('hws-footer-text--' + template);
+            $preview.addClass('hws-ft-align--' + alignment);
+        }
+
+        function applyAlignmentToMinis() {
+            var alignment = getSelectedAlignment();
+            $miniPreviews.removeClass(allAlignClasses).addClass('hws-ft-align--' + alignment);
         }
 
         function refreshMiniPreviews(html, hasContent) {
@@ -569,6 +674,7 @@ function display_settings_footer_text() {
                     $mini.html(miniEmptyHtml);
                 }
             });
+            applyAlignmentToMinis();
         }
 
         function refreshPreview(html, hasContent) {
@@ -606,13 +712,15 @@ function display_settings_footer_text() {
         }
 
         function saveFooterTextSettings(includeContent) {
-            var enabled  = $toggle.is(':checked') ? 1 : 0;
-            var template = getSelectedTemplate();
-            var payload  = {
+            var enabled   = $toggle.is(':checked') ? 1 : 0;
+            var template  = getSelectedTemplate();
+            var alignment = getSelectedAlignment();
+            var payload   = {
                 action: 'hws_footer_text_save_settings',
                 nonce: hwsNonce,
                 enabled: enabled,
-                template: template
+                template: template,
+                alignment: alignment
             };
 
             if (includeContent) payload.content = getEditorContent();
@@ -652,6 +760,13 @@ function display_settings_footer_text() {
 
         $templateInputs.on('change', function() {
             applyPreviewTemplate();
+            applyAlignmentToMinis();
+            saveFooterTextSettings(false);
+        });
+
+        $alignmentInputs.on('change', function() {
+            applyPreviewTemplate();
+            applyAlignmentToMinis();
             saveFooterTextSettings(false);
         });
 
@@ -691,6 +806,7 @@ function display_settings_footer_text() {
         });
 
         applyPreviewTemplate();
+        applyAlignmentToMinis();
         updatePreviewFromEditor();
         bindTinyMcePreview();
     });
