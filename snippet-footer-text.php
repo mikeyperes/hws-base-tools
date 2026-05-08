@@ -270,7 +270,7 @@ function hws_render_footer_text_in_footer() {
         <?php echo hws_get_footer_text_template_css( 'frontend' ); ?>
     </style>
     <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
-    <script id="hws-footer-text-script">
+    <script id="hws-footer-text-script" data-no-optimize="1" data-cfasync="false">
     (function() {
         var root = document.getElementById('hws-footer-text-root');
         if (!root) return;

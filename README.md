@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.13.1 (Current)
+### v10.13.2 (Current)
+- Footer Text injector script now opts out of LiteSpeed JS delay/optimization, so the saved footer text mounts into the real footer immediately instead of sitting below the footer until delayed JS fires
+
+### v10.13.1
 - Footer Text saves now purge frontend caches, so the live site updates immediately instead of waiting on a stale LiteSpeed snapshot
 - Saving the underlying Website Settings options page also purges cache for footer text changes made outside the Footer Text tab
 
