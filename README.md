@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.13.2 (Current)
+### v10.13.3 (Current)
+- Footer Text injector now avoids hidden Elementor footer containers and prefers visible footer inner wrappers like `.e-con-inner`, which fixes cases where the content mounted into a hidden footer section and never appeared on the live site
+
+### v10.13.2
 - Footer Text injector script now opts out of LiteSpeed JS delay/optimization, so the saved footer text mounts into the real footer immediately instead of sitting below the footer until delayed JS fires
 
 ### v10.13.1

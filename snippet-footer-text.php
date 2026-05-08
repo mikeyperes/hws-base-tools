@@ -214,6 +214,7 @@ function hws_render_footer_text_in_footer() {
             'footer',
         ],
         'innerSelectors' => [
+            '.e-con-inner',
             '.site-info',
             '.site-footer__inner',
             '.footer-inner',
@@ -286,7 +287,36 @@ function hws_render_footer_text_in_footer() {
         }
 
         function isUsable(node) {
-            return !!(node && document.body.contains(node) && node !== root);
+            return !!(node && document.body.contains(node) && node !== root && !hasHiddenAncestor(node));
+        }
+
+        function hasHiddenAncestor(node) {
+            var current = node;
+
+            while (current && current !== document.body) {
+                if (current.nodeType !== 1) {
+                    current = current.parentElement;
+                    continue;
+                }
+
+                if (current.hasAttribute('hidden') || current.getAttribute('aria-hidden') === 'true') {
+                    return true;
+                }
+
+                var className = current.getAttribute('class') || '';
+                if (/(^|\\s)(elementor-hidden-desktop|elementor-hidden-tablet|elementor-hidden-mobile|screen-reader-text|sr-only|hidden)(\\s|$)/.test(className)) {
+                    return true;
+                }
+
+                var style = (current.getAttribute('style') || '').replace(/\s+/g, '').toLowerCase();
+                if (style.indexOf('display:none') !== -1 || style.indexOf('visibility:hidden') !== -1) {
+                    return true;
+                }
+
+                current = current.parentElement;
+            }
+
+            return false;
         }
 
         function findFooterRoot() {
