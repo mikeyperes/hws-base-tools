@@ -110,7 +110,15 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.13.3 (Current)
+### v10.14.0 (Current)
+- Footer Text templates fully rewritten and remounted as a full-width band at the very bottom of the theme footer, so they read as a natural extension of the footer instead of a panel jammed into an existing column
+- Renamed and redesigned the entire 10-template set to a coherent intensity ladder: Whisper, Hairline, Colophon (minimal), Bookend, Keyline (light), Editorial, Broadsheet (medium), Marquee, Spotlight, Monolith (heavy)
+- Heavy templates now render as opaque dark bands with white-on-dark typography that work consistently regardless of the host theme footer colour
+- Link styling is enforced across templates with defensive overrides so theme-level a-tag rules can no longer break the band typography (font-size, weight, transform, letter-spacing now inherit from the template)
+- Each template card in the picker now shows a tier badge (minimal / light / medium / heavy) so the visual progression is obvious at a glance
+- Legacy template keys auto-migrate (boxed-card to keyline, pull-quote to spotlight, etc.) so existing sites keep working without admin intervention
+
+### v10.13.3
 - Footer Text injector now avoids hidden Elementor footer containers and prefers visible footer inner wrappers like `.e-con-inner`, which fixes cases where the content mounted into a hidden footer section and never appeared on the live site
 
 ### v10.13.2

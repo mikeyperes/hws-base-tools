@@ -5,8 +5,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Automatically render the Website Settings footer text near the site's
- * actual footer, with a quiet fallback when theme markup is inconsistent.
+ * Auto-injects the saved Footer Text as a full-width band at the very bottom
+ * of the theme footer. Each template is its own self-contained section so it
+ * reads as a natural continuation of the footer, not an inset panel.
  */
 function enable_footer_text_auto_injection() {
     if ( is_admin() || ! hws_is_footer_text_feature_enabled() ) {
@@ -24,124 +25,205 @@ function hws_is_footer_text_feature_enabled(): bool {
     return (bool) get_option( 'hws_footer_text_feature_enabled', false );
 }
 
+/**
+ * Map legacy template keys to the redesigned set so saved selections keep
+ * working without the user touching anything.
+ */
+function hws_footer_text_legacy_template_map(): array {
+    return [
+        'quiet-inline'   => 'whisper',
+        'fine-divider'   => 'hairline',
+        'fine-print'     => 'colophon',
+        'boxed-card'     => 'keyline',
+        'accent-bar'     => 'bookend',
+        'stamp'          => 'marquee',
+        'italic-tagline' => 'editorial',
+        'two-column'     => 'broadsheet',
+        'pull-quote'     => 'spotlight',
+        'soft-shadow'    => 'monolith',
+    ];
+}
+
 function hws_get_footer_text_templates(): array {
     return [
-        'quiet-inline' => [
-            'label'       => 'Plain',
-            'description' => 'Bare minimum. No framing, no box, just the saved copy sitting cleanly in the footer.',
+        'whisper' => [
+            'label'       => 'Whisper',
+            'description' => 'Bare text, transparent, blends into the footer. The quietest possible sign-off.',
+            'tier'        => 'minimal',
         ],
-        'fine-divider' => [
-            'label'       => 'Top Divider',
-            'description' => 'Refined top rule with breathing room, for a quiet but finished footer edge.',
+        'hairline' => [
+            'label'       => 'Hairline',
+            'description' => 'A single thin rule above the text. Adds the lightest touch of structure without weight.',
+            'tier'        => 'minimal',
         ],
-        'fine-print' => [
-            'label'       => 'Legal Small',
-            'description' => 'Small centered legal-copy treatment with softer contrast and tighter discipline.',
+        'colophon' => [
+            'label'       => 'Colophon',
+            'description' => 'Small caps with wide tracking framed by short rules, like the imprint on the back of a book.',
+            'tier'        => 'minimal',
         ],
-        'boxed-card' => [
-            'label'       => 'Soft Panel',
-            'description' => 'Rounded panel with a soft surface and subtle depth, without turning into a banner.',
+        'bookend' => [
+            'label'       => 'Bookend',
+            'description' => 'Centered text held between two thin rules, top and bottom. Calm and balanced.',
+            'tier'        => 'light',
         ],
-        'accent-bar' => [
-            'label'       => 'Signature Bar',
-            'description' => 'Short accent rule above the text for a sharper, more intentional sign-off.',
+        'keyline' => [
+            'label'       => 'Keyline',
+            'description' => 'Soft tinted band with a crisp accent line on top. Quietly intentional.',
+            'tier'        => 'light',
         ],
-        'stamp' => [
-            'label'       => 'Micro Stamp',
-            'description' => 'Compact uppercase capsule with tracking, useful when the footer needs to feel branded.',
+        'editorial' => [
+            'label'       => 'Editorial',
+            'description' => 'Serif italic in the center with a single hairline above. A magazine-style closing line.',
+            'tier'        => 'medium',
         ],
-        'italic-tagline' => [
-            'label'       => 'Editorial Line',
-            'description' => 'Centered italic line with a little poise, like a restrained editorial closing note.',
+        'broadsheet' => [
+            'label'       => 'Broadsheet',
+            'description' => 'Newspaper-style band with rules above and below. Long copy breaks into columns on wide screens.',
+            'tier'        => 'medium',
         ],
-        'two-column' => [
-            'label'       => 'Journal Columns',
-            'description' => 'Longer copy breaks into neat columns on wide screens, with a restrained publication feel.',
+        'marquee' => [
+            'label'       => 'Marquee',
+            'description' => 'Bold dark band with confident centered type. Strong, branded sign-off.',
+            'tier'        => 'heavy',
         ],
-        'pull-quote' => [
-            'label'       => 'Side Note',
-            'description' => 'Inline-note treatment with a left rail and slightly elevated voice.',
+        'spotlight' => [
+            'label'       => 'Spotlight',
+            'description' => 'Dramatic dark band with a soft center glow. Built to draw the eye.',
+            'tier'        => 'heavy',
         ],
-        'soft-shadow' => [
-            'label'       => 'Elevated Card',
-            'description' => 'The most designed option: rounded, lifted, and polished without looking loud.',
+        'monolith' => [
+            'label'       => 'Monolith',
+            'description' => 'Solid black slab with a precise white accent. The most decisive option.',
+            'tier'        => 'heavy',
         ],
     ];
 }
 
 /**
- * Returns per-template CSS as a string. Single source of truth so the admin
- * Live Preview and the frontend renderer cannot disagree.
+ * Single source of truth for template CSS. Used by the live frontend, the
+ * settings preview, and each compact preview tile in the picker.
  *
- * @param string $scope 'frontend' for the live site (#hws-footer-text-root)
- *                      or 'admin' for the settings preview (.hws-ft-preview).
+ * @param string $scope 'frontend' targets #hws-footer-text-root,
+ *                      'admin' targets .hws-ft-preview,
+ *                      'admin-mini' targets .hws-ft-item-mini.
  */
 function hws_get_footer_text_template_css( string $scope = 'frontend' ): string {
     if ( 'admin-mini' === $scope ) {
         $prefix = '.hws-ft-item-mini';
+        $is_admin = true;
+        $is_mini  = true;
     } elseif ( 'admin' === $scope ) {
         $prefix = '.hws-ft-preview';
+        $is_admin = true;
+        $is_mini  = false;
     } else {
         $prefix = '#hws-footer-text-root';
+        $is_admin = false;
+        $is_mini  = false;
     }
-
-    $is_admin_scope = in_array( $scope, [ 'admin', 'admin-mini' ], true );
-    $is_mini_scope  = 'admin-mini' === $scope;
 
     $rule = function( string $key ) use ( $prefix ): string {
         return $prefix . '.hws-footer-text--' . $key;
     };
 
-    $line_color       = $is_admin_scope ? 'rgba(15, 23, 42, 0.18)' : 'rgba(15, 23, 42, 0.14)';
-    $frame_color      = $is_admin_scope ? 'rgba(15, 23, 42, 0.10)' : 'rgba(15, 23, 42, 0.13)';
-    $surface_soft     = $is_admin_scope ? 'rgba(15, 23, 42, 0.04)' : 'rgba(15, 23, 42, 0.06)';
-    $surface_strong   = $is_admin_scope ? 'rgba(15, 23, 42, 0.065)' : 'rgba(15, 23, 42, 0.085)';
-    $shadow_soft      = $is_mini_scope ? '0 8px 18px rgba(15, 23, 42, 0.06)' : '0 16px 34px rgba(15, 23, 42, 0.08)';
-    $shadow_strong    = $is_mini_scope ? '0 12px 22px rgba(15, 23, 42, 0.09)' : '0 22px 48px rgba(15, 23, 42, 0.14)';
-    $panel_padding    = $is_mini_scope ? '0.8rem 1rem' : '1rem 1.2rem';
-    $card_padding     = $is_mini_scope ? '0.95rem 1.05rem' : '1.15rem 1.35rem';
-    $panel_radius     = $is_mini_scope ? '14px' : '18px';
-    $card_radius      = $is_mini_scope ? '16px' : '22px';
-    $column_gap       = $is_mini_scope ? '1.4rem' : '2.2rem';
-    $bar_width        = $is_mini_scope ? '54px' : '68px';
-    $center_bar_width = $is_mini_scope ? '42px' : '54px';
+    // Padding tunings: admin-mini keeps the previews compact, admin (live preview)
+    // and frontend get the full breathing room.
+    $pad_minimal  = $is_mini ? '0.7rem 0.9rem' : ( $is_admin ? '1.1rem 1.25rem' : '1.2rem 1.5rem' );
+    $pad_light    = $is_mini ? '0.85rem 0.95rem' : ( $is_admin ? '1.3rem 1.4rem' : '1.5rem 1.5rem' );
+    $pad_medium   = $is_mini ? '0.95rem 1rem' : ( $is_admin ? '1.45rem 1.4rem' : '1.7rem 1.5rem' );
+    $pad_heavy    = $is_mini ? '1.05rem 1rem' : ( $is_admin ? '1.6rem 1.4rem' : '1.9rem 1.5rem' );
+    $pad_monolith = $is_mini ? '1.1rem 1rem' : ( $is_admin ? '1.7rem 1.4rem' : '2.1rem 1.5rem' );
+
+    $rule_short_w = $is_mini ? '28px' : '48px';
+    $rule_long_w  = $is_mini ? '40px' : '64px';
+    $accent_w     = $is_mini ? '54px' : '80px';
+
+    $col_gap = $is_mini ? '1.4rem' : '2.4rem';
 
     $css = '';
 
-    $css .= $rule( 'quiet-inline' ) . " { max-width: 42rem; opacity: 0.8; }\n";
+    // ---- WHISPER ------------------------------------------------------------
+    $css .= $rule( 'whisper' ) . " { display:block; padding:" . $pad_minimal . "; text-align:center; font-size:" . ( $is_mini ? '0.78em' : '0.86em' ) . "; line-height:1.7; opacity:0.72; letter-spacing:0.005em; }\n";
 
-    $css .= $rule( 'fine-divider' ) . " { max-width: 40rem; padding-top: 1.05rem; position: relative; }\n";
-    $css .= $rule( 'fine-divider' ) . "::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: " . $line_color . "; }\n";
-    $css .= $rule( 'fine-divider' ) . "::after { content: ''; position: absolute; top: 0; left: 0; width: " . $bar_width . "; height: 2px; border-radius: 999px; background: currentColor; opacity: 0.4; }\n";
+    // ---- HAIRLINE -----------------------------------------------------------
+    $css .= $rule( 'hairline' ) . " { display:block; position:relative; padding:" . $pad_minimal . "; text-align:center; font-size:" . ( $is_mini ? '0.8em' : '0.88em' ) . "; line-height:1.7; opacity:0.85; }\n";
+    $css .= $rule( 'hairline' ) . "::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:min(640px, 78%); height:1px; background:currentColor; opacity:0.18; }\n";
 
-    $css .= $rule( 'fine-print' ) . " { max-width: 38rem; margin-inline: auto; font-size: 0.79em; line-height: 1.9; text-align: center; letter-spacing: 0.01em; opacity: 0.68; }\n";
+    // ---- COLOPHON -----------------------------------------------------------
+    $css .= $rule( 'colophon' ) . " { display:block; padding:" . $pad_light . "; text-align:center; font-size:" . ( $is_mini ? '0.62em' : '0.7em' ) . "; letter-spacing:0.22em; text-transform:uppercase; line-height:2.1; opacity:0.7; font-weight:500; }\n";
+    $css .= $rule( 'colophon' ) . "::before, " . $rule( 'colophon' ) . "::after { content:''; display:block; width:" . $rule_short_w . "; height:1px; background:currentColor; opacity:0.42; margin:0 auto; }\n";
+    $css .= $rule( 'colophon' ) . "::before { margin-bottom:" . ( $is_mini ? '0.55rem' : '0.85rem' ) . "; }\n";
+    $css .= $rule( 'colophon' ) . "::after  { margin-top:"  . ( $is_mini ? '0.55rem' : '0.85rem' ) . "; }\n";
 
-    $css .= $rule( 'boxed-card' ) . " { max-width: 44rem; margin-inline: auto; padding: " . $panel_padding . "; border-radius: " . $panel_radius . "; border: 1px solid " . $frame_color . "; background: linear-gradient(180deg, " . $surface_soft . " 0%, " . $surface_strong . " 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48), " . $shadow_soft . "; }\n";
+    // ---- BOOKEND ------------------------------------------------------------
+    $css .= $rule( 'bookend' ) . " { display:block; position:relative; padding:" . $pad_light . "; text-align:center; font-size:" . ( $is_mini ? '0.84em' : '0.94em' ) . "; line-height:1.75; }\n";
+    $css .= $rule( 'bookend' ) . "::before, " . $rule( 'bookend' ) . "::after { content:''; position:absolute; left:0; right:0; height:1px; background:currentColor; opacity:0.2; }\n";
+    $css .= $rule( 'bookend' ) . "::before { top:0; }\n";
+    $css .= $rule( 'bookend' ) . "::after  { bottom:0; }\n";
 
-    $css .= $rule( 'accent-bar' ) . " { max-width: 36rem; padding-top: 1rem; position: relative; }\n";
-    $css .= $rule( 'accent-bar' ) . "::before { content: ''; position: absolute; top: 0; left: 0; width: " . $bar_width . "; height: 3px; background: currentColor; opacity: 0.78; border-radius: 999px; }\n";
+    // ---- KEYLINE ------------------------------------------------------------
+    $css .= $rule( 'keyline' ) . " { display:block; position:relative; padding:" . $pad_light . "; text-align:center; font-size:" . ( $is_mini ? '0.86em' : '0.96em' ) . "; line-height:1.75; background:rgba(0,0,0,0.07); }\n";
+    $css .= $rule( 'keyline' ) . "::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:" . $accent_w . "; height:2px; background:currentColor; opacity:0.55; border-radius:0 0 2px 2px; }\n";
 
-    $css .= $rule( 'stamp' ) . " { max-width: 30rem; margin-inline: auto; padding: 0.55rem 0.95rem; border-radius: 999px; border: 1px solid " . $frame_color . "; background: " . $surface_soft . "; font-size: 0.72em; letter-spacing: 0.22em; text-transform: uppercase; text-align: center; line-height: 1.8; opacity: 0.82; font-weight: 600; }\n";
+    // ---- EDITORIAL ----------------------------------------------------------
+    $css .= $rule( 'editorial' ) . " { display:block; position:relative; padding:" . $pad_medium . "; text-align:center; font-family:Georgia, 'Times New Roman', 'Source Serif Pro', serif; font-style:italic; font-size:" . ( $is_mini ? '0.95em' : '1.06em' ) . "; line-height:1.8; opacity:0.94; }\n";
+    $css .= $rule( 'editorial' ) . "::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:" . $rule_long_w . "; height:1px; background:currentColor; opacity:0.45; }\n";
 
-    $css .= $rule( 'italic-tagline' ) . " { max-width: 34rem; margin-inline: auto; padding-top: 0.95rem; position: relative; font-size: 1.05em; font-style: italic; text-align: center; line-height: 1.8; opacity: 0.92; }\n";
-    $css .= $rule( 'italic-tagline' ) . "::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: " . $center_bar_width . "; height: 1px; background: currentColor; opacity: 0.3; }\n";
+    // ---- BROADSHEET ---------------------------------------------------------
+    $css .= $rule( 'broadsheet' ) . " { display:block; position:relative; padding:" . $pad_medium . "; font-family:Georgia, 'Times New Roman', 'Source Serif Pro', serif; font-size:" . ( $is_mini ? '0.88em' : '1em' ) . "; line-height:1.85; text-align:center; letter-spacing:0.005em; hyphens:auto; }\n";
+    $css .= $rule( 'broadsheet' ) . " > * { max-width:" . ( $is_mini ? 'none' : '780px' ) . "; margin-left:auto; margin-right:auto; }\n";
+    $css .= $rule( 'broadsheet' ) . "::before, " . $rule( 'broadsheet' ) . "::after { content:''; position:absolute; left:" . ( $is_mini ? '8%' : '15%' ) . "; right:" . ( $is_mini ? '8%' : '15%' ) . "; height:1px; background:currentColor; opacity:0.3; }\n";
+    $css .= $rule( 'broadsheet' ) . "::before { top:0; }\n";
+    $css .= $rule( 'broadsheet' ) . "::after  { bottom:0; }\n";
 
-    $css .= $rule( 'two-column' ) . " { max-width: 48rem; margin-inline: auto; font-size: 0.92em; line-height: 1.85; }\n";
-    $css .= "@media (min-width: 720px) { " . $rule( 'two-column' ) . " { column-count: 2; column-gap: " . $column_gap . "; column-rule: 1px solid " . $line_color . "; } }\n";
+    // ---- MARQUEE ------------------------------------------------------------
+    $css .= $rule( 'marquee' ) . " { display:block; position:relative; padding:" . $pad_heavy . "; text-align:center; font-size:" . ( $is_mini ? '0.78em' : '0.94em' ) . "; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; line-height:1.7; background:#111111; color:rgba(255,255,255,0.92); }\n";
+    $css .= $rule( 'marquee' ) . "::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%); }\n";
 
-    $css .= $rule( 'pull-quote' ) . " { max-width: 40rem; margin-inline: auto; padding: 0.45rem 0 0.45rem 1.05rem; border-left: 3px solid currentColor; background: linear-gradient(90deg, " . $surface_soft . " 0%, rgba(15, 23, 42, 0) 68%); font-size: 1.02em; line-height: 1.8; font-style: italic; opacity: 0.93; }\n";
+    // ---- SPOTLIGHT ----------------------------------------------------------
+    $css .= $rule( 'spotlight' ) . " { display:block; position:relative; padding:" . $pad_heavy . "; text-align:center; font-size:" . ( $is_mini ? '0.86em' : '1.04em' ) . "; font-weight:500; letter-spacing:0.02em; line-height:1.7; background:radial-gradient(ellipse at center, #2a2a2a 0%, #141414 60%, #0a0a0a 100%); color:rgba(255,255,255,0.95); overflow:hidden; }\n";
+    $css .= $rule( 'spotlight' ) . "::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%); pointer-events:none; }\n";
 
-    $css .= $rule( 'soft-shadow' ) . " { max-width: 44rem; margin-inline: auto; padding: " . $card_padding . "; border-radius: " . $card_radius . "; border: 1px solid rgba(255, 255, 255, 0.22); background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), " . $shadow_strong . "; backdrop-filter: blur(10px); }\n";
+    // ---- MONOLITH -----------------------------------------------------------
+    $css .= $rule( 'monolith' ) . " { display:block; position:relative; padding:" . $pad_monolith . "; text-align:center; font-size:" . ( $is_mini ? '0.84em' : '1em' ) . "; font-weight:500; line-height:1.75; background:#000000; color:#f4f4f5; letter-spacing:0.01em; }\n";
+    $css .= $rule( 'monolith' ) . "::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:" . $accent_w . "; height:" . ( $is_mini ? '3px' : '4px' ) . "; background:#ffffff; }\n";
+
+    // ---- LINK STYLING (default for inheriting templates) --------------------
+    // Defensive overrides — themes commonly target <a> tags with large
+    // font-size, weight, transform, etc., which would distort the band.
+    $css .= $prefix . " a { color:inherit !important; font-size:inherit !important; font-weight:500 !important; font-family:inherit !important; line-height:inherit !important; text-transform:inherit !important; letter-spacing:inherit !important; text-decoration:none !important; border-bottom:1px solid currentColor; padding-bottom:1px; transition:opacity .18s ease, border-color .18s ease, color .18s ease, background-size .18s ease; opacity:0.85; box-shadow:none !important; background:none; }\n";
+    $css .= $prefix . " a:hover, " . $prefix . " a:focus { opacity:1; border-bottom-color:currentColor; }\n";
+
+    // Light/medium templates: gentler underline so links don't shout.
+    foreach ( [ 'whisper', 'hairline', 'colophon', 'bookend', 'keyline', 'editorial', 'broadsheet' ] as $key ) {
+        $css .= $rule( $key ) . " a { border-bottom-color:transparent !important; background-image:linear-gradient(currentColor, currentColor) !important; background-repeat:no-repeat !important; background-size:100% 1px !important; background-position:0 100% !important; opacity:0.85; }\n";
+        $css .= $rule( $key ) . " a:hover, " . $rule( $key ) . " a:focus { opacity:1; background-size:100% 2px !important; }\n";
+    }
+
+    // Heavy templates: white-on-dark links with refined underline.
+    foreach ( [ 'marquee', 'spotlight', 'monolith' ] as $key ) {
+        $css .= $rule( $key ) . " a { color:#ffffff !important; border-bottom:1px solid rgba(255,255,255,0.55) !important; background:none !important; padding-bottom:2px; opacity:0.96; }\n";
+        $css .= $rule( $key ) . " a:hover, " . $rule( $key ) . " a:focus { border-bottom-color:#ffffff !important; opacity:1; }\n";
+    }
 
     return $css;
 }
 
 function hws_get_footer_text_template(): string {
     $templates = hws_get_footer_text_templates();
-    $template  = get_option( 'hws_footer_text_template', 'quiet-inline' );
+    $template  = get_option( 'hws_footer_text_template', 'whisper' );
 
-    if ( ! is_string( $template ) || ! isset( $templates[ $template ] ) ) {
-        return 'quiet-inline';
+    if ( ! is_string( $template ) ) {
+        return 'whisper';
+    }
+
+    $legacy = hws_footer_text_legacy_template_map();
+    if ( isset( $legacy[ $template ] ) ) {
+        $template = $legacy[ $template ];
+    }
+
+    if ( ! isset( $templates[ $template ] ) ) {
+        return 'whisper';
     }
 
     return $template;
@@ -213,18 +295,6 @@ function hws_render_footer_text_in_footer() {
             '[role="contentinfo"]',
             'footer',
         ],
-        'innerSelectors' => [
-            '.e-con-inner',
-            '.site-info',
-            '.site-footer__inner',
-            '.footer-inner',
-            '.footer-content',
-            '.footer-widgets-wrap',
-            '.elementor-container',
-            '.ast-builder-grid-row',
-            '.container',
-            '.wrap',
-        ],
         'template' => $template,
     ];
     ?>
@@ -234,43 +304,26 @@ function hws_render_footer_text_in_footer() {
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
-            flex-basis: 100%;
-            grid-column: 1 / -1;
-            margin: 0.9rem 0 0;
-            font-size: 0.95em;
-            line-height: 1.65;
+            margin: 0;
             color: inherit;
-            text-align: inherit;
+            font-family: inherit;
         }
 
         #hws-footer-text-root p {
-            margin: 0 0 0.6em;
+            margin: 0 0 0.55em;
         }
 
         #hws-footer-text-root p:last-child {
             margin-bottom: 0;
         }
 
-        #hws-footer-text-root a {
-            color: inherit;
-            text-decoration: underline;
-            text-underline-offset: 0.12em;
-        }
-
         #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"] {
-            padding: 0 1rem 1rem;
-        }
-
-        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--fine-divider,
-        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--accent-bar,
-        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--boxed-card,
-        #hws-footer-text-root[data-hws-footer-text-placement="body-fallback"].hws-footer-text--soft-shadow {
-            margin-top: 1rem;
+            margin-top: 0;
         }
 
         <?php echo hws_get_footer_text_template_css( 'frontend' ); ?>
     </style>
-    <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
+    <div id="hws-footer-text-root" class="hws-footer-text--<?php echo esc_attr( $template ); ?>" data-hws-footer-text-template="<?php echo esc_attr( $template ); ?>" data-hws-footer-text-placement="pending"><?php echo $footer_html; ?></div>
     <script id="hws-footer-text-script" data-no-optimize="1" data-cfasync="false">
     (function() {
         var root = document.getElementById('hws-footer-text-root');
@@ -278,7 +331,6 @@ function hws_render_footer_text_in_footer() {
 
         var config = <?php echo wp_json_encode( $config ); ?> || {};
         var footerSelectors = config.footerSelectors || [];
-        var innerSelectors = config.innerSelectors || [];
         var plainText = normalize(config.plainText || root.textContent || '');
         var observer = null;
 
@@ -304,7 +356,7 @@ function hws_render_footer_text_in_footer() {
                 }
 
                 var className = current.getAttribute('class') || '';
-                if (/(^|\\s)(elementor-hidden-desktop|elementor-hidden-tablet|elementor-hidden-mobile|screen-reader-text|sr-only|hidden)(\\s|$)/.test(className)) {
+                if (/(^|\s)(elementor-hidden-desktop|elementor-hidden-tablet|elementor-hidden-mobile|screen-reader-text|sr-only|hidden)(\s|$)/.test(className)) {
                     return true;
                 }
 
@@ -332,21 +384,6 @@ function hws_render_footer_text_in_footer() {
             return null;
         }
 
-        function findInnerTarget(footerRoot) {
-            if (!footerRoot) return null;
-
-            for (var i = 0; i < innerSelectors.length; i++) {
-                var nodes = footerRoot.querySelectorAll(innerSelectors[i]);
-                for (var j = nodes.length - 1; j >= 0; j--) {
-                    if (isUsable(nodes[j]) && !nodes[j].contains(root)) {
-                        return nodes[j];
-                    }
-                }
-            }
-
-            return footerRoot;
-        }
-
         function footerAlreadyContainsText(footerRoot) {
             if (!footerRoot || !plainText) return false;
             if (footerRoot.contains(root)) return false;
@@ -369,10 +406,10 @@ function hws_render_footer_text_in_footer() {
                     return true;
                 }
 
-                var target = findInnerTarget(footerRoot);
-
-                if (target && root.parentNode !== target) {
-                    target.appendChild(root);
+                if (root.parentNode !== footerRoot) {
+                    footerRoot.appendChild(root);
+                } else if (footerRoot.lastChild !== root) {
+                    footerRoot.appendChild(root);
                 }
 
                 setPlacement('footer');

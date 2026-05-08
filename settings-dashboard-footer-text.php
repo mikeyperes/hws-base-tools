@@ -61,14 +61,22 @@ function ajax_save_footer_text_settings() {
     hws_require_ajax_nonce_or_error();
 
     $enabled  = ! empty( $_POST['enabled'] );
-    $template = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'quiet-inline';
+    $template = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'whisper';
     $content  = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : null;
     $templates = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_templates' )
         ? hws_get_footer_text_templates()
         : [];
 
+    // Migrate legacy keys before validating.
+    if ( function_exists( __NAMESPACE__ . '\\hws_footer_text_legacy_template_map' ) ) {
+        $legacy = hws_footer_text_legacy_template_map();
+        if ( isset( $legacy[ $template ] ) ) {
+            $template = $legacy[ $template ];
+        }
+    }
+
     if ( ! isset( $templates[ $template ] ) ) {
-        $template = 'quiet-inline';
+        $template = 'whisper';
     }
 
     update_option( 'hws_footer_text_feature_enabled', $enabled ? '1' : '0' );
@@ -87,7 +95,7 @@ function ajax_save_footer_text_settings() {
     wp_send_json_success( [
         'enabled'       => $enabled,
         'template'      => $template,
-        'label'         => $templates[ $template ]['label'] ?? 'Plain',
+        'label'         => $templates[ $template ]['label'] ?? 'Whisper',
         'rendered_html' => $rendered_html,
         'has_content'   => '' !== trim( wp_strip_all_tags( $rendered_html ) ),
     ] );
@@ -109,7 +117,7 @@ function display_settings_footer_text() {
         : [];
     $active_template = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_template' )
         ? hws_get_footer_text_template()
-        : 'quiet-inline';
+        : 'whisper';
     $footer_text_raw = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_raw' )
         ? hws_get_footer_text_raw()
         : '';
@@ -123,6 +131,7 @@ function display_settings_footer_text() {
         $template_meta_for_js[ $key ] = [
             'label'       => $template['label'] ?? '',
             'description' => $template['description'] ?? '',
+            'tier'        => $template['tier'] ?? 'minimal',
         ];
     }
     ?>
@@ -206,7 +215,7 @@ function display_settings_footer_text() {
 
         .hws-ft-item {
             display: grid;
-            grid-template-columns: 22px minmax(180px, 1.1fr) minmax(0, 1.6fr);
+            grid-template-columns: 22px minmax(180px, 1.05fr) minmax(0, 1.7fr);
             align-items: center;
             gap: 20px;
             padding: 15px 18px;
@@ -242,31 +251,56 @@ function display_settings_footer_text() {
             font-size: 14px;
             color: #1d2327;
             line-height: 1.35;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .hws-ft-item-tier {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border: 1px solid currentColor;
+            line-height: 1.4;
+        }
+
+        .hws-ft-item-tier[data-tier="minimal"] { color: #6b7280; }
+        .hws-ft-item-tier[data-tier="light"]   { color: #4b5563; }
+        .hws-ft-item-tier[data-tier="medium"]  { color: #2563eb; }
+        .hws-ft-item-tier[data-tier="heavy"]   { color: #111827; }
 
         .hws-ft-item:has(input:checked) .hws-ft-item-name { color: #135e96; }
 
         .hws-ft-item-desc {
             font-size: 12.5px;
             color: #646970;
-            margin-top: 3px;
+            margin-top: 4px;
             line-height: 1.55;
         }
 
+        /* Preview tile container — no padding, no bg; templates own their own surface. */
         .hws-ft-item-mini {
             border: 1px solid #e7eaee;
             border-radius: 12px;
-            padding: 14px 18px;
             background: linear-gradient(180deg, #fcfcfd 0%, #f7f8fa 100%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
             color: #1d2327;
             font-size: 13px;
             line-height: 1.6;
             overflow: hidden;
             min-width: 0;
-            min-height: 74px;
+            min-height: 90px;
             box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
+
+        .hws-ft-item-mini > * { width: 100%; }
 
         .hws-ft-item-mini p { margin: 0 0 0.4em; }
         .hws-ft-item-mini p:last-child { margin-bottom: 0; }
@@ -275,6 +309,7 @@ function display_settings_footer_text() {
             color: #8a8f94;
             font-style: italic;
             font-size: 12.5px;
+            padding: 18px 18px;
         }
 
         @media (max-width: 720px) {
@@ -355,36 +390,38 @@ function display_settings_footer_text() {
             border-color: #116329;
         }
 
+        /* Live Preview tile — same approach: tile container, template owns surface. */
         .hws-ft-preview {
             border: 1px solid #d7dbe0;
             border-radius: 16px;
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%);
-            padding: 22px 24px;
-            min-height: 170px;
+            min-height: 180px;
             color: #1d2327;
             font-size: 14px;
             line-height: 1.65;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 12px 26px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
         }
+
+        .hws-ft-preview > * { width: 100%; }
 
         .hws-ft-preview p { margin: 0 0 0.6em; }
         .hws-ft-preview p:last-child { margin-bottom: 0; }
-
-        .hws-ft-preview a {
-            color: #2271b1;
-            text-decoration: underline;
-            text-underline-offset: 0.12em;
-        }
-
-        <?php echo hws_get_footer_text_template_css( 'admin' ); ?>
-        <?php echo hws_get_footer_text_template_css( 'admin-mini' ); ?>
 
         .hws-ft-preview-empty {
             color: #8a8f94;
             font-size: 13px;
             font-style: italic;
             line-height: 1.6;
+            padding: 22px 24px;
         }
+
+        <?php echo hws_get_footer_text_template_css( 'admin' ); ?>
+        <?php echo hws_get_footer_text_template_css( 'admin-mini' ); ?>
 
         @media (max-width: 600px) {
             .hws-ft-card { padding: 16px; }
@@ -398,7 +435,7 @@ function display_settings_footer_text() {
         <div class="hws-ft-card hws-ft-header">
             <div class="hws-ft-header-text">
                 <h2>Footer Text</h2>
-                <p class="hws-ft-tagline">Edit the footer text, choose a style, and toggle whether it shows on the live site.</p>
+                <p class="hws-ft-tagline">Edit the footer text, choose a style, and toggle whether it shows on the live site. The selected style renders as a full-width band at the very bottom of the footer.</p>
             </div>
             <div class="hws-ft-header-toggle">
                 <span class="hws-ft-status-text <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status">
@@ -410,13 +447,16 @@ function display_settings_footer_text() {
 
         <div class="hws-ft-card">
             <h3 class="hws-ft-section-title">Style</h3>
-            <p class="hws-ft-section-help">Pick a template. Some stay nearly invisible. Others add structure and polish without making the footer feel like a promo block.</p>
+            <p class="hws-ft-section-help">Pick a template. Minimal styles disappear into the footer. Heavy styles render as bold dark bands. All extend the existing footer rather than sitting on top of it.</p>
             <div class="hws-ft-list" role="radiogroup" aria-label="Footer text style">
                 <?php foreach ( $templates as $template_key => $template ) : ?>
                     <label class="hws-ft-item">
                         <input type="radio" name="hws-footer-text-template" value="<?php echo esc_attr( $template_key ); ?>" <?php checked( $active_template, $template_key ); ?>>
                         <div class="hws-ft-item-body">
-                            <div class="hws-ft-item-name"><?php echo esc_html( $template['label'] ); ?></div>
+                            <div class="hws-ft-item-name">
+                                <?php echo esc_html( $template['label'] ); ?>
+                                <span class="hws-ft-item-tier" data-tier="<?php echo esc_attr( $template['tier'] ?? 'minimal' ); ?>"><?php echo esc_html( $template['tier'] ?? 'minimal' ); ?></span>
+                            </div>
                             <div class="hws-ft-item-desc"><?php echo esc_html( $template['description'] ); ?></div>
                         </div>
                         <div class="hws-ft-item-mini hws-footer-text--<?php echo esc_attr( $template_key ); ?>" data-hws-mini="<?php echo esc_attr( $template_key ); ?>">
@@ -500,7 +540,7 @@ function display_settings_footer_text() {
         }
 
         function getSelectedTemplate() {
-            return $templateInputs.filter(':checked').val() || 'quiet-inline';
+            return $templateInputs.filter(':checked').val() || 'whisper';
         }
 
         function hasMeaningfulContent(html) {
