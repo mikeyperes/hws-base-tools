@@ -110,7 +110,8 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.3 (Current)
+### v10.14.4 (Current)
+- Fixed GitHub version checks to bypass stale cached raw responses when WordPress fetches the updater metadata.
 - Fixed updater folder normalization so WordPress installs into `hws-base-tools` instead of `hws-base-tools-main`.
 - Fixed footer text rendering to avoid Elementor replacing the saved footer text with full page content.
 

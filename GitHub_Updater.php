@@ -246,7 +246,11 @@ class WP_GitHub_Updater {
         }
 
         // Fetch the main plugin file from GitHub
-        $url = trailingslashit( $this->config['raw_url'] ) . $this->config['plugin_starter_file'];
+        $url = add_query_arg(
+            'cb',
+            gmdate( 'YmdHi' ),
+            trailingslashit( $this->config['raw_url'] ) . $this->config['plugin_starter_file']
+        );
         
         $response = wp_remote_get( $url, [
             'sslverify' => $this->config['sslverify'],

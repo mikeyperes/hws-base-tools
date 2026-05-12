@@ -345,7 +345,11 @@ function ajax_force_update_check() {
  * Get GitHub version WITHOUT using cache (force fresh)
  */
 function hws_get_github_version_fresh( $repo, $branch = 'main' ) {
-    $url = 'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php';
+    $url = add_query_arg(
+        'cb',
+        time(),
+        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php'
+    );
     
     $response = wp_remote_get( $url, [
         'timeout'   => 15,
@@ -650,7 +654,11 @@ function hws_get_github_version( $repo, $branch = 'main' ) {
         return $cached;
     }
     
-    $url = 'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php';
+    $url = add_query_arg(
+        'cb',
+        gmdate( 'YmdHi' ),
+        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php'
+    );
     
     $response = wp_remote_get( $url, [
         'timeout'   => 10,
