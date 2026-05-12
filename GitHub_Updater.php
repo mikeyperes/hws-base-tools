@@ -248,7 +248,7 @@ class WP_GitHub_Updater {
         // Fetch the main plugin file from GitHub
         $url = add_query_arg(
             'cb',
-            gmdate( 'YmdHi' ),
+            time(),
             trailingslashit( $this->config['raw_url'] ) . $this->config['plugin_starter_file']
         );
         

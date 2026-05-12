@@ -656,7 +656,7 @@ function hws_get_github_version( $repo, $branch = 'main' ) {
     
     $url = add_query_arg(
         'cb',
-        gmdate( 'YmdHi' ),
+        time(),
         'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php'
     );
     
