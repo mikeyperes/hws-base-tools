@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.1 (Current)
+### v10.14.2 (Current)
+- Version bump to `10.14.2`.
+
+### v10.14.1
 - Footer Text now supports per-band alignment: Left, Center, or Right. The choice applies to any of the 10 templates.
 - Decorative accents shift to match the alignment, so when text aligns left the keyline accent, hairline rule, monolith bar, editorial rule, and colophon rules all anchor to the left edge (and right with right alignment).
 - Admin picker shows a dedicated Alignment control above the Style picker. The mini previews and live preview update instantly as alignment changes.
