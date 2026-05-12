@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.14.2
+Version: 10.14.3
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -91,9 +91,25 @@ class Config {
     public static $github_branch = "main";
     
     /**
-     * Get the full plugin basename (folder/file.php)
+     * Get the currently-running plugin basename (folder/file.php).
+     * This may differ from the canonical folder when a site has been updated
+     * from a raw GitHub package such as hws-base-tools-main.
      */
     public static function get_plugin_basename() {
+        return plugin_basename( __FILE__ );
+    }
+
+    /**
+     * Get the currently-running plugin folder name.
+     */
+    public static function get_runtime_plugin_folder_name() {
+        return dirname( self::get_plugin_basename() );
+    }
+
+    /**
+     * Get the canonical plugin basename (folder/file.php).
+     */
+    public static function get_canonical_plugin_basename() {
         return self::$plugin_folder_name . '/' . self::$plugin_starter_file;
     }
 
@@ -111,10 +127,10 @@ public static function get_github_config() {
     // Build and return the updater config
     return [
         // 1) Plugin’s WP slug (folder/file path under wp‑content/plugins)
-        'slug'               => plugin_basename( __FILE__ ),
+        'slug'               => self::get_plugin_basename(),
 
         // 2) Folder name on disk
-        'proper_folder_name' => dirname( plugin_basename( __FILE__ ) ),
+        'proper_folder_name' => self::$plugin_folder_name,
 
         // 3) GitHub endpoints & download URL
         'api_url'            => 'https://api.github.com/repos/mikeyperes/hws-base-tools',
@@ -181,29 +197,46 @@ $github_access_token = ''; // Leave empty if not required for private repositori
 
 
 /**
- * Initialize GitHub Updater only after plugins have loaded and i18n is ready.
+ * Boot the GitHub updater early enough for wp-admin, AJAX, cron, and WP-CLI.
+ * WordPress core update checks can run outside admin_init, so loading here
+ * keeps the plugin visible to the native update system.
  */
-add_action( 'admin_init', function() {
-    include_once("GitHub_Updater.php");
-    // Initialize using the new abstract function - much cleaner!
-    // @since 8.9.5.3 - Refactored to use abstract hws_init_github_updater()
-    hws_init_github_updater([
-        'plugin_file'   => __FILE__,
-        'github_repo'   => 'mikeyperes/hws-base-tools',
-        'github_branch' => 'main',
-        'requires'      => '5.0',
-        'tested'        => '6.4',
-        // 'access_token' => '', // Uncomment for private repos
-    ]);
+function hws_should_boot_github_updater(): bool {
+    if ( is_admin() ) {
+        return true;
+    }
 
-    // if you still want your “force‐update‐check” debug hook:
-    if ( isset( $_GET['force-update-check'] ) ) {
+    if ( wp_doing_ajax() || wp_doing_cron() ) {
+        return true;
+    }
+
+    return defined( 'WP_CLI' ) && WP_CLI;
+}
+
+add_action( 'plugins_loaded', function() {
+    if ( ! hws_should_boot_github_updater() ) {
+        return;
+    }
+
+    include_once( 'GitHub_Updater.php' );
+
+    hws_init_github_updater( [
+        'plugin_file'        => __FILE__,
+        'github_repo'        => 'mikeyperes/hws-base-tools',
+        'github_branch'      => 'main',
+        'proper_folder_name' => Config::$plugin_folder_name,
+        'requires'           => '5.0',
+        'tested'             => '6.4',
+        // 'access_token' => '', // Uncomment for private repos
+    ] );
+
+    if ( is_admin() && isset( $_GET['force-update-check'] ) ) {
         wp_clean_update_cache();
         set_site_transient( 'update_plugins', null );
         wp_update_plugins();
         error_log( 'WP_GitHub_Updater: Forced plugin update check triggered.' );
     }
-} );
+}, 20 );
 
 
 

@@ -110,8 +110,9 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.2 (Current)
-- Version bump to `10.14.2`.
+### v10.14.3 (Current)
+- Fixed updater folder normalization so WordPress installs into `hws-base-tools` instead of `hws-base-tools-main`.
+- Fixed footer text rendering to avoid Elementor replacing the saved footer text with full page content.
 
 ### v10.14.1
 - Footer Text now supports per-band alignment: Left, Center, or Right. The choice applies to any of the 10 templates.

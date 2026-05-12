@@ -11,6 +11,57 @@ function hws_plugin_info_require_nonce() {
     hws_require_ajax_nonce_or_error();
 }
 
+function hws_plugin_info_get_managed_basenames(): array {
+    return array_values(
+        array_unique(
+            array_filter(
+                [
+                    Config::get_plugin_basename(),
+                    Config::get_canonical_plugin_basename(),
+                ]
+            )
+        )
+    );
+}
+
+function hws_plugin_info_get_update_response( $transient = null ) {
+    if ( null === $transient ) {
+        $transient = get_site_transient( 'update_plugins' );
+    }
+
+    if ( ! is_object( $transient ) || empty( $transient->response ) || ! is_array( $transient->response ) ) {
+        return false;
+    }
+
+    foreach ( hws_plugin_info_get_managed_basenames() as $basename ) {
+        if ( isset( $transient->response[ $basename ] ) ) {
+            return $transient->response[ $basename ];
+        }
+    }
+
+    return false;
+}
+
+function hws_plugin_info_clear_update_caches(): void {
+    $github_repo   = Config::$github_repo;
+    $github_branch = Config::$github_branch;
+
+    foreach ( hws_plugin_info_get_managed_basenames() as $basename ) {
+        delete_site_transient( 'hws_gu_version_' . md5( $basename ) );
+        delete_site_transient( 'hws_gu_repo_' . md5( $basename ) );
+    }
+
+    delete_site_transient( 'hws_github_ver_' . md5( $github_repo . $github_branch ) );
+    delete_site_transient( 'update_plugins' );
+    delete_option( '_site_transient_update_plugins' );
+
+    wp_clean_update_cache();
+
+    if ( function_exists( 'wp_clean_plugins_cache' ) ) {
+        wp_clean_plugins_cache( true );
+    }
+}
+
 /**
  * AJAX: Load available versions (commits) from GitHub
  * Fetches actual plugin version from initialization.php at each commit
@@ -271,30 +322,22 @@ function ajax_force_update_check() {
 
     hws_plugin_info_require_nonce();
     
-    // Use Config class - never hardcode
-    $plugin_basename = Config::get_plugin_basename();
-    $github_repo = Config::$github_repo;
+    $github_repo   = Config::$github_repo;
     $github_branch = Config::$github_branch;
-    
-    // Clear our custom transients
-    delete_site_transient( 'hws_gu_version_' . md5( $plugin_basename ) );
-    delete_site_transient( 'hws_gu_repo_' . md5( $plugin_basename ) );
-    delete_site_transient( 'hws_github_ver_' . md5( $github_repo . $github_branch ) );
-    
-    // Clear WordPress update transients
-    delete_site_transient( 'update_plugins' );
-    delete_option( '_site_transient_update_plugins' );
-    
-    // Force WordPress to check for updates
-    wp_clean_update_cache();
+
+    hws_plugin_info_clear_update_caches();
+
     wp_update_plugins();
-    
-    // Get the fresh version
-    $new_version = hws_get_github_version_fresh( $github_repo, $github_branch );
-    
+
+    $new_version   = hws_get_github_version_fresh( $github_repo, $github_branch );
+    $core_response = hws_plugin_info_get_update_response();
+
     wp_send_json_success( [
-        'message'     => 'Update check complete',
-        'new_version' => $new_version ?: 'Unknown',
+        'message'       => 'Update check complete',
+        'new_version'   => $new_version ?: 'Unknown',
+        'core_detected' => (bool) $core_response,
+        'core_version'  => $core_response->new_version ?? '',
+        'core_plugin'   => $core_response->plugin ?? '',
     ]);
 }
 
@@ -347,11 +390,13 @@ function ajax_direct_update_plugin() {
     WP_Filesystem();
     global $wp_filesystem;
     
-    // Use Config class - never hardcode
-    $github_repo = Config::$github_repo;
-    $github_branch = Config::$github_branch;
-    $correct_folder_name = Config::$plugin_folder_name;
-    $plugin_file = Config::get_plugin_basename();
+    $github_repo              = Config::$github_repo;
+    $github_branch            = Config::$github_branch;
+    $correct_folder_name      = Config::$plugin_folder_name;
+    $runtime_plugin_file      = Config::get_plugin_basename();
+    $canonical_plugin_file    = Config::get_canonical_plugin_basename();
+    $runtime_plugin_dir       = WP_PLUGIN_DIR . '/' . Config::get_runtime_plugin_folder_name();
+    $canonical_plugin_dir     = WP_PLUGIN_DIR . '/' . $correct_folder_name;
     
     // Download URL from GitHub
     $download_url = 'https://github.com/' . $github_repo . '/archive/refs/heads/' . $github_branch . '.zip';
@@ -403,25 +448,29 @@ function ajax_direct_update_plugin() {
         return;
     }
     
-    $source_folder = $extracted_folders[0]; // This is hws-base-tools-main
-    $plugin_dir = WP_PLUGIN_DIR . '/' . $correct_folder_name;
-    
-    // Deactivate the plugin first
-    $was_active = is_plugin_active( $plugin_file );
-    if ( $was_active ) {
-        deactivate_plugins( $plugin_file, true );
+    $source_folder = $extracted_folders[0];
+
+    $managed_plugins = array_unique( [ $runtime_plugin_file, $canonical_plugin_file ] );
+    $was_active = false;
+
+    foreach ( $managed_plugins as $managed_plugin ) {
+        if ( is_plugin_active( $managed_plugin ) ) {
+            $was_active = true;
+            deactivate_plugins( $managed_plugin, true );
+        }
     }
-    
-    // Remove old plugin folder
-    if ( is_dir( $plugin_dir ) ) {
-        $wp_filesystem->delete( $plugin_dir, true );
+
+    if ( is_dir( $canonical_plugin_dir ) ) {
+        $wp_filesystem->delete( $canonical_plugin_dir, true );
     }
-    
-    // Move the new folder with correct name
-    $move_result = $wp_filesystem->move( $source_folder, $plugin_dir );
+
+    if ( $runtime_plugin_dir !== $canonical_plugin_dir && is_dir( $runtime_plugin_dir ) ) {
+        $wp_filesystem->delete( $runtime_plugin_dir, true );
+    }
+
+    $move_result = $wp_filesystem->move( $source_folder, $canonical_plugin_dir );
     if ( ! $move_result ) {
-        // Try copy instead
-        $copy_result = copy_dir( $source_folder, $plugin_dir );
+        $copy_result = copy_dir( $source_folder, $canonical_plugin_dir );
         if ( is_wp_error( $copy_result ) ) {
             hws_delete_directory( $temp_dir );
             wp_send_json_error( 'Failed to install plugin: ' . $copy_result->get_error_message() );
@@ -432,9 +481,8 @@ function ajax_direct_update_plugin() {
     // Cleanup temp directory
     hws_delete_directory( $temp_dir );
     
-    // Reactivate the plugin if it was active
     if ( $was_active ) {
-        $activate_result = activate_plugin( $plugin_file );
+        $activate_result = activate_plugin( $canonical_plugin_file );
         if ( is_wp_error( $activate_result ) ) {
             wp_send_json_success( [
                 'message' => 'Plugin updated but failed to reactivate: ' . $activate_result->get_error_message(),
@@ -444,20 +492,18 @@ function ajax_direct_update_plugin() {
         }
     }
     
-    // Clear update caches
-    delete_site_transient( 'update_plugins' );
-    delete_site_transient( 'hws_github_ver_' . md5( $github_repo . $github_branch ) );
-    
-    // Get new version
+    hws_plugin_info_clear_update_caches();
+
     if ( ! function_exists( 'get_plugin_data' ) ) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
-    $new_plugin_data = get_plugin_data( $plugin_dir . '/' . Config::$plugin_starter_file );
+    $new_plugin_data = get_plugin_data( $canonical_plugin_dir . '/' . Config::$plugin_starter_file );
     
     wp_send_json_success( [
-        'message'     => 'Plugin updated successfully to v' . $new_plugin_data['Version'],
-        'new_version' => $new_plugin_data['Version'],
-        'reload'      => true,
+        'message'       => 'Plugin updated successfully to v' . $new_plugin_data['Version'],
+        'new_version'   => $new_plugin_data['Version'],
+        'active_plugin' => $canonical_plugin_file,
+        'reload'        => true,
     ]);
 }
 
@@ -655,31 +701,38 @@ function hws_ct_get_plugin_data() {
 function hws_ct_display_plugin_info() {
     $plugin_data = hws_ct_get_plugin_data();
 
-    // Use Config class - never hardcode
-    $github_repo = Config::$github_repo;
-    $github_branch = Config::$github_branch;
-    $new_version = hws_get_github_version( $github_repo, $github_branch ) ?: 'Checking...';
-    $download_url = 'https://github.com/' . $github_repo . '/archive/' . $github_branch . '.zip';
-    
-    $update_available = $new_version !== 'Checking...' && version_compare( $new_version, $plugin_data['Version'], '>' );
+    $github_repo          = Config::$github_repo;
+    $github_branch        = Config::$github_branch;
+    $runtime_folder_name  = Config::get_runtime_plugin_folder_name();
+    $canonical_folder     = Config::$plugin_folder_name;
+    $new_version          = hws_get_github_version( $github_repo, $github_branch ) ?: 'Checking...';
+    $core_update          = hws_plugin_info_get_update_response();
+    $core_detected        = (bool) $core_update;
+    $update_available     = $new_version !== 'Checking...' && version_compare( $new_version, $plugin_data['Version'], '>' );
+    $status_background    = $update_available ? ( $core_detected ? '#fcf0f1' : '#fff8e5' ) : '#edfaef';
+    $status_border        = $update_available ? ( $core_detected ? '#d63638' : '#dba617' ) : '#00a32a';
+    $status_accent        = $update_available ? ( $core_detected ? '#d63638' : '#996800' ) : '#00a32a';
 
     preg_match('/href=["\']([^"\']+)["\']/', $plugin_data['Author'], $matches);
     $author_url = $matches[1] ?? '#';
     $author_name = strip_tags($plugin_data['Author']);
     ?> 
     <!-- Plugin Info Panel -->
-    <div class="panel">
-        <h2 class="panel-title">HWS - Base Tools Plugin Info</h2>
+    <div class="panel" style="margin-top:24px; border:1px solid #c3c4c7; border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 8px 28px rgba(15, 23, 42, 0.04);">
+        <h2 class="panel-title" style="margin:0; padding:18px 22px; border-bottom:1px solid #dcdcde; background:linear-gradient(180deg, #fff 0%, #f6f7f7 100%);">HWS - Base Tools Plugin Info</h2>
         <div class="panel-content">
             <div style="margin-bottom: 15px;">
                 <strong>Plugin Name:</strong> <?php echo esc_html($plugin_data['Name']); ?>
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Plugin Slug:</strong> <?php echo esc_html(dirname(plugin_basename(__FILE__))); ?>
+                <strong>Installed Folder:</strong> <?php echo esc_html( $runtime_folder_name ); ?>
+                <?php if ( $runtime_folder_name !== $canonical_folder ) : ?>
+                    <span style="margin-left:8px; color:#996800;">Canonical folder should be <?php echo esc_html( $canonical_folder ); ?></span>
+                <?php endif; ?>
             </div>
             
             <!-- Version Info -->
-            <div style="margin-bottom: 15px; padding: 15px; background: <?php echo $update_available ? '#fcf0f1' : '#edfaef'; ?>; border: 1px solid <?php echo $update_available ? '#d63638' : '#00a32a'; ?>; border-radius: 6px;">
+            <div style="margin-bottom: 18px; padding: 18px; background: <?php echo esc_attr( $status_background ); ?>; border: 1px solid <?php echo esc_attr( $status_border ); ?>; border-radius: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>Current Version:</strong> 
@@ -687,15 +740,19 @@ function hws_ct_display_plugin_info() {
                     </div>
                     <div>
                         <strong>Latest Version:</strong> 
-                        <span id="hws-latest-version" style="font-size: 16px; font-weight: bold; color: <?php echo $update_available ? '#d63638' : '#00a32a'; ?>;">
+                        <span id="hws-latest-version" style="font-size: 16px; font-weight: bold; color: <?php echo esc_attr( $status_accent ); ?>;">
                             <?php echo esc_html($new_version); ?>
                         </span>
                     </div>
                 </div>
                 
-                <?php if ( $update_available ) : ?>
+                <?php if ( $update_available && $core_detected ) : ?>
                 <p style="margin: 10px 0 0; color: #d63638; font-weight: bold;">
-                    ⚠️ Update available! v<?php echo esc_html($plugin_data['Version']); ?> → v<?php echo esc_html($new_version); ?>
+                    ⚠️ Update available in WordPress. v<?php echo esc_html($plugin_data['Version']); ?> → v<?php echo esc_html($core_update->new_version ?? $new_version); ?>
+                </p>
+                <?php elseif ( $update_available ) : ?>
+                <p style="margin: 10px 0 0; color: #996800; font-weight: 600;">
+                    ⚠️ GitHub has a newer version, but WordPress has not registered the update yet.
                 </p>
                 <?php else : ?>
                 <p style="margin: 10px 0 0; color: #00a32a;">
@@ -705,7 +762,7 @@ function hws_ct_display_plugin_info() {
             </div>
             
             <!-- Update Actions -->
-            <div style="margin-bottom: 20px; padding: 15px; background: #f0f6fc; border: 1px solid #c3c4c7; border-radius: 6px;">
+            <div style="margin-bottom: 20px; padding: 18px; background: #f6f8fb; border: 1px solid #ccd4dc; border-radius: 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);">
                 <strong>🔄 Update Actions</strong>
                 <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" id="hws-force-update-check" class="button button-secondary">
@@ -720,8 +777,8 @@ function hws_ct_display_plugin_info() {
                 </div>
                 <div id="hws-update-status" style="margin-top: 10px;"></div>
                 <p style="font-size: 11px; color: #666; margin: 10px 0 0;">
-                    <strong>Force Update Check:</strong> Clears all caches and checks GitHub for new version.<br>
-                    <strong>Update Now:</strong> Directly downloads from GitHub and installs (folder name handled correctly).
+                    <strong>Force Update Check:</strong> Clears caches, re-runs WordPress core update detection, and confirms whether WordPress sees the update.<br>
+                    <strong>Update Now:</strong> Downloads from GitHub, installs into <code><?php echo esc_html( $canonical_folder ); ?></code>, and reactivates the canonical plugin file.
                 </p>
             </div>
             
@@ -787,14 +844,22 @@ function hws_ct_display_plugin_info() {
                 success: function(response) {
                     if (response.success) {
                         $('#hws-latest-version').text(response.data.new_version);
-                        $status.html('<span style="color: green;">✅ Check complete. Latest version: ' + response.data.new_version + '</span>');
+                        var statusHtml = '<span style="color: green;">✅ Check complete. Latest version: ' + response.data.new_version + '</span>';
                         
                         // Check if update is now available
                         var currentVer = '<?php echo esc_js($plugin_data['Version']); ?>';
                         if (response.data.new_version && response.data.new_version !== currentVer) {
                             $('#hws-direct-update').prop('disabled', false);
-                            $status.append(' <strong style="color: #d63638;">- Update available!</strong>');
+                            if (response.data.core_detected) {
+                                statusHtml += ' <strong style="color: #d63638;">WordPress core detected the update.</strong>';
+                            } else {
+                                statusHtml += ' <strong style="color: #996800;">GitHub is newer, but WordPress still did not register the update.</strong>';
+                            }
+                        } else if (response.data.core_detected) {
+                            statusHtml += ' <strong style="color: #00a32a;">WordPress core is in sync.</strong>';
                         }
+
+                        $status.html(statusHtml);
                     } else {
                         $status.html('<span style="color: red;">❌ ' + response.data + '</span>');
                     }
@@ -829,7 +894,11 @@ function hws_ct_display_plugin_info() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        $status.html('<span style="color: green;">✅ ' + response.data.message + '</span>');
+                        var updateMessage = '<span style="color: green;">✅ ' + response.data.message + '</span>';
+                        if (response.data.active_plugin) {
+                            updateMessage += ' <span style="color:#50575e;">Active plugin: <code>' + response.data.active_plugin + '</code></span>';
+                        }
+                        $status.html(updateMessage);
                         if (response.data.new_version) {
                             $('#hws-current-version').text(response.data.new_version);
                             $('#hws-latest-version').text(response.data.new_version).css('color', '#00a32a');

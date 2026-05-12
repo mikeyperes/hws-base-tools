@@ -539,7 +539,9 @@ function hws_get_footer_text_markup(): string {
     }
 
     $is_rendering = true;
-    $footer_text = apply_filters( 'the_content', $footer_text );
+    $footer_text = wp_kses_post( $footer_text );
+    $footer_text = shortcode_unautop( wpautop( $footer_text ) );
+    $footer_text = do_shortcode( $footer_text );
     $is_rendering = false;
 
     return trim( $footer_text );

@@ -58,11 +58,19 @@ function hws_init_github_updater( $config = [] ) {
     $github_repo   = trim( $config['github_repo'], '/' );
     $github_branch = isset( $config['github_branch'] ) ? $config['github_branch'] : 'main';
     
+    $runtime_slug        = plugin_basename( $config['plugin_file'] );
+    $runtime_folder_name = dirname( $runtime_slug );
+    $proper_folder_name  = ! empty( $config['proper_folder_name'] )
+        ? trim( (string) $config['proper_folder_name'], '/' )
+        : $runtime_folder_name;
+
     $full_config = [
         // Plugin identification
-        'slug'               => plugin_basename( $config['plugin_file'] ),
-        'proper_folder_name' => dirname( plugin_basename( $config['plugin_file'] ) ),
-        'plugin_starter_file'=> basename( $config['plugin_file'] ),
+        'slug'                     => $runtime_slug,
+        'runtime_folder_name'      => $runtime_folder_name,
+        'proper_folder_name'       => $proper_folder_name,
+        'plugin_starter_file'      => basename( $config['plugin_file'] ),
+        'canonical_plugin_basename'=> $proper_folder_name . '/' . basename( $config['plugin_file'] ),
         
         // GitHub endpoints
         'api_url'            => 'https://api.github.com/repos/' . $github_repo,
@@ -133,6 +141,7 @@ class WP_GitHub_Updater {
         // Hook into WordPress update system
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'check_for_update' ] );
         add_filter( 'plugins_api', [ $this, 'plugin_info' ], 10, 3 );
+        add_filter( 'upgrader_source_selection', [ $this, 'source_selection' ], 10, 4 );
         add_filter( 'upgrader_post_install', [ $this, 'post_install' ], 10, 3 );
         
         // HTTP request filters
@@ -177,6 +186,11 @@ class WP_GitHub_Updater {
      * Prepare runtime configuration values
      */
     private function prepare_config() {
+        $this->config['slug'] = trim( (string) $this->config['slug'], '/' );
+        $this->config['runtime_folder_name'] = trim( (string) $this->config['runtime_folder_name'], '/' );
+        $this->config['proper_folder_name'] = trim( (string) $this->config['proper_folder_name'], '/' );
+        $this->config['canonical_plugin_basename'] = $this->config['proper_folder_name'] . '/' . $this->config['plugin_starter_file'];
+
         // Add access token to zip URL if provided (for private repos)
         if ( ! empty( $this->config['access_token'] ) ) {
             $this->config['zip_url'] = add_query_arg( 
@@ -368,7 +382,16 @@ class WP_GitHub_Updater {
         }
 
         // Check if this request is for our plugin (by folder name)
-        if ( ! isset( $args->slug ) || $args->slug !== $this->config['proper_folder_name'] ) {
+        if ( ! isset( $args->slug ) ) {
+            return $result;
+        }
+
+        $valid_slugs = array_unique( [
+            $this->config['proper_folder_name'],
+            $this->config['runtime_folder_name'],
+        ] );
+
+        if ( ! in_array( $args->slug, $valid_slugs, true ) ) {
             return $result;
         }
 
@@ -397,10 +420,54 @@ class WP_GitHub_Updater {
     }
 
     /**
-     * Handle post-installation folder renaming
+     * Normalize the extracted GitHub archive folder before WordPress copies it
+     * into wp-content/plugins. GitHub packages include the branch suffix, but
+     * the live plugin must always install into the canonical folder.
      *
-     * GitHub archives include the branch name in the folder,
-     * so we need to rename it to match the expected plugin folder.
+     * @param string       $source        Working directory of the unpacked package.
+     * @param string       $remote_source Original remote source.
+     * @param \WP_Upgrader $upgrader      Upgrader instance.
+     * @param array        $hook_extra    Extra hook arguments.
+     * @return string|\WP_Error
+     */
+    public function source_selection( $source, $remote_source, $upgrader, $hook_extra ) {
+        global $wp_filesystem;
+
+        if ( ! isset( $hook_extra['plugin'] ) || $hook_extra['plugin'] !== $this->config['slug'] ) {
+            return $source;
+        }
+
+        if ( basename( $source ) === $this->config['proper_folder_name'] ) {
+            return $source;
+        }
+
+        if ( ! $wp_filesystem ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+
+        $target = trailingslashit( dirname( $source ) ) . $this->config['proper_folder_name'];
+
+        if ( $wp_filesystem->exists( $target ) ) {
+            $wp_filesystem->delete( $target, true );
+        }
+
+        if ( ! $wp_filesystem->move( $source, $target, true ) ) {
+            return new \WP_Error(
+                'hws_updater_rename_failed',
+                sprintf(
+                    'Unable to rename update package folder from %s to %s.',
+                    basename( $source ),
+                    $this->config['proper_folder_name']
+                )
+            );
+        }
+
+        return $target;
+    }
+
+    /**
+     * Handle post-installation folder normalization and reactivation.
      *
      * @param bool  $response   Installation response
      * @param array $hook_extra Extra hook arguments
@@ -418,12 +485,33 @@ class WP_GitHub_Updater {
         // Get the correct destination
         $proper_destination = WP_PLUGIN_DIR . '/' . $this->config['proper_folder_name'];
 
-        // Move to correct location
-        $wp_filesystem->move( $result['destination'], $proper_destination );
-        $result['destination'] = $proper_destination;
+        if ( ! $wp_filesystem ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+        }
+
+        if ( untrailingslashit( $result['destination'] ) !== untrailingslashit( $proper_destination ) ) {
+            if ( $wp_filesystem->exists( $proper_destination ) ) {
+                $wp_filesystem->delete( $proper_destination, true );
+            }
+
+            $wp_filesystem->move( $result['destination'], $proper_destination, true );
+            $result['destination'] = $proper_destination;
+        }
+
+        $result['destination_name'] = $this->config['proper_folder_name'];
+
+        $legacy_destination = WP_PLUGIN_DIR . '/' . $this->config['runtime_folder_name'];
+        if (
+            $this->config['runtime_folder_name'] !== $this->config['proper_folder_name']
+            && untrailingslashit( $legacy_destination ) !== untrailingslashit( $proper_destination )
+            && $wp_filesystem->is_dir( $legacy_destination )
+        ) {
+            $wp_filesystem->delete( $legacy_destination, true );
+        }
 
         // Reactivate plugin
-        $activate = activate_plugin( $this->config['slug'] );
+        $activate = activate_plugin( $this->config['canonical_plugin_basename'] );
         
         if ( is_wp_error( $activate ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -440,6 +528,8 @@ class WP_GitHub_Updater {
     public function clear_cache() {
         delete_site_transient( 'hws_gu_version_' . md5( $this->config['slug'] ) );
         delete_site_transient( 'hws_gu_repo_' . md5( $this->config['slug'] ) );
+        delete_site_transient( 'hws_gu_version_' . md5( $this->config['canonical_plugin_basename'] ) );
+        delete_site_transient( 'hws_gu_repo_' . md5( $this->config['canonical_plugin_basename'] ) );
         delete_site_transient( 'update_plugins' );
     }
 
