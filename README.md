@@ -110,7 +110,14 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.5 (Current)
+### v10.14.6 (Current)
+- Rebuilt Plugin Info → Update Now: discrete logged install steps with a live activity log (download, extract, locate, backup, install, sweep duplicates, repoint active_plugins, clean up) — no more silent ''Downloading & Installing…'' hang.
+- Atomic-style swap (rename) replaces the old delete-then-copy install path, so a failure mid-install rolls back cleanly. Backup is taken before any change.
+- Updater now sweeps stray hws-base-tools-* duplicates (the old ''-main'' postfix bug) every run, and repoints active_plugins to the canonical hws-base-tools/initialization.php if the runtime folder was different.
+- GitHub_Updater.check_for_update no longer early-returns when WordPress hasn'''t populated $transient->checked — it now adds to $transient->response (and to $transient->no_update when current) so the WP Plugins page reliably shows the update.
+- Plugin Info UI redesigned: metadata card + side-by-side ''On this site'' vs ''In the Git repo'' Version Status card with a status badge (Up to date / Update available / Update available (WP sees it)).
+
+### v10.14.5
 - Tightened GitHub version checks to use a per-request cache-buster, so freshly pushed releases register immediately in WordPress.
 - Fixed GitHub version checks to bypass stale cached raw responses when WordPress fetches the updater metadata.
 - Fixed updater folder normalization so WordPress installs into `hws-base-tools` instead of `hws-base-tools-main`.

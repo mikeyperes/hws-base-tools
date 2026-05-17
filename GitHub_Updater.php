@@ -338,34 +338,58 @@ class WP_GitHub_Updater {
      * @return object Modified transient
      */
     public function check_for_update( $transient ) {
-        if ( empty( $transient->checked ) ) {
-            return $transient;
+        // WordPress sometimes calls this filter with a non-object value (false
+        // or an empty array) when the update_plugins transient has been
+        // deleted. We still need to register the entry so the Plugins screen
+        // and the WP update API report the GitHub version.
+        if ( ! is_object( $transient ) ) {
+            $transient = new \stdClass();
+        }
+        if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+            $transient->response = [];
+        }
+        if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+            $transient->no_update = [];
         }
 
-        // Get remote version
         $remote_version = $this->get_remote_version();
-        
         if ( $remote_version === false ) {
             return $transient;
         }
 
-        // Compare versions
-        if ( version_compare( $remote_version, $this->config['version'], '>' ) ) {
-            $github_data = $this->get_github_data();
-            
-            $plugin_info = (object) [
-                'slug'        => $this->config['proper_folder_name'],
-                'plugin'      => $this->config['slug'],
-                'new_version' => $remote_version,
-                'url'         => $this->config['github_url'],
-                'package'     => $this->config['zip_url'],
-                'icons'       => [],
-                'banners'     => [],
-                'tested'      => $this->config['tested'],
-                'requires'    => $this->config['requires'],
-            ];
+        // Prefer the version WordPress recorded in the latest check; fall
+        // back to the version this PHP process loaded.
+        $current_version = $this->config['version'];
+        if ( isset( $transient->checked[ $this->config['slug'] ] ) ) {
+            $current_version = $transient->checked[ $this->config['slug'] ];
+        }
 
+        $plugin_info = (object) [
+            'id'            => $this->config['github_url'],
+            'slug'          => $this->config['proper_folder_name'],
+            'plugin'        => $this->config['slug'],
+            'new_version'   => $remote_version,
+            'url'           => $this->config['github_url'],
+            'package'       => $this->config['zip_url'],
+            'icons'         => [],
+            'banners'       => [],
+            'banners_rtl'   => [],
+            'tested'        => $this->config['tested'],
+            'requires'      => $this->config['requires'],
+            'requires_php'  => isset( $this->config['requires_php'] ) ? $this->config['requires_php'] : '',
+            'compatibility' => new \stdClass(),
+        ];
+
+        if ( version_compare( $remote_version, $current_version, '>' ) ) {
             $transient->response[ $this->config['slug'] ] = $plugin_info;
+            unset( $transient->no_update[ $this->config['slug'] ] );
+        } else {
+            // Tell core "we checked, no update" so the row stops re-checking
+            // and the plugin doesn't try to fall back to the .org API.
+            $no_update              = clone $plugin_info;
+            $no_update->new_version = $current_version;
+            $transient->no_update[ $this->config['slug'] ] = $no_update;
+            unset( $transient->response[ $this->config['slug'] ] );
         }
 
         return $transient;
