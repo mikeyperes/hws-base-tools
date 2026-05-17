@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.6 (Current)
+### v10.14.7 (Current)
+- Test bump to verify the new Update Now activity log + WP core update detection round-trip end-to-end on a live site.
+
+### v10.14.6
 - Rebuilt Plugin Info → Update Now: discrete logged install steps with a live activity log (download, extract, locate, backup, install, sweep duplicates, repoint active_plugins, clean up) — no more silent ''Downloading & Installing…'' hang.
 - Atomic-style swap (rename) replaces the old delete-then-copy install path, so a failure mid-install rolls back cleanly. Backup is taken before any change.
 - Updater now sweeps stray hws-base-tools-* duplicates (the old ''-main'' postfix bug) every run, and repoints active_plugins to the canonical hws-base-tools/initialization.php if the runtime folder was different.
