@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.14.8
+Version: 10.14.9
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -177,6 +177,22 @@ add_action( 'admin_init', function() {
 // Generic functions import 
 include_once("generic-functions.php");
 
+if ( ! function_exists( __NAMESPACE__ . '\\hws_is_acf_available' ) ) {
+    function hws_is_acf_available() {
+        return function_exists( 'acf' )
+            || function_exists( 'acf_add_local_field_group' )
+            || class_exists( 'ACF' );
+    }
+}
+
+if ( ! function_exists( __NAMESPACE__ . '\\get_field' ) ) {
+    function get_field( ...$args ) {
+        return function_exists( 'get_field' )
+            ? \get_field( ...$args )
+            : null;
+    }
+}
+
 // Define global variables
 //global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
 
@@ -242,33 +258,17 @@ add_action( 'plugins_loaded', function() {
 
 
 
-// Array of plugins to check
-$plugins_to_check = [
-    'advanced-custom-fields-pro/acf.php',
-    'advanced-custom-fields-pro-temp/acf.php'
-];
+if ( is_admin() ) {
+    add_action( 'admin_notices', function() {
+        if ( hws_is_acf_available() || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
 
-// Initialize flags for active status
-$acf_active = false;
-
-// Check if any of the plugins is active
-foreach ($plugins_to_check as $plugin) {
-    list($installed, $active) = check_plugin_status($plugin);
-    if ($active) {
-        $acf_active = true;
-        break; // Stop checking once we find an active one
-    }
+        echo '<div class="notice notice-warning"><p><strong>HWS Base Tools:</strong> ACF is not active. Core tools remain available; ACF field registration and ACF-powered shortcodes will stay inactive until ACF or ACF Pro is enabled.</p></div>';
+    } );
 }
 
-// If none of the ACF plugins are active, display a warning and prevent the plugin from running
-if (!$acf_active && is_admin()) {
-    add_action('admin_notices', function() {
-        echo '<div class="notice notice-error"><p><strong>HWS - Base Tools:</strong> The Advanced Custom Fields (ACF) or Advanced Custom Fields Pro (ACF Pro) plugin is required and must be active to use this plugin. Please activate ACF or ACF Pro.</p></div>';
-    });
-    return; // Stop further execution of the plugin
-}
-
-// Hook to acf/init to ensure ACF is initialized before running any ACF-related code
+// Hook to acf/init so ACF-related modules load only when ACF is available.
 add_action('acf/init', function() {
 
 

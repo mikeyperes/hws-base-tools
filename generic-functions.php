@@ -296,6 +296,10 @@ if (function_exists('acf_form_head')) {
  */
 if (!function_exists(__NAMESPACE__ . '\\is_acf_field_group_imported')) {
     function is_acf_field_group_imported($key) {
+        if ( ! function_exists( 'acf_get_local_field_groups' ) ) {
+            return false;
+        }
+
         $groups = acf_get_local_field_groups();
         foreach ($groups as $group) {
             if ($group['key'] === $key) {

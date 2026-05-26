@@ -6,7 +6,7 @@
 
 ## Overview
 
-HWS Base Tools is an all-in-one WordPress administration plugin for developers and site administrators managing production websites. It provides a centralized dashboard for system monitoring, automated maintenance, deployment readiness checks, security oversight, and dynamic content shortcodes — all powered by ACF.
+HWS Base Tools is an all-in-one WordPress administration plugin for developers and site administrators managing production websites. It provides a centralized dashboard for system monitoring, automated maintenance, deployment readiness checks, security oversight, and dynamic content shortcodes. ACF/ACF Pro is optional and only required for ACF field registration and ACF-powered content shortcodes.
 
 ---
 
@@ -15,7 +15,7 @@ HWS Base Tools is an all-in-one WordPress administration plugin for developers a
 ### 🚀 Going Live Checklist
 Three-column deployment readiness checker:
 - **Snippets** — All recommended snippets enabled (ACF fields, auto-updates, admin logo, etc.)
-- **Plugins** — Essential plugins installed & active (ACF Pro, Elementor, Wordfence, WP Mail SMTP, Rank Math, LiteSpeed, etc.)
+- **Plugins** — Essential plugins installed & active (Elementor, Wordfence, WP Mail SMTP, Rank Math, LiteSpeed, etc.)
 - **Settings & Server** — 25+ checks: WP_MEMORY_LIMIT, comments/pingbacks off, SMTP authenticated, WP_DEBUG off, display_errors off, Wordfence alerts, log file sizes (debug.log, error_log, wp-admin/error_log), WP_CRON disabled, Cloudflare active, PHP SAPI LiteSpeed, PHP ≥ 8.1, Imagick, no MyISAM tables, Redis active, post_max_size/upload_max ≥ 128MB, Brotli, max 2 themes, all updated, no Twenty* themes
 
 ### ⚡ Quick Setup
@@ -101,16 +101,21 @@ All in `generic-functions.php` for site-wide use:
 |-------------|---------|
 | WordPress | 6.0+ |
 | PHP | 8.1+ |
-| ACF Pro | 6.0+ |
 | LiteSpeed Cache | 6.0+ (for cache panel) |
 
-**Essential Plugins:** ACF Pro, Elementor + Pro, Classic Editor, Wordfence, WP Mail SMTP, Rank Math SEO, WP User Avatars, LiteSpeed Cache
+**Essential Plugins:** Elementor + Pro, Classic Editor, Wordfence, WP Mail SMTP, Rank Math SEO, WP User Avatars, LiteSpeed Cache
+
+**Optional Plugins:** ACF or ACF Pro for ACF field registration and ACF-powered shortcodes.
 
 ---
 
 ## Changelog
 
-### v10.14.8 (Current)
+### v10.14.9 (Current)
+- Removed ACF Pro as a hard runtime prerequisite. Core tools now continue loading without ACF, while ACF-specific features stay gated until ACF or ACF Pro is active.
+- Changed ACF Pro from an essential monitored plugin to optional.
+
+### v10.14.8
 - Fixed WP core plugin updates from GitHub archives by preserving the trailing slash on the normalized source directory, allowing core package validation to find `initialization.php`.
 
 ### v10.14.7
