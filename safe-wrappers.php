@@ -273,42 +273,266 @@ function hws_parse_size( $size ) {
 }
 
 /**
+ * Read and trim a small system file.
+ *
+ * @param string $path Absolute file path.
+ * @return string|null
+ */
+function hws_read_system_file( $path ) {
+    if ( ! is_readable( $path ) ) {
+        return null;
+    }
+
+    $contents = @file_get_contents( $path );
+    if ( false === $contents ) {
+        return null;
+    }
+
+    return trim( $contents );
+}
+
+/**
+ * Convert a cgroup memory limit value to bytes.
+ *
+ * @param string|null $value Raw cgroup value.
+ * @return int|null
+ */
+function hws_parse_cgroup_memory_limit( $value ) {
+    if ( null === $value || '' === $value || 'max' === $value ) {
+        return null;
+    }
+
+    if ( ! is_numeric( $value ) ) {
+        return null;
+    }
+
+    $bytes = (int) $value;
+
+    // cgroup v1 commonly exposes this huge sentinel when no limit is applied.
+    if ( $bytes <= 0 || $bytes >= 9000000000000000000 ) {
+        return null;
+    }
+
+    return $bytes;
+}
+
+/**
+ * Get the active cgroup memory limit when the runtime is container/account limited.
+ *
+ * @return array|null Array with bytes/source/current, or null when no finite limit exists.
+ */
+function hws_get_cgroup_memory_limit() {
+    $limit_files = [
+        '/sys/fs/cgroup/memory.max'                         => 'cgroup v2 memory.max',
+        '/sys/fs/cgroup/memory/memory.limit_in_bytes'       => 'cgroup v1 memory.limit_in_bytes',
+    ];
+
+    foreach ( $limit_files as $path => $source ) {
+        $bytes = hws_parse_cgroup_memory_limit( hws_read_system_file( $path ) );
+        if ( null === $bytes ) {
+            continue;
+        }
+
+        $current = null;
+        if ( false !== strpos( $path, 'memory.max' ) ) {
+            $current = hws_read_system_file( '/sys/fs/cgroup/memory.current' );
+        } else {
+            $current = hws_read_system_file( '/sys/fs/cgroup/memory/memory.usage_in_bytes' );
+        }
+
+        return [
+            'bytes'   => $bytes,
+            'current' => is_numeric( $current ) ? (int) $current : null,
+            'source'  => $source,
+        ];
+    }
+
+    return null;
+}
+
+/**
+ * Count CPUs from a cpuset string such as "0-3,8".
+ *
+ * @param string|null $cpuset CPU set string.
+ * @return int|null
+ */
+function hws_count_cpuset_cpus( $cpuset ) {
+    if ( null === $cpuset || '' === trim( $cpuset ) ) {
+        return null;
+    }
+
+    $count = 0;
+    foreach ( explode( ',', trim( $cpuset ) ) as $part ) {
+        $part = trim( $part );
+        if ( preg_match( '/^(\d+)-(\d+)$/', $part, $matches ) ) {
+            $start = (int) $matches[1];
+            $end   = (int) $matches[2];
+            if ( $end >= $start ) {
+                $count += ( $end - $start + 1 );
+            }
+        } elseif ( ctype_digit( $part ) ) {
+            $count++;
+        }
+    }
+
+    return $count > 0 ? $count : null;
+}
+
+/**
+ * Get CPU info, preferring cgroup quota/cpuset limits over host-visible CPU data.
+ *
+ * @return array{count:int|float|null,source:string,host_count:int|null}
+ */
+function hws_get_cpu_info() {
+    $host_count = null;
+
+    if ( is_readable( '/proc/cpuinfo' ) ) {
+        $cpuinfo = @file_get_contents( '/proc/cpuinfo' );
+        if ( $cpuinfo ) {
+            $count = substr_count( $cpuinfo, 'processor' );
+            if ( $count > 0 ) {
+                $host_count = $count;
+            }
+        }
+    }
+
+    $cpu_max = hws_read_system_file( '/sys/fs/cgroup/cpu.max' );
+    if ( $cpu_max && preg_match( '/^(\d+)\s+(\d+)$/', $cpu_max, $matches ) ) {
+        $quota  = (int) $matches[1];
+        $period = (int) $matches[2];
+
+        if ( $quota > 0 && $period > 0 ) {
+            return [
+                'count'      => round( $quota / $period, 2 ),
+                'source'     => 'cgroup v2 cpu.max',
+                'host_count' => $host_count,
+            ];
+        }
+    }
+
+    $quota  = hws_read_system_file( '/sys/fs/cgroup/cpu/cpu.cfs_quota_us' );
+    $period = hws_read_system_file( '/sys/fs/cgroup/cpu/cpu.cfs_period_us' );
+    if ( is_numeric( $quota ) && is_numeric( $period ) && (int) $quota > 0 && (int) $period > 0 ) {
+        return [
+            'count'      => round( (int) $quota / (int) $period, 2 ),
+            'source'     => 'cgroup v1 cpu.cfs_quota_us',
+            'host_count' => $host_count,
+        ];
+    }
+
+    $cpuset_files = [
+        '/sys/fs/cgroup/cpuset.cpus.effective'        => 'cgroup cpuset.cpus.effective',
+        '/sys/fs/cgroup/cpuset/cpuset.cpus.effective' => 'cgroup cpuset.cpus.effective',
+        '/sys/fs/cgroup/cpuset.cpus'                  => 'cgroup cpuset.cpus',
+        '/sys/fs/cgroup/cpuset/cpuset.cpus'           => 'cgroup cpuset.cpus',
+    ];
+
+    foreach ( $cpuset_files as $path => $source ) {
+        $count = hws_count_cpuset_cpus( hws_read_system_file( $path ) );
+        if ( null !== $count && ( null === $host_count || $count < $host_count ) ) {
+            return [
+                'count'      => $count,
+                'source'     => $source,
+                'host_count' => $host_count,
+            ];
+        }
+    }
+
+    $status = hws_read_system_file( '/proc/self/status' );
+    if ( $status && preg_match( '/^Cpus_allowed_list:\s*(.+)$/m', $status, $matches ) ) {
+        $count = hws_count_cpuset_cpus( $matches[1] );
+        if ( null !== $count && ( null === $host_count || $count < $host_count ) ) {
+            return [
+                'count'      => $count,
+                'source'     => '/proc/self/status Cpus_allowed_list',
+                'host_count' => $host_count,
+            ];
+        }
+    }
+
+    if ( null !== $host_count ) {
+        return [
+            'count'      => $host_count,
+            'source'     => '/proc/cpuinfo host-visible',
+            'host_count' => $host_count,
+        ];
+    }
+
+    $nproc = hws_safe_shell_exec( 'nproc 2>/dev/null' );
+    if ( $nproc && is_numeric( $nproc ) ) {
+        return [
+            'count'      => (int) $nproc,
+            'source'     => 'nproc host-visible',
+            'host_count' => null,
+        ];
+    }
+
+    return [
+        'count'      => null,
+        'source'     => 'unavailable',
+        'host_count' => null,
+    ];
+}
+
+/**
  * Get server memory information safely
  * 
  * @return array Memory info with 'total', 'free', 'used' in bytes, or null values if unavailable
  */
 function hws_get_memory_info() {
     $info = [
-        'total' => null,
-        'free'  => null,
-        'used'  => null,
+        'total'      => null,
+        'free'       => null,
+        'used'       => null,
+        'source'     => 'unavailable',
+        'host_total' => null,
     ];
 
-    // Try reading from /proc/meminfo first (most reliable on Linux)
+    $host_info = $info;
+
+    // Read host-visible Linux memory first, then override with finite cgroup limits.
     if ( is_readable( '/proc/meminfo' ) ) {
         $meminfo = @file_get_contents( '/proc/meminfo' );
         if ( $meminfo ) {
             if ( preg_match( '/MemTotal:\s+(\d+)\s+kB/', $meminfo, $matches ) ) {
-                $info['total'] = (int) $matches[1] * 1024;
+                $host_info['total'] = (int) $matches[1] * 1024;
+                $host_info['host_total'] = $host_info['total'];
+                $host_info['source'] = '/proc/meminfo host-visible';
             }
             if ( preg_match( '/MemAvailable:\s+(\d+)\s+kB/', $meminfo, $matches ) ) {
-                $info['free'] = (int) $matches[1] * 1024;
+                $host_info['free'] = (int) $matches[1] * 1024;
             } elseif ( preg_match( '/MemFree:\s+(\d+)\s+kB/', $meminfo, $matches ) ) {
-                $info['free'] = (int) $matches[1] * 1024;
+                $host_info['free'] = (int) $matches[1] * 1024;
             }
-            if ( $info['total'] && $info['free'] ) {
-                $info['used'] = $info['total'] - $info['free'];
+            if ( $host_info['total'] && $host_info['free'] ) {
+                $host_info['used'] = $host_info['total'] - $host_info['free'];
             }
-            return $info;
         }
     }
 
-    // Fallback to shell command
+    $cgroup = hws_get_cgroup_memory_limit();
+    if ( $cgroup && ( ! $host_info['total'] || $cgroup['bytes'] < $host_info['total'] ) ) {
+        $info['total']      = $cgroup['bytes'];
+        $info['used']       = $cgroup['current'];
+        $info['free']       = null !== $cgroup['current'] ? max( 0, $cgroup['bytes'] - $cgroup['current'] ) : null;
+        $info['source']     = $cgroup['source'];
+        $info['host_total'] = $host_info['total'];
+
+        return $info;
+    }
+
+    if ( $host_info['total'] ) {
+        return $host_info;
+    }
+
+    // Fallback to shell command when /proc/meminfo is unavailable.
     $total = hws_safe_shell_exec( "free -b 2>/dev/null | awk '/^Mem:/{print $2}'" );
-    $free = hws_safe_shell_exec( "free -b 2>/dev/null | awk '/^Mem:/{print $7}'" );
+    $free  = hws_safe_shell_exec( "free -b 2>/dev/null | awk '/^Mem:/{print $7}'" );
 
     if ( $total ) {
         $info['total'] = (int) $total;
+        $info['host_total'] = $info['total'];
+        $info['source'] = 'free command host-visible';
     }
     if ( $free ) {
         $info['free'] = (int) $free;
@@ -326,24 +550,8 @@ function hws_get_memory_info() {
  * @return int|null Number of processors or null if unavailable
  */
 function hws_get_cpu_count() {
-    // Try /proc/cpuinfo first
-    if ( is_readable( '/proc/cpuinfo' ) ) {
-        $cpuinfo = @file_get_contents( '/proc/cpuinfo' );
-        if ( $cpuinfo ) {
-            $count = substr_count( $cpuinfo, 'processor' );
-            if ( $count > 0 ) {
-                return $count;
-            }
-        }
-    }
-
-    // Fallback to nproc command
-    $nproc = hws_safe_shell_exec( 'nproc 2>/dev/null' );
-    if ( $nproc && is_numeric( $nproc ) ) {
-        return (int) $nproc;
-    }
-
-    return null;
+    $cpu = hws_get_cpu_info();
+    return $cpu['count'] ?? null;
 }
 
 /**

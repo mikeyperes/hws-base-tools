@@ -729,9 +729,11 @@ if (!function_exists(__NAMESPACE__ . '\\detect_additional_wp_installs')) {
 if (!function_exists(__NAMESPACE__ . '\\check_server_memory_limit')) {
     function check_server_memory_limit() {
         // Use safe memory info getter
+        $source = '';
         if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
             $memory = hws_get_memory_info();
             $total_ram = $memory['total'] ?? 0;
+            $source = $memory['source'] ?? '';
         } else {
             // Fallback to safe shell_exec
             $total_ram = 0;
@@ -747,7 +749,7 @@ if (!function_exists(__NAMESPACE__ . '\\check_server_memory_limit')) {
 
         return [
             'status' => $status,
-            'raw_value' => $total_ram ? size_format($total_ram) : 'Not available'
+            'raw_value' => $total_ram ? size_format($total_ram) . hws_format_resource_source_note($source) : 'Not available'
         ];
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_memory_limit function is already declared",true);
@@ -828,9 +830,11 @@ if (!function_exists(__NAMESPACE__ . '\\check_redis_active')) {
 if (!function_exists(__NAMESPACE__ . '\\check_server_ram')) {
     function check_server_ram() {
         // Use safe memory info getter if available
+        $source = '';
         if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
             $memory = hws_get_memory_info();
             $total_ram = $memory['total'] ?? 0;
+            $source = $memory['source'] ?? '';
         } else {
             $total_ram = 0;
             if ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
@@ -845,7 +849,7 @@ if (!function_exists(__NAMESPACE__ . '\\check_server_ram')) {
 
         return [
             'status' => $status,
-            'details' => $total_ram ? size_format($total_ram) : 'Not available'
+            'details' => $total_ram ? size_format($total_ram) . hws_format_resource_source_note($source) : 'Not available'
         ];
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_ram function is already declared",true);
@@ -989,15 +993,45 @@ if (!function_exists(__NAMESPACE__ . '\\custom_wp_admin_logo_link')) {
 
 
 
+if ( ! function_exists( __NAMESPACE__ . '\\hws_format_resource_source_note' ) ) {
+    function hws_format_resource_source_note( $source ) {
+        if ( ! is_string( $source ) || '' === $source ) {
+            return '';
+        }
+
+        $label = false !== strpos( $source, 'host-visible' )
+            ? 'host-visible, not account limit'
+            : $source;
+
+        return ' <span style="color:#646970;font-size:11px;">(' . esc_html( $label ) . ')</span>';
+    }
+}
+
+if ( ! function_exists( __NAMESPACE__ . '\\hws_format_cpu_value' ) ) {
+    function hws_format_cpu_value( $value ) {
+        if ( null === $value || 'Unknown' === $value ) {
+            return 'Unknown';
+        }
+
+        return (string) ( is_float( $value ) ? rtrim( rtrim( number_format( $value, 2, '.', '' ), '0' ), '.' ) : $value );
+    }
+}
+
 if(!function_exists('hws_base_tools\check_server_specs')) {
     function check_server_specs() {
         // Use safe wrappers if available
         $num_processors = 'Unknown';
         $total_ram = 'Unknown';
+        $cpu_source = '';
+        $memory_source = '';
 
-        if ( function_exists( __NAMESPACE__ . '\\hws_get_cpu_count' ) ) {
+        if ( function_exists( __NAMESPACE__ . '\\hws_get_cpu_info' ) ) {
+            $cpu = hws_get_cpu_info();
+            $num_processors = null !== ( $cpu['count'] ?? null ) ? hws_format_cpu_value( $cpu['count'] ) : 'Unknown';
+            $cpu_source = $cpu['source'] ?? '';
+        } elseif ( function_exists( __NAMESPACE__ . '\\hws_get_cpu_count' ) ) {
             $cpu = hws_get_cpu_count();
-            $num_processors = $cpu !== null ? $cpu : 'Unknown';
+            $num_processors = $cpu !== null ? hws_format_cpu_value( $cpu ) : 'Unknown';
         } elseif ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
             $result = hws_safe_shell_exec( 'nproc 2>/dev/null' );
             $num_processors = $result ?: 'Unknown';
@@ -1008,6 +1042,7 @@ if(!function_exists('hws_base_tools\check_server_specs')) {
         if ( function_exists( __NAMESPACE__ . '\\hws_get_memory_info' ) ) {
             $memory = hws_get_memory_info();
             $total_ram = $memory['total'] ? round( $memory['total'] / 1024 / 1024 ) : 'Unknown';
+            $memory_source = $memory['source'] ?? '';
         } elseif ( function_exists( __NAMESPACE__ . '\\hws_safe_shell_exec' ) ) {
             $result = hws_safe_shell_exec( "free -m 2>/dev/null | awk '/^Mem:/{print $2}'" );
             $total_ram = $result ?: 'Unknown';
@@ -1026,7 +1061,7 @@ if(!function_exists('hws_base_tools\check_server_specs')) {
         return [
             'function' => 'check_server_specs',
             'status' => true,
-            'raw_value' => "Number of processors: $num_processors, Total RAM: $total_ram MB"
+            'raw_value' => "Number of processors: $num_processors" . hws_format_resource_source_note( $cpu_source ) . ", Total RAM: $total_ram MB" . hws_format_resource_source_note( $memory_source )
         ];
     }}else 
     write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_server_specs function is already declared", true);

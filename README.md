@@ -111,7 +111,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.9 (Current)
+### v10.15.0 (Current)
+- Fixed server spec detection to prefer cgroup/container CPU and memory limits before host-level `/proc` values.
+- Server RAM and processor checks now label host-visible fallback readings so shared-server specs are not presented as account-level allocations.
+
+### v10.14.9
 - Removed ACF Pro as a hard runtime prerequisite. Core tools now continue loading without ACF, while ACF-specific features stay gated until ACF or ACF Pro is active.
 - Changed ACF Pro from an essential monitored plugin to optional.
 
