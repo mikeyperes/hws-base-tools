@@ -466,7 +466,7 @@ class WP_GitHub_Updater {
         }
 
         if ( basename( $source ) === $this->config['proper_folder_name'] ) {
-            return $source;
+            return trailingslashit( $source );
         }
 
         if ( ! $wp_filesystem ) {
@@ -491,7 +491,7 @@ class WP_GitHub_Updater {
             );
         }
 
-        return $target;
+        return trailingslashit( $target );
     }
 
     /**

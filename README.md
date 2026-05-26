@@ -110,7 +110,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.14.7 (Current)
+### v10.14.8 (Current)
+- Fixed WP core plugin updates from GitHub archives by preserving the trailing slash on the normalized source directory, allowing core package validation to find `initialization.php`.
+
+### v10.14.7
 - Test bump to verify the new Update Now activity log + WP core update detection round-trip end-to-end on a live site.
 
 ### v10.14.6
