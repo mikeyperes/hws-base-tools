@@ -464,6 +464,7 @@ function display_wp_admin_settings_page() {
     
     $tabs = [
         'overview'      => '📊 Overview',
+        'prwire-sync'   => '📡 PR Wire Sync',
         'system-checks' => '🔍 System Checks',
         'plugins'       => '🔌 Plugins',
         'snippets'      => '✂️ Snippets',
@@ -804,6 +805,11 @@ function display_wp_admin_settings_page() {
                     case 'system-checks':
                         if ( function_exists( __NAMESPACE__ . '\\display_settings_system_checks' ) ) {
                             display_settings_system_checks();
+                        }
+                        break;
+                    case 'prwire-sync':
+                        if ( function_exists( __NAMESPACE__ . '\\hws_hpr_display_force_sync_dashboard' ) ) {
+                            hws_hpr_display_force_sync_dashboard();
                         }
                         break;
                     case 'plugins':
