@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.16.0
+Version: 10.16.1
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -81,7 +81,7 @@ class Config {
     public static $settings_page_slug = "hws-core-tools";
     public static $settings_page_display_title = "Hexa Core Tools - WP-Config Settings";
 
-    public static $plugin_name = "Hexa PR Wire - Distributor";
+    public static $plugin_name = "Hexa Web Systems - Website Base Tool";
     public static $plugin_starter_file = "initialization.php";
     public static $plugin_slug = "hws-core-tools";
     
@@ -144,7 +144,7 @@ public static function get_github_config() {
 
         // 5) WP compatibility
         'requires'           => '5.0',
-        'tested'             => '6.0',
+        'tested'             => '7.0',
         'readme'             => 'README.md',
 
         // 6) Which file to read “Version:” from
@@ -200,12 +200,12 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "3.5";
+$plugin_version = "10.16.1";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
 $plugin_zip_url = "https://github.com/mikeyperes/hws-base-tools/archive/main.zip";
-$wordpress_version_tested = "6.0";
+$wordpress_version_tested = "7.0";
 $github_access_token = ''; // Leave empty if not required for private repositories
 
 
@@ -242,7 +242,7 @@ add_action( 'plugins_loaded', function() {
         'github_branch'      => 'main',
         'proper_folder_name' => Config::$plugin_folder_name,
         'requires'           => '5.0',
-        'tested'             => '6.4',
+        'tested'             => '7.0',
         // 'access_token' => '', // Uncomment for private repos
     ] );
 

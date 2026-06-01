@@ -111,7 +111,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.15.0 (Current)
+### v10.16.1 (Current)
+- Fixed the masked-login slug fallback so blank or malformed stored values cannot hit an undefined fallback constant.
+- Made `/wp-admin/` return a real 404 for logged-out visitors when masked-login hiding is enabled, matching the existing dashboard status text.
+- Updated plugin metadata to report WordPress 7.0 compatibility and corrected the internal plugin name label.
+
+### v10.15.0
 - Fixed server spec detection to prefer cgroup/container CPU and memory limits before host-level `/proc` values.
 - Server RAM and processor checks now label host-visible fallback readings so shared-server specs are not presented as account-level allocations.
 

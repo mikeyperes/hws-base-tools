@@ -105,8 +105,8 @@ const DEFAULT_SLUG = 'hexa-admin';
 
     public static function slug(): string {
         $o = self::opts();
-        $s = isset($o['slug']) ? sanitize_title_with_dashes($o['slug']) : self::FIXED_SLUG;
-        return $s ?: self::FIXED_SLUG;
+        $raw = isset($o['slug']) ? (string) $o['slug'] : self::DEFAULT_SLUG;
+        return self::sanitize_slug_value($raw);
     }
 
     public static function login_url(string $redirect = '', bool $reauth = false): string {
@@ -477,17 +477,12 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
                 return;
             }
     
-           // Everyone else (guests) → ultra-light static HTML (no PHP parser work)
-if (!is_user_logged_in()) {
-    header('Content-Type: text/html; charset=utf-8');
-    status_header(200);
-    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Access Restricted</title></head><body>'
-       . '<p>WordPress URL has been changed by Hexa Cloud Services (Hexa Web System) for security and performance.</p>'
-       . '<p>Contact support for the revised URL and emergency access.</p>'
-       . '<p>You can also find the current URL under <strong>Dashboard &gt; Settings &gt; Masked Login</strong>.</p>'
-       . '</body></html>';
-    exit;
-}
+            // Everyone else (guests) should see a real hidden endpoint, not a 200 page.
+            if (!is_user_logged_in() && !empty($o['hide_wp_admin'])) {
+                status_header(404);
+                nocache_headers();
+                exit;
+            }
             // Logged-in users: allow normal load
             return;
         }
