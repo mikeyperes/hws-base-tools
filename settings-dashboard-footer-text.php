@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'wp_ajax_hws_footer_text_save_settings', __NAMESPACE__ . '\\ajax_save_footer_text_settings' );
+add_action( 'wp_ajax_hws_footer_text_save_targeted_injection', __NAMESPACE__ . '\\ajax_save_footer_text_targeted_injection' );
 add_action( 'acf/save_post', __NAMESPACE__ . '\\maybe_purge_footer_text_cache_after_acf_save', 20 );
 
 function hws_purge_footer_text_cache(): void {
@@ -111,6 +112,72 @@ function ajax_save_footer_text_settings() {
     ] );
 }
 
+function ajax_save_footer_text_targeted_injection() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        return;
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $enabled   = ! empty( $_POST['enabled'] );
+    $selector  = isset( $_POST['selector'] ) ? trim( wp_strip_all_tags( wp_unslash( $_POST['selector'] ) ) ) : '';
+    $placement = isset( $_POST['placement'] ) ? sanitize_key( wp_unslash( $_POST['placement'] ) ) : 'within';
+    $allowed_html = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_inline_allowed_html' )
+        ? hws_get_footer_text_inline_allowed_html()
+        : [
+            'a'      => [
+                'href'       => true,
+                'title'      => true,
+                'target'     => true,
+                'rel'        => true,
+                'class'      => true,
+                'aria-label' => true,
+            ],
+            'span'   => [
+                'class'      => true,
+                'title'      => true,
+                'aria-label' => true,
+            ],
+            'strong' => [],
+            'b'      => [],
+            'em'     => [],
+            'i'      => [],
+            'small'  => [],
+            'br'     => [],
+            'sup'    => [],
+            'sub'    => [],
+        ];
+    $content   = isset( $_POST['content'] ) ? wp_kses( wp_unslash( $_POST['content'] ), $allowed_html ) : '';
+    $valid     = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_placements' )
+        ? hws_get_footer_text_targeted_placements()
+        : [ 'before' => 'Before target', 'after' => 'After target', 'within' => 'Within target' ];
+
+    if ( ! isset( $valid[ $placement ] ) ) {
+        $placement = 'within';
+    }
+
+    update_option( 'hws_footer_text_targeted_enabled', $enabled ? '1' : '0' );
+    update_option( 'hws_footer_text_targeted_selector', $selector );
+    update_option( 'hws_footer_text_targeted_placement', $placement );
+    update_option( 'hws_footer_text_targeted_content', $content );
+
+    hws_purge_footer_text_cache();
+
+    $markup = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_markup' )
+        ? hws_get_footer_text_targeted_markup()
+        : '';
+
+    wp_send_json_success( [
+        'enabled'     => $enabled,
+        'selector'    => $selector,
+        'placement'   => $placement,
+        'content'     => $content,
+        'markup'      => $markup,
+        'has_content' => '' !== trim( wp_strip_all_tags( $markup ) ),
+    ] );
+}
+
 function display_settings_footer_text() {
     if ( ! function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) || ! hws_is_footer_text_module_enabled() ) {
         echo '<div class="notice notice-warning"><p>Enable the <strong>Footer Text Module</strong> snippet first to unlock this module.</p></div>';
@@ -141,6 +208,22 @@ function display_settings_footer_text() {
         ? hws_get_footer_text_markup()
         : '';
     $shortcode = '[website_content field="website_footer_text"]';
+    $targeted_enabled = function_exists( __NAMESPACE__ . '\\hws_is_footer_text_targeted_injection_enabled' ) && hws_is_footer_text_targeted_injection_enabled();
+    $targeted_selector = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_selector' )
+        ? hws_get_footer_text_targeted_selector()
+        : '';
+    $targeted_placement = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_placement' )
+        ? hws_get_footer_text_targeted_placement()
+        : 'within';
+    $targeted_placements = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_placements' )
+        ? hws_get_footer_text_targeted_placements()
+        : [ 'before' => 'Before target', 'after' => 'After target', 'within' => 'Within target' ];
+    $targeted_content = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_raw' )
+        ? hws_get_footer_text_targeted_raw()
+        : '';
+    $targeted_markup = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_markup' )
+        ? hws_get_footer_text_targeted_markup()
+        : '';
 
     $template_meta_for_js = [];
     foreach ( $templates as $key => $template ) {
@@ -406,6 +489,144 @@ function display_settings_footer_text() {
             border-color: #116329;
         }
 
+        .hws-ft-target-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        @media (min-width: 960px) {
+            .hws-ft-target-grid {
+                grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+            }
+        }
+
+        .hws-ft-field {
+            margin-bottom: 14px;
+        }
+
+        .hws-ft-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1d2327;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .hws-ft-field input[type="text"],
+        .hws-ft-field select,
+        .hws-ft-field textarea {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .hws-ft-field textarea {
+            min-height: 96px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12.5px;
+        }
+
+        .hws-ft-field-help {
+            margin: 5px 0 0;
+            color: #646970;
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+
+        .hws-ft-target-status {
+            font-size: 12.5px;
+            min-height: 18px;
+            color: #2271b1;
+        }
+
+        .hws-ft-target-status.error { color: #b32d2e; }
+
+        .hws-ft-target-preview {
+            padding: 14px 16px;
+            border: 1px solid #d7dbe0;
+            border-radius: 10px;
+            background: #f8f9fb;
+            color: #1d2327;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .hws-ft-target-preview code {
+            display: inline-block;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            background: #fff;
+            border: 1px solid #dcdcde;
+            border-radius: 5px;
+            padding: 2px 6px;
+        }
+
+        .hws-ft-target-modal {
+            position: fixed;
+            inset: 32px;
+            z-index: 100000;
+            display: none;
+            background: #fff;
+            border: 1px solid #1d2327;
+            border-radius: 12px;
+            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .hws-ft-target-modal.is-open {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hws-ft-target-modal-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 16px;
+            background: #1d2327;
+            color: #fff;
+        }
+
+        .hws-ft-target-modal-header h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 15px;
+        }
+
+        .hws-ft-target-modal-header p {
+            margin: 2px 0 0;
+            color: rgba(255,255,255,0.75);
+            font-size: 12.5px;
+        }
+
+        .hws-ft-target-modal iframe {
+            width: 100%;
+            flex: 1 1 auto;
+            border: 0;
+            background: #fff;
+        }
+
+        .hws-ft-picked {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-left: 4px solid #2271b1;
+            background: #f0f6fc;
+            font-size: 12.5px;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .hws-ft-picked code {
+            background: #fff;
+            border: 1px solid #c3d9ef;
+            border-radius: 5px;
+            padding: 2px 6px;
+            overflow-wrap: anywhere;
+        }
+
         /* Live Preview tile — same approach: tile container, template owns surface. */
         .hws-ft-preview {
             border: 1px solid #d7dbe0;
@@ -601,6 +822,82 @@ function display_settings_footer_text() {
                 </div>
             </div>
         </div>
+
+        <div class="hws-ft-card" id="hws-footer-targeted-injection-card">
+            <div class="hws-ft-header" style="margin-bottom:16px;">
+                <div class="hws-ft-header-text">
+                    <h2>Targeted Footer Injection</h2>
+                    <p class="hws-ft-tagline">Separate from the full footer section. This inserts a small inline <code>&lt;span&gt;</code> before, after, or within a specific footer element you choose.</p>
+                </div>
+                <div class="hws-ft-header-toggle">
+                    <span class="hws-ft-status-text <?php echo $targeted_enabled ? 'on' : 'off'; ?>" id="hws-footer-targeted-status">
+                        <?php echo $targeted_enabled ? 'Targeted injection is active' : 'Targeted injection is off'; ?>
+                    </span>
+                    <?php echo render_toggle_switch( 'hws-footer-targeted-enabled', '', $targeted_enabled ); ?>
+                </div>
+            </div>
+
+            <div class="hws-ft-target-grid">
+                <div>
+                    <div class="hws-ft-field">
+                        <label for="hws-footer-targeted-selector">Target selector</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="hws-footer-targeted-selector" value="<?php echo esc_attr( $targeted_selector ); ?>" placeholder="#site-footer .copyright or .footer-bottom">
+                            <button type="button" class="button" id="hws-footer-targeted-pick">Select From Footer</button>
+                        </div>
+                        <p class="hws-ft-field-help">Use an ID, class, or full CSS selector. The picker can inspect the visible footer and fill this for you.</p>
+                        <div class="hws-ft-picked" id="hws-footer-targeted-picked"></div>
+                    </div>
+
+                    <div class="hws-ft-field">
+                        <label for="hws-footer-targeted-placement">Placement</label>
+                        <select id="hws-footer-targeted-placement">
+                            <?php foreach ( $targeted_placements as $placement_key => $placement_label ) : ?>
+                                <option value="<?php echo esc_attr( $placement_key ); ?>" <?php selected( $targeted_placement, $placement_key ); ?>>
+                                    <?php echo esc_html( $placement_label ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="hws-ft-field-help"><strong>Before</strong> inserts before the target element. <strong>After</strong> inserts after it. <strong>Within</strong> appends the span inside the target.</p>
+                    </div>
+
+                    <div class="hws-ft-field">
+                        <label for="hws-footer-targeted-content">Inline HTML</label>
+                        <textarea id="hws-footer-targeted-content" spellcheck="false" placeholder="Example: &lt;span&gt;Powered by Hexa Web Systems&lt;/span&gt;"><?php echo esc_textarea( $targeted_content ); ?></textarea>
+                        <p class="hws-ft-field-help">Saved output is always wrapped in <code>&lt;span class="hws-footer-inline-injection"&gt;</code>. Inline tags and shortcodes are allowed; block tags are stripped.</p>
+                    </div>
+
+                    <div class="hws-ft-editor-actions">
+                        <button type="button" class="button button-primary" id="hws-footer-targeted-save">Save Targeted Injection</button>
+                        <span class="hws-ft-target-status" id="hws-footer-targeted-save-status" aria-live="polite"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="hws-ft-col-title">Injection Preview</h3>
+                    <div class="hws-ft-target-preview">
+                        <p><strong>Status:</strong> <span id="hws-footer-targeted-preview-status"><?php echo $targeted_enabled ? 'Enabled' : 'Disabled'; ?></span></p>
+                        <p><strong>Selector:</strong> <code id="hws-footer-targeted-preview-selector"><?php echo esc_html( $targeted_selector ?: 'None selected' ); ?></code></p>
+                        <p><strong>Placement:</strong> <code id="hws-footer-targeted-preview-placement"><?php echo esc_html( $targeted_placements[ $targeted_placement ] ?? 'Within target' ); ?></code></p>
+                        <p><strong>Span content:</strong></p>
+                        <div id="hws-footer-targeted-preview-markup">
+                            <?php echo $targeted_markup ? '<span class="hws-footer-inline-injection">' . $targeted_markup . '</span>' : '<em>No inline content saved yet.</em>'; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hws-ft-target-modal" id="hws-footer-targeted-modal" aria-hidden="true">
+            <div class="hws-ft-target-modal-header">
+                <div>
+                    <h3>Click a footer element</h3>
+                    <p>Hover highlights visible footer elements. Click the exact text/area where the inline span should attach.</p>
+                </div>
+                <button type="button" class="button button-secondary" id="hws-footer-targeted-close">Close</button>
+            </div>
+            <iframe id="hws-footer-targeted-frame" title="Footer selector picker"></iframe>
+        </div>
     </div>
 
     <script>
@@ -614,9 +911,20 @@ function display_settings_footer_text() {
         var $miniPreviews    = $('.hws-ft-item-mini');
         var $saveContent     = $('#hws-footer-text-save-content');
         var $copyBtn         = $('#hws-footer-text-copy');
+        var $targetToggle    = $('#hws-footer-targeted-enabled');
+        var $targetStatus    = $('#hws-footer-targeted-status');
+        var $targetSelector  = $('#hws-footer-targeted-selector');
+        var $targetPlacement = $('#hws-footer-targeted-placement');
+        var $targetContent   = $('#hws-footer-targeted-content');
+        var $targetSave      = $('#hws-footer-targeted-save');
+        var $targetSaveStatus = $('#hws-footer-targeted-save-status');
+        var $targetModal     = $('#hws-footer-targeted-modal');
+        var $targetFrame     = $('#hws-footer-targeted-frame');
+        var $targetPicked    = $('#hws-footer-targeted-picked');
         var templateMeta     = <?php echo wp_json_encode( $template_meta_for_js ); ?>;
         var miniEmptyHtml    = '<span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>';
         var allAlignClasses  = 'hws-ft-align--left hws-ft-align--center hws-ft-align--right';
+        var pickerUrl        = <?php echo wp_json_encode( add_query_arg( 'hws_footer_picker', '1', home_url( '/' ) ) ); ?>;
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
@@ -709,6 +1017,243 @@ function display_settings_footer_text() {
             $saving.removeClass('error');
             if (isError) $saving.addClass('error');
             $saving.text(msg || '');
+        }
+
+        function showTargetSaving(msg, isError) {
+            $targetSaveStatus.removeClass('error');
+            if (isError) $targetSaveStatus.addClass('error');
+            $targetSaveStatus.text(msg || '');
+        }
+
+        function targetPlacementLabel(value) {
+            var map = <?php echo wp_json_encode( $targeted_placements ); ?> || {};
+            return map[value] || 'Within target';
+        }
+
+        function refreshTargetPreview(data) {
+            data = data || {};
+            var enabled = !!data.enabled;
+            var selector = data.selector || $targetSelector.val() || '';
+            var placement = data.placement || $targetPlacement.val() || 'within';
+            var markup = data.markup;
+
+            $('#hws-footer-targeted-preview-status').text(enabled ? 'Enabled' : 'Disabled');
+            $('#hws-footer-targeted-preview-selector').text(selector || 'None selected');
+            $('#hws-footer-targeted-preview-placement').text(targetPlacementLabel(placement));
+
+            if (typeof markup === 'string' && markup.replace(/\s+/g, '').length) {
+                $('#hws-footer-targeted-preview-markup').html('<span class="hws-footer-inline-injection">' + markup + '</span>');
+            }
+        }
+
+        function saveTargetedInjection() {
+            var enabled = $targetToggle.is(':checked') ? 1 : 0;
+            var payload = {
+                action: 'hws_footer_text_save_targeted_injection',
+                nonce: hwsNonce,
+                enabled: enabled,
+                selector: $targetSelector.val() || '',
+                placement: $targetPlacement.val() || 'within',
+                content: $targetContent.val() || ''
+            };
+
+            $targetSave.prop('disabled', true);
+            $targetToggle.prop('disabled', true);
+            showTargetSaving('Saving targeted injection…', false);
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: payload
+            }).done(function(response) {
+                if (!response || !response.success) { throw response; }
+
+                if (enabled) {
+                    $targetStatus.removeClass('off').addClass('on').text('Targeted injection is active');
+                } else {
+                    $targetStatus.removeClass('on').addClass('off').text('Targeted injection is off');
+                }
+
+                refreshTargetPreview(response.data || {});
+                showTargetSaving('Targeted injection saved.', false);
+                window.setTimeout(function() { showTargetSaving('', false); }, 1500);
+            }).fail(function(response) {
+                console.error('Targeted footer injection save failed', response);
+                showTargetSaving('Save failed. Refresh and try again.', true);
+            }).always(function() {
+                $targetSave.prop('disabled', false);
+                $targetToggle.prop('disabled', false);
+            });
+        }
+
+        function cssEscape(value) {
+            if (window.CSS && CSS.escape) return CSS.escape(value);
+            return String(value || '').replace(/[^a-zA-Z0-9_-]/g, function(ch) {
+                return '\\' + ch;
+            });
+        }
+
+        function elementTextPreview(el) {
+            return (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+        }
+
+        function selectorIsUnique(doc, selector) {
+            try {
+                return doc.querySelectorAll(selector).length === 1;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        function buildDomPath(el, doc) {
+            var parts = [];
+            var current = el;
+
+            while (current && current.nodeType === 1 && current !== doc.body && parts.length < 5) {
+                var tag = current.tagName.toLowerCase();
+                var parent = current.parentElement;
+
+                if (current.id) {
+                    parts.unshift(tag + '#' + cssEscape(current.id));
+                    break;
+                }
+
+                if (current.classList && current.classList.length) {
+                    var classes = Array.prototype.slice.call(current.classList).slice(0, 3).map(cssEscape).join('.');
+                    parts.unshift(tag + '.' + classes);
+                } else if (parent) {
+                    var siblings = Array.prototype.filter.call(parent.children, function(child) {
+                        return child.tagName === current.tagName;
+                    });
+                    parts.unshift(tag + ':nth-of-type(' + (siblings.indexOf(current) + 1) + ')');
+                } else {
+                    parts.unshift(tag);
+                }
+
+                current = parent;
+            }
+
+            return parts.join(' > ');
+        }
+
+        function suggestSelector(el, doc) {
+            var tag = el.tagName.toLowerCase();
+
+            if (el.id) {
+                var byId = '#' + cssEscape(el.id);
+                if (selectorIsUnique(doc, byId)) {
+                    return byId;
+                }
+            }
+
+            if (el.classList && el.classList.length) {
+                var classList = Array.prototype.slice.call(el.classList)
+                    .filter(function(cls) { return !/^elementor-(element|widget|column|section|container)$/.test(cls); })
+                    .slice(0, 3);
+
+                if (classList.length) {
+                    var classSelector = '.' + classList.map(cssEscape).join('.');
+                    if (selectorIsUnique(doc, classSelector)) {
+                        return classSelector;
+                    }
+
+                    var footer = el.closest('footer, [role="contentinfo"], .site-footer, .elementor-location-footer, [data-elementor-type="footer"]');
+                    if (footer) {
+                        var scoped = footer.id
+                            ? '#' + cssEscape(footer.id) + ' ' + classSelector
+                            : buildDomPath(footer, doc) + ' ' + classSelector;
+                        if (selectorIsUnique(doc, scoped)) {
+                            return scoped;
+                        }
+                    }
+
+                    return tag + classSelector;
+                }
+            }
+
+            return buildDomPath(el, doc);
+        }
+
+        function openFooterPicker() {
+            $targetModal.addClass('is-open').attr('aria-hidden', 'false');
+            $targetFrame.attr('src', pickerUrl + (pickerUrl.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now());
+        }
+
+        function closeFooterPicker() {
+            $targetModal.removeClass('is-open').attr('aria-hidden', 'true');
+            $targetFrame.attr('src', 'about:blank');
+        }
+
+        function bindFooterPickerFrame() {
+            var frame = $targetFrame.get(0);
+            var doc;
+            var win;
+            try {
+                doc = frame ? frame.contentDocument : null;
+                win = frame ? frame.contentWindow : null;
+            } catch (err) {
+                showTargetSaving('Picker could not inspect the page. Open the live page and copy a selector manually.', true);
+                return;
+            }
+            if (!doc) return;
+
+            var style = doc.createElement('style');
+            style.textContent = '.hws-ft-picker-hover{outline:3px solid #2271b1!important;outline-offset:3px!important;cursor:crosshair!important;}';
+            doc.head.appendChild(style);
+
+            var footerRoots = doc.querySelectorAll('footer, [role="contentinfo"], .site-footer, .elementor-location-footer, [data-elementor-type="footer"]');
+            if (!footerRoots.length) {
+                footerRoots = [doc.body];
+            }
+
+            Array.prototype.forEach.call(footerRoots, function(rootNode) {
+                rootNode.addEventListener('mouseover', function(event) {
+                    if (event.target && event.target.nodeType === 1) {
+                        event.target.classList.add('hws-ft-picker-hover');
+                    }
+                }, true);
+
+                rootNode.addEventListener('mouseout', function(event) {
+                    if (event.target && event.target.nodeType === 1) {
+                        event.target.classList.remove('hws-ft-picker-hover');
+                    }
+                }, true);
+
+                rootNode.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    var el = event.target;
+                    if (!el || el.nodeType !== 1) return;
+
+                    var selector = suggestSelector(el, doc);
+                    var id = el.id ? '#' + el.id : 'none';
+                    var classes = el.className && typeof el.className === 'string' ? el.className.trim() : '';
+                    var text = elementTextPreview(el);
+
+                    $targetSelector.val(selector);
+                    $targetPicked.html(
+                        '<strong>Picked:</strong> <code>' + $('<div>').text(el.tagName.toLowerCase()).html() + '</code><br>' +
+                        '<strong>ID:</strong> <code>' + $('<div>').text(id).html() + '</code><br>' +
+                        '<strong>Classes:</strong> <code>' + $('<div>').text(classes || 'none').html() + '</code><br>' +
+                        '<strong>Selector:</strong> <code>' + $('<div>').text(selector).html() + '</code><br>' +
+                        (text ? '<strong>Text:</strong> ' + $('<div>').text(text).html() : '')
+                    ).show();
+
+                    refreshTargetPreview({
+                        enabled: $targetToggle.is(':checked'),
+                        selector: selector,
+                        placement: $targetPlacement.val() || 'within'
+                    });
+
+                    closeFooterPicker();
+                }, true);
+            });
+
+            try {
+                win.scrollTo(0, doc.body.scrollHeight);
+            } catch (err) {}
         }
 
         function saveFooterTextSettings(includeContent) {
@@ -804,6 +1349,33 @@ function display_settings_footer_text() {
                 done(false);
             }
         });
+
+        $targetToggle.on('change', saveTargetedInjection);
+        $targetPlacement.on('change', function() {
+            refreshTargetPreview({
+                enabled: $targetToggle.is(':checked'),
+                selector: $targetSelector.val() || '',
+                placement: $targetPlacement.val() || 'within'
+            });
+        });
+        $targetSelector.on('input change', function() {
+            refreshTargetPreview({
+                enabled: $targetToggle.is(':checked'),
+                selector: $targetSelector.val() || '',
+                placement: $targetPlacement.val() || 'within'
+            });
+        });
+        $targetContent.on('input change', function() {
+            $('#hws-footer-targeted-preview-markup').html(
+                $targetContent.val()
+                    ? '<span class="hws-footer-inline-injection">' + $('<div>').text($targetContent.val()).html() + '</span>'
+                    : '<em>No inline content saved yet.</em>'
+            );
+        });
+        $targetSave.on('click', saveTargetedInjection);
+        $('#hws-footer-targeted-pick').on('click', openFooterPicker);
+        $('#hws-footer-targeted-close').on('click', closeFooterPicker);
+        $targetFrame.on('load', bindFooterPickerFrame);
 
         applyPreviewTemplate();
         applyAlignmentToMinis();

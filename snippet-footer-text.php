@@ -10,11 +10,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  * reads as a natural continuation of the footer, not an inset panel.
  */
 function enable_footer_text_auto_injection() {
-    if ( is_admin() || ! hws_is_footer_text_feature_enabled() ) {
+    if ( is_admin() ) {
         return;
     }
 
-    add_action( 'wp_footer', __NAMESPACE__ . '\\hws_render_footer_text_in_footer', 25 );
+    if ( hws_is_footer_text_feature_enabled() ) {
+        add_action( 'wp_footer', __NAMESPACE__ . '\\hws_render_footer_text_in_footer', 25 );
+    }
+
+    if ( hws_is_footer_text_targeted_injection_enabled() ) {
+        add_action( 'wp_footer', __NAMESPACE__ . '\\hws_render_footer_text_targeted_injection', 26 );
+    }
 }
 
 function hws_is_footer_text_module_enabled(): bool {
@@ -23,6 +29,16 @@ function hws_is_footer_text_module_enabled(): bool {
 
 function hws_is_footer_text_feature_enabled(): bool {
     return (bool) get_option( 'hws_footer_text_feature_enabled', false );
+}
+
+function hws_is_footer_text_targeted_injection_enabled(): bool {
+    return (bool) get_option( 'hws_footer_text_targeted_enabled', false );
+}
+
+function hws_is_footer_text_picker_request(): bool {
+    return isset( $_GET['hws_footer_picker'] )
+        && is_user_logged_in()
+        && current_user_can( 'manage_options' );
 }
 
 /**
@@ -293,19 +309,80 @@ function hws_get_footer_text_alignment(): string {
     return $alignment;
 }
 
-function hws_get_footer_text_raw(): string {
-    if ( ! function_exists( 'get_field' ) ) {
-        return '';
+function hws_get_footer_text_targeted_placements(): array {
+    return [
+        'before' => 'Before target',
+        'after'  => 'After target',
+        'within' => 'Within target',
+    ];
+}
+
+function hws_get_footer_text_targeted_selector(): string {
+    $selector = get_option( 'hws_footer_text_targeted_selector', '' );
+    return is_string( $selector ) ? trim( wp_strip_all_tags( $selector ) ) : '';
+}
+
+function hws_get_footer_text_targeted_placement(): string {
+    $placement = get_option( 'hws_footer_text_targeted_placement', 'within' );
+    $valid     = hws_get_footer_text_targeted_placements();
+
+    if ( ! is_string( $placement ) || ! isset( $valid[ $placement ] ) ) {
+        return 'within';
     }
 
-    $footer_text = get_field( 'website_footer_text', 'option' );
+    return $placement;
+}
+
+function hws_get_footer_text_targeted_raw(): string {
+    $content = get_option( 'hws_footer_text_targeted_content', '' );
+    return is_string( $content ) ? $content : '';
+}
+
+function hws_get_footer_text_inline_allowed_html(): array {
+    return [
+        'a'      => [
+            'href'         => true,
+            'title'        => true,
+            'target'       => true,
+            'rel'          => true,
+            'class'        => true,
+            'aria-label'   => true,
+            'data-*'       => true,
+        ],
+        'span'   => [
+            'class'      => true,
+            'title'      => true,
+            'aria-label' => true,
+            'data-*'     => true,
+        ],
+        'strong' => [],
+        'b'      => [],
+        'em'     => [],
+        'i'      => [],
+        'small'  => [],
+        'br'     => [],
+        'sup'    => [],
+        'sub'    => [],
+    ];
+}
+
+function hws_get_footer_text_raw(): string {
+    $footer_text = '';
+
+    if ( function_exists( 'get_field' ) ) {
+        $footer_text = get_field( 'website_footer_text', 'option' );
+
+        if ( empty( $footer_text ) ) {
+            $website_settings = get_field( 'website', 'option' );
+
+            if ( is_array( $website_settings ) && ! empty( $website_settings['footer_text'] ) ) {
+                $footer_text = $website_settings['footer_text'];
+            }
+        }
+    }
 
     if ( empty( $footer_text ) ) {
-        $website_settings = get_field( 'website', 'option' );
-
-        if ( is_array( $website_settings ) && ! empty( $website_settings['footer_text'] ) ) {
-            $footer_text = $website_settings['footer_text'];
-        }
+        $footer_text = get_option( 'options_website_footer_text', '' );
     }
 
     return is_string( $footer_text ) ? $footer_text : '';
@@ -334,7 +411,7 @@ function hws_save_footer_text_raw( string $content ): bool {
 }
 
 function hws_render_footer_text_in_footer() {
-    if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || is_feed() || is_embed() || is_preview() ) {
+    if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || is_feed() || is_embed() || is_preview() || hws_is_footer_text_picker_request() ) {
         return;
     }
 
@@ -525,6 +602,131 @@ function hws_render_footer_text_in_footer() {
     <?php
 }
 
+function hws_render_footer_text_targeted_injection() {
+    if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || is_feed() || is_embed() || is_preview() || hws_is_footer_text_picker_request() ) {
+        return;
+    }
+
+    $selector  = hws_get_footer_text_targeted_selector();
+    $placement = hws_get_footer_text_targeted_placement();
+    $markup    = hws_get_footer_text_targeted_markup();
+
+    if ( '' === $selector || '' === $markup ) {
+        return;
+    }
+
+    $config = [
+        'selector'  => $selector,
+        'placement' => $placement,
+    ];
+    ?>
+    <style id="hws-footer-targeted-injection-style">
+        .hws-footer-inline-injection {
+            display: inline;
+            color: inherit;
+            font: inherit;
+            letter-spacing: inherit;
+            text-transform: inherit;
+        }
+
+        .hws-footer-inline-injection a {
+            color: inherit;
+            font: inherit;
+        }
+    </style>
+    <span id="hws-footer-targeted-injection" class="hws-footer-inline-injection" data-hws-footer-injection="1" data-hws-footer-injection-placement="<?php echo esc_attr( $placement ); ?>" style="display:none;"><?php echo $markup; ?></span>
+    <script id="hws-footer-targeted-injection-script" data-no-optimize="1" data-cfasync="false">
+    (function() {
+        var root = document.getElementById('hws-footer-targeted-injection');
+        if (!root) return;
+
+        var config = <?php echo wp_json_encode( $config ); ?> || {};
+        var selector = config.selector || '';
+        var placement = config.placement || 'within';
+
+        function hasHiddenAncestor(node) {
+            var current = node;
+            while (current && current !== document.body) {
+                if (current.nodeType !== 1) {
+                    current = current.parentElement;
+                    continue;
+                }
+
+                if (current.hasAttribute('hidden') || current.getAttribute('aria-hidden') === 'true') {
+                    return true;
+                }
+
+                var className = current.getAttribute('class') || '';
+                if (/(^|\s)(elementor-hidden-desktop|elementor-hidden-tablet|elementor-hidden-mobile|screen-reader-text|sr-only|hidden)(\s|$)/.test(className)) {
+                    return true;
+                }
+
+                var style = (current.getAttribute('style') || '').replace(/\s+/g, '').toLowerCase();
+                if (style.indexOf('display:none') !== -1 || style.indexOf('visibility:hidden') !== -1) {
+                    return true;
+                }
+
+                current = current.parentElement;
+            }
+            return false;
+        }
+
+        function findTarget() {
+            if (!selector) return null;
+            try {
+                var nodes = document.querySelectorAll(selector);
+                for (var i = 0; i < nodes.length; i++) {
+                    if (nodes[i] && document.body.contains(nodes[i]) && !hasHiddenAncestor(nodes[i]) && nodes[i] !== root) {
+                        return nodes[i];
+                    }
+                }
+            } catch (err) {
+                root.remove();
+                return null;
+            }
+            return null;
+        }
+
+        function inject() {
+            if (!document.body) return false;
+            var target = findTarget();
+            if (!target) return false;
+
+            if (placement === 'before' && target.parentNode) {
+                target.parentNode.insertBefore(root, target);
+            } else if (placement === 'after' && target.parentNode) {
+                target.parentNode.insertBefore(root, target.nextSibling);
+            } else {
+                target.appendChild(root);
+            }
+
+            root.style.display = '';
+            root.setAttribute('data-hws-footer-injection-status', 'mounted');
+            return true;
+        }
+
+        if (inject()) return;
+
+        var observer = new MutationObserver(function() {
+            if (inject()) {
+                observer.disconnect();
+            }
+        });
+
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+            window.setTimeout(function() {
+                observer.disconnect();
+                if (!root.parentNode || root.parentNode === document.body) {
+                    root.remove();
+                }
+            }, 8000);
+        }
+    })();
+    </script>
+    <?php
+}
+
 function hws_get_footer_text_markup(): string {
     static $is_rendering = false;
 
@@ -545,4 +747,27 @@ function hws_get_footer_text_markup(): string {
     $is_rendering = false;
 
     return trim( $footer_text );
+}
+
+function hws_get_footer_text_targeted_markup(): string {
+    static $is_rendering = false;
+
+    if ( $is_rendering ) {
+        return '';
+    }
+
+    $content = trim( hws_get_footer_text_targeted_raw() );
+
+    if ( '' === $content ) {
+        return '';
+    }
+
+    $is_rendering = true;
+    $content      = shortcode_unautop( $content );
+    $content      = do_shortcode( $content );
+    $content      = wp_kses( $content, hws_get_footer_text_inline_allowed_html() );
+    $content      = preg_replace( '/\s+/', ' ', $content );
+    $is_rendering = false;
+
+    return trim( (string) $content );
 }

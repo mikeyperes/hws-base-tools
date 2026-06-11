@@ -111,7 +111,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.16.1 (Current)
+### v10.17.0 (Current)
+- Added a separate Targeted Footer Injection tool that inserts inline HTML as a non-invasive span before, after, or within a selected footer element.
+- Added a footer element picker for admins to inspect the live footer, click an element, and capture its ID/classes/suggested selector for targeted injection.
+- Removed Hexa PR Wire force-sync admin code from HWS Base Tools; PR Wire functionality now belongs in the Hexa PR Wire plugin.
+
+### v10.16.1
 - Fixed the masked-login slug fallback so blank or malformed stored values cannot hit an undefined fallback constant.
 - Made `/wp-admin/` return a real 404 for logged-out visitors when masked-login hiding is enabled, matching the existing dashboard status text.
 - Updated plugin metadata to report WordPress 7.0 compatibility and corrected the internal plugin name label.

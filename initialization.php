@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.16.1
+Version: 10.17.0
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -200,7 +200,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.16.1";
+$plugin_version = "10.17.0";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -311,7 +311,6 @@ if (is_admin()){
 
 include_once("helper.php");
 include_once("safe-wrappers.php");  // Safe AJAX, shell_exec, and error handling utilities
-include_once("hexa-prwire-force-sync-admin.php");
 hws_boot_structured_admin_modules();
 
 // Build Dashboard - New modular structure
