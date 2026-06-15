@@ -46,48 +46,77 @@ add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 
 function hws_get_brand_asset_definitions(): array {
 	return [
-		'icon' => [
-			'label' => 'Icon',
-			'option' => 'hws_brand_asset_icon_id',
-			'core' => 'site_icon',
-			'description' => 'Primary favicon/app icon. Syncs to WordPress Site Icon and /favicon.ico.',
-		],
-		'icon_1x1' => [
-			'label' => 'Icon 1:1',
-			'option' => 'hws_brand_asset_icon_1x1_id',
-			'core' => '',
-			'description' => 'Square icon variant for social profiles, avatars, and app tiles.',
-		],
-		'icon_text' => [
-			'label' => 'Icon with text',
-			'option' => 'hws_brand_asset_icon_text_id',
+		'logo' => [
+			'label' => 'Logo',
+			'option' => 'hws_brand_asset_logo_id',
+			'legacy_options' => [ 'hws_brand_asset_icon_text_id' ],
 			'core' => 'custom_logo',
-			'description' => 'Primary horizontal logo. Syncs to the WordPress Custom Logo.',
+			'description' => 'Primary WordPress logo. Syncs to the WordPress Custom Logo.',
 		],
-		'icon_dark' => [
-			'label' => 'Icon dark background',
-			'option' => 'hws_brand_asset_icon_dark_id',
+		'logo_1x1' => [
+			'label' => 'Logo 1:1',
+			'option' => 'hws_brand_asset_logo_1x1_id',
+			'legacy_options' => [ 'hws_brand_asset_icon_1x1_id' ],
 			'core' => '',
-			'description' => 'Primary icon prepared for dark backgrounds.',
+			'description' => 'Square logo variant for social profiles, avatars, and app tiles.',
 		],
-		'icon_dark_1x1' => [
-			'label' => 'Icon dark background 1:1',
-			'option' => 'hws_brand_asset_icon_dark_1x1_id',
+		'logo_text' => [
+			'label' => 'Logo with text',
+			'option' => 'hws_brand_asset_logo_text_id',
+			'legacy_options' => [],
 			'core' => '',
-			'description' => 'Square dark-background icon variant.',
+			'description' => 'Horizontal logo with readable brand text.',
 		],
-		'icon_text_dark' => [
-			'label' => 'Icon with text dark background',
-			'option' => 'hws_brand_asset_icon_text_dark_id',
+		'logo_dark' => [
+			'label' => 'Logo dark background',
+			'option' => 'hws_brand_asset_logo_dark_id',
+			'legacy_options' => [ 'hws_brand_asset_icon_dark_id' ],
 			'core' => '',
-			'description' => 'Horizontal logo prepared for dark backgrounds.',
+			'description' => 'Logo prepared for dark backgrounds.',
+		],
+		'logo_dark_1x1' => [
+			'label' => 'Logo dark background 1:1',
+			'option' => 'hws_brand_asset_logo_dark_1x1_id',
+			'legacy_options' => [ 'hws_brand_asset_icon_dark_1x1_id' ],
+			'core' => '',
+			'description' => 'Square dark-background logo variant.',
+		],
+		'logo_text_dark' => [
+			'label' => 'Logo with text dark background',
+			'option' => 'hws_brand_asset_logo_text_dark_id',
+			'legacy_options' => [ 'hws_brand_asset_icon_text_dark_id' ],
+			'core' => '',
+			'description' => 'Horizontal text logo prepared for dark backgrounds.',
 		],
 	];
 }
 
+function hws_normalize_brand_asset_key( string $key ): string {
+	$key = sanitize_key( $key );
+	$aliases = [
+		'icon' => 'logo',
+		'icon_1x1' => 'logo_1x1',
+		'icon_text' => 'logo',
+		'icon_dark' => 'logo_dark',
+		'icon_dark_1x1' => 'logo_dark_1x1',
+		'icon_text_dark' => 'logo_text_dark',
+	];
+
+	return $aliases[ $key ] ?? $key;
+}
+
 function hws_get_brand_asset_definition( string $key ): ?array {
 	$definitions = hws_get_brand_asset_definitions();
-	return $definitions[ sanitize_key( $key ) ] ?? null;
+	$normalized  = hws_normalize_brand_asset_key( $key );
+
+	if ( ! isset( $definitions[ $normalized ] ) ) {
+		return null;
+	}
+
+	$definition        = $definitions[ $normalized ];
+	$definition['key'] = $normalized;
+
+	return $definition;
 }
 
 function hws_get_brand_asset_attachment_id( string $key ): int {
@@ -101,12 +130,18 @@ function hws_get_brand_asset_attachment_id( string $key ): int {
 		return $attachment_id;
 	}
 
-	if ( ( $definition['core'] ?? '' ) === 'site_icon' ) {
-		return (int) get_option( 'site_icon', 0 );
+	if ( ( $definition['core'] ?? '' ) === 'custom_logo' ) {
+		$core_attachment_id = (int) get_theme_mod( 'custom_logo', 0 );
+		if ( $core_attachment_id ) {
+			return $core_attachment_id;
+		}
 	}
 
-	if ( ( $definition['core'] ?? '' ) === 'custom_logo' ) {
-		return (int) get_theme_mod( 'custom_logo', 0 );
+	foreach ( (array) ( $definition['legacy_options'] ?? [] ) as $legacy_option ) {
+		$legacy_attachment_id = (int) get_option( $legacy_option, 0 );
+		if ( $legacy_attachment_id ) {
+			return $legacy_attachment_id;
+		}
 	}
 
 	return 0;
@@ -134,7 +169,7 @@ function hws_get_brand_asset_url( string $key, string $size = 'full' ): string {
 function hws_brand_asset_shortcode( $atts ): string {
 	$atts = shortcode_atts(
 		[
-			'key' => 'icon_text',
+			'key' => 'logo',
 			'type' => '',
 			'size' => 'full',
 			'output' => 'img',
@@ -146,7 +181,7 @@ function hws_brand_asset_shortcode( $atts ): string {
 		'hws_brand_asset'
 	);
 
-	$key = sanitize_key( $atts['type'] !== '' ? $atts['type'] : $atts['key'] );
+	$key = hws_normalize_brand_asset_key( (string) ( $atts['type'] !== '' ? $atts['type'] : $atts['key'] ) );
 	$attachment_id = hws_get_brand_asset_attachment_id( $key );
 	if ( ! $attachment_id ) {
 		return '';

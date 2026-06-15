@@ -65,8 +65,8 @@ Structured feature management with toggles, optional settings, use instructions,
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions
 - Letter-based favicon generator
-- Six logo slots: `icon`, `icon_1x1`, `icon_text`, `icon_dark`, `icon_dark_1x1`, `icon_text_dark`
-- Shortcodes: `[site_logo key="icon_text" size="medium"]`, `[site_logo key="icon_text" size="full" output="url"]`, `[site_logo key="icon_text" size="300x120"]`
+- Six logo slots: `logo`, `logo_1x1`, `logo_text`, `logo_dark`, `logo_dark_1x1`, `logo_text_dark`
+- Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`
 
 ## UI Cleanup Tab
 WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, footer text.
@@ -83,8 +83,8 @@ WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, foote
 | `[website_url]` | Site URL |
 | `[display_year]` | Current year |
 | `[current_year]` | Current year alias |
-| `[site_logo key="icon_text" size="medium"]` | Brand/logo asset image |
-| `[site_logo key="icon_text" size="full" output="url"]` | Brand/logo asset URL |
+| `[site_logo key="logo" size="medium"]` | Brand/logo asset image |
+| `[site_logo key="logo" size="full" output="url"]` | Brand/logo asset URL |
 
 ---
 
@@ -132,7 +132,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.4 (Current)
+### v10.18.5 (Current)
+- Separated favicon/site-icon management from logo asset management on the Brand Assets tab.
+- Updated favicon actions and logo upload/clear actions to refresh the tab with AJAX instead of reloading the page.
+- Renamed the six managed asset slots to logo-based keys and made the first slot sync to WordPress Custom Logo.
+
+### v10.18.4
 - Added a dedicated Brand Assets tab and removed duplicate favicon controls from Overview/System Basics.
 - Consolidated favicon management into one panel that shows both the uploaded PNG source URL and physical `/favicon.ico` URL with new-tab links.
 - Added six managed logo asset slots with upload/clear controls, URL links, WordPress Site Icon/Custom Logo sync, and `[site_logo]` / `[hws_brand_asset]` shortcodes with size parameters.

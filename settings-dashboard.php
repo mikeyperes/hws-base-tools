@@ -3677,6 +3677,7 @@ function hws_asset_external_link( string $url ): string {
 }
 
 function hws_get_brand_asset_payload( string $key ): array {
+    $key           = function_exists( __NAMESPACE__ . '\\hws_normalize_brand_asset_key' ) ? hws_normalize_brand_asset_key( $key ) : sanitize_key( $key );
     $definition    = hws_get_brand_asset_definition( $key );
     $attachment_id = hws_get_brand_asset_attachment_id( $key );
     $full_url      = $attachment_id ? wp_get_attachment_image_url( $attachment_id, 'full' ) : '';
@@ -3712,29 +3713,34 @@ function render_site_icon_panel() {
             <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:start;">
                 <div>
                     <?php if ( $icon_url ) : ?>
-                        <img src="<?php echo esc_url( $icon_url ); ?>" alt="Site icon preview" style="width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                        <img id="hws-favicon-preview" src="<?php echo esc_url( $icon_url ); ?>" alt="Site icon preview" style="width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
                     <?php else : ?>
-                        <div style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;">No icon</div>
+                        <div id="hws-favicon-preview" style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;">No icon</div>
                     <?php endif; ?>
                     <div style="font-size:11px;color:#646970;margin-top:6px;">WordPress Site Icon</div>
                 </div>
 
                 <div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:14px;">
                         <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;">
-                            <strong style="display:block;margin-bottom:6px;">Uploaded PNG source</strong>
-                            <div id="hws-favicon-png-url"><?php echo hws_asset_external_link( $icon_url ); ?></div>
-                            <div style="font-size:12px;color:#646970;margin-top:6px;">Attachment ID: <?php echo $icon_id ? (int) $icon_id : 'none'; ?></div>
-                        </div>
-                        <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;">
-                            <strong style="display:block;margin-bottom:6px;">Physical ICO file</strong>
-                            <div id="hws-favicon-ico-url"><?php echo $favicon_exists ? hws_asset_external_link( $favicon_url ) : '<span style="color:#d63638;">Missing</span>'; ?></div>
-                            <div style="font-size:12px;color:#646970;margin-top:6px;"><?php echo $favicon_exists ? 'Exists: ' . esc_html( $favicon_size ) : 'Generated at /favicon.ico'; ?></div>
+                            <strong style="display:block;margin-bottom:10px;">Current favicon files</strong>
+                            <div style="display:grid;gap:12px;">
+                                <div>
+                                    <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Uploaded PNG source</label>
+                                    <div id="hws-favicon-png-url"><?php echo hws_asset_external_link( $icon_url ); ?></div>
+                                    <div style="font-size:12px;color:#646970;margin-top:6px;">Attachment ID: <span id="hws-favicon-attachment-id"><?php echo $icon_id ? (int) $icon_id : 'none'; ?></span></div>
+                                </div>
+                                <div>
+                                    <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Physical ICO file</label>
+                                    <div id="hws-favicon-ico-url"><?php echo $favicon_exists ? hws_asset_external_link( $favicon_url ) : '<span style="color:#d63638;">Missing</span>'; ?></div>
+                                    <div id="hws-favicon-ico-meta" style="font-size:12px;color:#646970;margin-top:6px;"><?php echo $favicon_exists ? 'Exists: ' . esc_html( $favicon_size ) : 'Generated at /favicon.ico'; ?></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                        <button type="button" id="hws-upload-favicon" class="button button-primary">Upload / Replace Icon PNG</button>
+                        <button type="button" id="hws-upload-favicon" class="button button-primary">Upload / Replace Site Icon PNG</button>
                         <button type="button" id="hws-copy-favicon" class="button">Create / Update .ico from PNG</button>
                         <a href="<?php echo esc_url( admin_url( 'customize.php?autofocus[section]=title_tagline' ) ); ?>" class="button" target="_blank" rel="noopener">Open WP Site Icon ↗</a>
                     </div>
@@ -3750,7 +3756,7 @@ function render_site_icon_panel() {
                     </div>
 
                     <div id="hws-favicon-status" style="font-size:13px;margin-top:10px;" aria-live="polite"></div>
-                    <p style="font-size:12px;color:#646970;margin:10px 0 0;">Uploaded icons are center-cropped to a clean 512x512 PNG before syncing to WordPress Site Icon and generating the real <code>/favicon.ico</code>.</p>
+                    <p style="font-size:12px;color:#646970;margin:10px 0 0;">Uploaded favicon images are center-cropped to a clean 512x512 PNG before syncing to WordPress Site Icon and generating the real <code>/favicon.ico</code>. Logo assets are managed separately below.</p>
                 </div>
             </div>
         </div>
@@ -3769,7 +3775,7 @@ function render_brand_logo_assets_panel() {
                     <?php $payload = hws_get_brand_asset_payload( $key ); ?>
                     <div class="hws-brand-asset-card" data-brand-key="<?php echo esc_attr( $key ); ?>" style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;">
                         <div style="display:flex;gap:12px;align-items:flex-start;">
-                            <div style="width:72px;min-width:72px;">
+                            <div class="hws-brand-preview-wrap" style="width:72px;min-width:72px;">
                                 <?php if ( $payload['thumbnail_url'] ) : ?>
                                     <img class="hws-brand-preview" src="<?php echo esc_url( $payload['thumbnail_url'] ); ?>" alt="" style="width:72px;height:72px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
                                 <?php else : ?>
@@ -3777,10 +3783,10 @@ function render_brand_logo_assets_panel() {
                                 <?php endif; ?>
                             </div>
                             <div style="min-width:0;flex:1;">
-                                <strong style="display:block;font-size:14px;margin-bottom:4px;"><?php echo esc_html( $definition['label'] ); ?></strong>
+                                <strong class="hws-brand-label" style="display:block;font-size:14px;margin-bottom:4px;"><?php echo esc_html( $definition['label'] ); ?></strong>
                                 <div style="font-size:12px;color:#646970;margin-bottom:8px;"><?php echo esc_html( $definition['description'] ); ?></div>
                                 <?php if ( ! empty( $definition['core'] ) ) : ?>
-                                    <div style="font-size:11px;color:#2271b1;margin-bottom:8px;">Syncs to: <?php echo esc_html( $definition['core'] === 'site_icon' ? 'WordPress Site Icon' : 'WordPress Custom Logo' ); ?></div>
+                                    <div style="font-size:11px;color:#2271b1;margin-bottom:8px;">Syncs to: WordPress Custom Logo</div>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -3809,12 +3815,95 @@ function render_brand_logo_assets_panel() {
 
     <script>
     jQuery(function($) {
-        function setStatus($target, message, ok) {
-            $target.html('<span style="color:' + (ok ? '#00a32a' : '#d63638') + ';">' + $('<div>').text(message).html() + '</span>');
+        var faviconPreviewStyle = 'width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
+        var brandPreviewStyle = 'width:72px;height:72px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
+        var brandEmptyPreview = '<div class="hws-brand-preview-empty" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>';
+
+        function escapeText(value) {
+            return $('<div>').text(value || '').html();
         }
 
-        function reloadSoon() {
-            window.setTimeout(function() { window.location.reload(); }, 650);
+        function setStatus($target, message, ok) {
+            $target.html('<span style="color:' + (ok ? '#00a32a' : '#d63638') + ';">' + escapeText(message) + '</span>');
+        }
+
+        function assetExternalLink(url) {
+            if (!url) {
+                return '<span style="color:#8c8f94;">Not set</span>';
+            }
+
+            var escapedUrl = escapeText(url);
+            return '<a href="' + escapedUrl + '" target="_blank" rel="noopener" style="display:inline-flex;gap:5px;align-items:center;max-width:100%;"><code style="white-space:normal;word-break:break-all;">' + escapedUrl + '</code><span aria-hidden="true">↗</span></a>';
+        }
+
+        function updateFaviconPreview(url) {
+            if (!url) {
+                return;
+            }
+
+            var $preview = $('#hws-favicon-preview');
+            var $img = $('<img>', {
+                id: 'hws-favicon-preview',
+                src: url,
+                alt: 'Site icon preview'
+            }).attr('style', faviconPreviewStyle);
+
+            if ($preview.length) {
+                $preview.replaceWith($img);
+            }
+        }
+
+        function updateFaviconPanel(data) {
+            if (!data) {
+                return;
+            }
+
+            if (data.icon_url !== undefined) {
+                $('#hws-favicon-png-url').html(assetExternalLink(data.icon_url));
+                updateFaviconPreview(data.icon_url);
+            }
+
+            if (data.favicon_url !== undefined) {
+                $('#hws-favicon-ico-url').html(assetExternalLink(data.favicon_url));
+            }
+
+            if (data.attachment_id !== undefined) {
+                $('#hws-favicon-attachment-id').text(data.attachment_id ? data.attachment_id : 'none');
+            }
+
+            if (data.favicon_size !== undefined) {
+                $('#hws-favicon-ico-meta').text(data.favicon_size ? 'Exists: ' + data.favicon_size : 'Generated at /favicon.ico');
+            }
+        }
+
+        function updateBrandCard($card, data) {
+            if (!data) {
+                return;
+            }
+
+            if (data.key) {
+                $card.attr('data-brand-key', data.key);
+                $card.find('.hws-brand-upload,.hws-brand-clear').attr('data-brand-key', data.key).data('brand-key', data.key);
+            }
+
+            if (data.url !== undefined) {
+                $card.find('.hws-brand-url').html(assetExternalLink(data.url));
+            }
+
+            if (data.thumbnail_url || data.url) {
+                var $img = $('<img>', {
+                    class: 'hws-brand-preview',
+                    src: data.thumbnail_url || data.url,
+                    alt: ''
+                }).attr('style', brandPreviewStyle);
+                $card.find('.hws-brand-preview-wrap').html($img);
+            } else if (data.url !== undefined || data.attachment_id === 0) {
+                $card.find('.hws-brand-preview-wrap').html(brandEmptyPreview);
+            }
+
+            if (data.attachment_id !== undefined) {
+                $card.find('.hws-brand-clear').prop('disabled', !data.attachment_id);
+            }
         }
 
         $('#hws-upload-favicon').on('click', function(e) {
@@ -3825,10 +3914,10 @@ function render_brand_logo_assets_panel() {
                 $('#hws-favicon-status').text('Uploading and cropping...');
                 $.post(ajaxurl, { action: 'hws_copy_favicon', nonce: hwsNonce, source: 'upload', attachment_id: attachment.id }, function(response) {
                     if (response && response.success) {
-                        $('#hws-favicon-status').html('<span style="color:#00a32a;">' + response.data.message + '</span>');
-                        reloadSoon();
+                        setStatus($('#hws-favicon-status'), response.data.message, true);
+                        updateFaviconPanel(response.data);
                     } else {
-                        $('#hws-favicon-status').html('<span style="color:#d63638;">' + (response && response.data ? response.data : 'Upload failed') + '</span>');
+                        setStatus($('#hws-favicon-status'), response && response.data ? response.data : 'Upload failed', false);
                     }
                 }, 'json');
             });
@@ -3839,10 +3928,10 @@ function render_brand_logo_assets_panel() {
             $('#hws-favicon-status').text('Creating ICO...');
             $.post(ajaxurl, { action: 'hws_copy_favicon', nonce: hwsNonce, source: 'site_icon' }, function(response) {
                 if (response && response.success) {
-                    $('#hws-favicon-status').html('<span style="color:#00a32a;">' + response.data.message + '</span>');
-                    reloadSoon();
+                    setStatus($('#hws-favicon-status'), response.data.message, true);
+                    updateFaviconPanel(response.data);
                 } else {
-                    $('#hws-favicon-status').html('<span style="color:#d63638;">' + (response && response.data ? response.data : 'ICO creation failed') + '</span>');
+                    setStatus($('#hws-favicon-status'), response && response.data ? response.data : 'ICO creation failed', false);
                 }
             }, 'json');
         });
@@ -3858,10 +3947,10 @@ function render_brand_logo_assets_panel() {
                 foreground: $('#hws-favicon-fg').val() || '#ffffff'
             }, function(response) {
                 if (response && response.success) {
-                    $('#hws-favicon-status').html('<span style="color:#00a32a;">' + response.data.message + '</span>');
-                    reloadSoon();
+                    setStatus($('#hws-favicon-status'), response.data.message, true);
+                    updateFaviconPanel(response.data);
                 } else {
-                    $('#hws-favicon-status').html('<span style="color:#d63638;">' + (response && response.data ? response.data : 'Generation failed') + '</span>');
+                    setStatus($('#hws-favicon-status'), response && response.data ? response.data : 'Generation failed', false);
                 }
             }, 'json');
         });
@@ -3870,14 +3959,14 @@ function render_brand_logo_assets_panel() {
             e.preventDefault();
             var key = $(this).data('brand-key');
             var $card = $(this).closest('.hws-brand-asset-card');
-            var frame = wp.media({ title: 'Select Brand Asset', button: { text: 'Use this image' }, library: { type: 'image' }, multiple: false });
+            var frame = wp.media({ title: 'Select Logo Asset', button: { text: 'Use this image' }, library: { type: 'image' }, multiple: false });
             frame.on('select', function() {
                 var attachment = frame.state().get('selection').first().toJSON();
                 setStatus($card.find('.hws-brand-status'), 'Saving...', true);
                 $.post(ajaxurl, { action: 'hws_save_brand_asset', nonce: hwsNonce, key: key, attachment_id: attachment.id }, function(response) {
                     if (response && response.success) {
                         setStatus($card.find('.hws-brand-status'), 'Saved.', true);
-                        reloadSoon();
+                        updateBrandCard($card, response.data);
                     } else {
                         setStatus($card.find('.hws-brand-status'), response && response.data ? response.data : 'Save failed.', false);
                     }
@@ -3893,7 +3982,7 @@ function render_brand_logo_assets_panel() {
             $.post(ajaxurl, { action: 'hws_clear_brand_asset', nonce: hwsNonce, key: key }, function(response) {
                 if (response && response.success) {
                     setStatus($card.find('.hws-brand-status'), 'Cleared.', true);
-                    reloadSoon();
+                    updateBrandCard($card, response.data);
                 } else {
                     setStatus($card.find('.hws-brand-status'), response && response.data ? response.data : 'Clear failed.', false);
                 }
@@ -3909,7 +3998,8 @@ function render_brand_logo_assets_panel() {
  * AJAX: Copy site icon to /favicon.ico or set a new icon from upload
  */
 function hws_brand_asset_requires_square_crop( string $key ): bool {
-    return in_array( sanitize_key( $key ), [ 'icon', 'icon_1x1', 'icon_dark_1x1' ], true );
+    $key = function_exists( __NAMESPACE__ . '\\hws_normalize_brand_asset_key' ) ? hws_normalize_brand_asset_key( $key ) : sanitize_key( $key );
+    return in_array( $key, [ 'logo_1x1', 'logo_dark_1x1' ], true );
 }
 
 function hws_create_square_brand_asset_attachment( int $source_attachment_id, string $key ) {
@@ -3967,12 +4057,6 @@ function hws_sync_brand_asset_to_wp_core( string $key, int $attachment_id ): str
     $definition = hws_get_brand_asset_definition( $key );
     $core       = $definition['core'] ?? '';
 
-    if ( $core === 'site_icon' ) {
-        update_option( 'site_icon', $attachment_id );
-        $message = hws_create_resized_favicon( get_attached_file( $attachment_id ) );
-        return 'Synced to WordPress Site Icon. ' . $message;
-    }
-
     if ( $core === 'custom_logo' ) {
         set_theme_mod( 'custom_logo', $attachment_id );
         return 'Synced to WordPress Custom Logo.';
@@ -3988,7 +4072,7 @@ function ajax_save_brand_asset() {
 
     hws_require_ajax_nonce_or_error();
 
-    $key           = isset( $_POST['key'] ) ? sanitize_key( $_POST['key'] ) : '';
+    $key           = isset( $_POST['key'] ) ? hws_normalize_brand_asset_key( (string) wp_unslash( $_POST['key'] ) ) : '';
     $attachment_id = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
     $definition    = hws_get_brand_asset_definition( $key );
 
@@ -4014,7 +4098,6 @@ function ajax_save_brand_asset() {
 
     $payload = hws_get_brand_asset_payload( $key );
     $payload['message'] = $message;
-    $payload['favicon_url'] = home_url( '/favicon.ico' );
 
     wp_send_json_success( $payload );
 }
@@ -4026,25 +4109,27 @@ function ajax_clear_brand_asset() {
 
     hws_require_ajax_nonce_or_error();
 
-    $key        = isset( $_POST['key'] ) ? sanitize_key( $_POST['key'] ) : '';
+    $key        = isset( $_POST['key'] ) ? hws_normalize_brand_asset_key( (string) wp_unslash( $_POST['key'] ) ) : '';
     $definition = hws_get_brand_asset_definition( $key );
 
     if ( ! $definition ) {
         wp_send_json_error( 'Unknown brand asset slot.' );
     }
 
-    $attachment_id = (int) get_option( $definition['option'], 0 );
+    $attachment_id = hws_get_brand_asset_attachment_id( $key );
     delete_option( $definition['option'] );
-
-    if ( ( $definition['core'] ?? '' ) === 'site_icon' && (int) get_option( 'site_icon', 0 ) === $attachment_id ) {
-        delete_option( 'site_icon' );
+    foreach ( (array) ( $definition['legacy_options'] ?? [] ) as $legacy_option ) {
+        delete_option( $legacy_option );
     }
 
     if ( ( $definition['core'] ?? '' ) === 'custom_logo' && (int) get_theme_mod( 'custom_logo' ) === $attachment_id ) {
         remove_theme_mod( 'custom_logo' );
     }
 
-    wp_send_json_success( [ 'message' => 'Cleared.' ] );
+    $payload = hws_get_brand_asset_payload( $key );
+    $payload['message'] = 'Cleared.';
+
+    wp_send_json_success( $payload );
 }
 
 function ajax_copy_favicon() {
@@ -4063,18 +4148,13 @@ function ajax_copy_favicon() {
             wp_send_json_error( 'No attachment selected' );
         }
 
-        $cropped = hws_create_square_brand_asset_attachment( $attachment_id, 'icon' );
+        $cropped = hws_create_square_brand_asset_attachment( $attachment_id, 'favicon' );
         if ( is_wp_error( $cropped ) ) {
             wp_send_json_error( $cropped->get_error_message() );
         }
 
         $attachment_id = (int) $cropped;
         update_option( 'site_icon', $attachment_id );
-
-        $icon_definition = hws_get_brand_asset_definition( 'icon' );
-        if ( $icon_definition ) {
-            update_option( $icon_definition['option'], $attachment_id );
-        }
 
         $file_path = get_attached_file( $attachment_id );
         $result    = hws_create_resized_favicon( $file_path );
@@ -4088,6 +4168,7 @@ function ajax_copy_favicon() {
             'attachment_id' => $attachment_id,
             'icon_url'      => wp_get_attachment_image_url( $attachment_id, 'full' ),
             'favicon_url'   => home_url( '/favicon.ico' ),
+            'favicon_size'  => file_exists( ABSPATH . 'favicon.ico' ) ? size_format( filesize( ABSPATH . 'favicon.ico' ) ) : '',
         ] );
         return;
     }
@@ -4124,16 +4205,12 @@ function ajax_copy_favicon() {
         if ( strpos( $result, 'error' ) !== false || strpos( $result, 'Could not' ) !== false ) {
             wp_send_json_error( $result );
         }
-        $icon_definition = hws_get_brand_asset_definition( 'icon' );
-        if ( $icon_definition ) {
-            update_option( $icon_definition['option'], $icon_id );
-        }
-
         wp_send_json_success( [
             'message'       => $result,
             'attachment_id' => $icon_id,
             'icon_url'      => get_site_icon_url( 512 ),
             'favicon_url'   => home_url( '/favicon.ico' ),
+            'favicon_size'  => file_exists( ABSPATH . 'favicon.ico' ) ? size_format( filesize( ABSPATH . 'favicon.ico' ) ) : '',
         ] );
         return;
     }
@@ -4154,6 +4231,7 @@ function ajax_copy_favicon() {
             'attachment_id' => $result['attachment_id'],
             'icon_url'      => $result['icon_url'],
             'favicon_url'   => home_url( '/favicon.ico' ),
+            'favicon_size'  => file_exists( ABSPATH . 'favicon.ico' ) ? size_format( filesize( ABSPATH . 'favicon.ico' ) ) : '',
         ] );
         return;
     }
@@ -4331,10 +4409,6 @@ function hws_create_letter_site_icon( string $letter, string $background = '#111
     }
 
     update_option( 'site_icon', (int) $attachment_id );
-    $icon_definition = hws_get_brand_asset_definition( 'icon' );
-    if ( $icon_definition ) {
-        update_option( $icon_definition['option'], (int) $attachment_id );
-    }
 
     $source_path = get_attached_file( $attachment_id );
     $message     = hws_create_resized_favicon( $source_path );
