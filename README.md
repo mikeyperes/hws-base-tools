@@ -112,7 +112,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.1 (Current)
+### v10.18.2 (Current)
+- Render only the selected HWS dashboard tab instead of loading every tab on every request.
+- Replaced full-file dashboard log reads with bounded tail reads so large `error_log` files do not slow the settings page.
+
+### v10.18.1
 - Fixed the Footer Text targeted selector picker so it does not save its temporary hover class and prefers stable Elementor selectors.
 - Normalized saved targeted selectors server-side so old values containing `.hws-ft-picker-hover` are cleaned before frontend injection runs.
 

@@ -512,6 +512,66 @@ function hws_test_site_basics_state(): array {
 /**
  * Main settings page display
  */
+function hws_render_dashboard_tab( string $tab_id ): void {
+    switch ( $tab_id ) {
+        case 'overview':
+            render_tab_overview();
+            break;
+        case 'system-checks':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_system_checks' ) ) {
+                display_settings_system_checks();
+            }
+            break;
+        case 'plugins':
+            render_tab_plugins();
+            break;
+        case 'features':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_features' ) ) {
+                display_settings_features();
+            }
+            break;
+        case 'website-types':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_website_types' ) ) {
+                display_settings_website_types();
+            }
+            break;
+        case 'ui-cleanup':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_ui_cleanup' ) ) {
+                display_settings_ui_cleanup();
+            }
+            break;
+        case 'config':
+            render_tab_config();
+            break;
+        case 'backups':
+            render_tab_backups();
+            break;
+        case 'comments':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_comments_dashboard' ) ) {
+                display_settings_comments_dashboard();
+            }
+            break;
+        case 'advanced':
+            render_tab_advanced();
+            break;
+        case 'update-center':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_update_center' ) ) {
+                display_settings_update_center();
+            }
+            break;
+        case 'masked-login':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_masked_login' ) ) {
+                display_settings_masked_login();
+            }
+            break;
+        case 'footer-text':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_footer_text' ) ) {
+                display_settings_footer_text();
+            }
+            break;
+    }
+}
+
 function display_wp_admin_settings_page() {
     if ( ob_get_level() == 0 ) ob_start();
     
@@ -843,76 +903,16 @@ function display_wp_admin_settings_page() {
         <!-- Tab Navigation -->
         <nav class="hws-tabs-nav">
             <?php foreach ( $tabs as $tab_id => $label ) : ?>
-                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?>" data-tab="<?php echo $tab_id; ?>">
+                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?>" data-tab="<?php echo esc_attr( $tab_id ); ?>">
                     <?php echo $label; ?>
                 </button>
             <?php endforeach; ?>
         </nav>
         
-        <!-- Tab Contents - ALL LOADED AT ONCE -->
-        <?php foreach ( $tabs as $tab_id => $label ) : ?>
-            <div id="tab-<?php echo $tab_id; ?>" class="hws-tab-content <?php echo $tab_id === $active_tab ? 'active' : ''; ?>">
-                <?php
-                switch ( $tab_id ) {
-                    case 'overview':
-                        render_tab_overview();
-                        break;
-                    case 'system-checks':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_system_checks' ) ) {
-                            display_settings_system_checks();
-                        }
-                        break;
-                    case 'plugins':
-                        render_tab_plugins();
-                        break;
-                    case 'features':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_features' ) ) {
-                            display_settings_features();
-                        }
-                        break;
-                    case 'website-types':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_website_types' ) ) {
-                            display_settings_website_types();
-                        }
-                        break;
-                    case 'ui-cleanup':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_ui_cleanup' ) ) {
-                            display_settings_ui_cleanup();
-                        }
-                        break;
-                    case 'config':
-                        render_tab_config();
-                        break;
-                    case 'backups':
-                        render_tab_backups();
-                        break;
-                    case 'comments':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_comments_dashboard' ) ) {
-                            display_settings_comments_dashboard();
-                        }
-                        break;
-                    case 'advanced':
-                        render_tab_advanced();
-                        break;
-                    case 'update-center':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_update_center' ) ) {
-                            display_settings_update_center();
-                        }
-                        break;
-                    case 'masked-login':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_masked_login' ) ) {
-                            display_settings_masked_login();
-                        }
-                        break;
-                    case 'footer-text':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_footer_text' ) ) {
-                            display_settings_footer_text();
-                        }
-                        break;
-                }
-                ?>
-            </div>
-        <?php endforeach; ?>
+        <!-- Only render the selected tab. Loading every tab eagerly makes this page slow on larger sites. -->
+        <div id="tab-<?php echo esc_attr( $active_tab ); ?>" class="hws-tab-content active">
+            <?php hws_render_dashboard_tab( $active_tab ); ?>
+        </div>
     </div>
 
     <script>
@@ -987,20 +987,16 @@ function display_wp_admin_settings_page() {
     
     jQuery(document).ready(function($) {
         
-        // — Tab switching with URL persistence via ?tab= query string
+        // — Tab navigation uses a full request so only the selected tab is rendered.
         $('.hws-tab-btn').on('click', function() {
             var tabId = $(this).data('tab');
+            if ($(this).hasClass('active')) {
+                return;
+            }
 
-            // — Switch active classes
-            $('.hws-tab-btn').removeClass('active');
-            $(this).addClass('active');
-            $('.hws-tab-content').removeClass('active');
-            $('#tab-' + tabId).addClass('active');
-
-            // — Update the URL query string without a page reload
             var url = new URL(window.location);
             url.searchParams.set('tab', tabId);
-            window.history.replaceState({}, '', url);
+            window.location.assign(url.toString());
         });
 
         function getAjaxErrorMessage(response, fallback) {
@@ -2320,17 +2316,46 @@ function render_tab_overview() {
 /**
  * Get log file tail
  */
-function hws_get_log_tail( $path, $lines = 100 ) {
+function hws_get_log_tail( $path, $lines = 100, $max_bytes = 524288 ) {
     if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
         return 'Log file not found or not readable.';
     }
-    
-    $content = file( $path, FILE_IGNORE_NEW_LINES );
-    if ( ! $content ) {
+
+    $lines     = max( 1, (int) $lines );
+    $max_bytes = max( 4096, (int) $max_bytes );
+    $size      = (int) filesize( $path );
+
+    if ( $size <= 0 ) {
         return 'Log file is empty.';
     }
-    
-    return implode( "\n", array_slice( $content, -$lines ) );
+
+    $handle = fopen( $path, 'rb' );
+    if ( ! $handle ) {
+        return 'Log file not readable.';
+    }
+
+    $read_bytes = min( $size, $max_bytes );
+    if ( $read_bytes < $size ) {
+        fseek( $handle, -$read_bytes, SEEK_END );
+    }
+
+    $content = stream_get_contents( $handle );
+    fclose( $handle );
+
+    if ( false === $content || '' === $content ) {
+        return 'Log file is empty.';
+    }
+
+    $content_lines = preg_split( "/\r\n|\n|\r/", trim( $content ) );
+    if ( false === $content_lines || empty( $content_lines ) ) {
+        return 'Log file is empty.';
+    }
+
+    if ( $read_bytes < $size && count( $content_lines ) > 1 ) {
+        array_shift( $content_lines );
+    }
+
+    return implode( "\n", array_slice( $content_lines, -$lines ) );
 }
 
 
@@ -2391,12 +2416,12 @@ function hws_get_fatal_syntax_errors_with_source( $limit = 100 ) {
             continue;
         }
         
-        $content = file( $path, FILE_IGNORE_NEW_LINES );
-        if ( ! $content ) {
+        $content = hws_get_log_tail( $path, max( 1000, $limit * 20 ), 1048576 );
+        if ( ! $content || strpos( $content, 'Log file ' ) === 0 ) {
             continue;
         }
         
-        foreach ( $content as $line ) {
+        foreach ( preg_split( "/\r\n|\n|\r/", $content ) as $line ) {
             if ( preg_match( '/\b(fatal\s+error|fatal\s*:|syntax\s+error|parse\s+error|php\s+fatal)/i', $line ) ) {
                 $errors[] = [
                     'source' => $name,
