@@ -41,6 +41,136 @@ add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
 add_shortcode( 'website_content', __NAMESPACE__ . '\\website_content_shortcode' );
 add_shortcode( 'founder', __NAMESPACE__ . '\\founder_shortcode' );
 add_shortcode( 'company', __NAMESPACE__ . '\\company_shortcode' );
+add_shortcode( 'hws_brand_asset', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
+add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
+
+function hws_get_brand_asset_definitions(): array {
+	return [
+		'icon' => [
+			'label' => 'Icon',
+			'option' => 'hws_brand_asset_icon_id',
+			'core' => 'site_icon',
+			'description' => 'Primary favicon/app icon. Syncs to WordPress Site Icon and /favicon.ico.',
+		],
+		'icon_1x1' => [
+			'label' => 'Icon 1:1',
+			'option' => 'hws_brand_asset_icon_1x1_id',
+			'core' => '',
+			'description' => 'Square icon variant for social profiles, avatars, and app tiles.',
+		],
+		'icon_text' => [
+			'label' => 'Icon with text',
+			'option' => 'hws_brand_asset_icon_text_id',
+			'core' => 'custom_logo',
+			'description' => 'Primary horizontal logo. Syncs to the WordPress Custom Logo.',
+		],
+		'icon_dark' => [
+			'label' => 'Icon dark background',
+			'option' => 'hws_brand_asset_icon_dark_id',
+			'core' => '',
+			'description' => 'Primary icon prepared for dark backgrounds.',
+		],
+		'icon_dark_1x1' => [
+			'label' => 'Icon dark background 1:1',
+			'option' => 'hws_brand_asset_icon_dark_1x1_id',
+			'core' => '',
+			'description' => 'Square dark-background icon variant.',
+		],
+		'icon_text_dark' => [
+			'label' => 'Icon with text dark background',
+			'option' => 'hws_brand_asset_icon_text_dark_id',
+			'core' => '',
+			'description' => 'Horizontal logo prepared for dark backgrounds.',
+		],
+	];
+}
+
+function hws_get_brand_asset_definition( string $key ): ?array {
+	$definitions = hws_get_brand_asset_definitions();
+	return $definitions[ sanitize_key( $key ) ] ?? null;
+}
+
+function hws_get_brand_asset_attachment_id( string $key ): int {
+	$definition = hws_get_brand_asset_definition( $key );
+	if ( ! $definition ) {
+		return 0;
+	}
+
+	$attachment_id = (int) get_option( $definition['option'], 0 );
+	if ( $attachment_id ) {
+		return $attachment_id;
+	}
+
+	if ( ( $definition['core'] ?? '' ) === 'site_icon' ) {
+		return (int) get_option( 'site_icon', 0 );
+	}
+
+	if ( ( $definition['core'] ?? '' ) === 'custom_logo' ) {
+		return (int) get_theme_mod( 'custom_logo', 0 );
+	}
+
+	return 0;
+}
+
+function hws_get_brand_asset_image_size( string $size ) {
+	$size = trim( $size );
+	if ( preg_match( '/^(\d{2,4})x(\d{2,4})$/', $size, $matches ) ) {
+		return [ (int) $matches[1], (int) $matches[2] ];
+	}
+
+	return $size !== '' ? sanitize_key( $size ) : 'full';
+}
+
+function hws_get_brand_asset_url( string $key, string $size = 'full' ): string {
+	$attachment_id = hws_get_brand_asset_attachment_id( $key );
+	if ( ! $attachment_id ) {
+		return '';
+	}
+
+	$url = wp_get_attachment_image_url( $attachment_id, hws_get_brand_asset_image_size( $size ) );
+	return $url ? (string) $url : '';
+}
+
+function hws_brand_asset_shortcode( $atts ): string {
+	$atts = shortcode_atts(
+		[
+			'key' => 'icon_text',
+			'type' => '',
+			'size' => 'full',
+			'output' => 'img',
+			'class' => '',
+			'alt' => '',
+			'loading' => 'lazy',
+		],
+		$atts,
+		'hws_brand_asset'
+	);
+
+	$key = sanitize_key( $atts['type'] !== '' ? $atts['type'] : $atts['key'] );
+	$attachment_id = hws_get_brand_asset_attachment_id( $key );
+	if ( ! $attachment_id ) {
+		return '';
+	}
+
+	$size = hws_get_brand_asset_image_size( (string) $atts['size'] );
+	if ( $atts['output'] === 'url' ) {
+		$url = wp_get_attachment_image_url( $attachment_id, $size );
+		return $url ? esc_url( $url ) : '';
+	}
+
+	$definition = hws_get_brand_asset_definition( $key );
+	$attributes = [
+		'class' => sanitize_html_class( (string) $atts['class'] ),
+		'alt' => $atts['alt'] !== '' ? sanitize_text_field( (string) $atts['alt'] ) : ( $definition['label'] ?? 'Site logo' ),
+		'loading' => sanitize_key( (string) $atts['loading'] ),
+	];
+
+	if ( $attributes['class'] === '' ) {
+		unset( $attributes['class'] );
+	}
+
+	return wp_get_attachment_image( $attachment_id, $size, false, $attributes );
+}
 
 
 /**
