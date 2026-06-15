@@ -65,6 +65,7 @@ Structured feature management with toggles, optional settings, use instructions,
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions
 - Letter-based favicon generator
+- Brand Colors panel with Highlight Text Color picker saved as `hws_brand_highlight_text_color`
 - Six logo slots: `logo`, `logo_1x1`, `logo_text`, `logo_dark`, `logo_dark_1x1`, `logo_text_dark`
 - Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`
 
@@ -132,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.5 (Current)
+### v10.18.6 (Current)
+- Added a Brand Colors panel to the Brand Assets tab with an AJAX Highlight Text Color picker.
+- Outputs the saved highlight color as `--hws-highlight-text-color` for templates/CSS that need the shared brand accent.
+
+### v10.18.5
 - Separated favicon/site-icon management from logo asset management on the Brand Assets tab.
 - Updated favicon actions and logo upload/clear actions to refresh the tab with AJAX instead of reloading the page.
 - Renamed the six managed asset slots to logo-based keys and made the first slot sync to WordPress Custom Logo.

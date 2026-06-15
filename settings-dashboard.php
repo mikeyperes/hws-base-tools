@@ -404,6 +404,7 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_copy_favicon', __NAMESPACE__ . '\\ajax_copy_favicon' );
     add_action( 'wp_ajax_hws_save_brand_asset', __NAMESPACE__ . '\\ajax_save_brand_asset' );
     add_action( 'wp_ajax_hws_clear_brand_asset', __NAMESPACE__ . '\\ajax_clear_brand_asset' );
+    add_action( 'wp_ajax_hws_save_brand_colors', __NAMESPACE__ . '\\ajax_save_brand_colors' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
 }
@@ -3665,6 +3666,7 @@ function render_wordfence_status_panel() {
 
 function render_tab_brand_assets() {
     render_site_icon_panel();
+    render_brand_colors_panel();
     render_brand_logo_assets_panel();
 }
 
@@ -3695,6 +3697,58 @@ function hws_get_brand_asset_payload( string $key ): array {
             'custom_size' => '[site_logo key="' . $key . '" size="300x120"]',
         ],
     ];
+}
+
+function hws_get_brand_colors_payload(): array {
+    $default_highlight = '#facc15';
+    $highlight_color   = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', $default_highlight ) );
+
+    if ( ! $highlight_color ) {
+        $highlight_color = $default_highlight;
+    }
+
+    return [
+        'highlight_text_color' => $highlight_color,
+        'option'               => 'hws_brand_highlight_text_color',
+        'css_variable'         => '--hws-highlight-text-color',
+    ];
+}
+
+function render_brand_colors_panel() {
+    $colors = hws_get_brand_colors_payload();
+    ?>
+    <div class="hws-panel" id="hws-brand-colors-panel">
+        <div class="hws-panel-header">Brand Colors</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(260px,1fr);gap:18px;align-items:start;">
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;">
+                    <label for="hws-highlight-text-color" style="display:block;font-weight:700;font-size:14px;margin-bottom:6px;">Highlight Text Color</label>
+                    <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Shared brand highlight color for text accents and templates that read the HWS brand color option.</p>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="color" id="hws-highlight-text-color" value="<?php echo esc_attr( $colors['highlight_text_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
+                        <input type="text" id="hws-highlight-text-color-hex" value="<?php echo esc_attr( $colors['highlight_text_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
+                        <span id="hws-highlight-text-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['highlight_text_color'] ); ?>;"></span>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+                        <button type="button" id="hws-save-brand-colors" class="button button-primary">Save Brand Colors</button>
+                        <span id="hws-brand-colors-status" style="font-size:12px;" aria-live="polite"></span>
+                    </div>
+                </div>
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#f8f9fa;padding:14px;">
+                    <strong style="display:block;margin-bottom:8px;">Current output</strong>
+                    <div style="display:grid;gap:8px;font-size:12.5px;color:#50575e;">
+                        <div>Option: <code><?php echo esc_html( $colors['option'] ); ?></code></div>
+                        <div>CSS variable: <code><?php echo esc_html( $colors['css_variable'] ); ?></code></div>
+                        <div>Value: <code id="hws-highlight-text-color-current"><?php echo esc_html( $colors['highlight_text_color'] ); ?></code></div>
+                        <div style="margin-top:4px;padding:10px 12px;border-radius:6px;background:#fff;border:1px solid #e0e0e0;">
+                            Preview: <span id="hws-highlight-text-color-preview" style="background:<?php echo esc_attr( $colors['highlight_text_color'] ); ?>;color:#111827;padding:2px 7px;border-radius:3px;font-weight:700;">highlight text</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
 }
 
 function render_site_icon_panel() {
@@ -3906,6 +3960,23 @@ function render_brand_logo_assets_panel() {
             }
         }
 
+        function isHexColor(value) {
+            return /^#[0-9a-fA-F]{6}$/.test(value || '');
+        }
+
+        function syncHighlightColor(value) {
+            if (!isHexColor(value)) {
+                return;
+            }
+
+            value = value.toLowerCase();
+            $('#hws-highlight-text-color').val(value);
+            $('#hws-highlight-text-color-hex').val(value);
+            $('#hws-highlight-text-color-swatch').css('background', value);
+            $('#hws-highlight-text-color-preview').css('background', value);
+            $('#hws-highlight-text-color-current').text(value);
+        }
+
         $('#hws-upload-favicon').on('click', function(e) {
             e.preventDefault();
             var frame = wp.media({ title: 'Select Site Icon PNG', button: { text: 'Use as Site Icon' }, library: { type: 'image' }, multiple: false });
@@ -3951,6 +4022,41 @@ function render_brand_logo_assets_panel() {
                     updateFaviconPanel(response.data);
                 } else {
                     setStatus($('#hws-favicon-status'), response && response.data ? response.data : 'Generation failed', false);
+                }
+            }, 'json');
+        });
+
+        $('#hws-highlight-text-color').on('input change', function() {
+            syncHighlightColor($(this).val());
+        });
+
+        $('#hws-highlight-text-color-hex').on('input change', function() {
+            var value = ($(this).val() || '').trim();
+            if (isHexColor(value)) {
+                syncHighlightColor(value);
+            }
+        });
+
+        $('#hws-save-brand-colors').on('click', function() {
+            var color = ($('#hws-highlight-text-color-hex').val() || '').trim();
+            var $status = $('#hws-brand-colors-status');
+
+            if (!isHexColor(color)) {
+                setStatus($status, 'Enter a valid 6-digit hex color.', false);
+                return;
+            }
+
+            setStatus($status, 'Saving...', true);
+            $.post(ajaxurl, {
+                action: 'hws_save_brand_colors',
+                nonce: hwsNonce,
+                highlight_text_color: color
+            }, function(response) {
+                if (response && response.success) {
+                    syncHighlightColor(response.data.highlight_text_color);
+                    setStatus($status, 'Saved.', true);
+                } else {
+                    setStatus($status, response && response.data ? response.data : 'Save failed.', false);
                 }
             }, 'json');
         });
@@ -4128,6 +4234,29 @@ function ajax_clear_brand_asset() {
 
     $payload = hws_get_brand_asset_payload( $key );
     $payload['message'] = 'Cleared.';
+
+    wp_send_json_success( $payload );
+}
+
+function ajax_save_brand_colors() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $highlight_color = isset( $_POST['highlight_text_color'] )
+        ? sanitize_hex_color( wp_unslash( $_POST['highlight_text_color'] ) )
+        : '';
+
+    if ( ! $highlight_color ) {
+        wp_send_json_error( 'Enter a valid 6-digit hex color.' );
+    }
+
+    update_option( 'hws_brand_highlight_text_color', strtolower( $highlight_color ), false );
+
+    $payload = hws_get_brand_colors_payload();
+    $payload['message'] = 'Saved.';
 
     wp_send_json_success( $payload );
 }

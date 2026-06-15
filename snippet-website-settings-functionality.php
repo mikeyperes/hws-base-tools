@@ -44,6 +44,18 @@ add_shortcode( 'company', __NAMESPACE__ . '\\company_shortcode' );
 add_shortcode( 'hws_brand_asset', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 
+function hws_get_brand_highlight_text_color(): string {
+	$color = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
+	return $color ?: '#facc15';
+}
+
+function hws_print_brand_color_css_variables(): void {
+	$highlight_color = hws_get_brand_highlight_text_color();
+	echo "\n" . '<style id="hws-brand-color-vars">:root{--hws-highlight-text-color:' . esc_html( $highlight_color ) . ';}</style>' . "\n";
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
+add_action( 'admin_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
+
 function hws_get_brand_asset_definitions(): array {
 	return [
 		'logo' => [
