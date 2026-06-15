@@ -334,7 +334,12 @@ function hws_get_footer_text_targeted_placement(): string {
 }
 
 function hws_get_footer_text_targeted_raw(): string {
-    $content = get_option( 'hws_footer_text_targeted_content', '' );
+    $content = hws_get_footer_text_raw();
+
+    if ( '' === trim( $content ) ) {
+        $content = get_option( 'hws_footer_text_targeted_content', '' );
+    }
+
     return is_string( $content ) ? $content : '';
 }
 

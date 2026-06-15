@@ -148,7 +148,7 @@ function ajax_save_footer_text_targeted_injection() {
             'sup'    => [],
             'sub'    => [],
         ];
-    $content   = isset( $_POST['content'] ) ? wp_kses( wp_unslash( $_POST['content'] ), $allowed_html ) : '';
+    $content   = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : null;
     $valid     = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_targeted_placements' )
         ? hws_get_footer_text_targeted_placements()
         : [ 'before' => 'Before target', 'after' => 'After target', 'within' => 'Within target' ];
@@ -160,7 +160,10 @@ function ajax_save_footer_text_targeted_injection() {
     update_option( 'hws_footer_text_targeted_enabled', $enabled ? '1' : '0' );
     update_option( 'hws_footer_text_targeted_selector', $selector );
     update_option( 'hws_footer_text_targeted_placement', $placement );
-    update_option( 'hws_footer_text_targeted_content', $content );
+
+    if ( null !== $content && function_exists( __NAMESPACE__ . '\\hws_save_footer_text_raw' ) ) {
+        hws_save_footer_text_raw( $content );
+    }
 
     hws_purge_footer_text_cache();
 
@@ -172,7 +175,7 @@ function ajax_save_footer_text_targeted_injection() {
         'enabled'     => $enabled,
         'selector'    => $selector,
         'placement'   => $placement,
-        'content'     => $content,
+        'content'     => function_exists( __NAMESPACE__ . '\\hws_get_footer_text_raw' ) ? hws_get_footer_text_raw() : '',
         'markup'      => $markup,
         'has_content' => '' !== trim( wp_strip_all_tags( $markup ) ),
     ] );
@@ -239,7 +242,14 @@ function display_settings_footer_text() {
             max-width: 1200px;
             margin: 18px 0 32px;
             color: #1d2327;
+            display: flex;
+            flex-direction: column;
         }
+
+        .hws-ft-overview-card { order: 0; }
+        .hws-ft-shared-card { order: 1; }
+        .hws-ft-method-one-card { order: 2; }
+        .hws-ft-method-two-card { order: 3; }
 
         .hws-ft-card {
             background: #fff;
@@ -723,20 +733,26 @@ function display_settings_footer_text() {
 
     <div class="hws-ft-wrap">
 
-        <div class="hws-ft-card hws-ft-header">
+        <div class="hws-ft-card hws-ft-header hws-ft-overview-card">
             <div class="hws-ft-header-text">
                 <h2>Footer Text</h2>
-                <p class="hws-ft-tagline">Edit the footer text, choose a style, and toggle whether it shows on the live site. The selected style renders as a full-width band at the very bottom of the footer.</p>
-            </div>
-            <div class="hws-ft-header-toggle">
-                <span class="hws-ft-status-text <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status">
-                    <?php echo $feature_enabled ? 'Visible on the live site' : 'Hidden on the live site'; ?>
-                </span>
-                <?php echo render_toggle_switch( 'hws-footer-text-feature-enabled', '', $feature_enabled ); ?>
+                <p class="hws-ft-tagline">Set the text once, then choose one of two flows: add it as a new bottom footer section, or inject it into an existing footer element.</p>
             </div>
         </div>
 
-        <div class="hws-ft-card">
+        <div class="hws-ft-card hws-ft-method-one-card">
+            <div class="hws-ft-header" style="margin-bottom:16px;">
+                <div class="hws-ft-header-text">
+                    <h2>Method 1: Add a new bottom footer section</h2>
+                    <p class="hws-ft-tagline">This appends the shared text as its own styled section at the very bottom of the footer.</p>
+                </div>
+                <div class="hws-ft-header-toggle">
+                    <span class="hws-ft-status-text <?php echo $feature_enabled ? 'on' : 'off'; ?>" id="hws-footer-text-status">
+                        <?php echo $feature_enabled ? 'Bottom section is active' : 'Bottom section is off'; ?>
+                    </span>
+                    <?php echo render_toggle_switch( 'hws-footer-text-feature-enabled', '', $feature_enabled ); ?>
+                </div>
+            </div>
             <h3 class="hws-ft-section-title">Alignment</h3>
             <p class="hws-ft-section-help">Where the text sits within the band. Centered reads as a sign-off; left lines up with the start of your content; right works for short signatures or version stamps.</p>
             <div class="hws-ft-align-row" role="radiogroup" aria-label="Footer text alignment">
@@ -756,7 +772,7 @@ function display_settings_footer_text() {
             </div>
         </div>
 
-        <div class="hws-ft-card">
+        <div class="hws-ft-card hws-ft-method-one-card">
             <h3 class="hws-ft-section-title">Style</h3>
             <p class="hws-ft-section-help">Pick a template. Minimal styles disappear into the footer. Heavy styles render as bold dark bands. All extend the existing footer rather than sitting on top of it.</p>
             <div class="hws-ft-list" role="radiogroup" aria-label="Footer text style">
@@ -782,10 +798,10 @@ function display_settings_footer_text() {
             </div>
         </div>
 
-        <div class="hws-ft-card">
+        <div class="hws-ft-card hws-ft-shared-card">
             <div class="hws-ft-edit-grid">
                 <div>
-                    <h3 class="hws-ft-col-title">Editor</h3>
+                    <h3 class="hws-ft-col-title">Shared Footer Text</h3>
                     <?php
                     wp_editor(
                         $footer_text_raw,
@@ -823,11 +839,11 @@ function display_settings_footer_text() {
             </div>
         </div>
 
-        <div class="hws-ft-card" id="hws-footer-targeted-injection-card">
+        <div class="hws-ft-card hws-ft-method-two-card" id="hws-footer-targeted-injection-card">
             <div class="hws-ft-header" style="margin-bottom:16px;">
                 <div class="hws-ft-header-text">
-                    <h2>Targeted Footer Injection</h2>
-                    <p class="hws-ft-tagline">Separate from the full footer section. This inserts a small inline <code>&lt;span&gt;</code> before, after, or within a specific footer element you choose.</p>
+                    <h2>Method 2: Inject into an existing footer element</h2>
+                    <p class="hws-ft-tagline">Use the same shared text above, then choose where it should attach inside the existing footer structure.</p>
                 </div>
                 <div class="hws-ft-header-toggle">
                     <span class="hws-ft-status-text <?php echo $targeted_enabled ? 'on' : 'off'; ?>" id="hws-footer-targeted-status">
@@ -862,9 +878,10 @@ function display_settings_footer_text() {
                     </div>
 
                     <div class="hws-ft-field">
-                        <label for="hws-footer-targeted-content">Inline HTML</label>
-                        <textarea id="hws-footer-targeted-content" spellcheck="false" placeholder="Example: &lt;span&gt;Powered by Hexa Web Systems&lt;/span&gt;"><?php echo esc_textarea( $targeted_content ); ?></textarea>
-                        <p class="hws-ft-field-help">Saved output is always wrapped in <code>&lt;span class="hws-footer-inline-injection"&gt;</code>. Inline tags and shortcodes are allowed; block tags are stripped.</p>
+                        <label>Shared text source</label>
+                        <div class="hws-ft-picked" style="display:block;border-left-color:#00a32a;background:#edfaef;">
+                            This method uses the shared footer text editor at the top of this tab. Save the shared text first, then save this selector and placement.
+                        </div>
                     </div>
 
                     <div class="hws-ft-editor-actions">
@@ -879,7 +896,7 @@ function display_settings_footer_text() {
                         <p><strong>Status:</strong> <span id="hws-footer-targeted-preview-status"><?php echo $targeted_enabled ? 'Enabled' : 'Disabled'; ?></span></p>
                         <p><strong>Selector:</strong> <code id="hws-footer-targeted-preview-selector"><?php echo esc_html( $targeted_selector ?: 'None selected' ); ?></code></p>
                         <p><strong>Placement:</strong> <code id="hws-footer-targeted-preview-placement"><?php echo esc_html( $targeted_placements[ $targeted_placement ] ?? 'Within target' ); ?></code></p>
-                        <p><strong>Span content:</strong></p>
+                        <p><strong>Shared text output:</strong></p>
                         <div id="hws-footer-targeted-preview-markup">
                             <?php echo $targeted_markup ? '<span class="hws-footer-inline-injection">' . $targeted_markup . '</span>' : '<em>No inline content saved yet.</em>'; ?>
                         </div>
@@ -915,7 +932,6 @@ function display_settings_footer_text() {
         var $targetStatus    = $('#hws-footer-targeted-status');
         var $targetSelector  = $('#hws-footer-targeted-selector');
         var $targetPlacement = $('#hws-footer-targeted-placement');
-        var $targetContent   = $('#hws-footer-targeted-content');
         var $targetSave      = $('#hws-footer-targeted-save');
         var $targetSaveStatus = $('#hws-footer-targeted-save-status');
         var $targetModal     = $('#hws-footer-targeted-modal');
@@ -998,6 +1014,12 @@ function display_settings_footer_text() {
         function updatePreviewFromEditor() {
             var html = getEditorContent();
             refreshPreview(html, hasMeaningfulContent(html));
+            refreshTargetPreview({
+                enabled: $targetToggle.is(':checked'),
+                selector: $targetSelector.val() || '',
+                placement: $targetPlacement.val() || 'within',
+                markup: html
+            });
         }
 
         function bindTinyMcePreview() {
@@ -1035,7 +1057,7 @@ function display_settings_footer_text() {
             var enabled = !!data.enabled;
             var selector = data.selector || $targetSelector.val() || '';
             var placement = data.placement || $targetPlacement.val() || 'within';
-            var markup = data.markup;
+            var markup = typeof data.markup === 'string' ? data.markup : getEditorContent();
 
             $('#hws-footer-targeted-preview-status').text(enabled ? 'Enabled' : 'Disabled');
             $('#hws-footer-targeted-preview-selector').text(selector || 'None selected');
@@ -1054,7 +1076,7 @@ function display_settings_footer_text() {
                 enabled: enabled,
                 selector: $targetSelector.val() || '',
                 placement: $targetPlacement.val() || 'within',
-                content: $targetContent.val() || ''
+                content: getEditorContent()
             };
 
             $targetSave.prop('disabled', true);
@@ -1282,9 +1304,9 @@ function display_settings_footer_text() {
                 if (!response || !response.success) { throw response; }
 
                 if (enabled) {
-                    $status.removeClass('off').addClass('on').text('Visible on the live site');
+                    $status.removeClass('off').addClass('on').text('Bottom section is active');
                 } else {
-                    $status.removeClass('on').addClass('off').text('Hidden on the live site');
+                    $status.removeClass('on').addClass('off').text('Bottom section is off');
                 }
 
                 if (includeContent) {
@@ -1364,13 +1386,6 @@ function display_settings_footer_text() {
                 selector: $targetSelector.val() || '',
                 placement: $targetPlacement.val() || 'within'
             });
-        });
-        $targetContent.on('input change', function() {
-            $('#hws-footer-targeted-preview-markup').html(
-                $targetContent.val()
-                    ? '<span class="hws-footer-inline-injection">' + $('<div>').text($targetContent.val()).html() + '</span>'
-                    : '<em>No inline content saved yet.</em>'
-            );
         });
         $targetSave.on('click', saveTargetedInjection);
         $('#hws-footer-targeted-pick').on('click', openFooterPicker);

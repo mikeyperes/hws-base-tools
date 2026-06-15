@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.17.0
+Version: 10.18.0
 Text Domain: hws-base-tools
 Domain Path: /languages
 Author URI: https://michaelperes.com
@@ -61,6 +61,7 @@ if ( defined('DOING_AJAX') && DOING_AJAX ) {
 
 
 include_once("snippet-login-mask.php");
+include_once("snippet-base-features.php");
 
 // — Update Center: loaded early so secret URL handlers register on init:1 for frontend access
 // — Dashboard UI rendering is gated inside display_settings_update_center() called only in admin
@@ -200,7 +201,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.17.0";
+$plugin_version = "10.18.0";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -322,6 +323,7 @@ include_once("settings-dashboard-backups.php");   // Backup detection & cleanup
 include_once("settings-dashboard-log-delete-cron.php");  // Log file cleaner
 include_once("settings-dashboard-elementor-db-cron.php"); // Elementor DB auto-updater
 include_once("settings-dashboard-snippets.php");
+include_once("settings-dashboard-features.php");
 include_once("settings-dashboard-website-types.php");  // Website type presets
 include_once("settings-dashboard-footer-text.php");    // Footer text module settings
 include_once("settings-dashboard-ui-cleanup.php");     // UI Cleanup (hide profile elements)
@@ -364,6 +366,9 @@ include_once("register-elementor-queries.php");
 // to ensure shortcodes work with all page builders
 
 add_shortcode('display_year', __NAMESPACE__ . '\\display_year_shortcode');
+if ( get_option( 'enable_current_year_shortcode', false ) ) {
+    add_shortcode('current_year', __NAMESPACE__ . '\\display_year_shortcode');
+}
 
 
 
@@ -579,6 +584,44 @@ function get_snippets($type = "")
             Use the <code>Footer Text</code> tab to write the content, turn live display on or off, and choose a style.',
         'function' => 'enable_footer_text_auto_injection',
         'scope_admin_only' => false
+    ],
+    [
+        'id' => 'disable_non_admin_admin_bar',
+        'name' => 'Disable Admin Bar for Non-Admins',
+        'description' => 'Hides the front-end WordPress admin bar for users who cannot manage site options.',
+        'info' => 'Admins keep the toolbar. Editors, authors, subscribers, and logged-out visitors do not see it on the front end.',
+        'function' => 'disable_non_admin_admin_bar',
+        'scope_admin_only' => false,
+        'recommended' => true,
+        'code_example' => "add_action( 'wp', function () {\n\tif ( ! current_user_can( 'manage_options' ) ) {\n\t\tshow_admin_bar( false );\n\t}\n} );",
+    ],
+    [
+        'id' => 'enable_syndtd_feed_limit',
+        'name' => 'RSS Feed Limit for Tag',
+        'description' => 'Overrides the item count for a specific tag feed, defaulting to the syndtd tag.',
+        'info' => 'Set the tag slug and item limit in the Features tab. The default is tag <code>syndtd</code> with a limit of <code>100</code> items.',
+        'function' => 'enable_syndtd_feed_limit',
+        'scope_admin_only' => false,
+        'code_example' => "add_action( 'pre_get_posts', function( WP_Query \$query ) {\n\tif ( ! is_admin() && \$query->is_main_query() && \$query->is_feed() && \$query->is_tag( 'syndtd' ) ) {\n\t\t\$query->set( 'posts_per_rss', 100 );\n\t}\n} );",
+    ],
+    [
+        'id' => 'enable_current_year_shortcode',
+        'name' => 'Current Year Shortcode',
+        'description' => 'Adds the intuitive [current_year] shortcode. The legacy [display_year] shortcode remains available.',
+        'info' => 'Use <code>[current_year]</code> in footer text, Elementor, Gutenberg, or post content to output the current four-digit year.',
+        'function' => 'enable_current_year_shortcode',
+        'scope_admin_only' => false,
+        'recommended' => true,
+        'code_example' => '[current_year]',
+    ],
+    [
+        'id' => 'enable_lowercase_upload_filenames',
+        'name' => 'Lowercase Upload File Names',
+        'description' => 'Forces uploaded media file names to lowercase during WordPress sanitization.',
+        'info' => 'Example: <code>My File.PNG</code> becomes <code>my-file.png</code>. This reduces case-sensitive URL and CDN cache issues.',
+        'function' => 'enable_lowercase_upload_filenames',
+        'scope_admin_only' => false,
+        'code_example' => "add_filter( 'sanitize_file_name', 'mb_strtolower' );",
     ],
     [
         'id' => 'enable_wp_admin_logo',

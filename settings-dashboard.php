@@ -399,6 +399,8 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_toggle_secret_permalinks', __NAMESPACE__ . '\\ajax_toggle_secret_permalinks' );
     add_action( 'wp_ajax_hws_enable_all_auto_updates', __NAMESPACE__ . '\\ajax_enable_all_auto_updates' );
     add_action( 'wp_ajax_hws_save_master_secret', __NAMESPACE__ . '\\ajax_save_master_secret' );
+    add_action( 'wp_ajax_hws_save_site_basics', __NAMESPACE__ . '\\ajax_save_site_basics' );
+    add_action( 'wp_ajax_hws_test_site_basics', __NAMESPACE__ . '\\ajax_test_site_basics' );
     add_action( 'wp_ajax_hws_copy_favicon', __NAMESPACE__ . '\\ajax_copy_favicon' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
@@ -452,6 +454,57 @@ function hws_get_overview_state_payload(): array {
                 'size'   => file_exists( $admin_log_path ) ? size_format( filesize( $admin_log_path ) ) : 'N/A',
             ],
         ],
+        'site_basics' => hws_get_site_basics_state(),
+    ];
+}
+
+function hws_get_site_basics_state(): array {
+    $title          = (string) get_option( 'blogname', '' );
+    $tagline        = (string) get_option( 'blogdescription', '' );
+    $indexable      = (string) get_option( 'blog_public', '1' ) === '1';
+    $site_icon_id   = (int) get_option( 'site_icon', 0 );
+    $site_icon_url  = $site_icon_id ? get_site_icon_url( 512 ) : '';
+    $favicon_path   = ABSPATH . 'favicon.ico';
+    $favicon_exists = file_exists( $favicon_path );
+
+    return [
+        'title'          => $title,
+        'tagline'        => $tagline,
+        'indexable'      => $indexable,
+        'site_icon_id'   => $site_icon_id,
+        'site_icon_url'  => $site_icon_url,
+        'favicon_exists' => $favicon_exists,
+        'favicon_url'    => home_url( '/favicon.ico' ),
+        'document_title' => trim( $title . ( $tagline !== '' ? ' - ' . $tagline : '' ) ),
+    ];
+}
+
+function hws_test_site_basics_state(): array {
+    $state  = hws_get_site_basics_state();
+    $checks = [
+        'indexable' => [
+            'pass'    => (bool) $state['indexable'],
+            'message' => (bool) $state['indexable'] ? 'Search engines are allowed by blog_public.' : 'Search engines are discouraged by blog_public.',
+        ],
+        'site_icon' => [
+            'pass'    => ! empty( $state['site_icon_id'] ),
+            'message' => ! empty( $state['site_icon_id'] ) ? 'WordPress site icon is set.' : 'WordPress site icon is not set.',
+        ],
+        'favicon' => [
+            'pass'    => (bool) $state['favicon_exists'],
+            'message' => (bool) $state['favicon_exists'] ? '/favicon.ico exists.' : '/favicon.ico is missing.',
+        ],
+        'title' => [
+            'pass'    => trim( (string) $state['title'] ) !== '',
+            'message' => trim( (string) $state['title'] ) !== '' ? 'Website title is set.' : 'Website title is empty.',
+        ],
+    ];
+
+    return [
+        'passed' => ! in_array( false, wp_list_pluck( $checks, 'pass' ), true ),
+        'state'  => $state,
+        'checks' => $checks,
+        'ran_at' => current_time( 'mysql' ),
     ];
 }
 
@@ -466,7 +519,7 @@ function display_wp_admin_settings_page() {
         'overview'      => '📊 Overview',
         'system-checks' => '🔍 System Checks',
         'plugins'       => '🔌 Plugins',
-        'snippets'      => '✂️ Snippets',
+        'features'      => '✨ Features',
     ];
 
     if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
@@ -778,6 +831,9 @@ function display_wp_admin_settings_page() {
         <?php
         // — Determine active tab from ?tab= query string (default: first tab)
         $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : '';
+        if ( 'snippets' === $active_tab ) {
+            $active_tab = 'features';
+        }
         // — Validate the tab exists in our tabs array; fall back to first tab if invalid
         if ( ! array_key_exists( $active_tab, $tabs ) ) {
             $active_tab = array_key_first( $tabs );
@@ -809,9 +865,9 @@ function display_wp_admin_settings_page() {
                     case 'plugins':
                         render_tab_plugins();
                         break;
-                    case 'snippets':
-                        if ( function_exists( __NAMESPACE__ . '\\display_settings_snippets' ) ) {
-                            display_settings_snippets();
+                    case 'features':
+                        if ( function_exists( __NAMESPACE__ . '\\display_settings_features' ) ) {
+                            display_settings_features();
                         }
                         break;
                     case 'website-types':
@@ -1584,6 +1640,157 @@ function display_wp_admin_settings_page() {
 /**
  * Overview Tab
  */
+function render_system_basics_panel() {
+    $state = hws_get_site_basics_state();
+    $test  = hws_test_site_basics_state();
+    ?>
+    <div class="hws-panel <?php echo $test['passed'] ? 'panel-healthy' : 'panel-warning'; ?>" id="hws-system-basics-panel">
+        <div class="hws-panel-header">System Basics</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,0.7fr);gap:18px;align-items:start;">
+                <div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <label>
+                            <strong style="display:block;margin-bottom:4px;">Website Title</strong>
+                            <input type="text" id="hws-site-title" class="regular-text" style="width:100%;" value="<?php echo esc_attr( $state['title'] ); ?>">
+                        </label>
+                        <label>
+                            <strong style="display:block;margin-bottom:4px;">Tagline</strong>
+                            <input type="text" id="hws-site-tagline" class="regular-text" style="width:100%;" value="<?php echo esc_attr( $state['tagline'] ); ?>">
+                        </label>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <input type="checkbox" id="hws-site-indexable" <?php checked( $state['indexable'] ); ?>>
+                        <strong>Allow search engines to index this site</strong>
+                    </label>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <button type="button" class="button button-primary" id="hws-save-site-basics">Save System Basics</button>
+                        <button type="button" class="button" id="hws-test-site-basics">Run Basics Test</button>
+                        <span id="hws-site-basics-status" style="font-size:13px;" aria-live="polite"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display:grid;gap:8px;font-size:13px;" id="hws-site-basics-checks">
+                        <?php foreach ( $test['checks'] as $check ) : ?>
+                            <div style="display:flex;gap:8px;align-items:flex-start;">
+                                <span><?php echo $check['pass'] ? '✅' : '⚠️'; ?></span>
+                                <span><?php echo esc_html( $check['message'] ); ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dcdcde;font-size:12.5px;color:#50575e;">
+                        <div><strong>Document title:</strong> <?php echo esc_html( $state['document_title'] ); ?></div>
+                        <div><strong>Site icon:</strong> <?php echo $state['site_icon_id'] ? 'set' : 'missing'; ?></div>
+                        <div><strong>/favicon.ico:</strong> <?php echo $state['favicon_exists'] ? esc_html( $state['favicon_url'] ) : 'missing'; ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px;padding:14px;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                <strong style="display:block;margin-bottom:8px;">Generate site icon from one letter</strong>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="hws-basics-favicon-letter" maxlength="1" style="width:48px;text-transform:uppercase;text-align:center;font-weight:700;" value="<?php echo esc_attr( strtoupper( substr( sanitize_title( $state['title'] ), 0, 1 ) ?: 'H' ) ); ?>">
+                    <input type="text" id="hws-basics-favicon-bg" value="#111827" style="width:92px;" aria-label="Background color">
+                    <input type="text" id="hws-basics-favicon-fg" value="#ffffff" style="width:92px;" aria-label="Foreground color">
+                    <button type="button" class="button" id="hws-basics-create-letter-icon">Create Letter Icon</button>
+                    <span id="hws-basics-favicon-status" style="font-size:13px;" aria-live="polite"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    jQuery(function($) {
+        function renderBasicsResult(data) {
+            if (!data || !data.checks) return;
+            var html = '';
+            Object.keys(data.checks).forEach(function(key) {
+                var check = data.checks[key];
+                html += '<div style="display:flex;gap:8px;align-items:flex-start;"><span>' + (check.pass ? '✅' : '⚠️') + '</span><span>' + $('<div>').text(check.message || '').html() + '</span></div>';
+            });
+            $('#hws-site-basics-checks').html(html);
+            $('#hws-system-basics-panel').toggleClass('panel-healthy', !!data.passed).toggleClass('panel-warning', !data.passed);
+        }
+
+        function basicsPayload(action) {
+            return {
+                action: action,
+                nonce: hwsNonce,
+                title: $('#hws-site-title').val() || '',
+                tagline: $('#hws-site-tagline').val() || '',
+                indexable: $('#hws-site-indexable').is(':checked') ? 1 : 0
+            };
+        }
+
+        $('#hws-save-site-basics').on('click', function() {
+            var $button = $(this);
+            var $status = $('#hws-site-basics-status');
+            $button.prop('disabled', true);
+            $status.text('Saving...');
+            $.post(ajaxurl, basicsPayload('hws_save_site_basics'), function(response) {
+                if (!response || !response.success) {
+                    $status.text('Save failed.');
+                    return;
+                }
+                renderBasicsResult(response.data || {});
+                $status.text('Saved and tested.');
+            }, 'json').fail(function() {
+                $status.text('AJAX error.');
+            }).always(function() {
+                $button.prop('disabled', false);
+            });
+        });
+
+        $('#hws-test-site-basics').on('click', function() {
+            var $button = $(this);
+            var $status = $('#hws-site-basics-status');
+            $button.prop('disabled', true);
+            $status.text('Testing...');
+            $.post(ajaxurl, basicsPayload('hws_test_site_basics'), function(response) {
+                if (!response || !response.success) {
+                    $status.text('Test failed.');
+                    return;
+                }
+                renderBasicsResult(response.data || {});
+                $status.text(response.data && response.data.passed ? 'All basics passed.' : 'Basics need attention.');
+            }, 'json').fail(function() {
+                $status.text('AJAX error.');
+            }).always(function() {
+                $button.prop('disabled', false);
+            });
+        });
+
+        $('#hws-basics-create-letter-icon').on('click', function() {
+            var $button = $(this);
+            var $status = $('#hws-basics-favicon-status');
+            $button.prop('disabled', true);
+            $status.text('Creating...');
+            $.post(ajaxurl, {
+                action: 'hws_copy_favicon',
+                nonce: hwsNonce,
+                source: 'letter',
+                letter: $('#hws-basics-favicon-letter').val() || 'H',
+                background: $('#hws-basics-favicon-bg').val() || '#111827',
+                foreground: $('#hws-basics-favicon-fg').val() || '#ffffff'
+            }, function(response) {
+                if (!response || !response.success) {
+                    $status.text(response && response.data ? response.data : 'Create failed.');
+                    return;
+                }
+                $status.text(response.data.message || 'Icon created.');
+                $('#hws-test-site-basics').trigger('click');
+            }, 'json').fail(function() {
+                $status.text('AJAX error.');
+            }).always(function() {
+                $button.prop('disabled', false);
+            });
+        });
+    });
+    </script>
+    <?php
+}
+
 function render_tab_overview() {
     // Get debug states
     $wp_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
@@ -1612,6 +1819,8 @@ function render_tab_overview() {
     $permalinks_url = add_query_arg( Dashboard_Config::SECRET_PERMALINKS_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
     ?>
     
+    <?php render_system_basics_panel(); ?>
+
     <!-- Summary Section -->
     <div class="hws-panel">
         <div class="hws-panel-header">📋 Summary</div>
@@ -2915,6 +3124,34 @@ function ajax_get_overview_state() {
     wp_send_json_success( hws_get_overview_state_payload() );
 }
 
+function ajax_save_site_basics() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+    $tagline   = isset( $_POST['tagline'] ) ? sanitize_text_field( wp_unslash( $_POST['tagline'] ) ) : '';
+    $indexable = ! empty( $_POST['indexable'] );
+
+    update_option( 'blogname', $title );
+    update_option( 'blogdescription', $tagline );
+    update_option( 'blog_public', $indexable ? '1' : '0' );
+
+    wp_send_json_success( hws_test_site_basics_state() );
+}
+
+function ajax_test_site_basics() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    wp_send_json_success( hws_test_site_basics_state() );
+}
+
 
 /**
  * AJAX: Toggle secret URLs
@@ -3528,10 +3765,17 @@ function render_site_icon_panel() {
                             📤 Upload New Icon
                         </button>
                     </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding:10px;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                        <strong style="font-size:13px;">Create from letter</strong>
+                        <input type="text" id="hws-favicon-letter" maxlength="1" style="width:42px;text-align:center;text-transform:uppercase;font-weight:700;" value="<?php echo esc_attr( strtoupper( substr( sanitize_title( get_bloginfo( 'name' ) ), 0, 1 ) ?: 'H' ) ); ?>">
+                        <input type="text" id="hws-favicon-bg" value="#111827" style="width:90px;" aria-label="Background color">
+                        <input type="text" id="hws-favicon-fg" value="#ffffff" style="width:90px;" aria-label="Foreground color">
+                        <button type="button" id="hws-create-letter-favicon" class="button">Generate</button>
+                    </div>
                     <div id="hws-favicon-status" style="font-size:13px;margin-top:8px;"></div>
 
                     <p style="font-size:12px;color:#646970;margin:10px 0 0;">
-                        💡 WordPress outputs <code>&lt;link rel="icon"&gt;</code> in the HTML head (supports PNG). The physical <code>/favicon.ico</code> file is a fallback for Google crawlers and browsers that request it directly. Modern browsers accept PNG at <code>/favicon.ico</code>.
+                        💡 WordPress outputs <code>&lt;link rel="icon"&gt;</code> in the HTML head. This tool also writes a real ICO file at <code>/favicon.ico</code> for crawlers and browsers that request it directly.
                     </p>
 
                     <!-- Setup Instructions (reusable instruction box) -->
@@ -3608,6 +3852,31 @@ function render_site_icon_panel() {
 
             frame.open();
         });
+
+        $('#hws-create-letter-favicon').on('click', function() {
+            var $btn = $(this);
+            var origText = $btn.text();
+            $btn.prop('disabled', true).text('Generating...');
+
+            $.post(ajaxurl, {
+                action: 'hws_copy_favicon',
+                nonce: hwsNonce,
+                source: 'letter',
+                letter: $('#hws-favicon-letter').val() || 'H',
+                background: $('#hws-favicon-bg').val() || '#111827',
+                foreground: $('#hws-favicon-fg').val() || '#ffffff'
+            }, function(response) {
+                $btn.prop('disabled', false).text(origText);
+                if (response.success) {
+                    $('#hws-favicon-status').html('<span style="color:#00a32a;">✅ ' + response.data.message + '</span>');
+                } else {
+                    $('#hws-favicon-status').html('<span style="color:#d63638;">❌ ' + (response.data || 'Failed') + '</span>');
+                }
+            }).fail(function() {
+                $btn.prop('disabled', false).text(origText);
+                $('#hws-favicon-status').html('<span style="color:#d63638;">❌ AJAX error</span>');
+            });
+        });
     });
     </script>
     <?php
@@ -3680,67 +3949,246 @@ function ajax_copy_favicon() {
         return;
     }
 
+    if ( $source === 'letter' ) {
+        $letter     = isset( $_POST['letter'] ) ? sanitize_text_field( wp_unslash( $_POST['letter'] ) ) : '';
+        $background = isset( $_POST['background'] ) ? sanitize_hex_color( wp_unslash( $_POST['background'] ) ) : '#111827';
+        $foreground = isset( $_POST['foreground'] ) ? sanitize_hex_color( wp_unslash( $_POST['foreground'] ) ) : '#ffffff';
+
+        $result = hws_create_letter_site_icon( $letter, $background ?: '#111827', $foreground ?: '#ffffff' );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
+
+        wp_send_json_success( [
+            'message'       => 'Letter icon created. ' . $result['message'],
+            'attachment_id' => $result['attachment_id'],
+            'icon_url'      => $result['icon_url'],
+        ] );
+        return;
+    }
+
     wp_send_json_error( 'Unknown source type' );
 }
 
 
 /**
- * Create a resized 48×48 favicon.ico from a source image file.
- * Uses WP_Image_Editor for reliable resizing and compression.
- * Output is PNG (modern browsers accept PNG at /favicon.ico).
+ * Create a real ICO file at /favicon.ico from a source image.
  *
- * @param string|null $source_path  Path to the source image
- * @return string                   Status message
+ * @param string|null $source_path Path to the source image.
+ * @return string Status message.
  */
 function hws_create_resized_favicon( ?string $source_path ): string {
     if ( ! $source_path || ! file_exists( $source_path ) ) {
         return 'Could not locate source image file';
     }
 
-    $dest = ABSPATH . 'favicon.ico';
+    $dest      = ABSPATH . 'favicon.ico';
+    $tmp_files = [];
+    $entries   = [];
 
-    // — Use WP_Image_Editor to resize to 48×48
-    $editor = wp_get_image_editor( $source_path );
-    if ( is_wp_error( $editor ) ) {
-        // — Fallback: direct copy without resize
-        if ( @copy( $source_path, $dest ) ) {
-            return '/favicon.ico created (not resized — image editor unavailable: ' . $editor->get_error_message() . ')';
+    foreach ( [ 256, 32 ] as $size ) {
+        $editor = wp_get_image_editor( $source_path );
+        if ( is_wp_error( $editor ) ) {
+            hws_delete_temp_files( $tmp_files );
+            return 'Could not create /favicon.ico — image editor unavailable: ' . $editor->get_error_message();
         }
-        return 'Could not create /favicon.ico — ' . $editor->get_error_message();
-    }
 
-    // — Resize to 48×48 (standard browser tab favicon size)
-    $resized = $editor->resize( 48, 48, true );
-    if ( is_wp_error( $resized ) ) {
-        // — Fallback: direct copy without resize
-        if ( @copy( $source_path, $dest ) ) {
-            return '/favicon.ico created (not resized — ' . $resized->get_error_message() . ')';
+        $resized = $editor->resize( $size, $size, true );
+        if ( is_wp_error( $resized ) ) {
+            hws_delete_temp_files( $tmp_files );
+            return 'Could not resize favicon image — ' . $resized->get_error_message();
         }
-        return 'Could not resize — ' . $resized->get_error_message();
+
+        $editor->set_quality( 90 );
+        $tmp_file = trailingslashit( get_temp_dir() ) . 'hws-favicon-' . $size . '-' . wp_generate_password( 8, false ) . '.png';
+        $saved    = $editor->save( $tmp_file, 'image/png' );
+
+        if ( is_wp_error( $saved ) || empty( $saved['path'] ) || ! file_exists( $saved['path'] ) ) {
+            hws_delete_temp_files( $tmp_files );
+            return 'Could not save resized favicon image.';
+        }
+
+        $tmp_files[] = $saved['path'];
+        $entries[]   = [
+            'width'  => $size,
+            'height' => $size,
+            'data'   => file_get_contents( $saved['path'] ),
+        ];
     }
 
-    // — Set quality for compression
-    $editor->set_quality( 90 );
+    $ico = hws_build_ico_file_bytes( $entries );
+    hws_delete_temp_files( $tmp_files );
 
-    // — Save to a temp file first (WP doesn't let us specify .ico extension directly)
-    $tmp_dir  = get_temp_dir();
-    $tmp_file = $tmp_dir . 'hws-favicon-' . wp_generate_password( 8, false ) . '.png';
-    $saved    = $editor->save( $tmp_file, 'image/png' );
-
-    if ( is_wp_error( $saved ) ) {
-        return 'Could not save resized favicon — ' . $saved->get_error_message();
+    if ( '' === $ico ) {
+        return 'Could not build ICO data.';
     }
 
-    // — Move the resized file to /favicon.ico
-    $saved_path = $saved['path'];
-    if ( @rename( $saved_path, $dest ) || @copy( $saved_path, $dest ) ) {
-        @unlink( $saved_path );
-        $size = size_format( filesize( $dest ) );
-        return '/favicon.ico created (48×48, ' . $size . ')';
+    if ( false === @file_put_contents( $dest, $ico ) ) {
+        return 'Could not write to ' . ABSPATH . 'favicon.ico — check file permissions';
     }
 
-    @unlink( $saved_path );
-    return 'Could not write to ' . ABSPATH . 'favicon.ico — check file permissions';
+    return '/favicon.ico created as ICO (' . size_format( filesize( $dest ) ) . ')';
+}
+
+function hws_build_ico_file_bytes( array $entries ): string {
+    $entries = array_values( array_filter( $entries, function( $entry ) {
+        return ! empty( $entry['width'] ) && ! empty( $entry['height'] ) && isset( $entry['data'] ) && $entry['data'] !== '';
+    } ) );
+
+    if ( empty( $entries ) ) {
+        return '';
+    }
+
+    $count      = count( $entries );
+    $header     = pack( 'vvv', 0, 1, $count );
+    $directory  = '';
+    $image_data = '';
+    $offset     = 6 + ( 16 * $count );
+
+    foreach ( $entries as $entry ) {
+        $data   = (string) $entry['data'];
+        $width  = (int) $entry['width'];
+        $height = (int) $entry['height'];
+
+        $directory .= pack(
+            'CCCCvvVV',
+            $width >= 256 ? 0 : $width,
+            $height >= 256 ? 0 : $height,
+            0,
+            0,
+            1,
+            32,
+            strlen( $data ),
+            $offset
+        );
+
+        $image_data .= $data;
+        $offset     += strlen( $data );
+    }
+
+    return $header . $directory . $image_data;
+}
+
+function hws_delete_temp_files( array $paths ): void {
+    foreach ( $paths as $path ) {
+        if ( is_string( $path ) && file_exists( $path ) ) {
+            @unlink( $path );
+        }
+    }
+}
+
+function hws_create_letter_site_icon( string $letter, string $background = '#111827', string $foreground = '#ffffff' ) {
+    $letter = strtoupper( substr( preg_replace( '/[^A-Za-z0-9]/', '', $letter ), 0, 1 ) );
+    if ( '' === $letter ) {
+        return new \WP_Error( 'hws_favicon_letter_invalid', 'Enter one letter or number.' );
+    }
+
+    if ( ! function_exists( 'imagecreatetruecolor' ) || ! function_exists( 'imagepng' ) ) {
+        return new \WP_Error( 'hws_favicon_gd_missing', 'PHP GD is required to generate a letter favicon.' );
+    }
+
+    $tmp_file = trailingslashit( get_temp_dir() ) . 'favicon-' . strtolower( $letter ) . '-' . time() . '.png';
+    $image    = imagecreatetruecolor( 512, 512 );
+
+    imagealphablending( $image, true );
+    imagesavealpha( $image, true );
+
+    $bg = hws_allocate_hex_color( $image, $background );
+    $fg = hws_allocate_hex_color( $image, $foreground );
+
+    imagefilledrectangle( $image, 0, 0, 512, 512, $bg );
+
+    $font = hws_get_letter_icon_font_path();
+    if ( $font && function_exists( 'imagettftext' ) ) {
+        $font_size = 378;
+        $box       = imagettfbbox( $font_size, 0, $font, $letter );
+        $width     = abs( $box[2] - $box[0] );
+        $height    = abs( $box[7] - $box[1] );
+        $x         = (int) round( ( 512 - $width ) / 2 - $box[0] );
+        $y         = (int) round( ( 512 - $height ) / 2 - $box[7] );
+
+        imagettftext( $image, $font_size, 0, $x, $y, $fg, $font, $letter );
+    } else {
+        $font_size = 5;
+        $width     = imagefontwidth( $font_size ) * strlen( $letter );
+        $height    = imagefontheight( $font_size );
+        imagestring( $image, $font_size, ( 512 - $width ) / 2, ( 512 - $height ) / 2, $letter, $fg );
+    }
+
+    if ( ! imagepng( $image, $tmp_file ) ) {
+        imagedestroy( $image );
+        return new \WP_Error( 'hws_favicon_png_failed', 'Could not create the letter icon PNG.' );
+    }
+    imagedestroy( $image );
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+
+    $file_array = [
+        'name'     => 'favicon-' . strtolower( $letter ) . '-' . time() . '.png',
+        'tmp_name' => $tmp_file,
+    ];
+
+    $attachment_id = media_handle_sideload( $file_array, 0, 'Generated favicon ' . $letter );
+
+    if ( is_wp_error( $attachment_id ) ) {
+        if ( file_exists( $tmp_file ) ) {
+            @unlink( $tmp_file );
+        }
+        return $attachment_id;
+    }
+
+    update_option( 'site_icon', (int) $attachment_id );
+
+    $source_path = get_attached_file( $attachment_id );
+    $message     = hws_create_resized_favicon( $source_path );
+
+    if ( strpos( $message, 'Could not' ) !== false ) {
+        return new \WP_Error( 'hws_favicon_ico_failed', $message );
+    }
+
+    return [
+        'attachment_id' => (int) $attachment_id,
+        'icon_url'      => wp_get_attachment_url( $attachment_id ),
+        'message'       => $message,
+    ];
+}
+
+function hws_get_letter_icon_font_path(): string {
+    $candidates = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
+        '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+        '/Library/Fonts/Arial Bold.ttf',
+    ];
+
+    foreach ( $candidates as $path ) {
+        if ( is_readable( $path ) ) {
+            return $path;
+        }
+    }
+
+    return '';
+}
+
+function hws_allocate_hex_color( $image, string $hex ): int {
+    $hex = ltrim( $hex, '#' );
+    if ( strlen( $hex ) === 3 ) {
+        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    }
+
+    if ( ! preg_match( '/^[0-9a-fA-F]{6}$/', $hex ) ) {
+        $hex = '111827';
+    }
+
+    return (int) imagecolorallocate(
+        $image,
+        hexdec( substr( $hex, 0, 2 ) ),
+        hexdec( substr( $hex, 2, 2 ) ),
+        hexdec( substr( $hex, 4, 2 ) )
+    );
 }
 
 

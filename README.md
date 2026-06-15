@@ -47,8 +47,8 @@ Monitored plugins (11 total, 9 essential, 2 optional) with ESSENTIAL/OPTIONAL/PR
 ## Themes Tab
 Active theme verification, auto-update status, batch delete, warning for >2 themes.
 
-## Snippets Tab
-Toggle-based feature management with recommended badges: ACF Field Registration, Admin Features, Frontend Features.
+## Features Tab
+Structured feature management with toggles, optional settings, use instructions, code examples, test reports, and activity logs.
 
 ## UI Cleanup Tab
 WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, footer text.
@@ -64,6 +64,7 @@ WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, foote
 | `[website_content id="..."]` | ACF website settings options |
 | `[website_url]` | Site URL |
 | `[display_year]` | Current year |
+| `[current_year]` | Current year alias |
 
 ---
 
@@ -111,7 +112,14 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.17.0 (Current)
+### v10.18.0 (Current)
+- Added a structured Features tab with toggle, settings, use instructions, code example, test report, and activity log sections.
+- Added toggles for disabling the front-end admin bar for non-admins, limiting a tag RSS feed, enabling `[current_year]`, and lowercasing uploaded file names.
+- Added Overview System Basics controls for indexability, website title/tagline, and favicon status/testing.
+- Rebuilt favicon tools with SFPF-style one-letter icon generation and real `/favicon.ico` ICO output.
+- Simplified Footer Text into one shared text editor with two clear methods: bottom section or targeted injection into an existing footer element.
+
+### v10.17.0
 - Added a separate Targeted Footer Injection tool that inserts inline HTML as a non-invasive span before, after, or within a selected footer element.
 - Added a footer element picker for admins to inspect the live footer, click an element, and capture its ID/classes/suggested selector for targeted injection.
 - Removed Hexa PR Wire force-sync admin code from HWS Base Tools; PR Wire functionality now belongs in the Hexa PR Wire plugin.
