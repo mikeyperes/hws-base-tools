@@ -142,7 +142,7 @@ function hws_plugin_info_clear_update_caches(): void {
 
 /**
  * AJAX: Load available versions (commits) from GitHub
- * Fetches actual plugin version from initialization.php at each commit
+ * Fetches actual plugin version from the main plugin file at each commit.
  */
 function ajax_load_github_versions() {
     if ( ! current_user_can( 'update_plugins' ) ) {
@@ -191,7 +191,7 @@ function ajax_load_github_versions() {
             ? date( 'M j, Y', strtotime( $commit['commit']['committer']['date'] ) )
             : '';
         
-        // Fetch actual plugin version from initialization.php at this commit
+        // Fetch actual plugin version from the plugin header at this commit.
         // Only fetch for first 10 commits to avoid GitHub rate limits
         $version_label = '';
         if ( $index < 10 ) {
@@ -231,39 +231,40 @@ function ajax_load_github_versions() {
 }
 
 /**
- * Fetch plugin version from initialization.php at a specific commit
+ * Fetch plugin version from the main plugin file at a specific commit.
  * 
  * @param string $repo GitHub repo (owner/repo)
  * @param string $sha Commit SHA
  * @return string Version number or empty string
  */
 function hws_get_version_from_commit( $repo, $sha ) {
-    // Use GitHub raw content URL
-    $raw_url = 'https://raw.githubusercontent.com/' . $repo . '/' . $sha . '/initialization.php';
-    
-    $response = wp_remote_get( $raw_url, [
-        'timeout' => 5,
-        'headers' => [
-            'User-Agent' => 'WordPress/' . get_bloginfo('version'),
-        ],
-    ]);
-    
-    if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
-        return '';
+    foreach ( [ Config::$plugin_starter_file, 'initialization.php' ] as $main_file ) {
+        $raw_url = 'https://raw.githubusercontent.com/' . $repo . '/' . $sha . '/' . $main_file;
+
+        $response = wp_remote_get( $raw_url, [
+            'timeout' => 5,
+            'headers' => [
+                'User-Agent' => 'WordPress/' . get_bloginfo('version'),
+            ],
+        ]);
+
+        if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
+            continue;
+        }
+
+        $content = wp_remote_retrieve_body( $response );
+
+        // Try to extract version from plugin header: * Version: X.X.X or Version: X.X.X
+        if ( preg_match( '/\*?\s*Version:\s*(\d+\.\d+(?:\.\d+)?)/i', $content, $matches ) ) {
+            return $matches[1];
+        }
+
+        // Try constant style: HWS_VERSION = 'X.X.X'
+        if ( preg_match( '/HWS_VERSION[\'"\s,=]+[\'"](\d+\.\d+(?:\.\d+)?)[\'"]/', $content, $matches ) ) {
+            return $matches[1];
+        }
     }
-    
-    $content = wp_remote_retrieve_body( $response );
-    
-    // Try to extract version from plugin header: * Version: X.X.X or Version: X.X.X
-    if ( preg_match( '/\*?\s*Version:\s*(\d+\.\d+(?:\.\d+)?)/i', $content, $matches ) ) {
-        return $matches[1];
-    }
-    
-    // Try constant style: HWS_VERSION = 'X.X.X'
-    if ( preg_match( '/HWS_VERSION[\'"\s,=]+[\'"](\d+\.\d+(?:\.\d+)?)[\'"]/', $content, $matches ) ) {
-        return $matches[1];
-    }
-    
+
     return '';
 }
 
@@ -426,7 +427,7 @@ function hws_get_github_version_fresh( $repo, $branch = 'main' ) {
     $url = add_query_arg(
         'cb',
         time(),
-        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php'
+        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/' . Config::$plugin_starter_file
     );
     
     $response = wp_remote_get( $url, [
@@ -819,7 +820,7 @@ function hws_get_github_version( $repo, $branch = 'main' ) {
     $url = add_query_arg(
         'cb',
         time(),
-        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/initialization.php'
+        'https://raw.githubusercontent.com/' . $repo . '/' . $branch . '/' . Config::$plugin_starter_file
     );
     
     $response = wp_remote_get( $url, [
@@ -843,9 +844,9 @@ function hws_get_github_version( $repo, $branch = 'main' ) {
 }
  
 function hws_ct_get_plugin_data() {
-    $plugin_file = __FILE__;
-    $plugin_dir = dirname($plugin_file);
-    $main_plugin_file = $plugin_dir . '/initialization.php';
+    $main_plugin_file = defined( 'HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE' )
+        ? HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE
+        : dirname( __FILE__ ) . '/hws-base-tools.php';
 
     if (!file_exists($main_plugin_file) || !is_file($main_plugin_file) || !is_readable($main_plugin_file)) {
         return [

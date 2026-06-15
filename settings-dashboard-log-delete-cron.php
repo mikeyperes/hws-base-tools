@@ -404,7 +404,10 @@ function hws_log_cleaner_ajax_run_now() {
 function hws_log_cleaner_deactivate() {
     hws_log_cleaner_unschedule();
 }
-register_deactivation_hook( dirname( __FILE__ ) . '/initialization.php', __NAMESPACE__ . '\\hws_log_cleaner_deactivate' );
+$hws_log_cleaner_main_file = defined( 'HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE' )
+    ? HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE
+    : dirname( __FILE__ ) . '/hws-base-tools.php';
+register_deactivation_hook( $hws_log_cleaner_main_file, __NAMESPACE__ . '\\hws_log_cleaner_deactivate' );
 
 
 /**

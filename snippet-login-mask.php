@@ -39,7 +39,9 @@ const DEFAULT_SLUG = 'hexa-admin';
 
         // Activation/deactivation — use the MAIN plugin file, not this include file
         // __FILE__ points to snippet-login-mask.php which is wrong for activation hooks
-        $main_plugin_file = dirname(__FILE__) . '/initialization.php';
+        $main_plugin_file = defined('HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE')
+            ? HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE
+            : dirname(__FILE__) . '/hws-base-tools.php';
         if (function_exists('register_activation_hook') && file_exists($main_plugin_file)) {
             \register_activation_hook($main_plugin_file, [__CLASS__, 'activate']);
             \register_deactivation_hook($main_plugin_file, [__CLASS__, 'deactivate']);

@@ -1,19 +1,79 @@
-<?php namespace hws_base_tools; 
-/*
-Plugin Name: Hexa Web Systems - Website Base Tool
-Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
-Author: Michael Peres
-Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 10.18.2
-Text Domain: hws-base-tools
-Domain Path: /languages
-Author URI: https://michaelperes.com
-GitHub Plugin URI: https://github.com/mikeyperes/hws-base-tools/
-GitHub Branch: main 
-*/   
+<?php
+namespace hws_base_tools;
+
+/**
+ * Legacy bootstrap.
+ *
+ * The canonical WordPress plugin entry is hws-base-tools.php. This file stays
+ * loadable so existing installs active as hws-base-tools/initialization.php can
+ * migrate their stored plugin basename without a deactivate/reactivate cycle.
+ */
 
 // Ensure this file is being included by a parent file
 defined('ABSPATH') or die('No script kiddies please!');
+
+if ( defined( 'HWS_BASE_TOOLS_BOOTSTRAPPED' ) ) {
+    return;
+}
+
+define( 'HWS_BASE_TOOLS_BOOTSTRAPPED', true );
+
+if ( ! defined( 'HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE' ) ) {
+    define( 'HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE', __DIR__ . '/hws-base-tools.php' );
+}
+
+if ( ! defined( 'HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE' ) ) {
+    define( 'HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE', __FILE__ );
+}
+
+function hws_migrate_active_plugin_basename_to_canonical(): void {
+    if ( ! function_exists( 'plugin_basename' ) ) {
+        return;
+    }
+
+    $legacy_basename    = plugin_basename( HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE );
+    $canonical_basename = plugin_basename( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE );
+
+    if ( $legacy_basename === $canonical_basename ) {
+        return;
+    }
+
+    $active_plugins = (array) get_option( 'active_plugins', [] );
+    $updated        = [];
+    $changed        = false;
+
+    foreach ( $active_plugins as $plugin ) {
+        if ( $plugin === $legacy_basename ) {
+            if ( ! in_array( $canonical_basename, $updated, true ) ) {
+                $updated[] = $canonical_basename;
+            }
+            $changed = true;
+            continue;
+        }
+
+        if ( $plugin === $canonical_basename && in_array( $canonical_basename, $updated, true ) ) {
+            $changed = true;
+            continue;
+        }
+
+        $updated[] = $plugin;
+    }
+
+    if ( $changed ) {
+        update_option( 'active_plugins', array_values( $updated ) );
+    }
+
+    if ( is_multisite() ) {
+        $network_active = (array) get_site_option( 'active_sitewide_plugins', [] );
+        if ( isset( $network_active[ $legacy_basename ] ) ) {
+            $activated_at = $network_active[ $legacy_basename ];
+            unset( $network_active[ $legacy_basename ] );
+            $network_active[ $canonical_basename ] = $network_active[ $canonical_basename ] ?? $activated_at;
+            update_site_option( 'active_sitewide_plugins', $network_active );
+        }
+    }
+}
+add_action( 'plugins_loaded', __NAMESPACE__ . '\\hws_migrate_active_plugin_basename_to_canonical', 1 );
 
 include_once("runtime-options.php");
 require_once __DIR__ . '/src/Core/Autoloader.php';
@@ -83,7 +143,7 @@ class Config {
     public static $settings_page_display_title = "Hexa Core Tools - WP-Config Settings";
 
     public static $plugin_name = "Hexa Web Systems - Website Base Tool";
-    public static $plugin_starter_file = "initialization.php";
+    public static $plugin_starter_file = "hws-base-tools.php";
     public static $plugin_slug = "hws-core-tools";
     
     // Plugin identification - use these everywhere, never hardcode
@@ -97,7 +157,7 @@ class Config {
      * from a raw GitHub package such as hws-base-tools-main.
      */
     public static function get_plugin_basename() {
-        return plugin_basename( __FILE__ );
+        return plugin_basename( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE );
     }
 
     /**
@@ -122,8 +182,8 @@ public static function get_github_config() {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
 
-    // Pull header info from this very file (it contains your Plugin Name, Version, etc.)
-    $plugin_data = get_plugin_data( __FILE__ );
+    // Pull header info from the canonical plugin file.
+    $plugin_data = get_plugin_data( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE );
 
     // Build and return the updater config
     return [
@@ -149,7 +209,7 @@ public static function get_github_config() {
         'readme'             => 'README.md',
 
         // 6) Which file to read “Version:” from
-        'plugin_starter_file'=> basename( __FILE__ ),
+        'plugin_starter_file'=> basename( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ),
 
         // 7) Metadata pulled straight from the plugin header
         'plugin_name'        => $plugin_data['Name'],
@@ -201,7 +261,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.2";
+$plugin_version = "10.18.3";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -238,7 +298,7 @@ add_action( 'plugins_loaded', function() {
     include_once( 'GitHub_Updater.php' );
 
     hws_init_github_updater( [
-        'plugin_file'        => __FILE__,
+        'plugin_file'        => HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE,
         'github_repo'        => 'mikeyperes/hws-base-tools',
         'github_branch'      => 'main',
         'proper_folder_name' => Config::$plugin_folder_name,

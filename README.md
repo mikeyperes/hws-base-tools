@@ -8,6 +8,17 @@
 
 HWS Base Tools is an all-in-one WordPress administration plugin for developers and site administrators managing production websites. It provides a centralized dashboard for system monitoring, automated maintenance, deployment readiness checks, security oversight, and dynamic content shortcodes. ACF/ACF Pro is optional and only required for ACF field registration and ACF-powered content shortcodes.
 
+Canonical plugin entry:
+
+```text
+/hws-base-tools
+    hws-base-tools.php
+    initialization.php
+    /src
+```
+
+`hws-base-tools.php` is the WordPress plugin header file. `initialization.php` remains as a legacy bootstrap so older installs active as `hws-base-tools/initialization.php` can migrate safely to `hws-base-tools/hws-base-tools.php`.
+
 ---
 
 ## Dashboard Panels (Overview Tab)
@@ -112,7 +123,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.2 (Current)
+### v10.18.3 (Current)
+- Added canonical `hws-base-tools.php` plugin entry file to match the plugin folder slug for better toolkit/scanner compatibility.
+- Kept `initialization.php` as a legacy bootstrap and added active plugin basename migration from `hws-base-tools/initialization.php` to `hws-base-tools/hws-base-tools.php`.
+- Updated updater, activation hooks, and plugin-info version checks to use the canonical main file while falling back to legacy commits where needed.
+
+### v10.18.2
 - Render only the selected HWS dashboard tab instead of loading every tab on every request.
 - Replaced full-file dashboard log reads with bounded tail reads so large `error_log` files do not slow the settings page.
 
