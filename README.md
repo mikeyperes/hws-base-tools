@@ -112,7 +112,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.0 (Current)
+### v10.18.1 (Current)
+- Fixed the Footer Text targeted selector picker so it does not save its temporary hover class and prefers stable Elementor selectors.
+- Normalized saved targeted selectors server-side so old values containing `.hws-ft-picker-hover` are cleaned before frontend injection runs.
+
+### v10.18.0
 - Added a structured Features tab with toggle, settings, use instructions, code example, test report, and activity log sections.
 - Added toggles for disabling the front-end admin bar for non-admins, limiting a tag RSS feed, enabling `[current_year]`, and lowercasing uploaded file names.
 - Added Overview System Basics controls for indexability, website title/tagline, and favicon status/testing.

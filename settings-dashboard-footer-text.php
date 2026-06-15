@@ -122,6 +122,9 @@ function ajax_save_footer_text_targeted_injection() {
 
     $enabled   = ! empty( $_POST['enabled'] );
     $selector  = isset( $_POST['selector'] ) ? trim( wp_strip_all_tags( wp_unslash( $_POST['selector'] ) ) ) : '';
+    if ( function_exists( __NAMESPACE__ . '\\hws_normalize_footer_text_targeted_selector' ) ) {
+        $selector = hws_normalize_footer_text_targeted_selector( $selector );
+    }
     $placement = isset( $_POST['placement'] ) ? sanitize_key( wp_unslash( $_POST['placement'] ) ) : 'within';
     $allowed_html = function_exists( __NAMESPACE__ . '\\hws_get_footer_text_inline_allowed_html' )
         ? hws_get_footer_text_inline_allowed_html()
@@ -1091,6 +1094,10 @@ function display_settings_footer_text() {
             }).done(function(response) {
                 if (!response || !response.success) { throw response; }
 
+                if (response.data && response.data.selector) {
+                    $targetSelector.val(response.data.selector);
+                }
+
                 if (enabled) {
                     $targetStatus.removeClass('off').addClass('on').text('Targeted injection is active');
                 } else {
@@ -1128,6 +1135,15 @@ function display_settings_footer_text() {
             }
         }
 
+        function stableClassList(el) {
+            return Array.prototype.slice.call((el && el.classList) || [])
+                .filter(function(cls) {
+                    return cls !== 'hws-ft-picker-hover'
+                        && !/^hws-ft-picker-/.test(cls)
+                        && !/^elementor-(element|widget|column|section|container)$/.test(cls);
+                });
+        }
+
         function buildDomPath(el, doc) {
             var parts = [];
             var current = el;
@@ -1141,8 +1157,9 @@ function display_settings_footer_text() {
                     break;
                 }
 
-                if (current.classList && current.classList.length) {
-                    var classes = Array.prototype.slice.call(current.classList).slice(0, 3).map(cssEscape).join('.');
+                var stableClasses = stableClassList(current);
+                if (stableClasses.length) {
+                    var classes = stableClasses.slice(0, 3).map(cssEscape).join('.');
                     parts.unshift(tag + '.' + classes);
                 } else if (parent) {
                     var siblings = Array.prototype.filter.call(parent.children, function(child) {
@@ -1162,6 +1179,10 @@ function display_settings_footer_text() {
         function suggestSelector(el, doc) {
             var tag = el.tagName.toLowerCase();
 
+            if (el.classList) {
+                el.classList.remove('hws-ft-picker-hover');
+            }
+
             if (el.id) {
                 var byId = '#' + cssEscape(el.id);
                 if (selectorIsUnique(doc, byId)) {
@@ -1169,10 +1190,30 @@ function display_settings_footer_text() {
                 }
             }
 
+            var elementorNode = el.closest('[data-id]');
+            if (elementorNode) {
+                var elementorId = elementorNode.getAttribute('data-id') || '';
+                var elementorSelector = elementorId ? '.elementor-element-' + cssEscape(elementorId) : '';
+
+                if (elementorSelector && elementorNode === el && selectorIsUnique(doc, elementorSelector)) {
+                    return elementorSelector;
+                }
+
+                var childClassList = stableClassList(el).slice(0, 3);
+                if (elementorSelector && childClassList.length) {
+                    var scopedElementor = elementorSelector + ' .' + childClassList.map(cssEscape).join('.');
+                    if (selectorIsUnique(doc, scopedElementor)) {
+                        return scopedElementor;
+                    }
+                }
+
+                if (elementorSelector && selectorIsUnique(doc, elementorSelector)) {
+                    return elementorSelector;
+                }
+            }
+
             if (el.classList && el.classList.length) {
-                var classList = Array.prototype.slice.call(el.classList)
-                    .filter(function(cls) { return !/^elementor-(element|widget|column|section|container)$/.test(cls); })
-                    .slice(0, 3);
+                var classList = stableClassList(el).slice(0, 3);
 
                 if (classList.length) {
                     var classSelector = '.' + classList.map(cssEscape).join('.');
@@ -1251,7 +1292,7 @@ function display_settings_footer_text() {
 
                     var selector = suggestSelector(el, doc);
                     var id = el.id ? '#' + el.id : 'none';
-                    var classes = el.className && typeof el.className === 'string' ? el.className.trim() : '';
+                    var classes = stableClassList(el).join(' ');
                     var text = elementTextPreview(el);
 
                     $targetSelector.val(selector);

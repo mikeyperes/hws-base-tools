@@ -319,7 +319,38 @@ function hws_get_footer_text_targeted_placements(): array {
 
 function hws_get_footer_text_targeted_selector(): string {
     $selector = get_option( 'hws_footer_text_targeted_selector', '' );
-    return is_string( $selector ) ? trim( wp_strip_all_tags( $selector ) ) : '';
+
+    return is_string( $selector ) ? hws_normalize_footer_text_targeted_selector( $selector ) : '';
+}
+
+function hws_normalize_footer_text_targeted_selector( string $selector ): string {
+    $selector = trim( wp_strip_all_tags( $selector ) );
+
+    if ( '' === $selector ) {
+        return '';
+    }
+
+    $selector = str_replace( '.hws-ft-picker-hover', '', $selector );
+    $selector = preg_replace( '/(^|[\s>+~])hws-ft-picker-hover(?=$|[\s>+~.#\[])/', '$1', $selector );
+    $selector = preg_replace( '/\s+/', ' ', trim( (string) $selector ) );
+
+    if ( preg_match( '/^([A-Za-z][A-Za-z0-9_-]*)(\.[A-Za-z0-9_-]+)+$/', $selector, $matches ) ) {
+        $first = strtolower( $matches[1] );
+        $html_tags = [
+            'a', 'abbr', 'article', 'aside', 'b', 'blockquote', 'body', 'button', 'canvas', 'cite', 'code',
+            'dd', 'details', 'div', 'dl', 'dt', 'em', 'fieldset', 'figcaption', 'figure', 'footer', 'form',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'html', 'i', 'iframe', 'img', 'input',
+            'label', 'li', 'main', 'nav', 'ol', 'option', 'p', 'section', 'select', 'small', 'span',
+            'strong', 'sub', 'summary', 'sup', 'table', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead',
+            'tr', 'ul',
+        ];
+
+        if ( ! in_array( $first, $html_tags, true ) ) {
+            $selector = '.' . $selector;
+        }
+    }
+
+    return $selector;
 }
 
 function hws_get_footer_text_targeted_placement(): string {
