@@ -4449,7 +4449,7 @@ function render_brand_logo_assets_panel() {
             document.execCommand('copy');
             $temp.remove();
 
-            return $.Deferred().resolve().promise();
+            return Promise.resolve();
         }
 
         function syncHighlightColor(kind, value) {

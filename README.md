@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.13 (Current)
+### v10.18.14 (Current)
+- Fixed Elementor color copy fallback so the copy buttons resolve consistently.
+
+### v10.18.13
 - Changed the Brand Colors highlight override control from a checkbox to a switch toggle.
 
 ### v10.18.12
