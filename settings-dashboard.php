@@ -4736,10 +4736,10 @@ function render_brand_logo_assets_panel() {
             });
 
             frame.on('select', function() {
-                var ids = [];
+                var ids = currentIds.slice();
                 frame.state().get('selection').each(function(attachment) {
                     var item = attachment.toJSON();
-                    if (item && item.id) {
+                    if (item && item.id && ids.indexOf(parseInt(item.id, 10)) === -1) {
                         ids.push(item.id);
                     }
                 });

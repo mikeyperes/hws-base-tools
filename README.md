@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.19 (Current)
+### v10.18.20 (Current)
+- Prevented Brand Gallery media saves from erasing existing selections by merging saved IDs with newly selected images.
+
+### v10.18.19
 - Changed Logo Assets to one full-width row per asset with larger uncropped contain previews.
 
 ### v10.18.18
