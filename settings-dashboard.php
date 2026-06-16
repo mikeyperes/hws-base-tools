@@ -3890,12 +3890,60 @@ function render_brand_colors_panel() {
     <div class="hws-panel" id="hws-brand-colors-panel">
         <div class="hws-panel-header">Brand Colors</div>
         <div class="hws-panel-body">
+            <style>
+                #hws-brand-colors-panel .hws-brand-toggle {
+                    align-items: center;
+                    cursor: pointer;
+                    display: inline-flex;
+                    gap: 10px;
+                    font-weight: 600;
+                    user-select: none;
+                }
+                #hws-brand-colors-panel .hws-brand-toggle input {
+                    height: 1px;
+                    opacity: 0;
+                    position: absolute;
+                    width: 1px;
+                }
+                #hws-brand-colors-panel .hws-brand-toggle-track {
+                    background: #8c8f94;
+                    border-radius: 999px;
+                    display: inline-block;
+                    flex: 0 0 auto;
+                    height: 28px;
+                    position: relative;
+                    transition: background .18s ease;
+                    width: 52px;
+                }
+                #hws-brand-colors-panel .hws-brand-toggle-track::before {
+                    background: #fff;
+                    border-radius: 50%;
+                    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+                    content: "";
+                    height: 22px;
+                    left: 3px;
+                    position: absolute;
+                    top: 3px;
+                    transition: transform .18s ease;
+                    width: 22px;
+                }
+                #hws-brand-colors-panel .hws-brand-toggle input:checked + .hws-brand-toggle-track {
+                    background: #3f46e5;
+                }
+                #hws-brand-colors-panel .hws-brand-toggle input:checked + .hws-brand-toggle-track::before {
+                    transform: translateX(24px);
+                }
+                #hws-brand-colors-panel .hws-brand-toggle input:focus + .hws-brand-toggle-track {
+                    box-shadow: 0 0 0 2px rgba(63,70,229,.25);
+                }
+            </style>
             <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                     <strong style="display:block;font-size:14px;margin-bottom:6px;">Site highlight override</strong>
                     <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Controls browser text selection and HWS highlight output with separate background and text colors.</p>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-weight:600;">
+                    <label class="hws-brand-toggle" style="margin-bottom:14px;">
                         <input type="checkbox" id="hws-highlight-enabled" <?php checked( $colors['highlight_enabled'] ); ?>>
+                        <span class="hws-brand-toggle-track" aria-hidden="true"></span>
                         Enable highlight color override
                     </label>
                     <div style="display:grid;gap:12px;">

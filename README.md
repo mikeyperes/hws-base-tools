@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.12 (Current)
+### v10.18.13 (Current)
+- Changed the Brand Colors highlight override control from a checkbox to a switch toggle.
+
+### v10.18.12
 - Added separate highlight enable, background color, and text color controls with cross-browser selection CSS output.
 - Added an Elementor color assets viewer with copy buttons for individual and full color lists.
 
