@@ -4203,8 +4203,9 @@ function render_brand_logo_assets_panel() {
                     <div class="hws-brand-asset-card" data-brand-key="<?php echo esc_attr( $key ); ?>" style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                         <div style="display:flex;gap:12px;align-items:flex-start;">
                             <div class="hws-brand-preview-wrap" style="width:180px;min-width:180px;">
-                                <?php if ( $payload['thumbnail_url'] ) : ?>
-                                    <img class="hws-brand-preview" src="<?php echo esc_url( $payload['thumbnail_url'] ); ?>" alt="" style="width:180px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                                <?php $preview_url = $payload['url'] ?: $payload['thumbnail_url']; ?>
+                                <?php if ( $preview_url ) : ?>
+                                    <img class="hws-brand-preview" src="<?php echo esc_url( $preview_url ); ?>" alt="" style="width:180px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
                                 <?php else : ?>
                                     <div class="hws-brand-preview-empty" style="width:180px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>
                                 <?php endif; ?>
@@ -4342,7 +4343,7 @@ function render_brand_logo_assets_panel() {
             if (data.thumbnail_url || data.url) {
                 var $img = $('<img>', {
                     class: 'hws-brand-preview',
-                    src: data.thumbnail_url || data.url,
+                    src: data.url || data.thumbnail_url,
                     alt: ''
                 }).attr('style', brandPreviewStyle);
                 $card.find('.hws-brand-preview-wrap').html($img);

@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.20 (Current)
+### v10.18.21 (Current)
+- Changed Logo Assets previews to use the full uploaded asset URL instead of WordPress cropped thumbnails.
+
+### v10.18.20
 - Prevented Brand Gallery media saves from erasing existing selections by merging saved IDs with newly selected images.
 
 ### v10.18.19
