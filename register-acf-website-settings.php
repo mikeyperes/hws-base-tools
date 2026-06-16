@@ -1,5 +1,67 @@
 <?php namespace hws_base_tools;
 
+function hws_get_brand_assets_gallery_acf_field(): array {
+    return array(
+        'key'               => 'field_hws_brand_assets_gallery',
+        'label'             => 'Brand Assets Gallery',
+        'name'              => 'brand_assets_gallery',
+        'type'              => 'gallery',
+        'instructions'      => "Shared brand image gallery. Managed from HWS Base Tools → Brand Assets.<br>Shortcode: <code>[brand_asset_gallery]</code> or <code>[site_gallery]</code>",
+        'required'          => 0,
+        'conditional_logic' => 0,
+        'wrapper'           => array(
+            'width' => '',
+            'class' => '',
+            'id'    => '',
+        ),
+        'return_format'     => 'id',
+        'library'           => 'all',
+        'min'               => '',
+        'max'               => '',
+        'min_width'         => '',
+        'min_height'        => '',
+        'min_size'          => '',
+        'max_width'         => '',
+        'max_height'        => '',
+        'max_size'          => '',
+        'mime_types'        => 'jpg,jpeg,png,gif,webp,svg',
+        'insert'            => 'append',
+        'preview_size'      => 'thumbnail',
+    );
+}
+
+function hws_register_brand_assets_gallery_acf(): void {
+    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+        return;
+    }
+
+    acf_add_local_field_group( array(
+        'key'                   => 'group_hws_brand_assets_gallery',
+        'title'                 => 'HWS Brand Assets',
+        'fields'                => array(
+            hws_get_brand_assets_gallery_acf_field(),
+        ),
+        'location'              => array(
+            array(
+                array(
+                    'param'    => 'options_page',
+                    'operator' => '==',
+                    'value'    => 'website-settings',
+                ),
+            ),
+        ),
+        'menu_order'            => 0,
+        'position'              => 'normal',
+        'style'                 => 'default',
+        'label_placement'       => 'top',
+        'instruction_placement' => 'label',
+        'hide_on_screen'        => '',
+        'active'                => true,
+        'description'           => '',
+        'show_in_rest'          => 0,
+    ) );
+}
+
 function register_acf_website_settings()
 {
     if ( ! function_exists( 'acf_add_local_field_group' ) ) {
@@ -275,34 +337,6 @@ function register_acf_website_settings()
                 ),
             ),
 
-            array(
-                'key'               => 'field_hws_brand_assets_gallery',
-                'label'             => 'Brand Assets Gallery',
-                'name'              => 'brand_assets_gallery',
-                'type'              => 'gallery',
-                'instructions'      => "Shared brand image gallery. Managed from HWS Base Tools → Brand Assets.<br>Shortcode: <code>[brand_asset_gallery]</code>",
-                'required'          => 0,
-                'conditional_logic' => 0,
-                'wrapper'           => array(
-                    'width' => '',
-                    'class' => '',
-                    'id'    => '',
-                ),
-                'return_format'     => 'id',
-                'library'           => 'all',
-                'min'               => '',
-                'max'               => '',
-                'min_width'         => '',
-                'min_height'        => '',
-                'min_size'          => '',
-                'max_width'         => '',
-                'max_height'        => '',
-                'max_size'          => '',
-                'mime_types'        => 'jpg,jpeg,png,gif,webp,svg',
-                'insert'            => 'append',
-                'preview_size'      => 'thumbnail',
-            ),
-
         ),
         'location'          => array(
             array(
@@ -331,3 +365,5 @@ function register_acf_website_settings()
         'redirect'   => false,
     ) );
 }
+
+hws_register_brand_assets_gallery_acf();

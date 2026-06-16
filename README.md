@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.10 (Current)
+### v10.18.11 (Current)
+- Registered the Brand Gallery ACF field independently from the Website Settings preset and exposed the `[site_gallery]` alias in the Brand Assets UI.
+
+### v10.18.10
 - Added a Brand Gallery ACF field and a Brand Assets tab gallery manager with AJAX media selection.
 - Added `[brand_asset_gallery]` and `[site_gallery]` shortcodes for rendering the managed brand gallery.
 

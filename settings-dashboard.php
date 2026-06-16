@@ -3799,6 +3799,7 @@ function hws_get_brand_gallery_payload(): array {
         'acf_key'    => 'field_hws_brand_assets_gallery',
         'shortcodes' => [
             'grid' => '[brand_asset_gallery]',
+            'alias' => '[site_gallery]',
             'urls' => '[brand_asset_gallery output="urls" size="full"]',
             'ids'  => '[brand_asset_gallery output="ids"]',
         ],
@@ -4019,6 +4020,7 @@ function render_brand_gallery_panel() {
                     </div>
                     <div style="margin-top:12px;display:grid;gap:5px;font-size:12px;">
                         <code><?php echo esc_html( $payload['shortcodes']['grid'] ); ?></code>
+                        <code><?php echo esc_html( $payload['shortcodes']['alias'] ); ?></code>
                         <code><?php echo esc_html( $payload['shortcodes']['urls'] ); ?></code>
                         <code><?php echo esc_html( $payload['shortcodes']['ids'] ); ?></code>
                     </div>
