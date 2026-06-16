@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.8 (Current)
+### v10.18.9 (Current)
+- Moved the Going Live Checklist and Quick Setup panels to the top of the Overview tab.
+- Marked the WP_MEMORY_LIMIT config tile green when the configured value is greater than 511MB.
+
+### v10.18.8
 - Updated the Brand Assets Login Logo panel to use the active HWS masked-login URL when login masking is enabled.
 
 ### v10.18.7

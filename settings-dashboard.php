@@ -1026,6 +1026,37 @@ function display_wp_admin_settings_page() {
             }
         }
 
+        function hwsMemoryLimitBytes(value) {
+            var match = String(value || '').trim().match(/^([0-9.]+)\s*([kmgtp]?)(?:b)?$/i);
+            var number;
+            var unit;
+            var multipliers = {
+                '': 1,
+                k: 1024,
+                m: 1024 * 1024,
+                g: 1024 * 1024 * 1024,
+                t: 1024 * 1024 * 1024 * 1024,
+                p: 1024 * 1024 * 1024 * 1024 * 1024
+            };
+
+            if (!match) {
+                return 0;
+            }
+
+            number = parseFloat(match[1]);
+            unit = (match[2] || '').toLowerCase();
+
+            if (!isFinite(number) || !Object.prototype.hasOwnProperty.call(multipliers, unit)) {
+                return 0;
+            }
+
+            return number * multipliers[unit];
+        }
+
+        function hwsMemoryLimitIsHealthy(value) {
+            return hwsMemoryLimitBytes(value) > (511 * 1024 * 1024);
+        }
+
         function formatConfigSummary(constant, value) {
             switch (constant) {
                 case 'WP_DEBUG':
@@ -1046,7 +1077,7 @@ function display_wp_admin_settings_page() {
                     };
                 case 'WP_MEMORY_LIMIT':
                     return {
-                        className: '',
+                        className: hwsMemoryLimitIsHealthy(value) ? 'status-ok' : 'status-bad',
                         html: 'WP_MEMORY_LIMIT: <strong>' + value + '</strong>'
                     };
                 default:
@@ -1079,9 +1110,14 @@ function display_wp_admin_settings_page() {
             }
 
             if (constant === 'WP_MEMORY_LIMIT') {
+                var memoryBytes = hwsMemoryLimitBytes(value);
                 $toggle.find('[data-config-label="' + constant + '"]').text('WP_MEMORY_LIMIT: ' + value);
                 $toggle.find('button.modify-wp-config[data-constant="WP_MEMORY_LIMIT"]').removeClass('button-primary');
                 $toggle.find('button.modify-wp-config[data-constant="WP_MEMORY_LIMIT"][data-value="' + value + '"]').addClass('button-primary');
+                if (memoryBytes >= (4000 * 1024 * 1024)) {
+                    $toggle.find('button.modify-wp-config[data-constant="WP_MEMORY_LIMIT"][data-value="4096M"]').addClass('button-primary');
+                }
+                $toggle.removeClass('on off').addClass(hwsMemoryLimitIsHealthy(value) ? 'off' : 'on');
                 updateSummarySetting(constant, value);
                 return;
             }
@@ -1759,6 +1795,70 @@ function render_system_basics_panel() {
     <?php
 }
 
+function hws_wp_memory_limit_is_healthy( $value ): bool {
+    $bytes = wp_convert_hr_to_bytes( (string) $value );
+
+    return $bytes > ( 511 * 1024 * 1024 );
+}
+
+function render_quick_setup_panel( bool $secret_setup_enabled, bool $secret_permalinks_enabled, string $setup_url, string $permalinks_url ): void {
+    ?>
+    <!-- Quick Setup -->
+    <div class="hws-panel">
+        <div class="hws-panel-header">⚡ Quick Setup</div>
+        <div class="hws-panel-body">
+            <p>Run this to quickly configure the site with optimal settings:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 15px;">
+                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
+                    <li>Disable all debug settings</li>
+                    <li>Set WP_MEMORY_LIMIT to 4GB</li>
+                    <li>Enable WP core auto-updates</li>
+                    <li>Enable ALL plugin auto-updates</li>
+                    <li>Enable ALL theme auto-updates</li>
+                    <li>Delete log files &amp; backup files</li>
+                    <li>Delete all comments &amp; pingbacks</li>
+                </ul>
+                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
+                    <li><strong>Enable all recommended snippets</strong></li>
+                    <li><strong>Install &amp; activate essential plugins</strong> <em>(skips pro)</em></li>
+                    <li>Enable Redis object cache <em>(if available)</em></li>
+                    <li>Activate LiteSpeed Cache <em>(if installed)</em></li>
+                    <li>Activate Wordfence <em>(if installed)</em></li>
+                </ul>
+            </div>
+            <button type="button" id="hws-run-quick-setup" class="hws-btn">▶️ Run Quick Setup</button>
+            <textarea id="hws-quick-setup-log" class="hws-quick-setup-log" readonly placeholder="Setup log will appear here..."></textarea>
+
+            <!-- Secret Quick Setup URL -->
+            <div class="hws-secret-url-box" id="hws-secret-setup-box" style="margin-top: 15px;">
+                <label>
+                    <input type="checkbox" id="hws-toggle-secret-setup" <?php checked( $secret_setup_enabled ); ?>>
+                    <strong>Enable Public Quick Setup URL</strong> (runs setup without admin login)
+                </label>
+                <div id="hws-secret-setup-details" style="<?php echo $secret_setup_enabled ? '' : 'display:none;'; ?>">
+                    <p style="margin: 10px 0 5px;"><strong>Quick Setup URL:</strong></p>
+                    <code id="hws-secret-setup-url"><?php echo esc_html( $setup_url ); ?></code>
+                    <p style="color: #d63638; font-size: 12px; margin-top: 5px;">⚠️ Anyone with this URL can run Quick Setup. Disable when not needed.</p>
+                </div>
+            </div>
+
+            <!-- Secret Permalinks Purge URL -->
+            <div class="hws-secret-url-box" id="hws-secret-permalinks-box" style="margin-top: 15px;">
+                <label>
+                    <input type="checkbox" id="hws-toggle-secret-permalinks" <?php checked( $secret_permalinks_enabled ); ?>>
+                    <strong>Enable Public Permalink Purge URL</strong> (flushes permalinks without admin login)
+                </label>
+                <div id="hws-secret-permalinks-details" style="<?php echo $secret_permalinks_enabled ? '' : 'display:none;'; ?>">
+                    <p style="margin: 10px 0 5px;"><strong>Purge Permalinks URL:</strong></p>
+                    <code id="hws-secret-permalinks-url"><?php echo esc_html( $permalinks_url ); ?></code>
+                    <p style="color: #666; font-size: 12px; margin-top: 5px;">ℹ️ Use this URL to flush rewrite rules remotely (useful for terminal/scripts).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
 function render_tab_overview() {
     // Get debug states
     $wp_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
@@ -1785,8 +1885,18 @@ function render_tab_overview() {
     $fatal_url = add_query_arg( Dashboard_Config::SECRET_FATAL_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
     $setup_url = add_query_arg( Dashboard_Config::SECRET_SETUP_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
     $permalinks_url = add_query_arg( Dashboard_Config::SECRET_PERMALINKS_KEY, Dashboard_Config::get_secret_key(), home_url( '/' ) );
+    $memory_limit_healthy = hws_wp_memory_limit_is_healthy( $wp_memory_limit );
     ?>
-    
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         GOING LIVE CHECKLIST (GLC)
+         Checks recommended snippets + essential plugins are active.
+         @since 10.9.0
+    ═══════════════════════════════════════════════════════════════════ -->
+    <?php render_going_live_checklist(); ?>
+
+    <?php render_quick_setup_panel( $secret_setup_enabled, $secret_permalinks_enabled, $setup_url, $permalinks_url ); ?>
+
     <?php render_system_basics_panel(); ?>
 
     <!-- Summary Section -->
@@ -1796,13 +1906,6 @@ function render_tab_overview() {
             <?php render_summary_section(); ?>
         </div>
     </div>
-    
-    <!-- ═══════════════════════════════════════════════════════════════════
-         GOING LIVE CHECKLIST (GLC)
-         Checks recommended snippets + essential plugins are active.
-         @since 10.9.0
-    ═══════════════════════════════════════════════════════════════════ -->
-    <?php render_going_live_checklist(); ?>
     
     <!-- Master Secret Password -->
     <div class="hws-panel">
@@ -1817,61 +1920,6 @@ function render_tab_overview() {
             <p style="font-size:12px;color:#d63638;margin:8px 0 0;">⚠️ Anyone with this password can trigger public URLs. Use a strong, unique password.</p>
         </div>
     </div>
-    
-    <!-- Quick Setup -->
-    <div class="hws-panel">
-        <div class="hws-panel-header">⚡ Quick Setup</div>
-        <div class="hws-panel-body">
-            <p>Run this to quickly configure the site with optimal settings:</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 15px;">
-                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
-                    <li>Disable all debug settings</li>
-                    <li>Set WP_MEMORY_LIMIT to 4GB</li>
-                    <li>Enable WP core auto-updates</li>
-                    <li>Enable ALL plugin auto-updates</li>
-                    <li>Enable ALL theme auto-updates</li>
-                    <li>Delete log files &amp; backup files</li>
-                    <li>Delete all comments &amp; pingbacks</li>
-                </ul>
-                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
-                    <li><strong>Enable all recommended snippets</strong></li>
-                    <li><strong>Install &amp; activate essential plugins</strong> <em>(skips pro)</em></li>
-                    <li>Enable Redis object cache <em>(if available)</em></li>
-                    <li>Activate LiteSpeed Cache <em>(if installed)</em></li>
-                    <li>Activate Wordfence <em>(if installed)</em></li>
-                </ul>
-            </div>
-            <button type="button" id="hws-run-quick-setup" class="hws-btn">▶️ Run Quick Setup</button>
-            <textarea id="hws-quick-setup-log" class="hws-quick-setup-log" readonly placeholder="Setup log will appear here..."></textarea>
-            
-            <!-- Secret Quick Setup URL -->
-            <div class="hws-secret-url-box" id="hws-secret-setup-box" style="margin-top: 15px;">
-                <label>
-                    <input type="checkbox" id="hws-toggle-secret-setup" <?php checked( $secret_setup_enabled ); ?>>
-                    <strong>Enable Public Quick Setup URL</strong> (runs setup without admin login)
-                </label>
-                <div id="hws-secret-setup-details" style="<?php echo $secret_setup_enabled ? '' : 'display:none;'; ?>">
-                    <p style="margin: 10px 0 5px;"><strong>Quick Setup URL:</strong></p>
-                    <code id="hws-secret-setup-url"><?php echo esc_html( $setup_url ); ?></code>
-                    <p style="color: #d63638; font-size: 12px; margin-top: 5px;">⚠️ Anyone with this URL can run Quick Setup. Disable when not needed.</p>
-                </div>
-            </div>
-            
-            <!-- Secret Permalinks Purge URL -->
-            <div class="hws-secret-url-box" id="hws-secret-permalinks-box" style="margin-top: 15px;">
-                <label>
-                    <input type="checkbox" id="hws-toggle-secret-permalinks" <?php checked( $secret_permalinks_enabled ); ?>>
-                    <strong>Enable Public Permalink Purge URL</strong> (flushes permalinks without admin login)
-                </label>
-                <div id="hws-secret-permalinks-details" style="<?php echo $secret_permalinks_enabled ? '' : 'display:none;'; ?>">
-                    <p style="margin: 10px 0 5px;"><strong>Purge Permalinks URL:</strong></p>
-                    <code id="hws-secret-permalinks-url"><?php echo esc_html( $permalinks_url ); ?></code>
-                    <p style="color: #666; font-size: 12px; margin-top: 5px;">ℹ️ Use this URL to flush rewrite rules remotely (useful for terminal/scripts).</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Debug Controls -->
     <div class="hws-panel">
         <div class="hws-panel-header">🐛 Debug Settings</div>
@@ -1936,11 +1984,11 @@ function render_tab_overview() {
                         <?php echo $disable_cron ? 'Enable WP-Cron' : 'Disable WP-Cron'; ?>
                     </button>
                 </div>
-                <div class="hws-debug-toggle" data-config-toggle="WP_MEMORY_LIMIT">
+                <div class="hws-debug-toggle <?php echo $memory_limit_healthy ? 'off' : 'on'; ?>" data-config-toggle="WP_MEMORY_LIMIT">
                     <span data-config-label="WP_MEMORY_LIMIT">WP_MEMORY_LIMIT: <?php echo esc_html( $wp_memory_limit ); ?></span>
                     <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '512M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="512M">Set to 512M</button>
                     <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '1024M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="1024M">Set to 1G</button>
-                    <button class="button modify-wp-config <?php echo (string) $wp_memory_limit === '4096M' ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="4096M">Set to 4G</button>
+                    <button class="button modify-wp-config <?php echo in_array( (string) $wp_memory_limit, [ '4000M', '4096M', '4G' ], true ) ? 'button-primary' : ''; ?>" data-constant="WP_MEMORY_LIMIT" data-value="4096M">Set to 4G</button>
                 </div>
             </div>
         </div>
@@ -2673,7 +2721,7 @@ function render_summary_section() {
             </div>
             <div class="hws-summary-card">
                 <h4>Memory & Cron</h4>
-                <p data-summary-setting="WP_MEMORY_LIMIT">WP_MEMORY_LIMIT: <strong><?php echo esc_html( $wp_memory_limit ); ?></strong></p>
+                <p class="<?php echo hws_wp_memory_limit_is_healthy( $wp_memory_limit ) ? 'status-ok' : 'status-bad'; ?>" data-summary-setting="WP_MEMORY_LIMIT">WP_MEMORY_LIMIT: <strong><?php echo esc_html( $wp_memory_limit ); ?></strong></p>
                 <p class="<?php echo $disable_cron ? 'status-ok' : 'status-warn'; ?>" data-summary-setting="DISABLE_WP_CRON">
                     DISABLE_WP_CRON: <?php echo $disable_cron ? '✅ TRUE (using real cron)' : '⚠️ FALSE'; ?>
                 </p>
