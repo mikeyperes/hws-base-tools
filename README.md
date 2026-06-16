@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.11 (Current)
+### v10.18.12 (Current)
+- Added separate highlight enable, background color, and text color controls with cross-browser selection CSS output.
+- Added an Elementor color assets viewer with copy buttons for individual and full color lists.
+
+### v10.18.11
 - Registered the Brand Gallery ACF field independently from the Website Settings preset and exposed the `[site_gallery]` alias in the Brand Assets UI.
 
 ### v10.18.10

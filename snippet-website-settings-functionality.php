@@ -46,14 +46,38 @@ add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 add_shortcode( 'brand_asset_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
 add_shortcode( 'site_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
 
+function hws_get_brand_highlight_background_color(): string {
+	$legacy_background = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
+	$background        = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_background_color', $legacy_background ?: '#facc15' ) );
+
+	return $background ?: '#facc15';
+}
+
 function hws_get_brand_highlight_text_color(): string {
-	$color = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
-	return $color ?: '#facc15';
+	$has_background_option = get_option( 'hws_brand_highlight_background_color', null ) !== null;
+	$default_text          = $has_background_option ? (string) get_option( 'hws_brand_highlight_text_color', '#111827' ) : '#111827';
+	$text                  = sanitize_hex_color( $default_text );
+
+	return $text ?: '#111827';
+}
+
+function hws_is_brand_highlight_enabled(): bool {
+	return (string) get_option( 'hws_brand_highlight_enabled', '1' ) === '1';
 }
 
 function hws_print_brand_color_css_variables(): void {
-	$highlight_color = hws_get_brand_highlight_text_color();
-	echo "\n" . '<style id="hws-brand-color-vars">:root{--hws-highlight-text-color:' . esc_html( $highlight_color ) . ';}</style>' . "\n";
+	$background_color = hws_get_brand_highlight_background_color();
+	$text_color       = hws_get_brand_highlight_text_color();
+	$enabled          = hws_is_brand_highlight_enabled();
+	$css              = ':root{--hws-highlight-background-color:' . $background_color . ';--hws-highlight-text-color:' . $text_color . ';}';
+
+	if ( $enabled ) {
+		$css .= '::selection{background:' . $background_color . ' !important;color:' . $text_color . ' !important;text-shadow:none !important;}';
+		$css .= '::-moz-selection{background:' . $background_color . ' !important;color:' . $text_color . ' !important;text-shadow:none !important;}';
+		$css .= 'mark,.hws-highlight,.hws-highlight-text{background-color:var(--hws-highlight-background-color) !important;color:var(--hws-highlight-text-color) !important;}';
+	}
+
+	echo "\n" . '<style id="hws-brand-color-vars">' . esc_html( $css ) . '</style>' . "\n";
 }
 add_action( 'wp_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
 add_action( 'admin_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
