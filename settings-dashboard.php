@@ -3666,6 +3666,7 @@ function render_wordfence_status_panel() {
 
 function render_tab_brand_assets() {
     render_site_icon_panel();
+    render_login_logo_panel();
     render_brand_colors_panel();
     render_brand_logo_assets_panel();
 }
@@ -3675,7 +3676,7 @@ function hws_asset_external_link( string $url ): string {
         return '<span style="color:#8c8f94;">Not set</span>';
     }
 
-    return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener" style="display:inline-flex;gap:5px;align-items:center;max-width:100%;"><code style="white-space:normal;word-break:break-all;">' . esc_html( $url ) . '</code><span aria-hidden="true">↗</span></a>';
+    return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener" style="display:inline-flex;gap:5px;align-items:flex-start;flex-wrap:wrap;min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;"><code style="display:inline;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;">' . esc_html( $url ) . '</code><span aria-hidden="true" style="flex:0 0 auto;">↗</span></a>';
 }
 
 function hws_get_brand_asset_payload( string $key ): array {
@@ -3720,8 +3721,8 @@ function render_brand_colors_panel() {
     <div class="hws-panel" id="hws-brand-colors-panel">
         <div class="hws-panel-header">Brand Colors</div>
         <div class="hws-panel-body">
-            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(260px,1fr);gap:18px;align-items:start;">
-                <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;">
+            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                     <label for="hws-highlight-text-color" style="display:block;font-weight:700;font-size:14px;margin-bottom:6px;">Highlight Text Color</label>
                     <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Shared brand highlight color for text accents and templates that read the HWS brand color option.</p>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -3734,7 +3735,7 @@ function render_brand_colors_panel() {
                         <span id="hws-brand-colors-status" style="font-size:12px;" aria-live="polite"></span>
                     </div>
                 </div>
-                <div style="border:1px solid #dcdcde;border-radius:6px;background:#f8f9fa;padding:14px;">
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#f8f9fa;padding:14px;min-width:0;">
                     <strong style="display:block;margin-bottom:8px;">Current output</strong>
                     <div style="display:grid;gap:8px;font-size:12.5px;color:#50575e;">
                         <div>Option: <code><?php echo esc_html( $colors['option'] ); ?></code></div>
@@ -3764,7 +3765,7 @@ function render_site_icon_panel() {
     <div class="hws-panel" id="hws-brand-favicon-panel">
         <div class="hws-panel-header">Site Icon / Favicon</div>
         <div class="hws-panel-body">
-            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:start;">
+            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:start;min-width:0;max-width:100%;overflow:hidden;">
                 <div>
                     <?php if ( $icon_url ) : ?>
                         <img id="hws-favicon-preview" src="<?php echo esc_url( $icon_url ); ?>" alt="Site icon preview" style="width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
@@ -3774,17 +3775,17 @@ function render_site_icon_panel() {
                     <div style="font-size:11px;color:#646970;margin-top:6px;">WordPress Site Icon</div>
                 </div>
 
-                <div>
+                <div style="min-width:0;max-width:100%;">
                     <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:14px;">
-                        <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;">
+                        <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;min-width:0;max-width:100%;">
                             <strong style="display:block;margin-bottom:10px;">Current favicon files</strong>
-                            <div style="display:grid;gap:12px;">
-                                <div>
+                            <div style="display:grid;gap:12px;min-width:0;">
+                                <div style="min-width:0;">
                                     <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Uploaded PNG source</label>
                                     <div id="hws-favicon-png-url"><?php echo hws_asset_external_link( $icon_url ); ?></div>
                                     <div style="font-size:12px;color:#646970;margin-top:6px;">Attachment ID: <span id="hws-favicon-attachment-id"><?php echo $icon_id ? (int) $icon_id : 'none'; ?></span></div>
                                 </div>
-                                <div>
+                                <div style="min-width:0;">
                                     <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Physical ICO file</label>
                                     <div id="hws-favicon-ico-url"><?php echo $favicon_exists ? hws_asset_external_link( $favicon_url ) : '<span style="color:#d63638;">Missing</span>'; ?></div>
                                     <div id="hws-favicon-ico-meta" style="font-size:12px;color:#646970;margin-top:6px;"><?php echo $favicon_exists ? 'Exists: ' . esc_html( $favicon_size ) : 'Generated at /favicon.ico'; ?></div>
@@ -3810,7 +3811,50 @@ function render_site_icon_panel() {
                     </div>
 
                     <div id="hws-favicon-status" style="font-size:13px;margin-top:10px;" aria-live="polite"></div>
-                    <p style="font-size:12px;color:#646970;margin:10px 0 0;">Uploaded favicon images are center-cropped to a clean 512x512 PNG before syncing to WordPress Site Icon and generating the real <code>/favicon.ico</code>. Logo assets are managed separately below.</p>
+                    <p style="font-size:12px;color:#646970;margin:10px 0 0;max-width:100%;overflow-wrap:anywhere;">Uploaded favicon images are center-cropped to a clean 512x512 PNG before syncing to WordPress Site Icon and generating the real <code>/favicon.ico</code>. Logo assets are managed separately below.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+function render_login_logo_panel() {
+    $icon_url  = has_site_icon() ? get_site_icon_url( 512 ) : '';
+    $login_url = site_url( 'wp-login.php' );
+    ?>
+    <div class="hws-panel" id="hws-brand-login-logo-panel">
+        <div class="hws-panel-header">Login Logo</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;align-items:start;min-width:0;">
+                <div>
+                    <?php if ( $icon_url ) : ?>
+                        <img id="hws-login-logo-preview" src="<?php echo esc_url( $icon_url ); ?>" alt="Login logo source preview" style="width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                    <?php else : ?>
+                        <div id="hws-login-logo-preview" style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;">No icon</div>
+                    <?php endif; ?>
+                    <div style="font-size:11px;color:#646970;margin-top:6px;">Login logo source</div>
+                </div>
+                <div style="min-width:0;">
+                    <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;min-width:0;">
+                        <strong style="display:block;margin-bottom:8px;">WordPress login screen</strong>
+                        <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">The login screen uses the current WordPress Site Icon automatically. Change the site icon above to change the login logo.</p>
+                        <div style="display:grid;gap:10px;font-size:12.5px;min-width:0;">
+                            <div>
+                                <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Source PNG</label>
+                                <div id="hws-login-logo-source-url"><?php echo hws_asset_external_link( $icon_url ); ?></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Login URL</label>
+                                <?php echo hws_asset_external_link( $login_url ); ?>
+                            </div>
+                            <div>Status: <span id="hws-login-logo-status" style="color:<?php echo $icon_url ? '#00a32a' : '#d63638'; ?>;"><?php echo $icon_url ? 'Active' : 'Needs a Site Icon'; ?></span></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;">
+                        <a href="<?php echo esc_url( $login_url ); ?>" class="button" target="_blank" rel="noopener">Open Login Screen ↗</a>
+                        <a href="#hws-brand-favicon-panel" class="button">Change Site Icon</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3824,10 +3868,10 @@ function render_brand_logo_assets_panel() {
     <div class="hws-panel" id="hws-brand-logo-panel">
         <div class="hws-panel-header">Logo Assets</div>
         <div class="hws-panel-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;min-width:0;">
                 <?php foreach ( $definitions as $key => $definition ) : ?>
                     <?php $payload = hws_get_brand_asset_payload( $key ); ?>
-                    <div class="hws-brand-asset-card" data-brand-key="<?php echo esc_attr( $key ); ?>" style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;">
+                    <div class="hws-brand-asset-card" data-brand-key="<?php echo esc_attr( $key ); ?>" style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                         <div style="display:flex;gap:12px;align-items:flex-start;">
                             <div class="hws-brand-preview-wrap" style="width:72px;min-width:72px;">
                                 <?php if ( $payload['thumbnail_url'] ) : ?>
@@ -3870,6 +3914,7 @@ function render_brand_logo_assets_panel() {
     <script>
     jQuery(function($) {
         var faviconPreviewStyle = 'width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
+        var loginLogoPreviewStyle = 'width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
         var brandPreviewStyle = 'width:72px;height:72px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
         var brandEmptyPreview = '<div class="hws-brand-preview-empty" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>';
 
@@ -3887,7 +3932,7 @@ function render_brand_logo_assets_panel() {
             }
 
             var escapedUrl = escapeText(url);
-            return '<a href="' + escapedUrl + '" target="_blank" rel="noopener" style="display:inline-flex;gap:5px;align-items:center;max-width:100%;"><code style="white-space:normal;word-break:break-all;">' + escapedUrl + '</code><span aria-hidden="true">↗</span></a>';
+            return '<a href="' + escapedUrl + '" target="_blank" rel="noopener" style="display:inline-flex;gap:5px;align-items:flex-start;flex-wrap:wrap;min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;"><code style="display:inline;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;">' + escapedUrl + '</code><span aria-hidden="true" style="flex:0 0 auto;">↗</span></a>';
         }
 
         function updateFaviconPreview(url) {
@@ -3907,6 +3952,26 @@ function render_brand_logo_assets_panel() {
             }
         }
 
+        function updateLoginLogoPanel(url) {
+            if (!url) {
+                return;
+            }
+
+            var $preview = $('#hws-login-logo-preview');
+            var $img = $('<img>', {
+                id: 'hws-login-logo-preview',
+                src: url,
+                alt: 'Login logo source preview'
+            }).attr('style', loginLogoPreviewStyle);
+
+            if ($preview.length) {
+                $preview.replaceWith($img);
+            }
+
+            $('#hws-login-logo-source-url').html(assetExternalLink(url));
+            $('#hws-login-logo-status').css('color', '#00a32a').text('Active');
+        }
+
         function updateFaviconPanel(data) {
             if (!data) {
                 return;
@@ -3915,6 +3980,7 @@ function render_brand_logo_assets_panel() {
             if (data.icon_url !== undefined) {
                 $('#hws-favicon-png-url').html(assetExternalLink(data.icon_url));
                 updateFaviconPreview(data.icon_url);
+                updateLoginLogoPanel(data.icon_url);
             }
 
             if (data.favicon_url !== undefined) {
@@ -4507,10 +4573,7 @@ function hws_create_letter_site_icon( string $letter, string $background = '#111
 
         imagettftext( $image, $font_size, 0, $x, $y, $fg, $font, $letter );
     } else {
-        $font_size = 5;
-        $width     = imagefontwidth( $font_size ) * strlen( $letter );
-        $height    = imagefontheight( $font_size );
-        imagestring( $image, $font_size, ( 512 - $width ) / 2, ( 512 - $height ) / 2, $letter, $fg );
+        hws_draw_scaled_builtin_letter( $image, $letter, $foreground );
     }
 
     if ( ! imagepng( $image, $tmp_file ) ) {
@@ -4557,6 +4620,9 @@ function hws_get_letter_icon_font_path(): string {
     $candidates = [
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
         '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/dejavu/DejaVuSansMono-Bold.ttf',
+        '/usr/share/fonts/google-droid/DroidSans-Bold.ttf',
+        '/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf',
         '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
         '/Library/Fonts/Arial Bold.ttf',
     ];
@@ -4568,6 +4634,32 @@ function hws_get_letter_icon_font_path(): string {
     }
 
     return '';
+}
+
+function hws_draw_scaled_builtin_letter( $image, string $letter, string $foreground ): void {
+    $font_size = 5;
+    $source_w  = max( 1, imagefontwidth( $font_size ) * strlen( $letter ) );
+    $source_h  = max( 1, imagefontheight( $font_size ) );
+    $source    = imagecreatetruecolor( $source_w, $source_h );
+
+    imagealphablending( $source, false );
+    imagesavealpha( $source, true );
+
+    $transparent = imagecolorallocatealpha( $source, 0, 0, 0, 127 );
+    imagefilledrectangle( $source, 0, 0, $source_w, $source_h, $transparent );
+
+    $fg = hws_allocate_hex_color( $source, $foreground );
+    imagestring( $source, $font_size, 0, 0, $letter, $fg );
+
+    $target_h = 318;
+    $target_w = (int) round( $target_h * ( $source_w / $source_h ) * 1.15 );
+    $target_w = max( 210, min( 380, $target_w ) );
+    $x        = (int) round( ( 512 - $target_w ) / 2 );
+    $y        = (int) round( ( 512 - $target_h ) / 2 );
+
+    imagealphablending( $image, true );
+    imagecopyresampled( $image, $source, $x, $y, 0, 0, $target_w, $target_h, $source_w, $source_h );
+    imagedestroy( $source );
 }
 
 function hws_allocate_hex_color( $image, string $hex ): int {

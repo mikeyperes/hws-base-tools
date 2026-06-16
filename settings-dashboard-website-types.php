@@ -322,6 +322,9 @@ function output_toggle_switch_styles() {
 function display_settings_website_types() {
     // Output the toggle switch styles
     output_toggle_switch_styles();
+    if ( function_exists( __NAMESPACE__ . '\\hws_output_feature_card_styles' ) ) {
+        hws_output_feature_card_styles();
+    }
     
     // Get all presets
     $presets = get_website_type_presets();
@@ -416,6 +419,20 @@ function display_settings_website_types() {
                     </div>
                 </div>
             <?php endforeach; ?>
+
+            <section class="hws-website-type-custom-fields" id="hws-website-type-custom-fields" style="margin-top:26px;padding-top:22px;border-top:1px solid #dcdcde;">
+                <h3 style="margin:0 0 6px;font-size:18px;">Custom Fields / ACF</h3>
+                <p style="margin:0 0 14px;color:#646970;">
+                    Manage ACF field groups, user profile fields, and related website-type field structures from this page.
+                </p>
+                <div class="hws-feature-grid">
+                    <?php foreach ( $snippets_acf as $feature ) : ?>
+                        <?php if ( function_exists( __NAMESPACE__ . '\\hws_render_feature_card' ) ) : ?>
+                            <?php hws_render_feature_card( $feature ); ?>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
         </div>
     </div>
     
@@ -495,6 +512,12 @@ function display_settings_website_types() {
     })(jQuery);
     </script>
     
+    <?php
+    if ( function_exists( __NAMESPACE__ . '\\hws_output_feature_card_scripts' ) ) {
+        hws_output_feature_card_scripts();
+    }
+    ?>
+
     <?php
 }
 ?>

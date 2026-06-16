@@ -133,7 +133,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.6 (Current)
+### v10.18.7 (Current)
+- Enlarged generated letter favicons when server font fallback is used, and added more Linux font path fallbacks.
+- Kept favicon PNG and ICO links together in the Site Icon/Favicon panel with safer wrapping for long URLs.
+- Moved the login-logo controls out of the Features card layout into Brand Assets as a no-toggle Site Icon driven panel.
+- Changed the Features tab to one feature per row and moved ACF/custom-field feature cards into Website Types.
+
+### v10.18.6
 - Added a Brand Colors panel to the Brand Assets tab with an AJAX Highlight Text Color picker.
 - Outputs the saved highlight color as `--hws-highlight-text-color` for templates/CSS that need the shared brand accent.
 

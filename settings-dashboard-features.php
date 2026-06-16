@@ -62,7 +62,6 @@ function hws_save_feature_test_report( string $feature_id, array $report ): void
 function hws_get_all_dashboard_features(): array {
     $groups = [
         'New / Requested Features' => [],
-        'ACF Adjustments'          => get_snippets( 'acf' ),
         'Admin Features'           => get_snippets( 'admin' ),
         'Frontend Features'        => get_snippets( 'non_admin' ),
     ];
@@ -77,6 +76,11 @@ function hws_get_all_dashboard_features(): array {
 
     foreach ( [ 'Admin Features', 'Frontend Features' ] as $group_name ) {
         foreach ( $groups[ $group_name ] as $index => $feature ) {
+            if ( 'enable_wp_admin_logo' === ( $feature['id'] ?? '' ) ) {
+                unset( $groups[ $group_name ][ $index ] );
+                continue;
+            }
+
             if ( in_array( $feature['id'] ?? '', $priority_ids, true ) ) {
                 $groups['New / Requested Features'][] = $feature;
                 unset( $groups[ $group_name ][ $index ] );
@@ -229,12 +233,7 @@ function hws_render_feature_card( array $feature ): void {
     <?php
 }
 
-function display_settings_features(): void {
-    if ( function_exists( __NAMESPACE__ . '\\output_toggle_switch_styles' ) ) {
-        output_toggle_switch_styles();
-    }
-
-    $groups = hws_get_all_dashboard_features();
+function hws_output_feature_card_styles(): void {
     ?>
     <style>
         .hws-features-wrap { max-width: 1220px; }
@@ -252,7 +251,7 @@ function display_settings_features(): void {
         .hws-feature-group h2 { margin: 0 0 12px; font-size: 18px; }
         .hws-feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            grid-template-columns: minmax(0, 1fr);
             gap: 14px;
         }
         .hws-feature-card {
@@ -260,6 +259,7 @@ function display_settings_features(): void {
             border-radius: 8px;
             background: #fff;
             padding: 16px;
+            min-width: 0;
         }
         .hws-feature-card.is-active { border-left: 4px solid #00a32a; }
         .hws-feature-card.is-deprecated { opacity: 0.72; }
@@ -339,28 +339,21 @@ function display_settings_features(): void {
             .hws-feature-settings { grid-template-columns: 1fr; }
         }
     </style>
+    <?php
+}
 
-    <div class="hws-features-wrap">
-        <div class="hws-features-intro">
-            Features use the same structure throughout this tab: toggle, optional settings, instructions, code when useful, proof from the latest test, and recent activity.
-        </div>
+function hws_output_feature_card_scripts(): void {
+    static $printed = false;
 
-        <?php foreach ( $groups as $group_name => $features ) : ?>
-            <?php if ( empty( $features ) ) continue; ?>
-            <section class="hws-feature-group">
-                <h2><?php echo esc_html( $group_name ); ?></h2>
-                <div class="hws-feature-grid">
-                    <?php foreach ( $features as $feature ) : ?>
-                        <?php hws_render_feature_card( $feature ); ?>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-        <?php endforeach; ?>
-    </div>
+    if ( $printed ) {
+        return;
+    }
 
+    $printed = true;
+    ?>
     <script>
     jQuery(function($) {
-        $('.hws-feature-save-settings').on('click', function() {
+        $(document).off('click.hwsFeatureSettings', '.hws-feature-save-settings').on('click.hwsFeatureSettings', '.hws-feature-save-settings', function() {
             var $button = $(this);
             var featureId = $button.data('feature-id');
             var $settings = $('[data-feature-settings="' + featureId + '"]');
@@ -391,7 +384,7 @@ function display_settings_features(): void {
             });
         });
 
-        $('.hws-feature-run-test').on('click', function() {
+        $(document).off('click.hwsFeatureTest', '.hws-feature-run-test').on('click.hwsFeatureTest', '.hws-feature-run-test', function() {
             var $button = $(this);
             var featureId = $button.data('feature-id');
             var $report = $('[data-feature-report="' + featureId + '"]');
@@ -428,6 +421,37 @@ function display_settings_features(): void {
         });
     });
     </script>
+    <?php
+}
+
+function display_settings_features(): void {
+    if ( function_exists( __NAMESPACE__ . '\\output_toggle_switch_styles' ) ) {
+        output_toggle_switch_styles();
+    }
+
+    $groups = hws_get_all_dashboard_features();
+    hws_output_feature_card_styles();
+    ?>
+
+    <div class="hws-features-wrap">
+        <div class="hws-features-intro">
+            Features use the same structure throughout this tab: toggle, optional settings, instructions, code when useful, proof from the latest test, and recent activity.
+        </div>
+
+        <?php foreach ( $groups as $group_name => $features ) : ?>
+            <?php if ( empty( $features ) ) continue; ?>
+            <section class="hws-feature-group">
+                <h2><?php echo esc_html( $group_name ); ?></h2>
+                <div class="hws-feature-grid">
+                    <?php foreach ( $features as $feature ) : ?>
+                        <?php hws_render_feature_card( $feature ); ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endforeach; ?>
+    </div>
+
+    <?php hws_output_feature_card_scripts(); ?>
     <?php
 }
 
