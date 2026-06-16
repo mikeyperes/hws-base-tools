@@ -275,6 +275,34 @@ function register_acf_website_settings()
                 ),
             ),
 
+            array(
+                'key'               => 'field_hws_brand_assets_gallery',
+                'label'             => 'Brand Assets Gallery',
+                'name'              => 'brand_assets_gallery',
+                'type'              => 'gallery',
+                'instructions'      => "Shared brand image gallery. Managed from HWS Base Tools → Brand Assets.<br>Shortcode: <code>[brand_asset_gallery]</code>",
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'return_format'     => 'id',
+                'library'           => 'all',
+                'min'               => '',
+                'max'               => '',
+                'min_width'         => '',
+                'min_height'        => '',
+                'min_size'          => '',
+                'max_width'         => '',
+                'max_height'        => '',
+                'max_size'          => '',
+                'mime_types'        => 'jpg,jpeg,png,gif,webp,svg',
+                'insert'            => 'append',
+                'preview_size'      => 'thumbnail',
+            ),
+
         ),
         'location'          => array(
             array(

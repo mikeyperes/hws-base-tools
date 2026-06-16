@@ -405,6 +405,8 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_save_brand_asset', __NAMESPACE__ . '\\ajax_save_brand_asset' );
     add_action( 'wp_ajax_hws_clear_brand_asset', __NAMESPACE__ . '\\ajax_clear_brand_asset' );
     add_action( 'wp_ajax_hws_save_brand_colors', __NAMESPACE__ . '\\ajax_save_brand_colors' );
+    add_action( 'wp_ajax_hws_save_brand_gallery', __NAMESPACE__ . '\\ajax_save_brand_gallery' );
+    add_action( 'wp_ajax_hws_clear_brand_gallery', __NAMESPACE__ . '\\ajax_clear_brand_gallery' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
 }
@@ -3717,6 +3719,7 @@ function render_tab_brand_assets() {
     render_login_logo_panel();
     render_brand_colors_panel();
     render_brand_logo_assets_panel();
+    render_brand_gallery_panel();
 }
 
 function hws_asset_external_link( string $url ): string {
@@ -3760,6 +3763,45 @@ function hws_get_brand_colors_payload(): array {
         'highlight_text_color' => $highlight_color,
         'option'               => 'hws_brand_highlight_text_color',
         'css_variable'         => '--hws-highlight-text-color',
+    ];
+}
+
+function hws_get_brand_gallery_payload(): array {
+    $ids   = function_exists( __NAMESPACE__ . '\\hws_get_brand_gallery_ids' ) ? hws_get_brand_gallery_ids() : [];
+    $items = [];
+
+    foreach ( $ids as $id ) {
+        $id = absint( $id );
+        if ( ! $id || get_post_type( $id ) !== 'attachment' ) {
+            continue;
+        }
+
+        $url   = wp_get_attachment_image_url( $id, 'full' );
+        $thumb = wp_get_attachment_image_url( $id, 'thumbnail' );
+        if ( ! $url ) {
+            continue;
+        }
+
+        $items[] = [
+            'id'        => $id,
+            'url'       => $url,
+            'thumb_url' => $thumb ?: $url,
+            'title'     => get_the_title( $id ),
+        ];
+    }
+
+    return [
+        'ids'        => wp_list_pluck( $items, 'id' ),
+        'items'      => $items,
+        'count'      => count( $items ),
+        'option'     => 'hws_brand_asset_gallery_ids',
+        'acf_field'  => 'brand_assets_gallery',
+        'acf_key'    => 'field_hws_brand_assets_gallery',
+        'shortcodes' => [
+            'grid' => '[brand_asset_gallery]',
+            'urls' => '[brand_asset_gallery output="urls" size="full"]',
+            'ids'  => '[brand_asset_gallery output="ids"]',
+        ],
     ];
 }
 
@@ -3921,6 +3963,70 @@ function hws_get_login_screen_url(): string {
     }
 
     return site_url( 'wp-login.php' );
+}
+
+function render_brand_gallery_panel() {
+    $payload = hws_get_brand_gallery_payload();
+    ?>
+    <div class="hws-panel" id="hws-brand-gallery-panel">
+        <div class="hws-panel-header">Brand Gallery ACF</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;">
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
+                    <strong style="display:block;margin-bottom:6px;">Gallery field</strong>
+                    <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">Shared image gallery for brand assets. The dashboard saves attachment IDs and syncs them to the ACF option field.</p>
+                    <div style="display:grid;gap:8px;font-size:12px;color:#50575e;">
+                        <div>Option: <code><?php echo esc_html( $payload['option'] ); ?></code></div>
+                        <div>ACF field: <code><?php echo esc_html( $payload['acf_field'] ); ?></code></div>
+                        <div>Field key: <code><?php echo esc_html( $payload['acf_key'] ); ?></code></div>
+                        <div>Images: <strong id="hws-brand-gallery-count"><?php echo (int) $payload['count']; ?></strong></div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+                        <button type="button" id="hws-brand-gallery-select" class="button button-primary">Select Gallery Images</button>
+                        <button type="button" id="hws-brand-gallery-clear" class="button" <?php disabled( empty( $payload['ids'] ) ); ?>>Clear Gallery</button>
+                        <span id="hws-brand-gallery-status" style="font-size:12px;" aria-live="polite"></span>
+                    </div>
+                </div>
+                <div style="border:1px solid #dcdcde;border-radius:6px;background:#f8f9fa;padding:14px;min-width:0;">
+                    <strong style="display:block;margin-bottom:8px;">Current gallery</strong>
+                    <div id="hws-brand-gallery-preview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;min-width:0;">
+                        <?php if ( empty( $payload['items'] ) ) : ?>
+                            <div class="hws-brand-gallery-empty" style="grid-column:1/-1;color:#8c8f94;">No gallery images selected.</div>
+                        <?php else : ?>
+                            <?php foreach ( $payload['items'] as $item ) : ?>
+                                <figure class="hws-brand-gallery-item" data-attachment-id="<?php echo (int) $item['id']; ?>" style="margin:0;min-width:0;">
+                                    <img src="<?php echo esc_url( $item['thumb_url'] ); ?>" alt="" style="width:92px;height:92px;object-fit:cover;border:1px solid #dcdcde;border-radius:6px;background:#fff;">
+                                    <figcaption style="font-size:11px;color:#646970;margin-top:4px;">ID <?php echo (int) $item['id']; ?></figcaption>
+                                </figure>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Attachment IDs</label>
+                        <code id="hws-brand-gallery-ids" style="display:block;white-space:normal;overflow-wrap:anywhere;"><?php echo esc_html( implode( ',', $payload['ids'] ) ); ?></code>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Image URLs</label>
+                        <div id="hws-brand-gallery-urls" style="display:grid;gap:5px;">
+                            <?php if ( empty( $payload['items'] ) ) : ?>
+                                <span style="color:#8c8f94;">Not set</span>
+                            <?php else : ?>
+                                <?php foreach ( $payload['items'] as $item ) : ?>
+                                    <div><?php echo hws_asset_external_link( $item['url'] ); ?></div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;display:grid;gap:5px;font-size:12px;">
+                        <code><?php echo esc_html( $payload['shortcodes']['grid'] ); ?></code>
+                        <code><?php echo esc_html( $payload['shortcodes']['urls'] ); ?></code>
+                        <code><?php echo esc_html( $payload['shortcodes']['ids'] ); ?></code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
 }
 
 function render_brand_logo_assets_panel() {
@@ -4087,6 +4193,49 @@ function render_brand_logo_assets_panel() {
             }
         }
 
+        function renderBrandGalleryPreview(items) {
+            var html = '';
+
+            if (!items || !items.length) {
+                return '<div class="hws-brand-gallery-empty" style="grid-column:1/-1;color:#8c8f94;">No gallery images selected.</div>';
+            }
+
+            items.forEach(function(item) {
+                html += '<figure class="hws-brand-gallery-item" data-attachment-id="' + escapeText(item.id) + '" style="margin:0;min-width:0;">';
+                html += '<img src="' + escapeText(item.thumb_url || item.url || '') + '" alt="" style="width:92px;height:92px;object-fit:cover;border:1px solid #dcdcde;border-radius:6px;background:#fff;">';
+                html += '<figcaption style="font-size:11px;color:#646970;margin-top:4px;">ID ' + escapeText(item.id) + '</figcaption>';
+                html += '</figure>';
+            });
+
+            return html;
+        }
+
+        function renderBrandGalleryUrls(items) {
+            var html = '';
+
+            if (!items || !items.length) {
+                return '<span style="color:#8c8f94;">Not set</span>';
+            }
+
+            items.forEach(function(item) {
+                html += '<div>' + assetExternalLink(item.url || '') + '</div>';
+            });
+
+            return html;
+        }
+
+        function updateBrandGalleryPanel(data) {
+            if (!data) {
+                return;
+            }
+
+            $('#hws-brand-gallery-count').text(data.count || 0);
+            $('#hws-brand-gallery-ids').text((data.ids || []).join(','));
+            $('#hws-brand-gallery-preview').html(renderBrandGalleryPreview(data.items || []));
+            $('#hws-brand-gallery-urls').html(renderBrandGalleryUrls(data.items || []));
+            $('#hws-brand-gallery-clear').prop('disabled', !(data.ids && data.ids.length));
+        }
+
         function isHexColor(value) {
             return /^#[0-9a-fA-F]{6}$/.test(value || '');
         }
@@ -4218,6 +4367,50 @@ function render_brand_logo_assets_panel() {
                     updateBrandCard($card, response.data);
                 } else {
                     setStatus($card.find('.hws-brand-status'), response && response.data ? response.data : 'Clear failed.', false);
+                }
+            }, 'json');
+        });
+
+        $('#hws-brand-gallery-select').on('click', function(e) {
+            e.preventDefault();
+            var frame = wp.media({
+                title: 'Select Brand Gallery Images',
+                button: { text: 'Use these images' },
+                library: { type: 'image' },
+                multiple: true
+            });
+
+            frame.on('select', function() {
+                var ids = [];
+                frame.state().get('selection').each(function(attachment) {
+                    var item = attachment.toJSON();
+                    if (item && item.id) {
+                        ids.push(item.id);
+                    }
+                });
+
+                setStatus($('#hws-brand-gallery-status'), 'Saving...', true);
+                $.post(ajaxurl, { action: 'hws_save_brand_gallery', nonce: hwsNonce, attachment_ids: ids }, function(response) {
+                    if (response && response.success) {
+                        setStatus($('#hws-brand-gallery-status'), response.data.message || 'Saved.', true);
+                        updateBrandGalleryPanel(response.data);
+                    } else {
+                        setStatus($('#hws-brand-gallery-status'), response && response.data ? response.data : 'Save failed.', false);
+                    }
+                }, 'json');
+            });
+
+            frame.open();
+        });
+
+        $('#hws-brand-gallery-clear').on('click', function() {
+            setStatus($('#hws-brand-gallery-status'), 'Clearing...', true);
+            $.post(ajaxurl, { action: 'hws_clear_brand_gallery', nonce: hwsNonce }, function(response) {
+                if (response && response.success) {
+                    setStatus($('#hws-brand-gallery-status'), response.data.message || 'Cleared.', true);
+                    updateBrandGalleryPanel(response.data);
+                } else {
+                    setStatus($('#hws-brand-gallery-status'), response && response.data ? response.data : 'Clear failed.', false);
                 }
             }, 'json');
         });
@@ -4361,6 +4554,69 @@ function ajax_clear_brand_asset() {
 
     $payload = hws_get_brand_asset_payload( $key );
     $payload['message'] = 'Cleared.';
+
+    wp_send_json_success( $payload );
+}
+
+function ajax_save_brand_gallery() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $raw_ids = $_POST['attachment_ids'] ?? [];
+    $raw_ids = is_array( $raw_ids ) ? wp_unslash( $raw_ids ) : wp_unslash( (string) $raw_ids );
+    $ids     = function_exists( __NAMESPACE__ . '\\hws_normalize_brand_gallery_ids' )
+        ? hws_normalize_brand_gallery_ids( $raw_ids )
+        : array_map( 'absint', (array) $raw_ids );
+
+    $valid_ids = [];
+    foreach ( $ids as $id ) {
+        $id = absint( $id );
+        if ( ! $id || get_post_type( $id ) !== 'attachment' ) {
+            continue;
+        }
+
+        $mime_type = (string) get_post_mime_type( $id );
+        if ( strpos( $mime_type, 'image/' ) !== 0 ) {
+            continue;
+        }
+
+        $valid_ids[] = $id;
+    }
+
+    if ( empty( $valid_ids ) ) {
+        wp_send_json_error( 'Select at least one image attachment.' );
+    }
+
+    if ( function_exists( __NAMESPACE__ . '\\hws_update_brand_gallery_ids' ) ) {
+        hws_update_brand_gallery_ids( $valid_ids );
+    } else {
+        update_option( 'hws_brand_asset_gallery_ids', $valid_ids, false );
+    }
+
+    $payload = hws_get_brand_gallery_payload();
+    $payload['message'] = 'Brand gallery saved.';
+
+    wp_send_json_success( $payload );
+}
+
+function ajax_clear_brand_gallery() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    if ( function_exists( __NAMESPACE__ . '\\hws_update_brand_gallery_ids' ) ) {
+        hws_update_brand_gallery_ids( [] );
+    } else {
+        update_option( 'hws_brand_asset_gallery_ids', [], false );
+    }
+
+    $payload = hws_get_brand_gallery_payload();
+    $payload['message'] = 'Brand gallery cleared.';
 
     wp_send_json_success( $payload );
 }

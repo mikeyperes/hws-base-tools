@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.9 (Current)
+### v10.18.10 (Current)
+- Added a Brand Gallery ACF field and a Brand Assets tab gallery manager with AJAX media selection.
+- Added `[brand_asset_gallery]` and `[site_gallery]` shortcodes for rendering the managed brand gallery.
+
+### v10.18.9
 - Moved the Going Live Checklist and Quick Setup panels to the top of the Overview tab.
 - Marked the WP_MEMORY_LIMIT config tile green when the configured value is greater than 511MB.
 

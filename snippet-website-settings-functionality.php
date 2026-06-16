@@ -43,6 +43,8 @@ add_shortcode( 'founder', __NAMESPACE__ . '\\founder_shortcode' );
 add_shortcode( 'company', __NAMESPACE__ . '\\company_shortcode' );
 add_shortcode( 'hws_brand_asset', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
+add_shortcode( 'brand_asset_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
+add_shortcode( 'site_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
 
 function hws_get_brand_highlight_text_color(): string {
 	$color = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
@@ -176,6 +178,121 @@ function hws_get_brand_asset_url( string $key, string $size = 'full' ): string {
 
 	$url = wp_get_attachment_image_url( $attachment_id, hws_get_brand_asset_image_size( $size ) );
 	return $url ? (string) $url : '';
+}
+
+function hws_normalize_brand_gallery_ids( $ids ): array {
+	if ( is_string( $ids ) ) {
+		$ids = preg_split( '/[,\s]+/', $ids );
+	}
+
+	if ( ! is_array( $ids ) ) {
+		return [];
+	}
+
+	$normalized = [];
+	foreach ( $ids as $item ) {
+		if ( is_array( $item ) ) {
+			$item = $item['ID'] ?? $item['id'] ?? 0;
+		} elseif ( is_object( $item ) ) {
+			$item = $item->ID ?? $item->id ?? 0;
+		}
+
+		$id = absint( $item );
+		if ( $id && ! in_array( $id, $normalized, true ) ) {
+			$normalized[] = $id;
+		}
+	}
+
+	return $normalized;
+}
+
+function hws_get_brand_gallery_ids(): array {
+	$ids = hws_normalize_brand_gallery_ids( get_option( 'hws_brand_asset_gallery_ids', [] ) );
+	if ( ! empty( $ids ) ) {
+		return $ids;
+	}
+
+	if ( function_exists( '\\get_field' ) ) {
+		$acf_value = \get_field( 'brand_assets_gallery', 'option', false );
+		$ids       = hws_normalize_brand_gallery_ids( $acf_value );
+	}
+
+	return $ids;
+}
+
+function hws_update_brand_gallery_ids( array $ids ): void {
+	$ids = hws_normalize_brand_gallery_ids( $ids );
+	update_option( 'hws_brand_asset_gallery_ids', $ids, false );
+
+	if ( function_exists( '\\update_field' ) ) {
+		\update_field( 'field_hws_brand_assets_gallery', $ids, 'option' );
+	}
+}
+
+add_filter( 'acf/update_value/key=field_hws_brand_assets_gallery', function( $value ) {
+	update_option( 'hws_brand_asset_gallery_ids', hws_normalize_brand_gallery_ids( $value ), false );
+
+	return $value;
+}, 20 );
+
+function hws_brand_gallery_shortcode( $atts ): string {
+	$atts = shortcode_atts(
+		[
+			'size' => 'medium',
+			'output' => 'grid',
+			'class' => '',
+			'columns' => 4,
+			'loading' => 'lazy',
+		],
+		$atts,
+		'brand_asset_gallery'
+	);
+
+	$ids = hws_get_brand_gallery_ids();
+	if ( empty( $ids ) ) {
+		return '';
+	}
+
+	$size = hws_get_brand_asset_image_size( (string) $atts['size'] );
+	if ( $atts['output'] === 'ids' ) {
+		return esc_html( implode( ',', $ids ) );
+	}
+
+	if ( $atts['output'] === 'urls' ) {
+		$urls = [];
+		foreach ( $ids as $id ) {
+			$url = wp_get_attachment_image_url( $id, $size );
+			if ( $url ) {
+				$urls[] = esc_url( $url );
+			}
+		}
+
+		return implode( "\n", $urls );
+	}
+
+	$columns = max( 1, min( 8, (int) $atts['columns'] ) );
+	$class   = trim( 'hws-brand-gallery ' . sanitize_html_class( (string) $atts['class'] ) );
+	$html    = '<div class="' . esc_attr( $class ) . '" style="display:grid;grid-template-columns:repeat(' . (int) $columns . ',minmax(0,1fr));gap:12px;">';
+
+	foreach ( $ids as $id ) {
+		$image = wp_get_attachment_image(
+			$id,
+			$size,
+			false,
+			[
+				'loading' => sanitize_key( (string) $atts['loading'] ),
+				'alt'     => get_post_meta( $id, '_wp_attachment_image_alt', true ),
+			]
+		);
+
+		if ( $image ) {
+			$html .= '<figure style="margin:0;">' . $image . '</figure>';
+		}
+	}
+
+	$html .= '</div>';
+
+	return $html;
 }
 
 function hws_brand_asset_shortcode( $atts ): string {
