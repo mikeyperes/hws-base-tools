@@ -405,6 +405,7 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_save_brand_asset', __NAMESPACE__ . '\\ajax_save_brand_asset' );
     add_action( 'wp_ajax_hws_clear_brand_asset', __NAMESPACE__ . '\\ajax_clear_brand_asset' );
     add_action( 'wp_ajax_hws_save_brand_colors', __NAMESPACE__ . '\\ajax_save_brand_colors' );
+    add_action( 'wp_ajax_hws_get_elementor_colors', __NAMESPACE__ . '\\ajax_get_elementor_colors' );
     add_action( 'wp_ajax_hws_save_brand_gallery', __NAMESPACE__ . '\\ajax_save_brand_gallery' );
     add_action( 'wp_ajax_hws_clear_brand_gallery', __NAMESPACE__ . '\\ajax_clear_brand_gallery' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
@@ -3884,8 +3885,7 @@ function hws_get_brand_gallery_payload(): array {
 }
 
 function render_brand_colors_panel() {
-    $colors           = hws_get_brand_colors_payload();
-    $elementor_colors = hws_get_elementor_color_assets();
+    $colors = hws_get_brand_colors_payload();
     ?>
     <div class="hws-panel" id="hws-brand-colors-panel">
         <div class="hws-panel-header">Brand Colors</div>
@@ -3987,50 +3987,15 @@ function render_brand_colors_panel() {
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                     <div>
                         <strong style="display:block;font-size:14px;margin-bottom:4px;">Elementor color assets</strong>
-                        <span style="color:#646970;font-size:12.5px;">Active kit: <code><?php echo $elementor_colors['kit_id'] ? (int) $elementor_colors['kit_id'] : 'not found'; ?></code>. Colors found: <strong id="hws-elementor-color-count"><?php echo (int) $elementor_colors['count']; ?></strong>.</span>
+                        <span style="color:#646970;font-size:12.5px;">Collapsed by default. Colors load only when this section is opened. Active kit: <code id="hws-elementor-kit-id">not loaded</code>. Colors found: <strong id="hws-elementor-color-count">not loaded</strong>.</span>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <button type="button" id="hws-toggle-elementor-colors" class="button" aria-expanded="false">Show Elementor Colors</button>
-                        <button type="button" id="hws-copy-elementor-colors" class="button" <?php disabled( $elementor_colors['count'] === 0 ); ?>>Copy All Hex Values</button>
                         <span id="hws-elementor-colors-status" style="font-size:12px;" aria-live="polite"></span>
                     </div>
                 </div>
                 <div id="hws-elementor-colors-panel" hidden style="margin-top:12px;overflow:auto;">
-                    <?php foreach ( $elementor_colors['groups'] as $group ) : ?>
-                        <strong style="display:block;margin:12px 0 6px;"><?php echo esc_html( $group['label'] ); ?></strong>
-                        <?php if ( empty( $group['items'] ) ) : ?>
-                            <p style="margin:0 0 8px;color:#8c8f94;">No colors found.</p>
-                        <?php else : ?>
-                            <table class="widefat striped" style="min-width:720px;">
-                                <thead>
-                                    <tr>
-                                        <th style="width:80px;">Color</th>
-                                        <th>Name</th>
-                                        <th>Hex</th>
-                                        <th>CSS variable</th>
-                                        <th style="width:90px;">Copy</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ( $group['items'] as $item ) : ?>
-                                        <tr class="hws-elementor-color-row" data-color="<?php echo esc_attr( $item['color'] ); ?>" data-title="<?php echo esc_attr( $item['title'] ); ?>" data-variable="<?php echo esc_attr( $item['variable'] ); ?>">
-                                            <td>
-                                                <?php if ( $item['color'] ) : ?>
-                                                    <span style="display:inline-block;width:34px;height:24px;border:1px solid #c3c4c7;border-radius:4px;background:<?php echo esc_attr( $item['color'] ); ?>;"></span>
-                                                <?php else : ?>
-                                                    <span style="color:#8c8f94;">Not set</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><?php echo esc_html( $item['title'] ); ?></td>
-                                            <td><code class="hws-elementor-color-hex"><?php echo $item['color'] ? esc_html( $item['color'] ) : 'not set'; ?></code></td>
-                                            <td><code><?php echo $item['variable'] ? esc_html( $item['variable'] ) : 'not set'; ?></code></td>
-                                            <td><button type="button" class="button button-small hws-copy-color" <?php disabled( $item['color'] === '' ); ?>>Copy</button></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    <div id="hws-elementor-colors-content"></div>
                 </div>
             </div>
         </div>
@@ -4421,6 +4386,21 @@ function render_brand_logo_assets_panel() {
             return html;
         }
 
+        function getCurrentBrandGalleryIds() {
+            var ids = ($('#hws-brand-gallery-ids').text() || '').split(',');
+            var normalized = [];
+
+            ids.forEach(function(id) {
+                id = parseInt($.trim(id), 10);
+
+                if (id && normalized.indexOf(id) === -1) {
+                    normalized.push(id);
+                }
+            });
+
+            return normalized;
+        }
+
         function updateBrandGalleryPanel(data) {
             if (!data) {
                 return;
@@ -4479,6 +4459,52 @@ function render_brand_logo_assets_panel() {
             syncHighlightColor('text', data.highlight_text_color);
             $('#hws-highlight-enabled').prop('checked', !!data.highlight_enabled);
             $('#hws-highlight-enabled-current').text(data.highlight_enabled ? 'enabled' : 'disabled');
+        }
+
+        function renderElementorColorAssets(data) {
+            var groups = data && data.groups ? data.groups : {};
+            var groupKeys = ['system_colors', 'custom_colors'];
+            var html = '';
+
+            $('#hws-elementor-kit-id').text(data && data.kit_id ? data.kit_id : 'not found');
+            $('#hws-elementor-color-count').text(data && data.count !== undefined ? data.count : 0);
+
+            groupKeys.forEach(function(groupKey) {
+                var group = groups[groupKey] || {};
+                var items = group.items || [];
+
+                html += '<strong style="display:block;margin:12px 0 6px;">' + escapeText(group.label || groupKey) + '</strong>';
+
+                if (!items.length) {
+                    html += '<p style="margin:0 0 8px;color:#8c8f94;">No colors found.</p>';
+                    return;
+                }
+
+                html += '<table class="widefat striped" style="min-width:720px;">';
+                html += '<thead><tr><th style="width:80px;">Color</th><th>Name</th><th>Hex</th><th>CSS variable</th><th style="width:90px;">Copy</th></tr></thead><tbody>';
+
+                items.forEach(function(item) {
+                    var color = item.color || '';
+                    var title = item.title || item.id || '';
+                    var variable = item.variable || '';
+                    var swatch = color
+                        ? '<span style="display:inline-block;width:34px;height:24px;border:1px solid #c3c4c7;border-radius:4px;background:' + escapeText(color) + ';"></span>'
+                        : '<span style="color:#8c8f94;">Not set</span>';
+                    var disabled = color ? '' : ' disabled';
+
+                    html += '<tr class="hws-elementor-color-row" data-color="' + escapeText(color) + '" data-title="' + escapeText(title) + '" data-variable="' + escapeText(variable) + '">';
+                    html += '<td>' + swatch + '</td>';
+                    html += '<td>' + escapeText(title) + '</td>';
+                    html += '<td><code class="hws-elementor-color-hex">' + escapeText(color || 'not set') + '</code></td>';
+                    html += '<td><code>' + escapeText(variable || 'not set') + '</code></td>';
+                    html += '<td><button type="button" class="button button-small hws-copy-color"' + disabled + '>Copy</button></td>';
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+            });
+
+            $('#hws-elementor-colors-content').html(html);
         }
 
         $('#hws-upload-favicon').on('click', function(e) {
@@ -4581,13 +4607,40 @@ function render_brand_logo_assets_panel() {
 
         $('#hws-toggle-elementor-colors').on('click', function() {
             var $panel = $('#hws-elementor-colors-panel');
+            var $button = $(this);
             var willShow = $panel.prop('hidden');
 
-            $panel.prop('hidden', !willShow);
-            $(this).attr('aria-expanded', willShow ? 'true' : 'false').text(willShow ? 'Hide Elementor Colors' : 'Show Elementor Colors');
+            if (!willShow) {
+                $panel.prop('hidden', true);
+                $button.attr('aria-expanded', 'false').text('Show Elementor Colors');
+                setStatus($('#hws-elementor-colors-status'), '', true);
+                return;
+            }
+
+            $panel.prop('hidden', false);
+            $button.attr('aria-expanded', 'true').text('Hide Elementor Colors');
+
+            if ($button.data('loaded')) {
+                return;
+            }
+
+            $button.prop('disabled', true).text('Loading...');
+            setStatus($('#hws-elementor-colors-status'), 'Loading...', true);
+
+            $.post(ajaxurl, { action: 'hws_get_elementor_colors', nonce: hwsNonce }, function(response) {
+                if (response && response.success) {
+                    renderElementorColorAssets(response.data);
+                    $button.data('loaded', true);
+                    setStatus($('#hws-elementor-colors-status'), 'Loaded.', true);
+                } else {
+                    setStatus($('#hws-elementor-colors-status'), response && response.data ? response.data : 'Load failed.', false);
+                }
+            }, 'json').always(function() {
+                $button.prop('disabled', false).text('Hide Elementor Colors');
+            });
         });
 
-        $('.hws-copy-color').on('click', function() {
+        $('#hws-elementor-colors-panel').on('click', '.hws-copy-color', function() {
             var $row = $(this).closest('.hws-elementor-color-row');
             var color = $row.data('color') || '';
 
@@ -4598,31 +4651,6 @@ function render_brand_logo_assets_panel() {
 
             copyTextToClipboard(color).then(function() {
                 setStatus($('#hws-elementor-colors-status'), 'Copied ' + color + '.', true);
-            }).catch(function() {
-                setStatus($('#hws-elementor-colors-status'), 'Copy failed.', false);
-            });
-        });
-
-        $('#hws-copy-elementor-colors').on('click', function() {
-            var lines = [];
-
-            $('.hws-elementor-color-row').each(function() {
-                var color = $(this).data('color') || '';
-                var title = $(this).data('title') || '';
-                var variable = $(this).data('variable') || '';
-
-                if (color) {
-                    lines.push(title + ': ' + color + (variable ? ' (' + variable + ')' : ''));
-                }
-            });
-
-            if (!lines.length) {
-                setStatus($('#hws-elementor-colors-status'), 'No Elementor hex values found.', false);
-                return;
-            }
-
-            copyTextToClipboard(lines.join("\n")).then(function() {
-                setStatus($('#hws-elementor-colors-status'), 'Copied ' + lines.length + ' colors.', true);
             }).catch(function() {
                 setStatus($('#hws-elementor-colors-status'), 'Copy failed.', false);
             });
@@ -4664,11 +4692,25 @@ function render_brand_logo_assets_panel() {
 
         $('#hws-brand-gallery-select').on('click', function(e) {
             e.preventDefault();
+            var currentIds = getCurrentBrandGalleryIds();
             var frame = wp.media({
                 title: 'Select Brand Gallery Images',
                 button: { text: 'Use these images' },
                 library: { type: 'image' },
                 multiple: true
+            });
+
+            frame.on('open', function() {
+                var selection = frame.state().get('selection');
+
+                currentIds.forEach(function(id) {
+                    var attachment = wp.media.attachment(id);
+
+                    if (attachment) {
+                        attachment.fetch();
+                        selection.add(attachment);
+                    }
+                });
             });
 
             frame.on('select', function() {
@@ -4939,6 +4981,16 @@ function ajax_save_brand_colors() {
     $payload['message'] = 'Saved.';
 
     wp_send_json_success( $payload );
+}
+
+function ajax_get_elementor_colors() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    wp_send_json_success( hws_get_elementor_color_assets() );
 }
 
 function ajax_copy_favicon() {

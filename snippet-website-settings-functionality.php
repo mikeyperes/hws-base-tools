@@ -80,7 +80,6 @@ function hws_print_brand_color_css_variables(): void {
 	echo "\n" . '<style id="hws-brand-color-vars">' . esc_html( $css ) . '</style>' . "\n";
 }
 add_action( 'wp_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
-add_action( 'admin_head', __NAMESPACE__ . '\\hws_print_brand_color_css_variables', 20 );
 
 function hws_get_brand_asset_definitions(): array {
 	return [

@@ -133,7 +133,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.14 (Current)
+### v10.18.15 (Current)
+- Made the highlight override frontend-only, with wp-admin showing only the local preview.
+- Made Elementor color assets collapsed and AJAX-loaded on demand, with individual copy buttons only.
+- Preserved Brand Gallery ACF selections when reopening the media picker.
+
+### v10.18.14
 - Fixed Elementor color copy fallback so the copy buttons resolve consistently.
 
 ### v10.18.13
