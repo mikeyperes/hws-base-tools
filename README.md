@@ -53,7 +53,7 @@ Toggle WP_DEBUG, WP_DEBUG_LOG, WP_DEBUG_DISPLAY, SCRIPT_DEBUG, DISABLE_WP_CRON, 
 ---
 
 ## Plugins Tab
-Monitored plugins (11 total, 9 essential, 2 optional) with ESSENTIAL/OPTIONAL/PRO badges, batch install, auto-update controls, red flag plugin detection.
+Monitored plugins (11 total, 9 essential, 2 optional) with ESSENTIAL/OPTIONAL/PRO badges, batch install, auto-update controls, red flag plugin detection, and one-click HWS GitHub plugin installs with canonical slug normalization.
 
 ## Themes Tab
 Active theme verification, auto-update status, batch delete, warning for >2 themes.
@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.21 (Current)
+### v10.18.22 (Current)
+- Added a Plugins tab HWS Plugin Library for one-click GitHub installs with `repo-main` folder normalization.
+- Changed dashboard tab navigation to load selected tabs with AJAX instead of full page refreshes.
+
+### v10.18.21
 - Changed Logo Assets previews to use the full uploaded asset URL instead of WordPress cropped thumbnails.
 
 ### v10.18.20

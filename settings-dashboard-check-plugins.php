@@ -19,6 +19,301 @@ add_action( 'wp_ajax_hws_install_plugin', __NAMESPACE__ . '\\ajax_install_plugin
 // Register AJAX handler for activating an already-installed plugin
 add_action( 'wp_ajax_hws_activate_plugin', __NAMESPACE__ . '\\ajax_activate_plugin' );
 
+// Register AJAX handler for installing HWS-owned plugins from GitHub ZIPs.
+add_action( 'wp_ajax_hws_install_hws_github_plugin', __NAMESPACE__ . '\\ajax_install_hws_github_plugin' );
+
+function hws_get_additional_hws_plugins(): array {
+    return [
+        'hexa-pr-wire-distributor' => [
+            'name'        => 'Hexa PR Wire Distributor',
+            'repo'        => 'mikeyperes/hexa-pr-wire-distributor',
+            'description' => 'PR wire distribution workflow plugin.',
+        ],
+        'smp-publication-integration' => [
+            'name'        => 'SMP Publication Integration',
+            'repo'        => 'mikeyperes/smp-publication-integration',
+            'description' => 'Publication integration tools for SMP sites.',
+        ],
+        'smp-core-podcast-integration' => [
+            'name'        => 'SMP Core Podcast Integration',
+            'repo'        => 'mikeyperes/smp-core-podcast-integration',
+            'description' => 'Podcast integration tools for SMP core workflows.',
+        ],
+        'smp-verified-profiles' => [
+            'name'        => 'SMP Verified Profiles',
+            'repo'        => 'mikeyperes/smp-verified-profiles',
+            'description' => 'Verified profile management for SMP sites.',
+        ],
+        'smp-contributor-network' => [
+            'name'        => 'SMP Contributor Network',
+            'repo'        => 'mikeyperes/smp-contributor-network',
+            'description' => 'Contributor network tooling for SMP publications.',
+        ],
+        'sfpf-person-profile-integration' => [
+            'name'        => 'SFPF Person Profile Integration',
+            'repo'        => 'mikeyperes/sfpf-person-profile-integration',
+            'description' => 'Person profile integration for SFPF sites.',
+        ],
+    ];
+}
+
+function hws_get_additional_hws_plugin( string $slug ): ?array {
+    $plugins = hws_get_additional_hws_plugins();
+
+    return $plugins[ sanitize_key( $slug ) ] ?? null;
+}
+
+function hws_find_plugin_file_by_folder( string $slug ): string {
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+    $slug = sanitize_key( $slug );
+    wp_cache_delete( 'plugins', 'plugins' );
+
+    foreach ( get_plugins() as $plugin_file => $plugin_data ) {
+        if ( dirname( $plugin_file ) === $slug && ! empty( $plugin_data['Name'] ) ) {
+            return $plugin_file;
+        }
+    }
+
+    return '';
+}
+
+function hws_check_additional_hws_plugin_status( string $slug ): array {
+    $plugin_file = hws_find_plugin_file_by_folder( $slug );
+    $installed   = $plugin_file !== '';
+    $active      = $installed && is_plugin_active( $plugin_file );
+    $folder      = sanitize_key( $slug );
+
+    return [
+        'slug'        => $folder,
+        'folder'      => $folder,
+        'plugin_file' => $plugin_file,
+        'installed'   => $installed,
+        'active'      => $active,
+        'folder_path' => WP_PLUGIN_DIR . '/' . $folder,
+    ];
+}
+
+function hws_render_additional_hws_plugin_status( array $status ): string {
+    if ( ! $status['installed'] ) {
+        return '<span class="status-bad">Not installed</span>';
+    }
+
+    $html = $status['active']
+        ? '<span class="status-ok">Active</span>'
+        : '<span class="status-warn">Installed, inactive</span>';
+
+    if ( ! empty( $status['plugin_file'] ) ) {
+        $html .= '<br><code style="font-size:11px;">' . esc_html( $status['plugin_file'] ) . '</code>';
+    }
+
+    return $html;
+}
+
+function hws_prepare_wp_filesystem() {
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+
+    global $wp_filesystem;
+
+    if ( ! function_exists( 'WP_Filesystem' ) || ! WP_Filesystem() || ! $wp_filesystem ) {
+        return new \WP_Error( 'hws_filesystem_unavailable', 'WordPress filesystem is unavailable.' );
+    }
+
+    return $wp_filesystem;
+}
+
+function hws_cleanup_install_work_dir( string $path ): void {
+    if ( $path === '' || strpos( $path, trailingslashit( WP_CONTENT_DIR ) . 'upgrade/hws-github-plugin-' ) !== 0 ) {
+        return;
+    }
+
+    $filesystem = hws_prepare_wp_filesystem();
+    if ( is_wp_error( $filesystem ) ) {
+        return;
+    }
+
+    $filesystem->delete( $path, true );
+}
+
+function hws_normalize_hws_github_plugin_folder( string $slug ) {
+    $filesystem = hws_prepare_wp_filesystem();
+    if ( is_wp_error( $filesystem ) ) {
+        return $filesystem;
+    }
+
+    $slug = sanitize_key( $slug );
+    $dest = trailingslashit( WP_PLUGIN_DIR ) . $slug;
+
+    if ( is_dir( $dest ) ) {
+        return true;
+    }
+
+    foreach ( [ $slug . '-main', $slug . '-master' ] as $github_folder ) {
+        $source = trailingslashit( WP_PLUGIN_DIR ) . $github_folder;
+
+        if ( ! is_dir( $source ) ) {
+            continue;
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+        foreach ( get_plugins() as $plugin_file => $plugin_data ) {
+            if ( dirname( $plugin_file ) === $github_folder && is_plugin_active( $plugin_file ) ) {
+                deactivate_plugins( $plugin_file, true, false );
+            }
+        }
+
+        if ( ! $filesystem->move( $source, $dest, false ) ) {
+            return new \WP_Error( 'hws_folder_normalize_failed', 'Could not rename ' . $github_folder . ' to ' . $slug . '.' );
+        }
+
+        wp_cache_delete( 'plugins', 'plugins' );
+        return true;
+    }
+
+    return true;
+}
+
+function hws_install_hws_github_plugin_package( string $slug, array $plugin ) {
+    $filesystem = hws_prepare_wp_filesystem();
+    if ( is_wp_error( $filesystem ) ) {
+        return $filesystem;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+    $slug      = sanitize_key( $slug );
+    $repo      = sanitize_text_field( $plugin['repo'] ?? '' );
+    $zip_url   = 'https://github.com/' . $repo . '/archive/refs/heads/main.zip';
+    $dest_dir  = trailingslashit( WP_PLUGIN_DIR ) . $slug;
+    $work_dir  = trailingslashit( WP_CONTENT_DIR ) . 'upgrade/hws-github-plugin-' . $slug . '-' . wp_generate_password( 8, false, false );
+    $tmp_file  = download_url( $zip_url, 60 );
+
+    if ( is_wp_error( $tmp_file ) ) {
+        return $tmp_file;
+    }
+
+    if ( is_dir( $dest_dir ) ) {
+        @unlink( $tmp_file );
+        return new \WP_Error( 'hws_plugin_folder_exists', 'Plugin folder already exists: ' . $slug );
+    }
+
+    if ( ! wp_mkdir_p( $work_dir ) ) {
+        @unlink( $tmp_file );
+        return new \WP_Error( 'hws_work_dir_failed', 'Could not create temporary install directory.' );
+    }
+
+    $unzipped = unzip_file( $tmp_file, $work_dir );
+    @unlink( $tmp_file );
+
+    if ( is_wp_error( $unzipped ) ) {
+        hws_cleanup_install_work_dir( $work_dir );
+        return $unzipped;
+    }
+
+    $dirs = glob( trailingslashit( $work_dir ) . '*', GLOB_ONLYDIR );
+    if ( empty( $dirs ) ) {
+        hws_cleanup_install_work_dir( $work_dir );
+        return new \WP_Error( 'hws_zip_empty', 'GitHub ZIP did not contain a plugin folder.' );
+    }
+
+    $source_dir = '';
+    foreach ( $dirs as $dir ) {
+        if ( basename( $dir ) === $slug . '-main' || basename( $dir ) === $slug . '-master' || basename( $dir ) === $slug ) {
+            $source_dir = $dir;
+            break;
+        }
+    }
+
+    if ( $source_dir === '' ) {
+        $source_dir = $dirs[0];
+    }
+
+    if ( ! $filesystem->move( $source_dir, $dest_dir, false ) ) {
+        hws_cleanup_install_work_dir( $work_dir );
+        return new \WP_Error( 'hws_plugin_move_failed', 'Could not move extracted GitHub folder into the plugin slug folder.' );
+    }
+
+    hws_cleanup_install_work_dir( $work_dir );
+    wp_cache_delete( 'plugins', 'plugins' );
+
+    $plugin_file = hws_find_plugin_file_by_folder( $slug );
+    if ( $plugin_file === '' ) {
+        return new \WP_Error( 'hws_plugin_header_missing', 'Installed folder does not contain a WordPress plugin header.' );
+    }
+
+    return $plugin_file;
+}
+
+function ajax_install_hws_github_plugin() {
+    if ( ! current_user_can( 'install_plugins' ) ) {
+        wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
+    }
+
+    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+        wp_send_json_error( 'Security check failed.' );
+    }
+
+    $slug   = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
+    $plugin = hws_get_additional_hws_plugin( $slug );
+
+    if ( ! $plugin ) {
+        wp_send_json_error( 'Unknown HWS plugin slug.' );
+    }
+
+    $normalized = hws_normalize_hws_github_plugin_folder( $slug );
+    if ( is_wp_error( $normalized ) ) {
+        wp_send_json_error( $normalized->get_error_message() );
+    }
+
+    $status      = hws_check_additional_hws_plugin_status( $slug );
+    $plugin_file = $status['plugin_file'];
+    $message     = '';
+
+    if ( ! $status['installed'] ) {
+        $installed = hws_install_hws_github_plugin_package( $slug, $plugin );
+        if ( is_wp_error( $installed ) ) {
+            wp_send_json_error( $installed->get_error_message() );
+        }
+
+        $plugin_file = $installed;
+        $message     = 'Installed from GitHub and normalized to folder ' . $slug . '.';
+    }
+
+    if ( $plugin_file === '' ) {
+        wp_send_json_error( 'Plugin file could not be found after install.' );
+    }
+
+    if ( ! is_plugin_active( $plugin_file ) ) {
+        if ( ! current_user_can( 'activate_plugins' ) ) {
+            wp_send_json_error( 'Installed, but you do not have permission to activate plugins.' );
+        }
+
+        $activate_result = activate_plugin( $plugin_file );
+        if ( is_wp_error( $activate_result ) ) {
+            wp_send_json_error( 'Activation failed: ' . $activate_result->get_error_message() );
+        }
+
+        $message = $message ? $message . ' Activated.' : 'Activated.';
+    } else {
+        $message = $message ?: 'Plugin is already active.';
+    }
+
+    $status = hws_check_additional_hws_plugin_status( $slug );
+
+    wp_send_json_success( [
+        'message'     => $message,
+        'slug'        => $slug,
+        'status_html' => hws_render_additional_hws_plugin_status( $status ),
+        'button_text' => $status['active'] ? 'Active' : 'Activate',
+        'installed'   => $status['installed'],
+        'active'      => $status['active'],
+        'plugin_file' => $status['plugin_file'],
+        'folder'      => $status['folder'],
+    ] );
+}
+
 /**
  * AJAX handler to install a plugin from WordPress.org
  */
@@ -313,6 +608,62 @@ function hws_check_plugin_status( $plugin_path ) {
     ];
 }
 
+function hws_render_additional_hws_plugins_panel(): void {
+    $plugins = hws_get_additional_hws_plugins();
+    ?>
+    <div class="hws-panel" id="hws-additional-hws-plugins-panel">
+        <div class="hws-panel-header">HWS Plugin Library</div>
+        <div class="hws-panel-body">
+            <p style="margin-top:0;color:#50575e;">
+                Install additional HWS plugins directly from GitHub. ZIP folders are normalized from <code>repo-main</code> to the correct WordPress plugin slug before activation.
+            </p>
+            <table class="hws-plugin-table">
+                <thead>
+                    <tr>
+                        <th>Plugin</th>
+                        <th>GitHub</th>
+                        <th>Folder Slug</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $plugins as $slug => $plugin ) : ?>
+                        <?php $status = hws_check_additional_hws_plugin_status( $slug ); ?>
+                        <tr data-hws-github-plugin-row="<?php echo esc_attr( $slug ); ?>">
+                            <td>
+                                <strong><?php echo esc_html( $plugin['name'] ); ?></strong>
+                                <br><small style="color:#646970;"><?php echo esc_html( $plugin['description'] ); ?></small>
+                            </td>
+                            <td>
+                                <a href="<?php echo esc_url( 'https://github.com/' . $plugin['repo'] ); ?>" target="_blank" rel="noopener">
+                                    <?php echo esc_html( $plugin['repo'] ); ?> ↗
+                                </a>
+                            </td>
+                            <td>
+                                <code><?php echo esc_html( $slug ); ?></code>
+                            </td>
+                            <td class="hws-hws-plugin-status">
+                                <?php echo hws_render_additional_hws_plugin_status( $status ); ?>
+                            </td>
+                            <td>
+                                <button
+                                    type="button"
+                                    class="hws-btn hws-install-hws-github-plugin"
+                                    data-slug="<?php echo esc_attr( $slug ); ?>"
+                                    <?php disabled( $status['active'] ); ?>
+                                ><?php echo $status['active'] ? 'Active' : ( $status['installed'] ? 'Activate' : 'Install & Activate' ); ?></button>
+                                <div class="hws-hws-plugin-message" style="margin-top:6px;font-size:12px;" aria-live="polite"></div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php
+}
+
 
 /**
  * Render Plugins Tab
@@ -379,6 +730,8 @@ function render_tab_plugins() {
             <?php endif; ?>
         </div>
     </div>
+
+    <?php hws_render_additional_hws_plugins_panel(); ?>
     
     <!-- Monitored Plugins Status -->
     <div class="hws-panel">
@@ -619,6 +972,51 @@ function render_tab_plugins() {
             };
             
             installNext(0);
+        });
+
+        $('#hws-additional-hws-plugins-panel').on('click', '.hws-install-hws-github-plugin', function() {
+            var $btn = $(this);
+            var slug = $btn.data('slug');
+            var $row = $btn.closest('[data-hws-github-plugin-row]');
+            var $message = $row.find('.hws-hws-plugin-message');
+            var originalText = $btn.text();
+
+            if (!slug) {
+                return;
+            }
+
+            if (!confirm('Install and activate ' + slug + ' from GitHub?')) {
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Installing...');
+            $message.css('color', '#50575e').text('Downloading from GitHub...');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'hws_install_hws_github_plugin',
+                    slug: slug,
+                    nonce: '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $row.find('.hws-hws-plugin-status').html(response.data.status_html || '<span class="status-ok">Active</span>');
+                        $message.css('color', '#00a32a').text(response.data.message || 'Installed and activated.');
+                        $btn.text(response.data.button_text || 'Active').prop('disabled', !!response.data.active);
+                        return;
+                    }
+
+                    $message.css('color', '#d63638').text(response.data || 'Install failed.');
+                    $btn.prop('disabled', false).text(originalText);
+                },
+                error: function(xhr, status, error) {
+                    $message.css('color', '#d63638').text('AJAX error: ' + (error || status));
+                    $btn.prop('disabled', false).text(originalText);
+                }
+            });
         });
     });
     </script>

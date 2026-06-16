@@ -408,6 +408,7 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_get_elementor_colors', __NAMESPACE__ . '\\ajax_get_elementor_colors' );
     add_action( 'wp_ajax_hws_save_brand_gallery', __NAMESPACE__ . '\\ajax_save_brand_gallery' );
     add_action( 'wp_ajax_hws_clear_brand_gallery', __NAMESPACE__ . '\\ajax_clear_brand_gallery' );
+    add_action( 'wp_ajax_hws_load_dashboard_tab', __NAMESPACE__ . '\\ajax_load_dashboard_tab' );
     // Note: hws_delete_backups is registered in settings-dashboard-backups.php
     // Note: hws_toggle_all_debug uses existing hws_base_tools_modify_wp_config_constants handler
 }
@@ -518,6 +519,67 @@ function hws_test_site_basics_state(): array {
 /**
  * Main settings page display
  */
+function hws_get_dashboard_tabs(): array {
+    $tabs = [
+        'overview'      => '📊 Overview',
+        'system-checks' => '🔍 System Checks',
+        'plugins'       => '🔌 Plugins',
+        'features'      => '✨ Features',
+        'brand-assets'  => '🖼️ Brand Assets',
+    ];
+
+    if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
+        $tabs['footer-text'] = '🦶 Footer Text';
+    }
+
+    $tabs += [
+        'website-types' => '🌐 Website Types',
+        'ui-cleanup'    => '🧹 UI Cleanup',
+        'config'        => '⚙️ Configuration',
+        'backups'       => '💾 Backups',
+        'advanced'      => '🔧 Advanced',
+        'comments'      => '💬 Comments',
+        'update-center' => '🔄 Update Center',
+        'masked-login'  => '🔐 Masked Login',
+    ];
+
+    return $tabs;
+}
+
+function hws_normalize_dashboard_tab_id( string $tab_id ): string {
+    $tabs   = hws_get_dashboard_tabs();
+    $tab_id = sanitize_key( $tab_id );
+
+    if ( 'snippets' === $tab_id ) {
+        $tab_id = 'features';
+    }
+
+    if ( ! array_key_exists( $tab_id, $tabs ) ) {
+        $tab_id = array_key_first( $tabs );
+    }
+
+    return $tab_id;
+}
+
+function ajax_load_dashboard_tab() {
+    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $tab_id = isset( $_POST['tab'] ) ? hws_normalize_dashboard_tab_id( (string) wp_unslash( $_POST['tab'] ) ) : hws_normalize_dashboard_tab_id( '' );
+
+    ob_start();
+    hws_render_dashboard_tab( $tab_id );
+    $html = ob_get_clean();
+
+    wp_send_json_success( [
+        'tab'  => $tab_id,
+        'html' => $html,
+    ] );
+}
+
 function hws_render_dashboard_tab( string $tab_id ): void {
     switch ( $tab_id ) {
         case 'overview':
@@ -584,28 +646,7 @@ function hws_render_dashboard_tab( string $tab_id ): void {
 function display_wp_admin_settings_page() {
     if ( ob_get_level() == 0 ) ob_start();
     
-    $tabs = [
-        'overview'      => '📊 Overview',
-        'system-checks' => '🔍 System Checks',
-        'plugins'       => '🔌 Plugins',
-        'features'      => '✨ Features',
-        'brand-assets'  => '🖼️ Brand Assets',
-    ];
-
-    if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
-        $tabs['footer-text'] = '🦶 Footer Text';
-    }
-
-    $tabs += [
-        'website-types' => '🌐 Website Types',
-        'ui-cleanup'    => '🧹 UI Cleanup',
-        'config'        => '⚙️ Configuration',
-        'backups'       => '💾 Backups',
-        'advanced'      => '🔧 Advanced',
-        'comments'      => '💬 Comments',
-        'update-center' => '🔄 Update Center',
-        'masked-login'  => '🔐 Masked Login',
-    ];
+    $tabs = hws_get_dashboard_tabs();
     ?>
     <style>
         /* === GLOBAL STYLES === */
@@ -651,6 +692,13 @@ function display_wp_admin_settings_page() {
             padding: 20px;
         }
         .hws-tab-content.active { display: block; }
+        .hws-tab-content.hws-tab-loading { min-height: 160px; }
+        .hws-tab-loading-message {
+            padding: 28px;
+            text-align: center;
+            color: #646970;
+            font-size: 14px;
+        }
         
         /* Panels */
         .hws-panel {
@@ -899,15 +947,7 @@ function display_wp_admin_settings_page() {
         <h1><?php echo Config::$settings_page_display_title; ?></h1>
         
         <?php
-        // — Determine active tab from ?tab= query string (default: first tab)
-        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : '';
-        if ( 'snippets' === $active_tab ) {
-            $active_tab = 'features';
-        }
-        // — Validate the tab exists in our tabs array; fall back to first tab if invalid
-        if ( ! array_key_exists( $active_tab, $tabs ) ) {
-            $active_tab = array_key_first( $tabs );
-        }
+        $active_tab = isset( $_GET['tab'] ) ? hws_normalize_dashboard_tab_id( (string) wp_unslash( $_GET['tab'] ) ) : hws_normalize_dashboard_tab_id( '' );
         ?>
         
         <!-- Tab Navigation -->
@@ -929,7 +969,8 @@ function display_wp_admin_settings_page() {
     // Global nonce for all AJAX calls
     var hwsNonce = '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>';
     var hwsDashboardConfig = {
-        homeUrl: <?php echo wp_json_encode( home_url( '/' ) ); ?>
+        homeUrl: <?php echo wp_json_encode( home_url( '/' ) ); ?>,
+        activeTab: <?php echo wp_json_encode( $active_tab ); ?>
     };
 
     /**
@@ -997,16 +1038,85 @@ function display_wp_admin_settings_page() {
     
     jQuery(document).ready(function($) {
         
-        // — Tab navigation uses a full request so only the selected tab is rendered.
-        $('.hws-tab-btn').on('click', function() {
-            var tabId = $(this).data('tab');
-            if ($(this).hasClass('active')) {
+        function hwsBuildTabUrl(tabId) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('tab', tabId);
+            return url;
+        }
+
+        function hwsApplyTabHtml($content, html) {
+            var $wrapper = $('<div>');
+            var scripts = [];
+
+            $wrapper.append($.parseHTML(html || '', document, true));
+            $wrapper.find('script').each(function() {
+                scripts.push(this.text || this.textContent || this.innerHTML || '');
+                $(this).remove();
+            });
+
+            $content.html($wrapper.contents());
+            scripts.forEach(function(scriptText) {
+                if (scriptText.trim()) {
+                    $.globalEval(scriptText);
+                }
+            });
+        }
+
+        function hwsLoadDashboardTab(tabId, pushState) {
+            var $button = $('.hws-tab-btn[data-tab="' + tabId + '"]');
+            var $content = $('.hws-tab-content.active').first();
+            var originalHtml = $content.html();
+
+            if (!$button.length || $button.hasClass('active')) {
                 return;
             }
 
-            var url = new URL(window.location);
-            url.searchParams.set('tab', tabId);
-            window.location.assign(url.toString());
+            $('.hws-tab-btn').prop('disabled', true);
+            $content.addClass('hws-tab-loading').html('<div class="hws-tab-loading-message">Loading...</div>');
+
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'hws_load_dashboard_tab',
+                    tab: tabId,
+                    nonce: hwsNonce
+                }
+            }).done(function(response) {
+                if (!response || !response.success || !response.data || !response.data.html) {
+                    $content.html(originalHtml);
+                    alert(getAjaxErrorMessage(response, 'Could not load tab.'));
+                    return;
+                }
+
+                tabId = response.data.tab || tabId;
+                $('.hws-tab-btn').removeClass('active');
+                $('.hws-tab-btn[data-tab="' + tabId + '"]').addClass('active');
+                $content.attr('id', 'tab-' + tabId).removeClass('hws-tab-loading');
+                hwsApplyTabHtml($content, response.data.html);
+                hwsDashboardConfig.activeTab = tabId;
+
+                if (pushState) {
+                    window.history.pushState({ hwsTab: tabId }, '', hwsBuildTabUrl(tabId).toString());
+                }
+            }).fail(function() {
+                window.location.assign(hwsBuildTabUrl(tabId).toString());
+            }).always(function() {
+                $('.hws-tab-btn').prop('disabled', false);
+                $content.removeClass('hws-tab-loading');
+            });
+        }
+
+        $('.hws-tab-btn').on('click', function() {
+            var tabId = $(this).data('tab');
+            hwsLoadDashboardTab(tabId, true);
+        });
+
+        window.addEventListener('popstate', function() {
+            var url = new URL(window.location.href);
+            var tabId = url.searchParams.get('tab') || 'overview';
+            hwsLoadDashboardTab(tabId, false);
         });
 
         function getAjaxErrorMessage(response, fallback) {
@@ -1246,7 +1356,7 @@ function display_wp_admin_settings_page() {
         }
         
         // Quick Setup
-        $('#hws-run-quick-setup').on('click', function() {
+        $(document).on('click', '#hws-run-quick-setup', function() {
             var $btn = $(this);
             var $log = $('#hws-quick-setup-log');
             $btn.prop('disabled', true).text('Running...');
@@ -1274,7 +1384,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Toggle Secret URLs
-        $('#hws-toggle-secret-urls').on('change', function() {
+        $(document).on('change', '#hws-toggle-secret-urls', function() {
             var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
@@ -1295,7 +1405,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Toggle Secret Setup URL
-        $('#hws-toggle-secret-setup').on('change', function() {
+        $(document).on('change', '#hws-toggle-secret-setup', function() {
             var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
@@ -1316,7 +1426,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Toggle Secret Permalinks Purge URL
-        $('#hws-toggle-secret-permalinks').on('change', function() {
+        $(document).on('change', '#hws-toggle-secret-permalinks', function() {
             var $checkbox = $(this);
             var enabled = $(this).is(':checked');
             $.post(ajaxurl, {
@@ -1337,7 +1447,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Save Master Secret Password
-        $('#hws-save-master-secret').on('click', function() {
+        $(document).on('click', '#hws-save-master-secret', function() {
             var $btn = $(this);
             var secret = $('#hws-master-secret').val().trim();
             var $status = $('#hws-master-secret-status');
@@ -1367,13 +1477,13 @@ function display_wp_admin_settings_page() {
         });
         
         // Log file toggle
-        $('.hws-toggle-log').on('click', function() {
+        $(document).on('click', '.hws-toggle-log', function() {
             var target = $(this).data('target');
             $('#' + target).slideToggle();
         });
         
         // Delete backups
-        $('.hws-delete-backup').on('click', function() {
+        $(document).on('click', '.hws-delete-backup', function() {
             var file = $(this).data('file');
             var plugin = $(this).data('plugin');
             if (!confirm('Delete this backup file?')) return;
@@ -1403,7 +1513,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Mass delete backups
-        $('.hws-delete-all-backups').on('click', function() {
+        $(document).on('click', '.hws-delete-all-backups', function() {
             var plugin = $(this).data('plugin');
             if (!confirm('Delete ALL backups for ' + plugin + '? This cannot be undone!')) return;
             
@@ -1430,7 +1540,7 @@ function display_wp_admin_settings_page() {
         });
         
         // WP-Config constant toggles - uses existing handler (for checkboxes)
-        $('.modify-wp-config').filter('input[type="checkbox"]').on('change', function() {
+        $(document).on('change', 'input.modify-wp-config[type="checkbox"]', function() {
             var $checkbox = $(this);
             var constant = $checkbox.data('constant');
             var value = $checkbox.is(':checked') ? 'true' : 'false';
@@ -1547,7 +1657,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Enable ALL debug - uses existing handler
-        $('#hws-enable-all-debug').on('click', function() {
+        $(document).on('click', '#hws-enable-all-debug', function() {
             if (!confirm('Enable ALL debug settings? This will turn on WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG.')) return;
             
             var $btn = $(this);
@@ -1582,7 +1692,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Disable ALL debug - uses existing handler
-        $('#hws-disable-all-debug').on('click', function() {
+        $(document).on('click', '#hws-disable-all-debug', function() {
             var $btn = $(this);
             $btn.prop('disabled', true).text('Disabling...');
             
@@ -1615,7 +1725,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Delete debug.log
-        $('#delete-debug-log').on('click', function() {
+        $(document).on('click', '#delete-debug-log', function() {
             if (!confirm('Delete debug.log?')) return;
             
             var $btn = $(this);
@@ -1645,7 +1755,7 @@ function display_wp_admin_settings_page() {
         });
         
         // Delete error_log
-        $('#delete-error-log').on('click', function() {
+        $(document).on('click', '#delete-error-log', function() {
             if (!confirm('Delete error_log?')) return;
             
             var $btn = $(this);
