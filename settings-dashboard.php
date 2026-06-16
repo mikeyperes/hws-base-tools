@@ -3821,7 +3821,7 @@ function render_site_icon_panel() {
 
 function render_login_logo_panel() {
     $icon_url  = has_site_icon() ? get_site_icon_url( 512 ) : '';
-    $login_url = site_url( 'wp-login.php' );
+    $login_url = hws_get_login_screen_url();
     ?>
     <div class="hws-panel" id="hws-brand-login-logo-panel">
         <div class="hws-panel-header">Login Logo</div>
@@ -3860,6 +3860,19 @@ function render_login_logo_panel() {
         </div>
     </div>
     <?php
+}
+
+function hws_get_login_screen_url(): string {
+    $mask_options = get_option( 'hws_login_mask_options', [] );
+
+    if ( is_array( $mask_options ) && ! empty( $mask_options['enabled'] ) && ! empty( $mask_options['slug'] ) ) {
+        $slug = sanitize_title( (string) $mask_options['slug'] );
+        if ( '' !== $slug ) {
+            return home_url( user_trailingslashit( $slug ) );
+        }
+    }
+
+    return site_url( 'wp-login.php' );
 }
 
 function render_brand_logo_assets_panel() {

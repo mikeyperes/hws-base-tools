@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.7 (Current)
+### v10.18.8 (Current)
+- Updated the Brand Assets Login Logo panel to use the active HWS masked-login URL when login masking is enabled.
+
+### v10.18.7
 - Enlarged generated letter favicons when server font fallback is used, and added more Linux font path fallbacks.
 - Kept favicon PNG and ICO links together in the Site Icon/Favicon panel with safer wrapping for long URLs.
 - Moved the login-logo controls out of the Features card layout into Brand Assets as a no-toggle Site Icon driven panel.
