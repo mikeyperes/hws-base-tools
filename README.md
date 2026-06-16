@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.16 (Current)
+### v10.18.17 (Current)
+- Seeded the Brand Gallery media frame with the saved attachment selection before opening it.
+
+### v10.18.16
 - Added a fallback copy path for individual Elementor color hex buttons when the Clipboard API rejects.
 
 ### v10.18.15

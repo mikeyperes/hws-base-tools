@@ -4697,11 +4697,25 @@ function render_brand_logo_assets_panel() {
         $('#hws-brand-gallery-select').on('click', function(e) {
             e.preventDefault();
             var currentIds = getCurrentBrandGalleryIds();
+            var selectedAttachments = new wp.media.model.Selection([], { multiple: true });
+
+            currentIds.forEach(function(id) {
+                var attachment = wp.media.attachment(id);
+
+                if (attachment) {
+                    attachment.fetch();
+                    selectedAttachments.add(attachment);
+                }
+            });
+
             var frame = wp.media({
                 title: 'Select Brand Gallery Images',
+                frame: 'select',
+                state: 'library',
                 button: { text: 'Use these images' },
                 library: { type: 'image' },
-                multiple: true
+                multiple: true,
+                selection: selectedAttachments
             });
 
             frame.on('open', function() {
@@ -4710,7 +4724,7 @@ function render_brand_logo_assets_panel() {
                 currentIds.forEach(function(id) {
                     var attachment = wp.media.attachment(id);
 
-                    if (attachment) {
+                    if (attachment && ! selection.get(id)) {
                         attachment.fetch();
                         selection.add(attachment);
                     }
