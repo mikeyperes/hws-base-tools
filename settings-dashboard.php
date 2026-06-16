@@ -4197,16 +4197,16 @@ function render_brand_logo_assets_panel() {
     <div class="hws-panel" id="hws-brand-logo-panel">
         <div class="hws-panel-header">Logo Assets</div>
         <div class="hws-panel-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;min-width:0;">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0;">
                 <?php foreach ( $definitions as $key => $definition ) : ?>
                     <?php $payload = hws_get_brand_asset_payload( $key ); ?>
                     <div class="hws-brand-asset-card" data-brand-key="<?php echo esc_attr( $key ); ?>" style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                         <div style="display:flex;gap:12px;align-items:flex-start;">
-                            <div class="hws-brand-preview-wrap" style="width:72px;min-width:72px;">
+                            <div class="hws-brand-preview-wrap" style="width:180px;min-width:180px;">
                                 <?php if ( $payload['thumbnail_url'] ) : ?>
-                                    <img class="hws-brand-preview" src="<?php echo esc_url( $payload['thumbnail_url'] ); ?>" alt="" style="width:72px;height:72px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
+                                    <img class="hws-brand-preview" src="<?php echo esc_url( $payload['thumbnail_url'] ); ?>" alt="" style="width:180px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;">
                                 <?php else : ?>
-                                    <div class="hws-brand-preview-empty" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>
+                                    <div class="hws-brand-preview-empty" style="width:180px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>
                                 <?php endif; ?>
                             </div>
                             <div style="min-width:0;flex:1;">
@@ -4244,8 +4244,8 @@ function render_brand_logo_assets_panel() {
     jQuery(function($) {
         var faviconPreviewStyle = 'width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
         var loginLogoPreviewStyle = 'width:96px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
-        var brandPreviewStyle = 'width:72px;height:72px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
-        var brandEmptyPreview = '<div class="hws-brand-preview-empty" style="width:72px;height:72px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>';
+        var brandPreviewStyle = 'width:180px;height:96px;object-fit:contain;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7;';
+        var brandEmptyPreview = '<div class="hws-brand-preview-empty" style="width:180px;height:96px;display:flex;align-items:center;justify-content:center;border:1px dashed #b8bcc2;border-radius:6px;background:#f6f7f7;color:#646970;font-size:11px;">No file</div>';
 
         function escapeText(value) {
             return $('<div>').text(value || '').html();
@@ -4719,6 +4719,10 @@ function render_brand_logo_assets_panel() {
             });
 
             frame.on('open', function() {
+                if (frame.content && frame.content.mode) {
+                    frame.content.mode('browse');
+                }
+
                 var selection = frame.state().get('selection');
 
                 currentIds.forEach(function(id) {

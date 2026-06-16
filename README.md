@@ -133,7 +133,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.17 (Current)
+### v10.18.19 (Current)
+- Changed Logo Assets to one full-width row per asset with larger uncropped contain previews.
+
+### v10.18.18
+- Forced the Brand Gallery media picker to open in Media Library browse mode with the saved selection visible.
+
+### v10.18.17
 - Seeded the Brand Gallery media frame with the saved attachment selection before opening it.
 
 ### v10.18.16
