@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.15 (Current)
+### v10.18.16 (Current)
+- Added a fallback copy path for individual Elementor color hex buttons when the Clipboard API rejects.
+
+### v10.18.15
 - Made the highlight override frontend-only, with wp-admin showing only the local preview.
 - Made Elementor color assets collapsed and AJAX-loaded on demand, with individual copy buttons only.
 - Preserved Brand Gallery ACF selections when reopening the media picker.

@@ -4418,18 +4418,22 @@ function render_brand_logo_assets_panel() {
         }
 
         function copyTextToClipboard(text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                return navigator.clipboard.writeText(text);
+            function fallbackCopy() {
+                var $temp = $('<textarea>');
+                $temp.css({ position: 'fixed', top: '-1000px', left: '-1000px' }).val(text);
+                $('body').append($temp);
+                $temp[0].select();
+                document.execCommand('copy');
+                $temp.remove();
+
+                return Promise.resolve();
             }
 
-            var $temp = $('<textarea>');
-            $temp.css({ position: 'fixed', top: '-1000px', left: '-1000px' }).val(text);
-            $('body').append($temp);
-            $temp[0].select();
-            document.execCommand('copy');
-            $temp.remove();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text).catch(fallbackCopy);
+            }
 
-            return Promise.resolve();
+            return fallbackCopy();
         }
 
         function syncHighlightColor(kind, value) {
