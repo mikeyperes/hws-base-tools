@@ -525,6 +525,7 @@ function hws_get_dashboard_tabs(): array {
         'system-checks' => '🔍 System Checks',
         'plugins'       => '🔌 Plugins',
         'features'      => '✨ Features',
+        'snippets'      => '✂️ Snippets (Deprecated)',
         'brand-assets'  => '🖼️ Brand Assets',
     ];
 
@@ -549,10 +550,6 @@ function hws_get_dashboard_tabs(): array {
 function hws_normalize_dashboard_tab_id( string $tab_id ): string {
     $tabs   = hws_get_dashboard_tabs();
     $tab_id = sanitize_key( $tab_id );
-
-    if ( 'snippets' === $tab_id ) {
-        $tab_id = 'features';
-    }
 
     if ( ! array_key_exists( $tab_id, $tabs ) ) {
         $tab_id = array_key_first( $tabs );
@@ -596,6 +593,11 @@ function hws_render_dashboard_tab( string $tab_id ): void {
         case 'features':
             if ( function_exists( __NAMESPACE__ . '\\display_settings_features' ) ) {
                 display_settings_features();
+            }
+            break;
+        case 'snippets':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_snippets' ) ) {
+                display_settings_snippets();
             }
             break;
         case 'brand-assets':
@@ -677,6 +679,7 @@ function display_wp_admin_settings_page() {
             transition: all 0.2s;
         }
         .hws-tab-btn:hover { color: #2271b1; background: #fff; }
+        .hws-tab-btn.hws-tab-deprecated { color: #996800; }
         .hws-tab-btn.active {
             color: #1d2327;
             background: #fff;
@@ -953,7 +956,7 @@ function display_wp_admin_settings_page() {
         <!-- Tab Navigation -->
         <nav class="hws-tabs-nav">
             <?php foreach ( $tabs as $tab_id => $label ) : ?>
-                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?>" data-tab="<?php echo esc_attr( $tab_id ); ?>">
+                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?> <?php echo 'snippets' === $tab_id ? 'hws-tab-deprecated' : ''; ?>" data-tab="<?php echo esc_attr( $tab_id ); ?>">
                     <?php echo $label; ?>
                 </button>
             <?php endforeach; ?>

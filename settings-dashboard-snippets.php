@@ -38,12 +38,24 @@ function display_settings_snippets() {
         .panel-settings-snippets .panel-content {
             padding: 10px 0;
         }
+
+        .hws-snippets-deprecated-notice {
+            margin: 0 0 16px;
+            padding: 12px 14px;
+            border-left: 4px solid #dba617;
+            background: #fff8e5;
+            color: #664d03;
+        }
     </style>
 
     <!-- Snippets Status Panel -->
     <div class="panel panel-settings-snippets">
-        <h2 class="panel-title">Snippets</h2>
+        <h2 class="panel-title">Snippets (Deprecated)</h2>
         <div class="panel-content">
+            <div class="hws-snippets-deprecated-notice">
+                <strong>Deprecated legacy tab.</strong>
+                This tab is retained for existing snippet toggles and backwards compatibility. New structured controls belong in the Features tab.
+            </div>
             <!-- Snippet Actions and Status -->
             <div style="margin-bottom: 15px;">
                 <h3>Available Snippets:</h3>

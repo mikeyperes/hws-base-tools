@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.22 (Current)
+### v10.18.24 (Current)
+- Restored the legacy Snippets tab as a separate deprecated dashboard tab instead of aliasing it to Features.
+
+### v10.18.22
 - Added a Plugins tab HWS Plugin Library for one-click GitHub installs with `repo-main` folder normalization.
 - Changed dashboard tab navigation to load selected tabs with AJAX instead of full page refreshes.
 
