@@ -83,16 +83,26 @@ function get_ui_cleanup_options(): array {
             'section'       => 'elementor',
         ],
         
+        'hide_wordfence_app_passwords' => [
+            'label'         => 'Application Passwords',
+            'description'   => 'Hides the WordPress core "Application Passwords" section on profile and user-edit screens.',
+            'css_selectors' => '#application-passwords-section, .application-passwords',
+            'js_hide'       => 'Application Passwords',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'hide_classic_editor_default_editor' => [
+            'label'         => 'Classic Editor Default Editor',
+            'description'   => 'Hides the Classic Editor plugin default editor selector on profile and user-edit screens.',
+            'css_selectors' => '.classic-editor-user-options',
+            'js_input_id'   => 'classic-editor-user-settings',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+
         // ========================================
         // User Profile - Wordfence
         // ========================================
-        'hide_wordfence_app_passwords' => [
-            'label'         => 'Wordfence Application Passwords',
-            'description'   => 'Hides the "Application Passwords" section disabled by Wordfence',
-            'js_hide'       => 'Application Passwords',
-            'default'       => false,
-            'section'       => 'wordfence',
-        ],
         'hide_wordfence_2fa' => [
             'label'         => 'Wordfence 2FA Section',
             'description'   => 'Hides the "Wordfence Login Security" 2FA settings section',
@@ -110,6 +120,13 @@ function get_ui_cleanup_options(): array {
             'description'   => 'Disables the Content AI module in Rank Math (hides the Content AI panel from the dashboard and post editor)',
             'callback'      => 'apply_rankmath_content_ai_cleanup',
             'default'       => true,
+            'section'       => 'rankmath',
+        ],
+        'hide_rankmath_admin_footer' => [
+            'label'         => 'Rank Math Admin Footer',
+            'description'   => 'Suppresses the Rank Math admin footer credit and the WordPress version/update footer text.',
+            'callback'      => 'apply_rankmath_admin_footer_cleanup',
+            'default'       => false,
             'section'       => 'rankmath',
         ],
     ];
@@ -614,9 +631,19 @@ function inject_ui_cleanup_css() {
             
             <?php if ( in_array( 'Application Passwords', $js_hide_headers ) ) : ?>
             // Special handling for Application Passwords
+            $('#application-passwords-section, .application-passwords').hide();
             $('h2').filter(function() {
                 return $(this).text().trim() === 'Application Passwords';
-            }).hide().next('table.form-table').hide();
+            }).each(function() {
+                var $h2 = $(this);
+                var $section = $h2.closest('#application-passwords-section, .application-passwords');
+                if ($section.length) {
+                    $section.hide();
+                    return;
+                }
+                $h2.hide();
+                $h2.nextUntil('h2').hide();
+            });
             <?php endif; ?>
         });
         </script>
@@ -624,6 +651,28 @@ function inject_ui_cleanup_css() {
     }
 }
 add_action( 'admin_head', __NAMESPACE__ . '\\inject_ui_cleanup_css', 999 );
+
+/**
+ * Suppress Rank Math admin footer text without relying on visual hiding.
+ *
+ * WordPress always prints the #wpfooter wrapper, but these filters remove the
+ * Rank Math credit text and the right-side version/update footer content.
+ */
+function apply_rankmath_admin_footer_cleanup() {
+    if ( ! get_ui_cleanup_option( 'hide_rankmath_admin_footer' ) ) {
+        return;
+    }
+
+    add_filter( 'admin_footer_text', function( $text ) {
+        $text = is_string( $text ) ? $text : '';
+        if ( stripos( $text, 'rankmath' ) !== false || stripos( $text, 'rank math' ) !== false ) {
+            return '';
+        }
+        return $text;
+    }, PHP_INT_MAX );
+
+    add_filter( 'update_footer', '__return_empty_string', PHP_INT_MAX );
+}
 
 /**
  * Apply Rank Math Content AI cleanup
@@ -667,8 +716,14 @@ function apply_rankmath_content_ai_cleanup() {
 if ( get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
     apply_rankmath_content_ai_cleanup();
 }
+if ( get_ui_cleanup_option( 'hide_rankmath_admin_footer' ) ) {
+    apply_rankmath_admin_footer_cleanup();
+}
 add_action( 'admin_init', function() {
     if ( function_exists( __NAMESPACE__ . '\\get_ui_cleanup_option' ) && get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
         apply_rankmath_content_ai_cleanup();
+    }
+    if ( function_exists( __NAMESPACE__ . '\\get_ui_cleanup_option' ) && get_ui_cleanup_option( 'hide_rankmath_admin_footer' ) ) {
+        apply_rankmath_admin_footer_cleanup();
     }
 }, 1 );

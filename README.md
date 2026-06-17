@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.24 (Current)
+### v10.18.26 (Current)
+- Added UI Cleanup controls for hiding the WordPress core Application Passwords section, Classic Editor default editor selector, and Rank Math admin footer output.
+
+### v10.18.24
 - Restored the legacy Snippets tab as a separate deprecated dashboard tab instead of aliasing it to Features.
 
 ### v10.18.22
