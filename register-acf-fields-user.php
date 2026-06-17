@@ -7,8 +7,9 @@
  *
  * This file registers three ACF field groups on user profile screens:
  *
- * 1. "User - Additional"               → additional_public_email, additional_public_phone, additional_title
- * 2. "User - General Fields"           → URLs group (22 platforms), subtitle, settings
+ * 1. "User - Additional"               → additional_public_email, additional_public_phone, additional_title,
+ *                                          staff_writer, muckrack_verified, muckrack_url
+ * 2. "User - General Fields"           → URLs group (22 platforms), subtitle
  * 3. "Schema.org Structured Data"      → entity_type, education, inception_date, headquarters, sameas
  *
  * All fields support BOTH shortcode prefixes:
@@ -23,6 +24,7 @@
  *   [company id="additional_public_email"]   /  [founder id="additional_public_email"]
  *   [company id="additional_public_phone"]   /  [founder id="additional_public_phone"]
  *   [company id="additional_title"]          /  [founder id="additional_title"]
+ *   staff_writer, muckrack_verified, muckrack_url are top-level user meta fields.
  *
  * — User - General Fields: URLs —
  *   [company id="url_facebook"]              /  [founder id="url_facebook"]
@@ -74,6 +76,9 @@
  *  - public_email      (email)
  *  - public_phone      (text)
  *  - title             (text)
+ *  - staff_writer      (true_false toggle)
+ *  - muckrack_verified (true_false toggle)
+ *  - muckrack_url      (url)
  *
  * Shortcode usage:
  *  - [company id="additional_public_email"]  or  [founder id="additional_public_email"]
@@ -166,8 +171,61 @@ function register_user_custom_fields_additional_2025() {
                         'media_upload'      => 0,
                         'delay'             => 0,
                     ),
-
                 ),
+            ),
+            array(
+                'key'               => 'field_hws_additional_staff_writer',
+                'label'             => 'Staff Writer',
+                'name'              => 'staff_writer',
+                'type'              => 'true_false',
+                'instructions'      => '',
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'message'           => '',
+                'default_value'     => 0,
+                'ui'                => 1,
+                'ui_on_text'        => 'Yes',
+                'ui_off_text'       => 'No',
+            ),
+            array(
+                'key'               => 'field_hws_additional_muckrack_verified',
+                'label'             => 'MuckRack Verified',
+                'name'              => 'muckrack_verified',
+                'type'              => 'true_false',
+                'instructions'      => '',
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'message'           => '',
+                'default_value'     => 0,
+                'ui'                => 1,
+                'ui_on_text'        => 'Yes',
+                'ui_off_text'       => 'No',
+            ),
+            array(
+                'key'               => 'field_hws_additional_muckrack_url',
+                'label'             => 'MuckRack URL',
+                'name'              => 'muckrack_url',
+                'type'              => 'url',
+                'instructions'      => '',
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'default_value'     => '',
+                'placeholder'       => 'https://muckrack.com/...',
             ),
         ),
 
@@ -207,7 +265,7 @@ function register_user_custom_fields_additional_2025() {
  *   wikipedia, x, soundcloud, the_org, whatsapp, telegram, signal,
  *   calendly, amazon, github, audible, threads, crunchbase, website
  *
- * Top-level: subtitle, settings (staff_writer, muckrack_verified)
+ * Top-level: subtitle
  *
  * Shortcode pattern for URLs:
  *   [company id="url_{platform}"]  or  [founder id="url_{platform}"]
@@ -712,60 +770,6 @@ function register_user_custom_fields_2025()
                 'append' => '',
             ),
 
-            // ─────────────────────────────────────────────────────────────
-            // Settings Group — staff_writer, muckrack_verified
-            // ─────────────────────────────────────────────────────────────
-            array(
-                'key' => 'field_68434913832e3',
-                'label' => 'Settings',
-                'name' => 'settings',
-                'aria-label' => '',
-                'type' => 'group',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'layout' => 'block',
-                'sub_fields' => array(
-
-                    // — Staff Writer toggle
-                    array(
-                        'key' => 'field_68434932832e4',
-                        'label' => 'Staff Writer',
-                        'name' => 'staff_writer',
-                        'aria-label' => '',
-                        'type' => 'true_false',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'message' => '',
-                        'default_value' => 0,
-                        'allow_in_bindings' => 0,
-                        'ui' => 0,
-                        'ui_on_text' => '',
-                        'ui_off_text' => '',
-                    ),
-
-                    // — MuckRack Verified toggle
-                    array(
-                        'key' => 'field_68434973832e5',
-                        'label' => 'MuckRack Verified',
-                        'name' => 'muckrack_verified',
-                        'aria-label' => '',
-                        'type' => 'true_false',
-                        'instructions' => '',
-                        'required' => false,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => 0,
-                        'message' => '',
-                        'ui' => 0,
-                        'ui_on_text' => '',
-                        'ui_off_text' => '',
-                    ),
-                ),
-            ),
         ),
 
         // — Show on all user roles
@@ -1127,4 +1131,3 @@ function register_user_custom_fields(){
     ) );
     
 }
-

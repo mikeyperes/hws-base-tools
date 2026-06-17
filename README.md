@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.26 (Current)
+### v10.18.27 (Current)
+- Moved canonical `staff_writer`, `muckrack_verified`, and `muckrack_url` user fields into the User - Additional ACF group with toggle UI for boolean fields.
+- Removed duplicate active Staff Writer and Settings-group MuckRack registrations from legacy HWS user ACF groups.
+
+### v10.18.26
 - Added UI Cleanup controls for hiding the WordPress core Application Passwords section, Classic Editor default editor selector, and Rank Math admin footer output.
 
 ### v10.18.24
