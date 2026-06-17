@@ -182,7 +182,10 @@
 
 
 
-	acf_add_local_field_group( array(
+	// Deprecated legacy social/profile fields. The 2025 user fields are the supported path.
+	return;
+
+		acf_add_local_field_group( array(
 	'key' => 'group_6419bc02b6e93',
 	'title' => 'User/Author',
 	'fields' => array(
@@ -709,4 +712,3 @@
 	'description' => '',
 	'show_in_rest' => 0,
 ) );}
-
