@@ -25,7 +25,67 @@ src/Contracts/   Hexa\PluginCore\Contracts
 src/Shortcodes/  Hexa\PluginCore\Shortcodes
 src/Support/     Hexa\PluginCore\Support
 src/Tabs/        Hexa\PluginCore\Tabs
+src/UI/          Hexa\PluginCore\UI
+src/Logs/        Hexa\PluginCore\Logs
 src/Updater/     Hexa\PluginCore\Updater
+```
+
+## UI Components
+
+Namespace:
+
+```text
+Hexa\PluginCore\UI
+```
+
+Class:
+
+```text
+CoreUi
+```
+
+Use this for:
+
+```text
+cards
+subcards
+buttons
+pills
+tooltips
+collapsible sections
+copy buttons
+shared admin styles
+```
+
+Never rebuild those patterns directly in host plugins when `CoreUi` can render them.
+
+## Error Logs
+
+Namespace:
+
+```text
+Hexa\PluginCore\Logs
+```
+
+Classes:
+
+```text
+ErrorLogSource
+ErrorLogClassifier
+ErrorLogReader
+ErrorLogPanelRenderer
+```
+
+Use this for reusable log viewing:
+
+```php
+( new ErrorLogPanelRenderer() )->render(
+    [
+        new ErrorLogSource( 'debug', 'debug.log', WP_CONTENT_DIR . '/debug.log', true, 'delete-debug-log' ),
+        new ErrorLogSource( 'error', 'error_log', ABSPATH . 'error_log', true, 'delete-error-log' ),
+        new ErrorLogSource( 'admin-error', 'wp-admin/error_log', ABSPATH . 'wp-admin/error_log' ),
+    ]
+);
 ```
 
 ## README Locations

@@ -36,6 +36,8 @@ src/Contracts/   Hexa\PluginCore\Contracts
 src/Shortcodes/  Hexa\PluginCore\Shortcodes
 src/Support/     Hexa\PluginCore\Support
 src/Tabs/        Hexa\PluginCore\Tabs
+src/UI/          Hexa\PluginCore\UI
+src/Logs/        Hexa\PluginCore\Logs
 src/Updater/     Hexa\PluginCore\Updater
 ```
 
@@ -58,6 +60,8 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put interfaces in `src/Contracts`.
 - Put small generic helpers and value objects in `src/Support`.
 - Put admin tab abstractions in `src/Tabs`.
+- Put reusable visual primitives in `src/UI`.
+- Put reusable error-log viewer/read/classification features in `src/Logs`.
 - Put activity log abstractions, storage modes, and the shared dark renderer in `src/Activity`.
 - Put shortcode registries, definitions, and testing tools in `src/Shortcodes`.
 - Put update/GitHub configuration and updater abstractions in `src/Updater`.

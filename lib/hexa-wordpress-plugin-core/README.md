@@ -30,6 +30,8 @@ hexa-wordpress-plugin-core/
     Shortcodes/  -> Hexa\PluginCore\Shortcodes
     Support/     -> Hexa\PluginCore\Support
     Tabs/        -> Hexa\PluginCore\Tabs
+    UI/          -> Hexa\PluginCore\UI
+    Logs/        -> Hexa\PluginCore\Logs
     Updater/     -> Hexa\PluginCore\Updater
 ```
 
@@ -43,6 +45,8 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `Shortcodes`: shortcode definition registry, dashboard metadata, and test runner contracts.
 - `Support`: small shared value objects and helpers that are not specific to one module.
 - `Tabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
+- `UI`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
+- `Logs`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
 - `Updater`: shared GitHub/update configuration objects, host plugin updater, and vendored core package updater.
 
 ## Host Plugin Integration Rule
@@ -191,4 +195,45 @@ use Hexa\PluginCore\Tabs\CoreTabModule;
         ]
     )
 ) )->register();
+```
+
+## UI Primitives
+
+Use `Hexa\PluginCore\UI\CoreUi` for reusable admin UI pieces.
+
+```php
+use Hexa\PluginCore\UI\CoreUi;
+
+CoreUi::render_assets();
+
+echo CoreUi::card(
+    [
+        'title'     => 'System Status',
+        'body_html' => '<p>Everything is healthy.</p>',
+        'meta_html' => CoreUi::pill( 'Healthy', 'success' ),
+    ]
+);
+
+echo CoreUi::collapsible(
+    [
+        'title'     => 'Advanced details',
+        'body_html' => '<p>Hidden until expanded.</p>',
+    ]
+);
+```
+
+## Error Log Viewer
+
+Use `Hexa\PluginCore\Logs` for reusable error-log monitoring.
+
+```php
+use Hexa\PluginCore\Logs\ErrorLogPanelRenderer;
+use Hexa\PluginCore\Logs\ErrorLogSource;
+
+( new ErrorLogPanelRenderer() )->render(
+    [
+        new ErrorLogSource( 'debug', 'debug.log', WP_CONTENT_DIR . '/debug.log', true, 'delete-debug-log' ),
+        new ErrorLogSource( 'error', 'error_log', ABSPATH . 'error_log', true, 'delete-error-log' ),
+    ]
+);
 ```

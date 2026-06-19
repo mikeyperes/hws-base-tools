@@ -7,6 +7,7 @@ use Hexa\PluginCore\Activity\ActivityLogEntry;
 use Hexa\PluginCore\Activity\ActivityLogger;
 use Hexa\PluginCore\Activity\ActivityLogRenderer;
 use Hexa\PluginCore\Support\CoreVersion;
+use Hexa\PluginCore\UI\CoreUi;
 
 final class CoreTabRenderer {
     private CoreTabConfig $config;
@@ -16,88 +17,197 @@ final class CoreTabRenderer {
     }
 
     public function render(): void {
-        $dom = 'hexa-core-tab-' . md5( $this->config->core_root() );
+        CoreUi::render_assets();
+
+        $core_version = CoreVersion::current( $this->config->core_root() );
         ?>
-        <div id="<?php echo esc_attr( $dom ); ?>" class="hexa-core-tab">
-            <style>
-                #<?php echo esc_attr( $dom ); ?>{--hc-border:#dcdcde;--hc-muted:#646970;--hc-panel:#fff;--hc-soft:#f6f7f7;color:#1d2327}
-                #<?php echo esc_attr( $dom ); ?> .hc-hero{background:#111827;border-radius:8px;color:#f8fafc;margin:0 0 18px;padding:22px}
-                #<?php echo esc_attr( $dom ); ?> .hc-hero h2{color:#fff;font-size:24px;margin:0 0 8px}
-                #<?php echo esc_attr( $dom ); ?> .hc-grid{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 18px}
-                #<?php echo esc_attr( $dom ); ?> .hc-card{background:var(--hc-panel);border:1px solid var(--hc-border);border-radius:8px;padding:16px}
-                #<?php echo esc_attr( $dom ); ?> .hc-card h3{font-size:16px;margin:0 0 10px}
-                #<?php echo esc_attr( $dom ); ?> .hc-card p{color:#3c434a;font-size:14px;line-height:1.55;margin:0 0 10px}
-                #<?php echo esc_attr( $dom ); ?> code{background:#eef0f2;padding:2px 5px}
-                #<?php echo esc_attr( $dom ); ?> details{background:#fff;border:1px solid var(--hc-border);border-radius:8px;margin:0 0 12px;overflow:hidden}
-                #<?php echo esc_attr( $dom ); ?> summary{cursor:pointer;font-size:15px;font-weight:700;padding:14px 16px}
-                #<?php echo esc_attr( $dom ); ?> .hc-detail-body{border-top:1px solid var(--hc-border);padding:16px}
-                #<?php echo esc_attr( $dom ); ?> pre{background:#0f1720;border-radius:8px;color:#dbe7f3;max-height:360px;overflow:auto;padding:14px;white-space:pre-wrap}
-                #<?php echo esc_attr( $dom ); ?> .hc-list{margin:0 0 0 20px}
-                #<?php echo esc_attr( $dom ); ?> .hc-path{word-break:break-all}
-                @media(max-width:1000px){#<?php echo esc_attr( $dom ); ?> .hc-grid{grid-template-columns:1fr}}
-            </style>
+        <div class="hpc-ui">
+            <div class="hpc-shell">
+                <section class="hpc-hero">
+                    <div>
+                        <h2>Hexa WordPress Plugin Core</h2>
+                        <p>Shared UI, tabs, activity logs, updater panels, shortcode registries, and agent-facing documentation for Hexa plugins.</p>
+                    </div>
+                    <div class="hpc-actions" style="align-content:start;justify-content:flex-end;">
+                        <?php echo CoreUi::pill( 'Core v' . $core_version, 'dark' ); ?>
+                        <?php echo CoreUi::pill( 'Public repo', 'success' ); ?>
+                    </div>
+                </section>
 
-            <section class="hc-hero">
-                <h2>Hexa WordPress Plugin Core</h2>
-                <p>Shared source-of-truth library for plugin tabs, activity logs, update panels, shortcode registries, and agent-facing documentation.</p>
-                <p>Core version in this package: <code><?php echo esc_html( CoreVersion::current( $this->config->core_root() ) ); ?></code></p>
-            </section>
+                <div class="hpc-grid">
+                    <?php
+                    echo CoreUi::card(
+                        [
+                            'title'     => 'Source of truth',
+                            'body_html' => '<p>The core package owns shared structures. Host plugins pass settings and hook names, then the core renders consistent components.</p>'
+                                . '<p><span class="hpc-code">Hexa\\PluginCore\\</span></p>',
+                        ]
+                    );
+                    echo CoreUi::card(
+                        [
+                            'title'     => 'README files',
+                            'body_html' => '<p>Main README: <span class="hpc-path">' . esc_html( $this->config->readme_path() ) . '</span></p>'
+                                . '<p>Agent guide: <span class="hpc-path">' . esc_html( $this->config->library_path() ) . '</span></p>',
+                            'meta_html' => CoreUi::copy_button( $this->config->readme_path(), 'Copy README path' ),
+                        ]
+                    );
+                    echo CoreUi::card(
+                        [
+                            'title'     => 'First extracted pieces',
+                            'body_html' => '<p>Current extraction order: UI primitives, tabs, activity logs, updater panels, and error-log viewing.</p>'
+                                . '<p>' . CoreUi::tooltip( 'This tab is itself rendered by the core tab module, through HWS host filters.' ) . ' Core-rendered tab content.</p>',
+                        ]
+                    );
+                    ?>
+                </div>
 
-            <div class="hc-grid">
-                <div class="hc-card">
-                    <h3>README location</h3>
-                    <p>Core README: <code class="hc-path"><?php echo esc_html( $this->config->readme_path() ); ?></code></p>
-                    <p>Agent library file: <code class="hc-path"><?php echo esc_html( $this->config->library_path() ); ?></code></p>
-                </div>
-                <div class="hc-card">
-                    <h3>Activity logs</h3>
-                    <p>Use the dark expandable log for updater progress, tests, imports, background jobs, and admin actions.</p>
-                    <p>Storage modes: <code>page</code>, <code>transient</code>, and <code>permanent</code>.</p>
-                </div>
-                <div class="hc-card">
-                    <h3>Tabs</h3>
-                    <p>The core tab registers through host-provided filters, so the host dashboard keeps control while the tab content comes from core.</p>
-                    <p>Default tab ID: <code><?php echo esc_html( $this->config->tab_id() ); ?></code></p>
-                </div>
+                <div style="height:14px"></div>
+
+                <?php echo $this->render_ui_primitives_section(); ?>
+                <?php echo $this->render_activity_section(); ?>
+                <?php echo $this->render_error_logs_section(); ?>
+                <?php echo $this->render_agent_docs_section(); ?>
+
+                <?php $this->render_activity_demo(); ?>
             </div>
-
-            <details open>
-                <summary>Friendly version</summary>
-                <div class="hc-detail-body">
-                    <p>The core is the shared toolkit used by Hexa plugins. Instead of rebuilding tabs, logs, updater panels, and shortcode docs in every plugin, each plugin loads this package and lets the package provide the standard pieces.</p>
-                    <p>The activity log is meant to be readable while work is happening. It starts dark, can collapse, and can show short messages first with details hidden until needed.</p>
-                </div>
-            </details>
-
-            <details>
-                <summary>Technical version</summary>
-                <div class="hc-detail-body">
-                    <ul class="hc-list">
-                        <li><code>Hexa\PluginCore\Activity</code> provides entries, storage config, persistence, and a dark renderer.</li>
-                        <li><code>Hexa\PluginCore\Tabs\CoreTabModule</code> injects a core tab through configured host filters.</li>
-                        <li><code>Hexa\PluginCore\Updater</code> has two layers: host plugin updater and vendored core package updater.</li>
-                        <li>Host plugins provide identity and hook names. Core classes provide the implementation.</li>
-                    </ul>
-                </div>
-            </details>
-
-            <details>
-                <summary>README-style guide</summary>
-                <div class="hc-detail-body">
-                    <pre><?php echo esc_html( $this->readme_guide() ); ?></pre>
-                </div>
-            </details>
-
-            <?php $this->render_activity_demo(); ?>
         </div>
         <?php
+    }
+
+    private function render_ui_primitives_section(): string {
+        $body = '<div class="hpc-grid two">'
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Cards and subcards',
+                    'body_html' => '<p>Use <span class="hpc-code">CoreUi::card()</span> for primary surfaces and <span class="hpc-code">CoreUi::subcard()</span> for grouped controls inside a larger section.</p>',
+                ]
+            )
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Tooltips and pills',
+                    'body_html' => '<p>Use tooltips for compact help and pills for status. Example: ' . CoreUi::tooltip( 'Tooltip text is passed as an input parameter.' ) . ' ' . CoreUi::pill( 'Healthy', 'success' ) . ' ' . CoreUi::pill( 'Warning', 'warning' ) . '</p>',
+                ]
+            )
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Collapsible sections',
+                    'body_html' => '<p>Use <span class="hpc-code">CoreUi::collapsible()</span> for expandable documentation, logs, and advanced settings.</p>',
+                ]
+            )
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Buttons',
+                    'body_html' => '<p>Use standard button tones from core instead of per-plugin CSS. The first HWS swap is this tab plus the error-log viewer foundation.</p>',
+                ]
+            )
+            . '</div>';
+
+        return CoreUi::collapsible(
+            [
+                'title'     => 'Core UI primitives',
+                'open'      => true,
+                'meta_html' => CoreUi::pill( 'Reusable UI', 'success' ),
+                'body_html' => $body,
+            ]
+        );
+    }
+
+    private function render_activity_section(): string {
+        $body = '<p>The activity log component supports three storage modes and always renders the same dark expandable monitor.</p>'
+            . '<div class="hpc-grid">'
+            . CoreUi::subcard( [ 'title' => 'page', 'body_html' => '<p>Render-only. Data disappears when the page refreshes.</p>' ] )
+            . CoreUi::subcard( [ 'title' => 'transient', 'body_html' => '<p>Stored with WordPress transients and a TTL.</p>' ] )
+            . CoreUi::subcard( [ 'title' => 'permanent', 'body_html' => '<p>Stored with WordPress options until cleared.</p>' ] )
+            . '</div>';
+
+        return CoreUi::collapsible(
+            [
+                'title'     => 'Activity log structure',
+                'open'      => true,
+                'meta_html' => CoreUi::pill( 'Dark monitor', 'dark' ),
+                'body_html' => $body,
+            ]
+        );
+    }
+
+    private function render_error_logs_section(): string {
+        $body = '<p>HWS currently has two log systems: the Overview error-log viewer and the Log Cleaner cron/delete workflow. The reusable core layer now owns reading, tailing, classifying, highlighting, searching, and rendering log files.</p>'
+            . '<div class="hpc-grid two">'
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Reusable core classes',
+                    'body_html' => '<ul class="hpc-list"><li><span class="hpc-code">ErrorLogSource</span></li><li><span class="hpc-code">ErrorLogReader</span></li><li><span class="hpc-code">ErrorLogClassifier</span></li><li><span class="hpc-code">ErrorLogPanelRenderer</span></li></ul>',
+                ]
+            )
+            . CoreUi::subcard(
+                [
+                    'title'     => 'HWS first swap',
+                    'body_html' => '<p>The Overview tab can now render the error-log viewer from core while keeping HWS delete AJAX intact. The cleaner cron/settings system is the next extraction target.</p>',
+                ]
+            )
+            . '</div>';
+
+        return CoreUi::collapsible(
+            [
+                'title'     => 'Error logs as a core feature',
+                'open'      => true,
+                'meta_html' => CoreUi::pill( 'Foundation added', 'warning' ),
+                'body_html' => $body,
+            ]
+        );
+    }
+
+    private function render_agent_docs_section(): string {
+        $guide = <<<'README'
+# Core Implementation Guide
+
+## UI
+Use Hexa\PluginCore\UI\CoreUi for cards, subcards, buttons, pills, tooltips, and collapsible sections.
+
+## Tabs
+Host plugin exposes a tab-list filter and a render filter. CoreTabModule registers "hexa-core" through those hooks.
+
+## Activity Logs
+Use ActivityLogConfig storage modes:
+- page
+- transient
+- permanent
+
+## Error Logs
+Use Logs\ErrorLogSource for each file path, ErrorLogReader for tails/classification, and ErrorLogPanelRenderer for the UI.
+
+README;
+
+        $body = '<div class="hpc-grid two">'
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Friendly version',
+                    'body_html' => '<p>This core keeps plugin screens consistent. Build the pattern once in core, pass plugin-specific values into it, and then reuse it everywhere.</p>',
+                ]
+            )
+            . CoreUi::subcard(
+                [
+                    'title'     => 'Technical version',
+                    'body_html' => '<p>Core modules are host-neutral. Host plugins provide filter names, paths, slugs, capabilities, and repositories. Core classes render the standardized UI and behavior.</p>',
+                ]
+            )
+            . '</div><pre class="hpc-readme">' . esc_html( $guide ) . '</pre>';
+
+        return CoreUi::collapsible(
+            [
+                'title'     => 'README-style guide for agents',
+                'open'      => false,
+                'meta_html' => CoreUi::pill( 'Agent handoff', '' ),
+                'body_html' => $body,
+            ]
+        );
     }
 
     private function render_activity_demo(): void {
         $config = new ActivityLogConfig(
             [
                 'id'          => 'hexa-core-activity-demo',
-                'title'       => 'Hexa Core Activity Log Demo',
+                'title'       => 'Core Activity Monitor Demo',
                 'storage'     => ActivityLogConfig::STORAGE_PAGE,
                 'storage_key' => 'hexa_core_activity_demo',
                 'collapsed'   => false,
@@ -106,38 +216,10 @@ final class CoreTabRenderer {
         );
 
         $logger = new ActivityLogger( $config );
-        $logger->add( new ActivityLogEntry( 'Core tab registered.', [ 'tab_id' => $this->config->tab_id() ], 'system', 'tabs', null, 'success' ) );
-        $logger->add( new ActivityLogEntry( 'Activity log renderer loaded in page-only mode.', [ 'storage' => 'page' ], 'system', 'activity', null, 'info', 'Page-only logs are removed when the admin page refreshes.' ) );
-        $logger->add( new ActivityLogEntry( 'Transient and permanent modes are available for long-running monitors.', [ 'transient' => 'set_transient', 'permanent' => 'update_option' ], 'system', 'activity', null, 'warning' ) );
+        $logger->add( new ActivityLogEntry( 'Core tab rendered from shared UI primitives.', [ 'component' => 'CoreUi' ], 'system', 'ui', null, 'success' ) );
+        $logger->add( new ActivityLogEntry( 'Activity log loaded in page-only mode.', [ 'storage' => 'page' ], 'system', 'activity', null, 'info', 'Page-only entries disappear on refresh.' ) );
+        $logger->add( new ActivityLogEntry( 'Error-log core foundation is available for HWS swap.', [ 'namespace' => 'Hexa\\PluginCore\\Logs' ], 'system', 'logs', null, 'warning' ) );
 
         ( new ActivityLogRenderer( $config ) )->render( $logger->all() );
-    }
-
-    private function readme_guide(): string {
-        return <<<'README'
-# Hexa WordPress Plugin Core Quick Guide
-
-## Activity Logs
-
-Use ActivityLogConfig to choose storage:
-
-- page: render-only; removed on refresh
-- transient: stored with WordPress transients and a TTL
-- permanent: stored with WordPress options until cleared
-
-Use ActivityLogger to add entries. Use ActivityLogRenderer to render the dark expandable UI.
-
-## Tabs
-
-Expose a host tab filter and host render filter. Register CoreTabModule with those hook names.
-
-CoreTabModule adds a tab named "Hexa WordPress Plugin Core" and renders this documentation page from the shared core.
-
-## Updaters
-
-Use UpdaterPanelRenderer for the host WordPress plugin.
-Use CorePackagePanelRenderer for the vendored Hexa WordPress Plugin Core library.
-
-README;
     }
 }

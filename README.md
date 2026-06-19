@@ -133,7 +133,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.30 (Current)
+### v10.18.31 (Current)
+- Updated vendored Hexa WordPress Plugin Core to v0.4.0.
+- Redesigned the Hexa Core tab around shared core UI primitives.
+- Started the first HWS swap by rendering the Overview error-log viewer through Hexa Plugin Core Logs.
+- Added an HWS core migration scan that inventories current tabs, repeated UI patterns, and the next extraction order.
+
+### v10.18.30
 - Updated the vendored Hexa WordPress Plugin Core package to v0.3.0.
 - Added the automatically registered Hexa WordPress Plugin Core dashboard tab through core tab hooks.
 - Added the core dark expandable activity log component and README-style core documentation tab.
