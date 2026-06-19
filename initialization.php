@@ -249,14 +249,14 @@ public static function get_github_config() {
 }
 }
 
-function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\Updater\UpdaterConfig {
+function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\PluginUpdates\UpdaterConfig {
     static $config = null;
 
-    if ( $config instanceof \Hexa\PluginCore\Updater\UpdaterConfig ) {
+    if ( $config instanceof \Hexa\PluginCore\PluginUpdates\UpdaterConfig ) {
         return $config;
     }
 
-    $config = \Hexa\PluginCore\Updater\UpdaterConfig::from_plugin_file(
+    $config = \Hexa\PluginCore\PluginUpdates\UpdaterConfig::from_plugin_file(
         HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE,
         'https://github.com/' . Config::$github_repo,
         [
@@ -279,14 +279,14 @@ function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\Updater\Upd
     return $config;
 }
 
-function hws_get_hexa_plugin_core_package_config(): \Hexa\PluginCore\Updater\CorePackageConfig {
+function hws_get_hexa_plugin_core_package_config(): \Hexa\PluginCore\CorePackageUpdates\CorePackageConfig {
     static $config = null;
 
-    if ( $config instanceof \Hexa\PluginCore\Updater\CorePackageConfig ) {
+    if ( $config instanceof \Hexa\PluginCore\CorePackageUpdates\CorePackageConfig ) {
         return $config;
     }
 
-    $config = \Hexa\PluginCore\Updater\CorePackageConfig::from_core_root(
+    $config = \Hexa\PluginCore\CorePackageUpdates\CorePackageConfig::from_core_root(
         __DIR__ . '/lib/hexa-wordpress-plugin-core',
         [
             'github_repo'        => 'mikeyperes/hexa-wordpress-plugin-core',
@@ -341,7 +341,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.33";
+$plugin_version = "10.18.34";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -377,11 +377,11 @@ add_action( 'plugins_loaded', function() {
 
     $updater_config = hws_get_hexa_plugin_core_updater_config();
 
-    ( new \Hexa\PluginCore\Updater\GitHubPluginUpdater( $updater_config ) )->register();
-    ( new \Hexa\PluginCore\Updater\UpdaterAjaxController( $updater_config ) )->register();
-    ( new \Hexa\PluginCore\Updater\CorePackageAjaxController( hws_get_hexa_plugin_core_package_config() ) )->register();
-    ( new \Hexa\PluginCore\Tabs\CoreTabModule(
-        new \Hexa\PluginCore\Tabs\CoreTabConfig(
+    ( new \Hexa\PluginCore\PluginUpdates\GitHubPluginUpdater( $updater_config ) )->register();
+    ( new \Hexa\PluginCore\PluginUpdates\UpdaterAjaxController( $updater_config ) )->register();
+    ( new \Hexa\PluginCore\CorePackageUpdates\CorePackageAjaxController( hws_get_hexa_plugin_core_package_config() ) )->register();
+    ( new \Hexa\PluginCore\WpAdminTabs\CoreTabModule(
+        new \Hexa\PluginCore\WpAdminTabs\CoreTabConfig(
             [
                 'tabs_filter'   => 'hws_base_tools_dashboard_tabs',
                 'render_filter' => 'hws_base_tools_render_dashboard_tab',

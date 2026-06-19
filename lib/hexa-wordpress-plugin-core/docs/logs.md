@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Logs
+Hexa\PluginCore\LogFiles
 ```
 
 Folder:
 
 ```text
-src/Logs/
+src/LogFiles/
 ```
 
 ## Purpose
@@ -38,8 +38,8 @@ ErrorLogPanelRenderer
 ## Example
 
 ```php
-use Hexa\PluginCore\Logs\ErrorLogPanelRenderer;
-use Hexa\PluginCore\Logs\ErrorLogSource;
+use Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer;
+use Hexa\PluginCore\LogFiles\ErrorLogSource;
 
 ( new ErrorLogPanelRenderer() )->render(
     [

@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\UI
+Hexa\PluginCore\WpAdminComponents
 ```
 
 Folder:
 
 ```text
-src/UI/
+src/WpAdminComponents/
 ```
 
 ## Purpose
@@ -39,7 +39,7 @@ copy_button()
 ## Example
 
 ```php
-use Hexa\PluginCore\UI\CoreUi;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 
 CoreUi::render_assets();
 

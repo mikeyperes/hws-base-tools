@@ -34,8 +34,8 @@ This file records the current HWS Base Tools dashboard feature inventory and the
 
 ## First Core Swaps
 
-1. Hexa Core tab design: rendered from `Hexa\PluginCore\UI\CoreUi`.
-2. Overview error-log viewer: rendered from `Hexa\PluginCore\Logs\ErrorLogPanelRenderer`.
+1. Hexa Core tab design: rendered from `Hexa\PluginCore\WpAdminComponents\CoreUi`.
+2. Overview error-log viewer: rendered from `Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer`.
 3. Feature rows: replace hard-coded feature cards with core card/toggle primitives.
 4. Brand asset rows: replace logo/favicons cards with core subcards and copy rows.
 5. Update Center panels: replace local updater panels with core updater UI primitives.

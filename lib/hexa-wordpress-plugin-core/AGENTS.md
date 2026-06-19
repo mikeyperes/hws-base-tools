@@ -30,17 +30,18 @@ Host plugin namespaces may exist only inside the host plugin repository. Shared 
 Each sub-namespace must have a matching folder:
 
 ```text
-src/Activity/    Hexa\PluginCore\Activity
-src/Bootstrap/   Hexa\PluginCore\Bootstrap
-src/Contracts/   Hexa\PluginCore\Contracts
-src/Credentials/ Hexa\PluginCore\Credentials
-src/Search/      Hexa\PluginCore\Search
-src/Shortcodes/  Hexa\PluginCore\Shortcodes
-src/Support/     Hexa\PluginCore\Support
-src/Tabs/        Hexa\PluginCore\Tabs
-src/UI/          Hexa\PluginCore\UI
-src/Logs/        Hexa\PluginCore\Logs
-src/Updater/     Hexa\PluginCore\Updater
+src/ActivityLog/        Hexa\PluginCore\ActivityLog
+src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
+src/CoreContracts/      Hexa\PluginCore\CoreContracts
+src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
+src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
+src/CredentialVault/    Hexa\PluginCore\CredentialVault
+src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
+src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
+src/SmartSearch/        Hexa\PluginCore\SmartSearch
+src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
+src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 ```
 
 If you add a namespace, add it to `README.md`, `docs/folder-map.md`, and this file in the same change.
@@ -50,8 +51,8 @@ If you add a namespace, add it to `README.md`, `docs/folder-map.md`, and this fi
 Every host plugin must initialize the core in the same order:
 
 1. Load Composer or vendored autoload.
-2. Create `Hexa\PluginCore\Support\PluginContext`.
-3. Create `Hexa\PluginCore\Bootstrap\CoreBootstrap`.
+2. Create `Hexa\PluginCore\CoreRuntime\PluginContext`.
+3. Create `Hexa\PluginCore\CoreBootstrap\CoreBootstrap`.
 4. Add modules.
 5. Call `boot()` once.
 
@@ -59,18 +60,18 @@ Never make a module boot itself at file include time. Modules register hooks fro
 
 ## Implementation Rules
 
-- Put interfaces in `src/Contracts`.
-- Put small generic helpers and value objects in `src/Support`.
-- Put admin tab abstractions in `src/Tabs`.
-- Put reusable visual primitives in `src/UI`.
-- Put reusable error-log viewer/read/classification features in `src/Logs`.
-- Put reusable API-key/secret storage, masking, and credential setup UI in `src/Credentials`.
-- Put reusable smart search/X-Search endpoint and typeahead UI in `src/Search`.
-- Put activity log abstractions, storage modes, and the shared dark renderer in `src/Activity`.
-- Put shortcode registries, definitions, and testing tools in `src/Shortcodes`.
-- Put update/GitHub configuration and updater abstractions in `src/Updater`.
-- Put vendored core package version checks and core package update UI in `src/Updater`; do not treat the shared core as a WordPress plugin.
-- Put bootstrap/lifecycle orchestration in `src/Bootstrap`.
+- Put interfaces in `src/CoreContracts`.
+- Put runtime value objects and version metadata in `src/CoreRuntime`.
+- Put admin tab abstractions in `src/WpAdminTabs`.
+- Put reusable visual primitives in `src/WpAdminComponents`.
+- Put reusable error-log viewer/read/classification features in `src/LogFiles`.
+- Put reusable API-key/secret storage, masking, and credential setup UI in `src/CredentialVault`.
+- Put reusable smart search/X-Search endpoint and typeahead UI in `src/SmartSearch`.
+- Put activity log abstractions, storage modes, and the shared dark renderer in `src/ActivityLog`.
+- Put shortcode registries, definitions, and testing tools in `src/ShortcodeRegistry`.
+- Put host plugin GitHub/update configuration and updater abstractions in `src/PluginUpdates`.
+- Put vendored core package version checks and core package update UI in `src/CorePackageUpdates`; do not treat the shared core as a WordPress plugin.
+- Put bootstrap/lifecycle orchestration in `src/CoreBootstrap`.
 
 ## WordPress Rules
 
@@ -96,7 +97,7 @@ Minimum documentation for a new implementation:
 
 Also update `HEXA_PLUGIN_CORE_LIBRARY.md` whenever a public namespace, class, setup protocol, or host integration pattern changes. That file is intended to be copied into every plugin that consumes the core.
 
-The automatic core tab must remain host-neutral. Host plugins provide hook names; the implementation stays in `Hexa\PluginCore\Tabs`.
+The automatic core tab must remain host-neutral. Host plugins provide hook names; the implementation stays in `Hexa\PluginCore\WpAdminTabs`.
 
 ## Commit Hygiene
 

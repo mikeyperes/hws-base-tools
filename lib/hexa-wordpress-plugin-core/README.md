@@ -24,34 +24,36 @@ Every sub-namespace has its own folder under `src/`.
 hexa-wordpress-plugin-core/
   VERSION
   src/
-    Activity/    -> Hexa\PluginCore\Activity
-    Bootstrap/   -> Hexa\PluginCore\Bootstrap
-    Contracts/   -> Hexa\PluginCore\Contracts
-    Credentials/ -> Hexa\PluginCore\Credentials
-    Search/      -> Hexa\PluginCore\Search
-    Shortcodes/  -> Hexa\PluginCore\Shortcodes
-    Support/     -> Hexa\PluginCore\Support
-    Tabs/        -> Hexa\PluginCore\Tabs
-    UI/          -> Hexa\PluginCore\UI
-    Logs/        -> Hexa\PluginCore\Logs
-    Updater/     -> Hexa\PluginCore\Updater
+    ActivityLog/        -> Hexa\PluginCore\ActivityLog
+    CoreBootstrap/      -> Hexa\PluginCore\CoreBootstrap
+    CoreContracts/      -> Hexa\PluginCore\CoreContracts
+    CorePackageUpdates/ -> Hexa\PluginCore\CorePackageUpdates
+    CoreRuntime/        -> Hexa\PluginCore\CoreRuntime
+    CredentialVault/    -> Hexa\PluginCore\CredentialVault
+    LogFiles/           -> Hexa\PluginCore\LogFiles
+    PluginUpdates/      -> Hexa\PluginCore\PluginUpdates
+    ShortcodeRegistry/  -> Hexa\PluginCore\ShortcodeRegistry
+    SmartSearch/        -> Hexa\PluginCore\SmartSearch
+    WpAdminComponents/  -> Hexa\PluginCore\WpAdminComponents
+    WpAdminTabs/        -> Hexa\PluginCore\WpAdminTabs
 ```
 
 Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`, or plugin-specific namespaces inside this package. Consuming plugins may have their own namespaces, but this shared package always stays under `Hexa\PluginCore`.
 
 ## First Core Areas
 
-- `Activity`: shared activity log records, storage modes, and expandable dark log renderer.
-- `Bootstrap`: consistent setup/init protocol for loading this core in a host plugin.
-- `Contracts`: interfaces that host plugins and core modules must follow.
-- `Credentials`: encrypted API-key/secret storage, masking, and credential field examples.
-- `Search`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
-- `Shortcodes`: shortcode definition registry, dashboard metadata, and test runner contracts.
-- `Support`: small shared value objects and helpers that are not specific to one module.
-- `Tabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
-- `UI`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
-- `Logs`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
-- `Updater`: shared GitHub/update configuration objects, host plugin updater, and vendored core package updater.
+- `ActivityLog`: shared activity log records, storage modes, and expandable dark log renderer.
+- `CoreBootstrap`: consistent setup/init protocol for loading this core in a host plugin.
+- `CoreContracts`: interfaces that host plugins and core modules must follow.
+- `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
+- `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
+- `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
+- `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
+- `PluginUpdates`: shared GitHub/update configuration objects and host plugin updater.
+- `ShortcodeRegistry`: shortcode definition registry, dashboard metadata, and test runner contracts.
+- `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
+- `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
+- `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 
 ## Host Plugin Integration Rule
 
@@ -83,8 +85,8 @@ Every plugin that uses this core follows the same sequence:
 Example:
 
 ```php
-use Hexa\PluginCore\Bootstrap\CoreBootstrap;
-use Hexa\PluginCore\Support\PluginContext;
+use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
+use Hexa\PluginCore\CoreRuntime\PluginContext;
 
 $context = new PluginContext(
     [
@@ -126,9 +128,9 @@ The shared core is a library, not a WordPress plugin. Its current version is sto
 Host plugins that vendor this package should render a separate core-package status panel under the host plugin updater:
 
 ```php
-use Hexa\PluginCore\Updater\CorePackageAjaxController;
-use Hexa\PluginCore\Updater\CorePackageConfig;
-use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageAjaxController;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageConfig;
+use Hexa\PluginCore\CorePackageUpdates\CorePackagePanelRenderer;
 
 $core_config = CorePackageConfig::from_core_root(
     __DIR__ . '/lib/hexa-wordpress-plugin-core',
@@ -159,10 +161,10 @@ Storage modes:
 | `permanent` | WordPress option | Kept until clear |
 
 ```php
-use Hexa\PluginCore\Activity\ActivityLogConfig;
-use Hexa\PluginCore\Activity\ActivityLogEntry;
-use Hexa\PluginCore\Activity\ActivityLogger;
-use Hexa\PluginCore\Activity\ActivityLogRenderer;
+use Hexa\PluginCore\ActivityLog\ActivityLogConfig;
+use Hexa\PluginCore\ActivityLog\ActivityLogEntry;
+use Hexa\PluginCore\ActivityLog\ActivityLogger;
+use Hexa\PluginCore\ActivityLog\ActivityLogRenderer;
 
 $config = new ActivityLogConfig(
     [
@@ -185,8 +187,8 @@ $logger->add( new ActivityLogEntry( 'Started import.', [ 'batch' => 12 ], 'admin
 Host dashboards expose a tab-list filter and tab-render filter. The core registers itself through those hooks:
 
 ```php
-use Hexa\PluginCore\Tabs\CoreTabConfig;
-use Hexa\PluginCore\Tabs\CoreTabModule;
+use Hexa\PluginCore\WpAdminTabs\CoreTabConfig;
+use Hexa\PluginCore\WpAdminTabs\CoreTabModule;
 
 ( new CoreTabModule(
     new CoreTabConfig(
@@ -203,10 +205,10 @@ use Hexa\PluginCore\Tabs\CoreTabModule;
 
 ## UI Primitives
 
-Use `Hexa\PluginCore\UI\CoreUi` for reusable admin UI pieces.
+Use `Hexa\PluginCore\WpAdminComponents\CoreUi` for reusable admin UI pieces.
 
 ```php
-use Hexa\PluginCore\UI\CoreUi;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 
 CoreUi::render_assets();
 
@@ -228,10 +230,10 @@ echo CoreUi::collapsible(
 
 ## Credentials / API Keys
 
-Use `Hexa\PluginCore\Credentials` for API-key and secret storage.
+Use `Hexa\PluginCore\CredentialVault` for API-key and secret storage.
 
 ```php
-$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store = new \Hexa\PluginCore\CredentialVault\CredentialStore();
 $store->store( 'openai', 'api_key', $raw_key );
 $key = $store->get( 'openai', 'api_key' );
 $masked = $store->get_masked( 'openai', 'api_key' );
@@ -246,10 +248,10 @@ hpc_cred_{slug}_{keyName}
 
 ## Smart Search / X-Search
 
-Use `Hexa\PluginCore\Search` for reusable typeahead search. This is the WordPress equivalent of Laravel `<x-hexa-smart-search>`.
+Use `Hexa\PluginCore\SmartSearch` for reusable typeahead search. This is the WordPress equivalent of Laravel `<x-hexa-smart-search>`.
 
 ```php
-( new \Hexa\PluginCore\Search\SmartSearchRenderer() )->render(
+( new \Hexa\PluginCore\SmartSearch\SmartSearchRenderer() )->render(
     [
         'id'        => 'plugin-content-search',
         'label'     => 'Find content',
@@ -267,11 +269,11 @@ wp_ajax_hexa_plugin_core_smart_search
 
 ## Error Log Viewer
 
-Use `Hexa\PluginCore\Logs` for reusable error-log monitoring.
+Use `Hexa\PluginCore\LogFiles` for reusable error-log monitoring.
 
 ```php
-use Hexa\PluginCore\Logs\ErrorLogPanelRenderer;
-use Hexa\PluginCore\Logs\ErrorLogSource;
+use Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer;
+use Hexa\PluginCore\LogFiles\ErrorLogSource;
 
 ( new ErrorLogPanelRenderer() )->render(
     [

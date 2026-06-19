@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Tabs
+Hexa\PluginCore\WpAdminTabs
 ```
 
 Folder:
 
 ```text
-src/Tabs/
+src/WpAdminTabs/
 ```
 
 ## Purpose

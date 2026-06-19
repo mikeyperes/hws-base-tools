@@ -22,8 +22,8 @@ These values must be passed through `PluginContext`.
 ## Standard Bootstrap Sequence
 
 ```php
-use Hexa\PluginCore\Bootstrap\CoreBootstrap;
-use Hexa\PluginCore\Support\PluginContext;
+use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
+use Hexa\PluginCore\CoreRuntime\PluginContext;
 
 $context = new PluginContext(
     [
@@ -51,7 +51,7 @@ $core
 Modules implement:
 
 ```php
-Hexa\PluginCore\Contracts\ModuleInterface
+Hexa\PluginCore\CoreContracts\ModuleInterface
 ```
 
 Modules must not execute behavior at file include time. They register WordPress hooks only inside:
@@ -77,7 +77,7 @@ HWS\BaseTools\Admin\Shortcodes\ShortcodesModule
 That adapter may consume:
 
 ```text
-Hexa\PluginCore\Shortcodes\ShortcodeRegistry
+Hexa\PluginCore\ShortcodeRegistry\ShortcodeRegistry
 ```
 
 But the shared core must not reference the host adapter namespace.

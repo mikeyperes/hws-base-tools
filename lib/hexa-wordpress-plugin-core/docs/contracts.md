@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Contracts
+Hexa\PluginCore\CoreContracts
 ```
 
 Folder:
 
 ```text
-src/Contracts/
+src/CoreContracts/
 ```
 
 ## Purpose

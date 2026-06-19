@@ -30,9 +30,9 @@ Hexa\PluginCore\
 The host plugin adapter may depend on the shared core:
 
 ```php
-use Hexa\PluginCore\Contracts\ModuleInterface;
-use Hexa\PluginCore\Shortcodes\ShortcodeDefinition;
-use Hexa\PluginCore\Shortcodes\ShortcodeRegistry;
+use Hexa\PluginCore\CoreContracts\ModuleInterface;
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDefinition;
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeRegistry;
 
 final class ShortcodesModule implements ModuleInterface {
     public function register(): void {

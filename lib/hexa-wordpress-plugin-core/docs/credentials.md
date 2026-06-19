@@ -1,6 +1,6 @@
 # Credentials
 
-Namespace: `Hexa\PluginCore\Credentials`
+Namespace: `Hexa\PluginCore\CredentialVault`
 
 WordPress equivalent of the Laravel Hexa `CredentialService`.
 
@@ -22,7 +22,7 @@ Values are encrypted with the WordPress auth salt when OpenSSL is available.
 ## Usage
 
 ```php
-$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store = new \Hexa\PluginCore\CredentialVault\CredentialStore();
 $store->store( 'brevo', 'api_key', $raw_key );
 $key = $store->get( 'brevo', 'api_key' );
 $masked = $store->get_masked( 'brevo', 'api_key' );

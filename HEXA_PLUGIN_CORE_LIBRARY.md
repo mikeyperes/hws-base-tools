@@ -19,17 +19,18 @@ Do not rename these.
 ## Folder And Namespace Map
 
 ```text
-src/Activity/    Hexa\PluginCore\Activity
-src/Bootstrap/   Hexa\PluginCore\Bootstrap
-src/Contracts/   Hexa\PluginCore\Contracts
-src/Credentials/ Hexa\PluginCore\Credentials
-src/Search/      Hexa\PluginCore\Search
-src/Shortcodes/  Hexa\PluginCore\Shortcodes
-src/Support/     Hexa\PluginCore\Support
-src/Tabs/        Hexa\PluginCore\Tabs
-src/UI/          Hexa\PluginCore\UI
-src/Logs/        Hexa\PluginCore\Logs
-src/Updater/     Hexa\PluginCore\Updater
+src/ActivityLog/        Hexa\PluginCore\ActivityLog
+src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
+src/CoreContracts/      Hexa\PluginCore\CoreContracts
+src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
+src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
+src/CredentialVault/    Hexa\PluginCore\CredentialVault
+src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
+src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
+src/SmartSearch/        Hexa\PluginCore\SmartSearch
+src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
+src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 ```
 
 ## UI Components
@@ -37,7 +38,7 @@ src/Updater/     Hexa\PluginCore\Updater
 Namespace:
 
 ```text
-Hexa\PluginCore\UI
+Hexa\PluginCore\WpAdminComponents
 ```
 
 Class:
@@ -66,7 +67,7 @@ Never rebuild those patterns directly in host plugins when `CoreUi` can render t
 Namespace:
 
 ```text
-Hexa\PluginCore\Credentials
+Hexa\PluginCore\CredentialVault
 ```
 
 Classes:
@@ -89,7 +90,7 @@ Rules:
 Example:
 
 ```php
-$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store = new \Hexa\PluginCore\CredentialVault\CredentialStore();
 $store->store( 'openai', 'api_key', $raw_key );
 $masked = $store->get_masked( 'openai', 'api_key' );
 ```
@@ -99,7 +100,7 @@ $masked = $store->get_masked( 'openai', 'api_key' );
 Namespace:
 
 ```text
-Hexa\PluginCore\Search
+Hexa\PluginCore\SmartSearch
 ```
 
 Classes:
@@ -120,7 +121,7 @@ Rules:
 Example:
 
 ```php
-( new \Hexa\PluginCore\Search\SmartSearchRenderer() )->render([
+( new \Hexa\PluginCore\SmartSearch\SmartSearchRenderer() )->render([
     'id'        => 'content-search',
     'label'     => 'Find content',
     'source'    => 'posts',
@@ -133,7 +134,7 @@ Example:
 Namespace:
 
 ```text
-Hexa\PluginCore\Logs
+Hexa\PluginCore\LogFiles
 ```
 
 Classes:
@@ -174,7 +175,7 @@ The host root copy of `HEXA_PLUGIN_CORE_LIBRARY.md` exists so agents can read th
 Namespace:
 
 ```text
-Hexa\PluginCore\Activity
+Hexa\PluginCore\ActivityLog
 ```
 
 Classes:
@@ -217,14 +218,14 @@ $logger->add( new ActivityLogEntry( 'Update started.', [], 'admin', 'updater', n
 Every consuming plugin should:
 
 1. Load Composer or the vendored core autoloader.
-2. Create `Hexa\PluginCore\Support\PluginContext`.
-3. Create `Hexa\PluginCore\Bootstrap\CoreBootstrap`.
+2. Create `Hexa\PluginCore\CoreRuntime\PluginContext`.
+3. Create `Hexa\PluginCore\CoreBootstrap\CoreBootstrap`.
 4. Add core modules and host adapter modules.
 5. Call `boot()` once.
 
 ```php
-use Hexa\PluginCore\Bootstrap\CoreBootstrap;
-use Hexa\PluginCore\Support\PluginContext;
+use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
+use Hexa\PluginCore\CoreRuntime\PluginContext;
 
 $context = new PluginContext(
     [
@@ -244,12 +245,12 @@ $context = new PluginContext(
     ->boot();
 ```
 
-## Updater
+## Plugin Updates
 
 Namespace:
 
 ```text
-Hexa\PluginCore\Updater
+Hexa\PluginCore\PluginUpdates
 ```
 
 Purpose:
@@ -263,17 +264,16 @@ Purpose:
 - Normalized plugin ZIP downloads
 - Version history ZIP downloads
 - Transient-backed update activity log
-- Vendored Hexa WordPress Plugin Core status/update panel
 
 ### Required Updater Config
 
 The updater can be initialized from a plugin file and a GitHub URL/repo:
 
 ```php
-use Hexa\PluginCore\Updater\UpdaterConfig;
-use Hexa\PluginCore\Updater\GitHubPluginUpdater;
-use Hexa\PluginCore\Updater\UpdaterAjaxController;
-use Hexa\PluginCore\Updater\UpdaterPanelRenderer;
+use Hexa\PluginCore\PluginUpdates\UpdaterConfig;
+use Hexa\PluginCore\PluginUpdates\GitHubPluginUpdater;
+use Hexa\PluginCore\PluginUpdates\UpdaterAjaxController;
+use Hexa\PluginCore\PluginUpdates\UpdaterPanelRenderer;
 
 $updater_config = UpdaterConfig::from_plugin_file(
     __FILE__,
@@ -304,7 +304,7 @@ Render the panel in an admin page:
 Namespace:
 
 ```text
-Hexa\PluginCore\Tabs
+Hexa\PluginCore\WpAdminTabs
 ```
 
 Classes:
@@ -359,7 +359,7 @@ $updater_config = UpdaterConfig::from_slug_and_github_url(
 );
 ```
 
-### Updater Classes
+### Plugin Update Classes
 
 ```text
 UpdaterConfig
@@ -372,6 +372,19 @@ PluginZipBuilder
 UpdaterAjaxController
 UpdaterPanelRenderer
 UpdaterFilesystem
+```
+
+### Vendored Core Package Update Classes
+
+Namespace:
+
+```text
+Hexa\PluginCore\CorePackageUpdates
+```
+
+Classes:
+
+```text
 CorePackageConfig
 CorePackageVersionClient
 CorePackageStatus
@@ -387,9 +400,9 @@ The Hexa WordPress Plugin Core is a library, not a WordPress plugin. Its version
 Host plugins that vendor the core should place a core status panel directly under their plugin updater panel:
 
 ```php
-use Hexa\PluginCore\Updater\CorePackageAjaxController;
-use Hexa\PluginCore\Updater\CorePackageConfig;
-use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageAjaxController;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageConfig;
+use Hexa\PluginCore\CorePackageUpdates\CorePackagePanelRenderer;
 
 $core_config = CorePackageConfig::from_core_root(
     __DIR__ . '/lib/hexa-wordpress-plugin-core',
@@ -461,7 +474,7 @@ write progress steps to a transient
 Namespace:
 
 ```text
-Hexa\PluginCore\Shortcodes
+Hexa\PluginCore\ShortcodeRegistry
 ```
 
 Purpose:
@@ -483,8 +496,8 @@ ShortcodeTester
 Example:
 
 ```php
-use Hexa\PluginCore\Shortcodes\ShortcodeDefinition;
-use Hexa\PluginCore\Shortcodes\ShortcodeRegistry;
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDefinition;
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeRegistry;
 
 $registry = ( new ShortcodeRegistry() )
     ->add(
@@ -503,7 +516,7 @@ $registry = ( new ShortcodeRegistry() )
 Namespace:
 
 ```text
-Hexa\PluginCore\Tabs
+Hexa\PluginCore\WpAdminTabs
 ```
 
 Purpose:
@@ -533,7 +546,7 @@ brand-assets
 Namespace:
 
 ```text
-Hexa\PluginCore\Activity
+Hexa\PluginCore\ActivityLog
 ```
 
 Purpose:
@@ -555,7 +568,7 @@ Activity logs must not include secrets, tokens, private keys, or raw request pay
 Namespace:
 
 ```text
-Hexa\PluginCore\Contracts
+Hexa\PluginCore\CoreContracts
 ```
 
 Core interfaces:
@@ -578,7 +591,7 @@ Do not execute feature behavior at include time.
 Namespace:
 
 ```text
-Hexa\PluginCore\Support
+Hexa\PluginCore\CoreRuntime
 ```
 
 Core classes:

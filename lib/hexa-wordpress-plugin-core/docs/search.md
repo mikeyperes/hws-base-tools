@@ -1,6 +1,6 @@
 # Smart Search / X-Search
 
-Namespace: `Hexa\PluginCore\Search`
+Namespace: `Hexa\PluginCore\SmartSearch`
 
 WordPress equivalent of Laravel `<x-hexa-smart-search>`.
 
@@ -45,7 +45,7 @@ limit=8
 ## Renderer
 
 ```php
-( new \Hexa\PluginCore\Search\SmartSearchRenderer() )->render(
+( new \Hexa\PluginCore\SmartSearch\SmartSearchRenderer() )->render(
     [
         'id'        => 'my-content-search',
         'label'     => 'Find content',

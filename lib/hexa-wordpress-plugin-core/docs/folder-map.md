@@ -26,17 +26,18 @@ The package version is stored in the root `VERSION` file.
 
 | Folder | Namespace | Purpose |
 | --- | --- | --- |
-| `src/Activity/` | `Hexa\PluginCore\Activity` | Activity logs and activity storage adapters. |
-| `src/Bootstrap/` | `Hexa\PluginCore\Bootstrap` | Core setup, module registration, and lifecycle. |
-| `src/Contracts/` | `Hexa\PluginCore\Contracts` | Interfaces shared across modules and host plugins. |
-| `src/Credentials/` | `Hexa\PluginCore\Credentials` | Encrypted credential/API-key storage, masking, and credential field examples. |
-| `src/Search/` | `Hexa\PluginCore\Search` | Smart search/X-Search AJAX endpoints and reusable typeahead renderers. |
-| `src/Shortcodes/` | `Hexa\PluginCore\Shortcodes` | Shortcode definitions, registries, dashboard lists, and testing. |
-| `src/Support/` | `Hexa\PluginCore\Support` | Shared value objects and small helpers. |
-| `src/Tabs/` | `Hexa\PluginCore\Tabs` | Admin tab definitions, registries, rendering contracts, and the automatic core tab. |
-| `src/UI/` | `Hexa\PluginCore\UI` | Shared UI primitives: cards, subcards, buttons, pills, tooltips, and collapsibles. |
-| `src/Logs/` | `Hexa\PluginCore\Logs` | Error-log sources, readers, classifiers, and reusable viewer panels. |
-| `src/Updater/` | `Hexa\PluginCore\Updater` | GitHub/update configuration and updater contracts. |
+| `src/ActivityLog/` | `Hexa\PluginCore\ActivityLog` | Activity logs and activity storage adapters. |
+| `src/CoreBootstrap/` | `Hexa\PluginCore\CoreBootstrap` | Core setup, module registration, and lifecycle. |
+| `src/CoreContracts/` | `Hexa\PluginCore\CoreContracts` | Interfaces shared across modules and host plugins. |
+| `src/CorePackageUpdates/` | `Hexa\PluginCore\CorePackageUpdates` | Vendored Hexa WordPress Plugin Core version checks and package update UI. |
+| `src/CoreRuntime/` | `Hexa\PluginCore\CoreRuntime` | Shared value objects and small helpers. |
+| `src/CredentialVault/` | `Hexa\PluginCore\CredentialVault` | Encrypted credential/API-key storage, masking, and credential field examples. |
+| `src/LogFiles/` | `Hexa\PluginCore\LogFiles` | Error-log sources, readers, classifiers, and reusable viewer panels. |
+| `src/PluginUpdates/` | `Hexa\PluginCore\PluginUpdates` | Host plugin GitHub version checks, update transients, zip downloads, and updater panels. |
+| `src/ShortcodeRegistry/` | `Hexa\PluginCore\ShortcodeRegistry` | Shortcode definitions, registries, dashboard lists, and testing. |
+| `src/SmartSearch/` | `Hexa\PluginCore\SmartSearch` | Smart search/X-Search AJAX endpoints and reusable typeahead renderers. |
+| `src/WpAdminComponents/` | `Hexa\PluginCore\WpAdminComponents` | Shared UI primitives: cards, subcards, buttons, pills, tooltips, and collapsibles. |
+| `src/WpAdminTabs/` | `Hexa\PluginCore\WpAdminTabs` | Admin tab definitions, registries, rendering contracts, and the automatic core tab. |
 
 ## Naming Rules
 

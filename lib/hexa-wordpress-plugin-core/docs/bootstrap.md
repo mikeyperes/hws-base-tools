@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Bootstrap
+Hexa\PluginCore\CoreBootstrap
 ```
 
 Folder:
 
 ```text
-src/Bootstrap/
+src/CoreBootstrap/
 ```
 
 ## Purpose

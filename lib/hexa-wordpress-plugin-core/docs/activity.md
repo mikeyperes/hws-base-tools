@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Activity
+Hexa\PluginCore\ActivityLog
 ```
 
 Folder:
 
 ```text
-src/Activity/
+src/ActivityLog/
 ```
 
 ## Purpose

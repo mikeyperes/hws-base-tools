@@ -21,13 +21,14 @@ Use this before adding code to any plugin that consumes `hexa/plugin-core`.
 
 ## Required Class Placement
 
-- New module interface: `src/Contracts/`
-- Module bootstrap/lifecycle: `src/Bootstrap/`
-- Activity logs: `src/Activity/`
-- Dashboard tabs: `src/Tabs/`
-- Shortcode registry/testing/display metadata: `src/Shortcodes/`
-- GitHub/update shared configuration: `src/Updater/`
-- Generic helper/value object: `src/Support/`
+- New module interface: `src/CoreContracts/`
+- Module bootstrap/lifecycle: `src/CoreBootstrap/`
+- Activity logs: `src/ActivityLog/`
+- Dashboard tabs: `src/WpAdminTabs/`
+- Shortcode registry/testing/display metadata: `src/ShortcodeRegistry/`
+- Host plugin GitHub/update shared configuration: `src/PluginUpdates/`
+- Vendored Hexa WordPress Plugin Core update checks: `src/CorePackageUpdates/`
+- Generic helper/value object: `src/CoreRuntime/`
 
 ## Required Documentation
 

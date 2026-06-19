@@ -1,24 +1,36 @@
-# Updater Namespace
+# Plugin Update Namespaces
 
-Namespace:
+Host plugin updater namespace:
 
 ```text
-Hexa\PluginCore\Updater
+Hexa\PluginCore\PluginUpdates
 ```
 
-Folder:
+Host plugin updater folder:
 
 ```text
-src/Updater/
+src/PluginUpdates/
+```
+
+Vendored core package updater namespace:
+
+```text
+Hexa\PluginCore\CorePackageUpdates
+```
+
+Vendored core package updater folder:
+
+```text
+src/CorePackageUpdates/
 ```
 
 ## Purpose
 
-The updater namespace standardizes GitHub/update configuration.
+These namespaces standardize GitHub/update configuration without nesting under a vague `Updater` bucket.
 
 The updater core must not hard-code one plugin's repository. It reads repository and plugin identity from the host `PluginContext` or an explicit `UpdaterConfig`.
 
-The updater namespace starts with the HWS Base Tools updater behavior and makes it abstract:
+The plugin update namespace starts with the HWS Base Tools updater behavior and makes it abstract:
 
 - a plugin passes its slug/basename and GitHub repo URL
 - GitHub URLs are normalized to `owner/repo`
@@ -66,6 +78,9 @@ PluginZipBuilder
 UpdaterAjaxController
 UpdaterPanelRenderer
 UpdaterFilesystem
+```
+
+```text
 CorePackageConfig
 CorePackageVersionClient
 CorePackageStatus
@@ -77,10 +92,10 @@ CorePackagePanelRenderer
 ## Minimal Host Integration
 
 ```php
-use Hexa\PluginCore\Updater\GitHubPluginUpdater;
-use Hexa\PluginCore\Updater\UpdaterAjaxController;
-use Hexa\PluginCore\Updater\UpdaterConfig;
-use Hexa\PluginCore\Updater\UpdaterPanelRenderer;
+use Hexa\PluginCore\PluginUpdates\GitHubPluginUpdater;
+use Hexa\PluginCore\PluginUpdates\UpdaterAjaxController;
+use Hexa\PluginCore\PluginUpdates\UpdaterConfig;
+use Hexa\PluginCore\PluginUpdates\UpdaterPanelRenderer;
 
 $config = UpdaterConfig::from_plugin_file(
     __FILE__,
@@ -121,9 +136,9 @@ The Hexa WordPress Plugin Core is not a WordPress plugin. It uses a root `VERSIO
 Host plugins that vendor the core should render this panel below their own plugin updater:
 
 ```php
-use Hexa\PluginCore\Updater\CorePackageAjaxController;
-use Hexa\PluginCore\Updater\CorePackageConfig;
-use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageAjaxController;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageConfig;
+use Hexa\PluginCore\CorePackageUpdates\CorePackagePanelRenderer;
 
 $core_config = CorePackageConfig::from_core_root(
     __DIR__ . '/lib/hexa-wordpress-plugin-core',

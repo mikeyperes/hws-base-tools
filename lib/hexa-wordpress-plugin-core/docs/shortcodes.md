@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Shortcodes
+Hexa\PluginCore\ShortcodeRegistry
 ```
 
 Folder:
 
 ```text
-src/Shortcodes/
+src/ShortcodeRegistry/
 ```
 
 ## Purpose

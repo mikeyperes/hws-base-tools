@@ -3,13 +3,13 @@
 Namespace:
 
 ```text
-Hexa\PluginCore\Support
+Hexa\PluginCore\CoreRuntime
 ```
 
 Folder:
 
 ```text
-src/Support/
+src/CoreRuntime/
 ```
 
 ## Purpose
