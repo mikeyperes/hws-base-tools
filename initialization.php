@@ -80,6 +80,34 @@ require_once __DIR__ . '/src/Core/Autoloader.php';
 
 \HWS\BaseTools\Core\Autoloader::register( __DIR__ . '/src' );
 
+function hws_register_hexa_plugin_core_autoloader(): void {
+    static $registered = false;
+
+    if ( $registered ) {
+        return;
+    }
+
+    $base_dir = __DIR__ . '/lib/hexa-wordpress-plugin-core/src/';
+    $prefix   = 'Hexa\\PluginCore\\';
+
+    spl_autoload_register( static function( $class_name ) use ( $base_dir, $prefix ) {
+        if ( strpos( $class_name, $prefix ) !== 0 ) {
+            return;
+        }
+
+        $relative_class = substr( $class_name, strlen( $prefix ) );
+        $file           = $base_dir . str_replace( '\\', DIRECTORY_SEPARATOR, $relative_class ) . '.php';
+
+        if ( is_readable( $file ) ) {
+            require_once $file;
+        }
+    } );
+
+    $registered = true;
+}
+
+hws_register_hexa_plugin_core_autoloader();
+
 function hws_get_structured_plugin() {
     static $plugin = null;
 
@@ -221,6 +249,36 @@ public static function get_github_config() {
 }
 }
 
+function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\Updater\UpdaterConfig {
+    static $config = null;
+
+    if ( $config instanceof \Hexa\PluginCore\Updater\UpdaterConfig ) {
+        return $config;
+    }
+
+    $config = \Hexa\PluginCore\Updater\UpdaterConfig::from_plugin_file(
+        HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE,
+        'https://github.com/' . Config::$github_repo,
+        [
+            'plugin_slug'               => Config::$plugin_folder_name,
+            'proper_folder_name'        => Config::$plugin_folder_name,
+            'runtime_folder_name'       => Config::get_runtime_plugin_folder_name(),
+            'plugin_basename'           => Config::get_plugin_basename(),
+            'canonical_plugin_basename' => Config::get_canonical_plugin_basename(),
+            'plugin_starter_file'       => Config::$plugin_starter_file,
+            'github_branch'             => Config::$github_branch,
+            'requires'                  => '5.0',
+            'tested'                    => '7.0',
+            'nonce_action'              => 'hws_base_tools_ajax_nonce',
+            'nonce_param'               => 'nonce',
+            'ajax_action_prefix'        => 'hws_base_tools_core_updater',
+            'progress_key'              => 'hws_base_tools_core_update_progress',
+        ]
+    );
+
+    return $config;
+}
+
 
 
 
@@ -261,7 +319,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.27";
+$plugin_version = "10.18.28";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -274,11 +332,11 @@ $github_access_token = ''; // Leave empty if not required for private repositori
 
 
 /**
- * Boot the GitHub updater early enough for wp-admin, AJAX, cron, and WP-CLI.
+ * Boot the abstract Hexa Plugin Core updater early enough for wp-admin, AJAX, cron, and WP-CLI.
  * WordPress core update checks can run outside admin_init, so loading here
  * keeps the plugin visible to the native update system.
  */
-function hws_should_boot_github_updater(): bool {
+function hws_should_boot_hexa_plugin_core_updater(): bool {
     if ( is_admin() ) {
         return true;
     }
@@ -291,27 +349,20 @@ function hws_should_boot_github_updater(): bool {
 }
 
 add_action( 'plugins_loaded', function() {
-    if ( ! hws_should_boot_github_updater() ) {
+    if ( ! hws_should_boot_hexa_plugin_core_updater() ) {
         return;
     }
 
-    include_once( 'GitHub_Updater.php' );
+    $updater_config = hws_get_hexa_plugin_core_updater_config();
 
-    hws_init_github_updater( [
-        'plugin_file'        => HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE,
-        'github_repo'        => 'mikeyperes/hws-base-tools',
-        'github_branch'      => 'main',
-        'proper_folder_name' => Config::$plugin_folder_name,
-        'requires'           => '5.0',
-        'tested'             => '7.0',
-        // 'access_token' => '', // Uncomment for private repos
-    ] );
+    ( new \Hexa\PluginCore\Updater\GitHubPluginUpdater( $updater_config ) )->register();
+    ( new \Hexa\PluginCore\Updater\UpdaterAjaxController( $updater_config ) )->register();
 
     if ( is_admin() && isset( $_GET['force-update-check'] ) ) {
         wp_clean_update_cache();
         set_site_transient( 'update_plugins', null );
         wp_update_plugins();
-        error_log( 'WP_GitHub_Updater: Forced plugin update check triggered.' );
+        error_log( 'Hexa Plugin Core Updater: Forced plugin update check triggered for HWS Base Tools.' );
     }
 }, 20 );
 

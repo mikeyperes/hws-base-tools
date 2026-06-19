@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.27 (Current)
+### v10.18.28 (Current)
+- Replaced the HWS-specific GitHub updater and Plugin Info AJAX handlers with the vendored Hexa Plugin Core abstract updater.
+- Added the Hexa Plugin Core library reference file to the HWS Base Tools package.
+
+### v10.18.27
 - Moved canonical `staff_writer`, `muckrack_verified`, and `muckrack_url` user fields into the User - Additional ACF group with toggle UI for boolean fields.
 - Removed duplicate active Staff Writer and Settings-group MuckRack registrations from legacy HWS user ACF groups.
 
