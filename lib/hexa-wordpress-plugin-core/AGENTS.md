@@ -58,7 +58,7 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put interfaces in `src/Contracts`.
 - Put small generic helpers and value objects in `src/Support`.
 - Put admin tab abstractions in `src/Tabs`.
-- Put activity log abstractions in `src/Activity`.
+- Put activity log abstractions, storage modes, and the shared dark renderer in `src/Activity`.
 - Put shortcode registries, definitions, and testing tools in `src/Shortcodes`.
 - Put update/GitHub configuration and updater abstractions in `src/Updater`.
 - Put vendored core package version checks and core package update UI in `src/Updater`; do not treat the shared core as a WordPress plugin.
@@ -85,6 +85,8 @@ Minimum documentation for a new implementation:
 - testing method
 
 Also update `HEXA_PLUGIN_CORE_LIBRARY.md` whenever a public namespace, class, setup protocol, or host integration pattern changes. That file is intended to be copied into every plugin that consumes the core.
+
+The automatic core tab must remain host-neutral. Host plugins provide hook names; the implementation stays in `Hexa\PluginCore\Tabs`.
 
 ## Commit Hygiene
 

@@ -31,7 +31,7 @@ The package version is stored in the root `VERSION` file.
 | `src/Contracts/` | `Hexa\PluginCore\Contracts` | Interfaces shared across modules and host plugins. |
 | `src/Shortcodes/` | `Hexa\PluginCore\Shortcodes` | Shortcode definitions, registries, dashboard lists, and testing. |
 | `src/Support/` | `Hexa\PluginCore\Support` | Shared value objects and small helpers. |
-| `src/Tabs/` | `Hexa\PluginCore\Tabs` | Admin tab definitions, registries, and rendering contracts. |
+| `src/Tabs/` | `Hexa\PluginCore\Tabs` | Admin tab definitions, registries, rendering contracts, and the automatic core tab. |
 | `src/Updater/` | `Hexa\PluginCore\Updater` | GitHub/update configuration and updater contracts. |
 
 ## Naming Rules

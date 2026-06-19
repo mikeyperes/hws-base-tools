@@ -544,7 +544,7 @@ function hws_get_dashboard_tabs(): array {
         'masked-login'  => '🔐 Masked Login',
     ];
 
-    return $tabs;
+    return apply_filters( 'hws_base_tools_dashboard_tabs', $tabs );
 }
 
 function hws_normalize_dashboard_tab_id( string $tab_id ): string {
@@ -578,6 +578,10 @@ function ajax_load_dashboard_tab() {
 }
 
 function hws_render_dashboard_tab( string $tab_id ): void {
+    if ( apply_filters( 'hws_base_tools_render_dashboard_tab', false, $tab_id ) ) {
+        return;
+    }
+
     switch ( $tab_id ) {
         case 'overview':
             render_tab_overview();

@@ -37,12 +37,12 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 
 ## First Core Areas
 
-- `Activity`: shared activity log records and storage adapters.
+- `Activity`: shared activity log records, storage modes, and expandable dark log renderer.
 - `Bootstrap`: consistent setup/init protocol for loading this core in a host plugin.
 - `Contracts`: interfaces that host plugins and core modules must follow.
 - `Shortcodes`: shortcode definition registry, dashboard metadata, and test runner contracts.
 - `Support`: small shared value objects and helpers that are not specific to one module.
-- `Tabs`: admin tab definitions, registry, and rendering contracts.
+- `Tabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 - `Updater`: shared GitHub/update configuration objects, host plugin updater, and vendored core package updater.
 
 ## Host Plugin Integration Rule
@@ -137,3 +137,58 @@ $core_config = CorePackageConfig::from_core_root(
 ```
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`.
+
+## Activity Log Component
+
+Use the activity component for updater progress, imports, tests, maintenance tasks, and any admin workflow that benefits from a collapsible dark monitor.
+
+Storage modes:
+
+| Mode | Storage | Lifetime |
+| --- | --- | --- |
+| `page` | Rendered only | Removed on page refresh |
+| `transient` | WordPress transient | Removed after TTL or clear |
+| `permanent` | WordPress option | Kept until clear |
+
+```php
+use Hexa\PluginCore\Activity\ActivityLogConfig;
+use Hexa\PluginCore\Activity\ActivityLogEntry;
+use Hexa\PluginCore\Activity\ActivityLogger;
+use Hexa\PluginCore\Activity\ActivityLogRenderer;
+
+$config = new ActivityLogConfig(
+    [
+        'id'          => 'example-activity-log',
+        'title'       => 'Example Activity Log',
+        'storage'     => ActivityLogConfig::STORAGE_TRANSIENT,
+        'storage_key' => 'example_activity_log',
+        'collapsed'   => false,
+    ]
+);
+
+$logger = new ActivityLogger( $config );
+$logger->add( new ActivityLogEntry( 'Started import.', [ 'batch' => 12 ], 'admin', 'importer', null, 'info' ) );
+
+( new ActivityLogRenderer( $config ) )->render( $logger->all() );
+```
+
+## Automatic Core Tab
+
+Host dashboards expose a tab-list filter and tab-render filter. The core registers itself through those hooks:
+
+```php
+use Hexa\PluginCore\Tabs\CoreTabConfig;
+use Hexa\PluginCore\Tabs\CoreTabModule;
+
+( new CoreTabModule(
+    new CoreTabConfig(
+        [
+            'tabs_filter'   => 'example_dashboard_tabs',
+            'render_filter' => 'example_dashboard_render_tab',
+            'core_root'     => __DIR__ . '/lib/hexa-wordpress-plugin-core',
+            'readme_path'   => __DIR__ . '/lib/hexa-wordpress-plugin-core/README.md',
+            'library_path'  => __DIR__ . '/HEXA_PLUGIN_CORE_LIBRARY.md',
+        ]
+    )
+) )->register();
+```

@@ -28,6 +28,61 @@ src/Tabs/        Hexa\PluginCore\Tabs
 src/Updater/     Hexa\PluginCore\Updater
 ```
 
+## README Locations
+
+When this core is vendored into a host plugin, the important files are:
+
+```text
+lib/hexa-wordpress-plugin-core/README.md
+lib/hexa-wordpress-plugin-core/HEXA_PLUGIN_CORE_LIBRARY.md
+HEXA_PLUGIN_CORE_LIBRARY.md
+```
+
+The host root copy of `HEXA_PLUGIN_CORE_LIBRARY.md` exists so agents can read the rules without opening the vendored package first.
+
+## Activity Log Component
+
+Namespace:
+
+```text
+Hexa\PluginCore\Activity
+```
+
+Classes:
+
+```text
+ActivityLogConfig
+ActivityLogEntry
+ActivityLogger
+ActivityLogRenderer
+```
+
+Storage modes:
+
+```text
+page       render-only, removed on refresh
+transient  stored with set_transient
+permanent  stored with update_option
+```
+
+Example:
+
+```php
+$config = new ActivityLogConfig(
+    [
+        'id'          => 'example-activity-log',
+        'title'       => 'Example Activity Log',
+        'storage'     => ActivityLogConfig::STORAGE_TRANSIENT,
+        'storage_key' => 'example_activity_log',
+    ]
+);
+
+$logger = new ActivityLogger( $config );
+$logger->add( new ActivityLogEntry( 'Update started.', [], 'admin', 'updater', null, 'info' ) );
+
+( new ActivityLogRenderer( $config ) )->render( $logger->all() );
+```
+
 ## Required Host Plugin Boot
 
 Every consuming plugin should:
@@ -113,6 +168,52 @@ Render the panel in an admin page:
 
 ```php
 ( new UpdaterPanelRenderer( $updater_config ) )->render();
+```
+
+## Automatic Core Tab
+
+Namespace:
+
+```text
+Hexa\PluginCore\Tabs
+```
+
+Classes:
+
+```text
+CoreTabConfig
+CoreTabModule
+CoreTabRenderer
+```
+
+The host dashboard must expose:
+
+```text
+one filter that returns the tab list
+one filter that renders a selected tab and returns true when rendered
+```
+
+Then register:
+
+```php
+( new CoreTabModule(
+    new CoreTabConfig(
+        [
+            'tabs_filter'   => 'example_dashboard_tabs',
+            'render_filter' => 'example_dashboard_render_tab',
+            'core_root'     => __DIR__ . '/lib/hexa-wordpress-plugin-core',
+            'readme_path'   => __DIR__ . '/lib/hexa-wordpress-plugin-core/README.md',
+            'library_path'  => __DIR__ . '/HEXA_PLUGIN_CORE_LIBRARY.md',
+        ]
+    )
+) )->register();
+```
+
+The default tab is:
+
+```text
+ID: hexa-core
+Label: Hexa WordPress Plugin Core
 ```
 
 If the caller only has a plugin folder slug and a GitHub URL, use:

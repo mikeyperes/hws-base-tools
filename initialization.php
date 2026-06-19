@@ -341,7 +341,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.29";
+$plugin_version = "10.18.30";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -380,6 +380,18 @@ add_action( 'plugins_loaded', function() {
     ( new \Hexa\PluginCore\Updater\GitHubPluginUpdater( $updater_config ) )->register();
     ( new \Hexa\PluginCore\Updater\UpdaterAjaxController( $updater_config ) )->register();
     ( new \Hexa\PluginCore\Updater\CorePackageAjaxController( hws_get_hexa_plugin_core_package_config() ) )->register();
+    ( new \Hexa\PluginCore\Tabs\CoreTabModule(
+        new \Hexa\PluginCore\Tabs\CoreTabConfig(
+            [
+                'tabs_filter'   => 'hws_base_tools_dashboard_tabs',
+                'render_filter' => 'hws_base_tools_render_dashboard_tab',
+                'capability'    => Config::$settings_page_capability,
+                'core_root'     => __DIR__ . '/lib/hexa-wordpress-plugin-core',
+                'readme_path'   => __DIR__ . '/lib/hexa-wordpress-plugin-core/README.md',
+                'library_path'  => __DIR__ . '/HEXA_PLUGIN_CORE_LIBRARY.md',
+            ]
+        )
+    ) )->register();
 
     if ( is_admin() && isset( $_GET['force-update-check'] ) ) {
         wp_clean_update_cache();
