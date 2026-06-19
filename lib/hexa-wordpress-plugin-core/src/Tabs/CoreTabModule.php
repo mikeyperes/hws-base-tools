@@ -3,6 +3,7 @@
 namespace Hexa\PluginCore\Tabs;
 
 use Hexa\PluginCore\Contracts\ModuleInterface;
+use Hexa\PluginCore\Search\SmartSearchAjaxController;
 
 final class CoreTabModule implements ModuleInterface {
     private CoreTabConfig $config;
@@ -12,6 +13,8 @@ final class CoreTabModule implements ModuleInterface {
     }
 
     public function register(): void {
+        ( new SmartSearchAjaxController() )->register();
+
         if ( '' !== $this->config->tabs_filter() ) {
             add_filter( $this->config->tabs_filter(), [ $this, 'register_tab' ] );
         }

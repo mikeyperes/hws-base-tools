@@ -33,6 +33,8 @@ Each sub-namespace must have a matching folder:
 src/Activity/    Hexa\PluginCore\Activity
 src/Bootstrap/   Hexa\PluginCore\Bootstrap
 src/Contracts/   Hexa\PluginCore\Contracts
+src/Credentials/ Hexa\PluginCore\Credentials
+src/Search/      Hexa\PluginCore\Search
 src/Shortcodes/  Hexa\PluginCore\Shortcodes
 src/Support/     Hexa\PluginCore\Support
 src/Tabs/        Hexa\PluginCore\Tabs
@@ -62,6 +64,8 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put admin tab abstractions in `src/Tabs`.
 - Put reusable visual primitives in `src/UI`.
 - Put reusable error-log viewer/read/classification features in `src/Logs`.
+- Put reusable API-key/secret storage, masking, and credential setup UI in `src/Credentials`.
+- Put reusable smart search/X-Search endpoint and typeahead UI in `src/Search`.
 - Put activity log abstractions, storage modes, and the shared dark renderer in `src/Activity`.
 - Put shortcode registries, definitions, and testing tools in `src/Shortcodes`.
 - Put update/GitHub configuration and updater abstractions in `src/Updater`.
@@ -74,6 +78,8 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Generic value objects should not call WordPress functions.
 - Do not hard-code `manage_options`; read capability from the context unless a host explicitly overrides it.
 - Do not hard-code plugin slugs, GitHub repos, admin page slugs, paths, URLs, or versions.
+- Do not duplicate credential/API-key storage or masking in host plugins.
+- Do not duplicate typeahead search UI in host plugins.
 
 ## Documentation Rule
 

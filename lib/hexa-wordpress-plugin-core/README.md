@@ -27,6 +27,8 @@ hexa-wordpress-plugin-core/
     Activity/    -> Hexa\PluginCore\Activity
     Bootstrap/   -> Hexa\PluginCore\Bootstrap
     Contracts/   -> Hexa\PluginCore\Contracts
+    Credentials/ -> Hexa\PluginCore\Credentials
+    Search/      -> Hexa\PluginCore\Search
     Shortcodes/  -> Hexa\PluginCore\Shortcodes
     Support/     -> Hexa\PluginCore\Support
     Tabs/        -> Hexa\PluginCore\Tabs
@@ -42,6 +44,8 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `Activity`: shared activity log records, storage modes, and expandable dark log renderer.
 - `Bootstrap`: consistent setup/init protocol for loading this core in a host plugin.
 - `Contracts`: interfaces that host plugins and core modules must follow.
+- `Credentials`: encrypted API-key/secret storage, masking, and credential field examples.
+- `Search`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `Shortcodes`: shortcode definition registry, dashboard metadata, and test runner contracts.
 - `Support`: small shared value objects and helpers that are not specific to one module.
 - `Tabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
@@ -220,6 +224,45 @@ echo CoreUi::collapsible(
         'body_html' => '<p>Hidden until expanded.</p>',
     ]
 );
+```
+
+## Credentials / API Keys
+
+Use `Hexa\PluginCore\Credentials` for API-key and secret storage.
+
+```php
+$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store->store( 'openai', 'api_key', $raw_key );
+$key = $store->get( 'openai', 'api_key' );
+$masked = $store->get_masked( 'openai', 'api_key' );
+$exists = $store->exists( 'openai', 'api_key' );
+```
+
+The storage key pattern is:
+
+```text
+hpc_cred_{slug}_{keyName}
+```
+
+## Smart Search / X-Search
+
+Use `Hexa\PluginCore\Search` for reusable typeahead search. This is the WordPress equivalent of Laravel `<x-hexa-smart-search>`.
+
+```php
+( new \Hexa\PluginCore\Search\SmartSearchRenderer() )->render(
+    [
+        'id'        => 'plugin-content-search',
+        'label'     => 'Find content',
+        'source'    => 'posts',
+        'post_type' => 'any',
+    ]
+);
+```
+
+The core module registers:
+
+```text
+wp_ajax_hexa_plugin_core_smart_search
 ```
 
 ## Error Log Viewer

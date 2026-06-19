@@ -22,6 +22,8 @@ Do not rename these.
 src/Activity/    Hexa\PluginCore\Activity
 src/Bootstrap/   Hexa\PluginCore\Bootstrap
 src/Contracts/   Hexa\PluginCore\Contracts
+src/Credentials/ Hexa\PluginCore\Credentials
+src/Search/      Hexa\PluginCore\Search
 src/Shortcodes/  Hexa\PluginCore\Shortcodes
 src/Support/     Hexa\PluginCore\Support
 src/Tabs/        Hexa\PluginCore\Tabs
@@ -58,6 +60,73 @@ shared admin styles
 ```
 
 Never rebuild those patterns directly in host plugins when `CoreUi` can render them.
+
+## Credentials / API Keys
+
+Namespace:
+
+```text
+Hexa\PluginCore\Credentials
+```
+
+Classes:
+
+```text
+CredentialStore
+CredentialFieldRenderer
+```
+
+Use this for API keys, tokens, secrets, and passwords.
+
+Rules:
+
+- Store by slug and key name.
+- Option key pattern is `hpc_cred_{slug}_{keyName}`.
+- Never show raw values in admin UI.
+- Use `get_masked()` for display.
+- Every credential implementation needs setup steps, Save, Test, and Delete actions.
+
+Example:
+
+```php
+$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store->store( 'openai', 'api_key', $raw_key );
+$masked = $store->get_masked( 'openai', 'api_key' );
+```
+
+## Smart Search / X-Search
+
+Namespace:
+
+```text
+Hexa\PluginCore\Search
+```
+
+Classes:
+
+```text
+SmartSearchAjaxController
+SmartSearchRenderer
+```
+
+Use this for generic AJAX typeahead search. This is the WordPress equivalent of Laravel `<x-hexa-smart-search>`.
+
+Rules:
+
+- Default source searches WordPress posts, pages, and custom post types.
+- Extend results with `hexa_plugin_core_smart_search_results`.
+- Results should include `id`, `value`, `name`, and `subtitle`.
+
+Example:
+
+```php
+( new \Hexa\PluginCore\Search\SmartSearchRenderer() )->render([
+    'id'        => 'content-search',
+    'label'     => 'Find content',
+    'source'    => 'posts',
+    'post_type' => 'any',
+]);
+```
 
 ## Error Logs
 

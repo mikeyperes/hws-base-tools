@@ -6,6 +6,8 @@ use Hexa\PluginCore\Activity\ActivityLogConfig;
 use Hexa\PluginCore\Activity\ActivityLogEntry;
 use Hexa\PluginCore\Activity\ActivityLogger;
 use Hexa\PluginCore\Activity\ActivityLogRenderer;
+use Hexa\PluginCore\Credentials\CredentialFieldRenderer;
+use Hexa\PluginCore\Search\SmartSearchRenderer;
 use Hexa\PluginCore\Support\CoreVersion;
 use Hexa\PluginCore\UI\CoreUi;
 
@@ -22,188 +24,171 @@ final class CoreTabRenderer {
         $core_version = CoreVersion::current( $this->config->core_root() );
         ?>
         <div class="hpc-ui">
-            <div class="hpc-shell">
+            <div class="hpc-shell" id="hexa-plugin-core-workspace">
                 <section class="hpc-hero">
                     <div>
                         <h2>Hexa WordPress Plugin Core</h2>
-                        <p>Shared UI, tabs, activity logs, updater panels, shortcode registries, and agent-facing documentation for Hexa plugins.</p>
+                        <p>Shared WordPress plugin library for consistent tabs, UI components, activity logs, API key storage, smart search, updater panels, shortcode tooling, and error-log monitors.</p>
                     </div>
                     <div class="hpc-actions" style="align-content:start;justify-content:flex-end;">
                         <?php echo CoreUi::pill( 'Core v' . $core_version, 'dark' ); ?>
-                        <?php echo CoreUi::pill( 'Public repo', 'success' ); ?>
+                        <?php echo CoreUi::pill( 'hexa/plugin-core', 'success' ); ?>
                     </div>
                 </section>
 
-                <div class="hpc-grid">
-                    <?php
-                    echo CoreUi::card(
-                        [
-                            'title'     => 'Source of truth',
-                            'body_html' => '<p>The core package owns shared structures. Host plugins pass settings and hook names, then the core renders consistent components.</p>'
-                                . '<p><span class="hpc-code">Hexa\\PluginCore\\</span></p>',
-                        ]
-                    );
-                    echo CoreUi::card(
-                        [
-                            'title'     => 'README files',
-                            'body_html' => '<p>Main README: <span class="hpc-path">' . esc_html( $this->config->readme_path() ) . '</span></p>'
-                                . '<p>Agent guide: <span class="hpc-path">' . esc_html( $this->config->library_path() ) . '</span></p>',
-                            'meta_html' => CoreUi::copy_button( $this->config->readme_path(), 'Copy README path' ),
-                        ]
-                    );
-                    echo CoreUi::card(
-                        [
-                            'title'     => 'First extracted pieces',
-                            'body_html' => '<p>Current extraction order: UI primitives, tabs, activity logs, updater panels, and error-log viewing.</p>'
-                                . '<p>' . CoreUi::tooltip( 'This tab is itself rendered by the core tab module, through HWS host filters.' ) . ' Core-rendered tab content.</p>',
-                        ]
-                    );
-                    ?>
-                </div>
+                <nav class="hpc-core-tabs" aria-label="Hexa core sections">
+                    <button type="button" class="hpc-core-tab active" data-hpc-core-tab="readme">README</button>
+                    <button type="button" class="hpc-core-tab" data-hpc-core-tab="ui">UI Elements</button>
+                    <button type="button" class="hpc-core-tab" data-hpc-core-tab="activity">Activity Log</button>
+                    <button type="button" class="hpc-core-tab" data-hpc-core-tab="search">Smart Search / X-Search</button>
+                    <button type="button" class="hpc-core-tab" data-hpc-core-tab="api-keys">API Keys</button>
+                    <button type="button" class="hpc-core-tab" data-hpc-core-tab="logs">Error Logs</button>
+                </nav>
 
-                <div style="height:14px"></div>
+                <section class="hpc-core-pane active" data-hpc-core-pane="readme">
+                    <?php echo $this->render_readme_section(); ?>
+                </section>
 
-                <?php echo $this->render_ui_primitives_section(); ?>
-                <?php echo $this->render_activity_section(); ?>
-                <?php echo $this->render_error_logs_section(); ?>
-                <?php echo $this->render_agent_docs_section(); ?>
+                <section class="hpc-core-pane" data-hpc-core-pane="ui">
+                    <?php echo $this->render_ui_elements_section(); ?>
+                </section>
 
-                <?php $this->render_activity_demo(); ?>
+                <section class="hpc-core-pane" data-hpc-core-pane="activity">
+                    <?php $this->render_activity_section(); ?>
+                </section>
+
+                <section class="hpc-core-pane" data-hpc-core-pane="search">
+                    <?php $this->render_search_section(); ?>
+                </section>
+
+                <section class="hpc-core-pane" data-hpc-core-pane="api-keys">
+                    <?php echo $this->render_api_key_section(); ?>
+                </section>
+
+                <section class="hpc-core-pane" data-hpc-core-pane="logs">
+                    <?php echo $this->render_error_logs_section(); ?>
+                </section>
             </div>
         </div>
+        <script>
+        (function(){
+            var root = document.getElementById('hexa-plugin-core-workspace');
+            if (!root) return;
+            var tabs = root.querySelectorAll('[data-hpc-core-tab]');
+            var panes = root.querySelectorAll('[data-hpc-core-pane]');
+            tabs.forEach(function(tab){
+                tab.addEventListener('click', function(){
+                    var target = tab.getAttribute('data-hpc-core-tab');
+                    tabs.forEach(function(item){ item.classList.remove('active'); });
+                    panes.forEach(function(item){ item.classList.remove('active'); });
+                    tab.classList.add('active');
+                    var pane = root.querySelector('[data-hpc-core-pane="' + target + '"]');
+                    if (pane) pane.classList.add('active');
+                });
+            });
+        })();
+        </script>
         <?php
     }
 
-    private function render_ui_primitives_section(): string {
-        $body = '<div class="hpc-grid two">'
-            . CoreUi::subcard(
-                [
-                    'title'     => 'Cards and subcards',
-                    'body_html' => '<p>Use <span class="hpc-code">CoreUi::card()</span> for primary surfaces and <span class="hpc-code">CoreUi::subcard()</span> for grouped controls inside a larger section.</p>',
-                ]
-            )
-            . CoreUi::subcard(
-                [
-                    'title'     => 'Tooltips and pills',
-                    'body_html' => '<p>Use tooltips for compact help and pills for status. Example: ' . CoreUi::tooltip( 'Tooltip text is passed as an input parameter.' ) . ' ' . CoreUi::pill( 'Healthy', 'success' ) . ' ' . CoreUi::pill( 'Warning', 'warning' ) . '</p>',
-                ]
-            )
-            . CoreUi::subcard(
-                [
-                    'title'     => 'Collapsible sections',
-                    'body_html' => '<p>Use <span class="hpc-code">CoreUi::collapsible()</span> for expandable documentation, logs, and advanced settings.</p>',
-                ]
-            )
-            . CoreUi::subcard(
-                [
-                    'title'     => 'Buttons',
-                    'body_html' => '<p>Use standard button tones from core instead of per-plugin CSS. The first HWS swap is this tab plus the error-log viewer foundation.</p>',
-                ]
-            )
-            . '</div>';
-
-        return CoreUi::collapsible(
-            [
-                'title'     => 'Core UI primitives',
-                'open'      => true,
-                'meta_html' => CoreUi::pill( 'Reusable UI', 'success' ),
-                'body_html' => $body,
-            ]
-        );
-    }
-
-    private function render_activity_section(): string {
-        $body = '<p>The activity log component supports three storage modes and always renders the same dark expandable monitor.</p>'
-            . '<div class="hpc-grid">'
-            . CoreUi::subcard( [ 'title' => 'page', 'body_html' => '<p>Render-only. Data disappears when the page refreshes.</p>' ] )
-            . CoreUi::subcard( [ 'title' => 'transient', 'body_html' => '<p>Stored with WordPress transients and a TTL.</p>' ] )
-            . CoreUi::subcard( [ 'title' => 'permanent', 'body_html' => '<p>Stored with WordPress options until cleared.</p>' ] )
-            . '</div>';
-
-        return CoreUi::collapsible(
-            [
-                'title'     => 'Activity log structure',
-                'open'      => true,
-                'meta_html' => CoreUi::pill( 'Dark monitor', 'dark' ),
-                'body_html' => $body,
-            ]
-        );
-    }
-
-    private function render_error_logs_section(): string {
-        $body = '<p>HWS currently has two log systems: the Overview error-log viewer and the Log Cleaner cron/delete workflow. The reusable core layer now owns reading, tailing, classifying, highlighting, searching, and rendering log files.</p>'
-            . '<div class="hpc-grid two">'
-            . CoreUi::subcard(
-                [
-                    'title'     => 'Reusable core classes',
-                    'body_html' => '<ul class="hpc-list"><li><span class="hpc-code">ErrorLogSource</span></li><li><span class="hpc-code">ErrorLogReader</span></li><li><span class="hpc-code">ErrorLogClassifier</span></li><li><span class="hpc-code">ErrorLogPanelRenderer</span></li></ul>',
-                ]
-            )
-            . CoreUi::subcard(
-                [
-                    'title'     => 'HWS first swap',
-                    'body_html' => '<p>The Overview tab can now render the error-log viewer from core while keeping HWS delete AJAX intact. The cleaner cron/settings system is the next extraction target.</p>',
-                ]
-            )
-            . '</div>';
-
-        return CoreUi::collapsible(
-            [
-                'title'     => 'Error logs as a core feature',
-                'open'      => true,
-                'meta_html' => CoreUi::pill( 'Foundation added', 'warning' ),
-                'body_html' => $body,
-            ]
-        );
-    }
-
-    private function render_agent_docs_section(): string {
+    private function render_readme_section(): string {
         $guide = <<<'README'
-# Core Implementation Guide
+# Hexa WordPress Plugin Core
 
-## UI
-Use Hexa\PluginCore\UI\CoreUi for cards, subcards, buttons, pills, tooltips, and collapsible sections.
+Core owns shared structure. Host plugins pass plugin-specific values such as slugs, hook names, paths, capabilities, labels, and repositories.
 
-## Tabs
-Host plugin exposes a tab-list filter and a render filter. CoreTabModule registers "hexa-core" through those hooks.
+Required rule:
+- Build reusable UI and behavior in Hexa Plugin Core first.
+- Host plugins should call core classes with input arrays/config objects.
+- Do not duplicate panels, tabs, credential fields, smart search, updater UI, shortcode displays, or log viewers inside individual plugins.
 
-## Activity Logs
-Use ActivityLogConfig storage modes:
-- page
-- transient
-- permanent
-
-## Error Logs
-Use Logs\ErrorLogSource for each file path, ErrorLogReader for tails/classification, and ErrorLogPanelRenderer for the UI.
-
+Current core sections:
+- Tabs
+- UI
+- Activity
+- Search
+- Credentials
+- Logs
+- Updater
+- Shortcodes
 README;
 
-        $body = '<div class="hpc-grid two">'
-            . CoreUi::subcard(
+        return '<div class="hpc-grid">'
+            . CoreUi::card(
                 [
-                    'title'     => 'Friendly version',
-                    'body_html' => '<p>This core keeps plugin screens consistent. Build the pattern once in core, pass plugin-specific values into it, and then reuse it everywhere.</p>',
+                    'title'     => 'Source of truth',
+                    'body_html' => '<p>Reusable plugin behavior belongs in <span class="hpc-code">Hexa\\PluginCore\\</span>. HWS is now a host plugin that passes configuration into core.</p>',
                 ]
             )
-            . CoreUi::subcard(
+            . CoreUi::card(
                 [
-                    'title'     => 'Technical version',
-                    'body_html' => '<p>Core modules are host-neutral. Host plugins provide filter names, paths, slugs, capabilities, and repositories. Core classes render the standardized UI and behavior.</p>',
+                    'title'     => 'README files',
+                    'body_html' => '<p>Main README: <span class="hpc-path">' . esc_html( $this->config->readme_path() ) . '</span></p>'
+                        . '<p>Agent guide: <span class="hpc-path">' . esc_html( $this->config->library_path() ) . '</span></p>',
+                    'meta_html' => CoreUi::copy_button( $this->config->readme_path(), 'Copy README path' ),
                 ]
             )
-            . '</div><pre class="hpc-readme">' . esc_html( $guide ) . '</pre>';
-
-        return CoreUi::collapsible(
-            [
-                'title'     => 'README-style guide for agents',
-                'open'      => false,
-                'meta_html' => CoreUi::pill( 'Agent handoff', '' ),
-                'body_html' => $body,
-            ]
-        );
+            . CoreUi::card(
+                [
+                    'title'     => 'Implementation rule',
+                    'body_html' => '<p>Every new reusable element needs an example, a visual, and a clear API. This tab is the live component catalog.</p>',
+                ]
+            )
+            . '</div><div style="height:14px"></div><pre class="hpc-readme">' . esc_html( $guide ) . '</pre>';
     }
 
-    private function render_activity_demo(): void {
+    private function render_ui_elements_section(): string {
+        $collapsible_body = '<p>This expandable block is generated by <span class="hpc-code">CoreUi::collapsible()</span>. Use it for advanced settings, setup instructions, readme sections, and logs.</p>';
+
+        return '<div class="hpc-grid two">'
+            . CoreUi::card(
+                [
+                    'title'     => 'Cards and subcards',
+                    'body_html' => '<p>Main surface from <span class="hpc-code">CoreUi::card()</span>.</p>'
+                        . CoreUi::subcard(
+                            [
+                                'title'     => 'Nested detail',
+                                'body_html' => '<p>Compact detail from <span class="hpc-code">CoreUi::subcard()</span>. Keep repeated settings and examples in subcards.</p>',
+                            ]
+                        ),
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Status pills and tooltips',
+                    'body_html' => '<p>' . CoreUi::pill( 'Healthy', 'success' ) . ' ' . CoreUi::pill( 'Warning', 'warning' ) . ' ' . CoreUi::pill( 'Danger', 'danger' ) . ' ' . CoreUi::pill( 'Dark', 'dark' ) . '</p>'
+                        . '<p>Tooltip example: ' . CoreUi::tooltip( 'Tooltips come from core, not one-off plugin CSS.' ) . '</p>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Buttons and copy actions',
+                    'body_html' => '<div class="hpc-actions"><button type="button" class="hpc-button">Primary</button><button type="button" class="hpc-button secondary">Secondary</button><button type="button" class="hpc-button danger">Danger</button>' . CoreUi::copy_button( '[site_logo key="logo"]', 'Copy shortcode' ) . '</div>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Collapsible component',
+                    'body_html' => CoreUi::collapsible(
+                        [
+                            'title'     => 'Expandable example',
+                            'open'      => true,
+                            'meta_html' => CoreUi::pill( 'Core UI', 'success' ),
+                            'body_html' => $collapsible_body,
+                        ]
+                    ),
+                ]
+            )
+            . '</div>';
+    }
+
+    private function render_activity_section(): void {
+        echo '<div class="hpc-grid">'
+            . CoreUi::card( [ 'title' => 'Page-only', 'body_html' => '<p>Render-only entries. Removed when the page refreshes.</p>' ] )
+            . CoreUi::card( [ 'title' => 'Transient', 'body_html' => '<p>Stored in a WordPress transient with a TTL.</p>' ] )
+            . CoreUi::card( [ 'title' => 'Permanent', 'body_html' => '<p>Stored in a WordPress option until cleared.</p>' ] )
+            . '</div><div style="height:14px"></div>';
+
         $config = new ActivityLogConfig(
             [
                 'id'          => 'hexa-core-activity-demo',
@@ -216,10 +201,113 @@ README;
         );
 
         $logger = new ActivityLogger( $config );
-        $logger->add( new ActivityLogEntry( 'Core tab rendered from shared UI primitives.', [ 'component' => 'CoreUi' ], 'system', 'ui', null, 'success' ) );
-        $logger->add( new ActivityLogEntry( 'Activity log loaded in page-only mode.', [ 'storage' => 'page' ], 'system', 'activity', null, 'info', 'Page-only entries disappear on refresh.' ) );
-        $logger->add( new ActivityLogEntry( 'Error-log core foundation is available for HWS swap.', [ 'namespace' => 'Hexa\\PluginCore\\Logs' ], 'system', 'logs', null, 'warning' ) );
+        $logger->add( new ActivityLogEntry( 'Core internal tabs rendered.', [ 'tab' => 'activity' ], 'system', 'tabs', null, 'success' ) );
+        $logger->add( new ActivityLogEntry( 'UI catalog loaded from shared primitives.', [ 'component' => 'CoreUi' ], 'system', 'ui', null, 'info' ) );
+        $logger->add( new ActivityLogEntry( 'Smart search and credentials are available as core features.', [ 'namespaces' => [ 'Search', 'Credentials' ] ], 'system', 'core', null, 'warning' ) );
 
         ( new ActivityLogRenderer( $config ) )->render( $logger->all() );
+    }
+
+    private function render_search_section(): void {
+        echo '<div class="hpc-grid two">';
+        echo CoreUi::card(
+            [
+                'title'     => 'X-Search concept',
+                'body_html' => '<p>The Laravel reference is <span class="hpc-code">&lt;x-hexa-smart-search&gt;</span>: an AJAX typeahead for any endpoint. The WordPress core version searches posts, pages, custom post types, or filtered sources through <span class="hpc-code">wp_ajax_hexa_plugin_core_smart_search</span>.</p>',
+            ]
+        );
+        echo CoreUi::card(
+            [
+                'title'     => 'Endpoint contract',
+                'body_html' => '<p>Input: <span class="hpc-code">q</span>, <span class="hpc-code">source</span>, <span class="hpc-code">post_type</span>, <span class="hpc-code">limit</span>.</p><p>Output: JSON results with <span class="hpc-code">id</span>, <span class="hpc-code">name</span>, <span class="hpc-code">subtitle</span>, and <span class="hpc-code">value</span>.</p>',
+            ]
+        );
+        echo '</div><div style="height:14px"></div>';
+
+        ( new SmartSearchRenderer() )->render(
+            [
+                'id'          => 'hexa-core-smart-search-demo',
+                'label'       => 'Live WordPress content search',
+                'placeholder' => 'Start typing a post, page, or custom post type title...',
+                'source'      => 'posts',
+                'post_type'   => 'any',
+                'limit'       => 8,
+            ]
+        );
+    }
+
+    private function render_api_key_section(): string {
+        $example = ( new CredentialFieldRenderer() )->render_example(
+            [
+                'slug'     => 'openai',
+                'key_name' => 'api_key',
+                'label'    => 'OpenAI API Key',
+                'provider' => 'OpenAI',
+                'steps'    => [
+                    'Open the provider dashboard.',
+                    'Create a restricted API key for the plugin integration.',
+                    'Paste it into the core credential field.',
+                    'Use the plugin-specific Test key action before enabling automation.',
+                ],
+            ]
+        );
+
+        $code = <<<'CODE'
+$store = new \Hexa\PluginCore\Credentials\CredentialStore();
+$store->store('openai', 'api_key', $raw_key);
+$key = $store->get('openai', 'api_key');
+$masked = $store->get_masked('openai', 'api_key');
+$exists = $store->exists('openai', 'api_key');
+CODE;
+
+        return '<div class="hpc-grid two">'
+            . CoreUi::card(
+                [
+                    'title'     => 'Credential structure',
+                    'body_html' => '<p>WordPress equivalent of Laravel <span class="hpc-code">CredentialService</span>. Stores secrets under <span class="hpc-code">hpc_cred_{slug}_{keyName}</span>, encrypts values with the WordPress auth salt, masks display values, and exposes exists/get/delete helpers.</p>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Usage example',
+                    'body_html' => '<pre class="hpc-readme">' . esc_html( $code ) . '</pre>',
+                ]
+            )
+            . '</div><div style="height:14px"></div>'
+            . CoreUi::card(
+                [
+                    'title'     => 'Visual example',
+                    'body_html' => $example,
+                ]
+            );
+    }
+
+    private function render_error_logs_section(): string {
+        return '<div class="hpc-grid two">'
+            . CoreUi::card(
+                [
+                    'title'     => 'Core log viewer',
+                    'body_html' => '<p><span class="hpc-code">ErrorLogPanelRenderer</span> owns log source summaries, tabs, search, highlighted rows, and dark log output.</p>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'HWS migration',
+                    'body_html' => '<p>HWS Overview now uses the core error-log viewer. The cleaner cron/settings system remains in HWS until the scheduler/options abstraction is moved.</p>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Reusable classes',
+                    'body_html' => '<ul class="hpc-list"><li><span class="hpc-code">ErrorLogSource</span></li><li><span class="hpc-code">ErrorLogReader</span></li><li><span class="hpc-code">ErrorLogClassifier</span></li><li><span class="hpc-code">ErrorLogPanelRenderer</span></li></ul>',
+                ]
+            )
+            . CoreUi::card(
+                [
+                    'title'     => 'Next extraction',
+                    'body_html' => '<p>Move log cleaning schedules, retention policy, manual cleanup actions, and activity output into core system tools.</p>',
+                ]
+            )
+            . '</div>';
     }
 }

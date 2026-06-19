@@ -29,6 +29,8 @@ The package version is stored in the root `VERSION` file.
 | `src/Activity/` | `Hexa\PluginCore\Activity` | Activity logs and activity storage adapters. |
 | `src/Bootstrap/` | `Hexa\PluginCore\Bootstrap` | Core setup, module registration, and lifecycle. |
 | `src/Contracts/` | `Hexa\PluginCore\Contracts` | Interfaces shared across modules and host plugins. |
+| `src/Credentials/` | `Hexa\PluginCore\Credentials` | Encrypted credential/API-key storage, masking, and credential field examples. |
+| `src/Search/` | `Hexa\PluginCore\Search` | Smart search/X-Search AJAX endpoints and reusable typeahead renderers. |
 | `src/Shortcodes/` | `Hexa\PluginCore\Shortcodes` | Shortcode definitions, registries, dashboard lists, and testing. |
 | `src/Support/` | `Hexa\PluginCore\Support` | Shared value objects and small helpers. |
 | `src/Tabs/` | `Hexa\PluginCore\Tabs` | Admin tab definitions, registries, rendering contracts, and the automatic core tab. |

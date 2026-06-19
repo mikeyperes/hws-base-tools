@@ -34,11 +34,37 @@ final class CoreUi {
             .hpc-button{background:var(--hpc-blue);border:1px solid var(--hpc-blue);border-radius:6px;color:#fff;cursor:pointer;display:inline-flex;font-weight:700;line-height:1;padding:10px 13px;text-decoration:none}
             .hpc-button.secondary{background:#fff;color:var(--hpc-blue)}
             .hpc-button.danger{background:var(--hpc-red);border-color:var(--hpc-red)}
+            .hpc-core-tabs{align-items:center;border-bottom:1px solid var(--hpc-line);display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;padding-bottom:12px}
+            .hpc-core-tab{background:#fff;border:1px solid #cfd8e3;border-radius:6px;color:#253650;cursor:pointer;font-weight:800;padding:9px 12px}
+            .hpc-core-tab.active{background:var(--hpc-blue);border-color:var(--hpc-blue);color:#fff}
+            .hpc-core-pane{display:none}
+            .hpc-core-pane.active{display:block}
             .hpc-section{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;margin:0 0 14px;overflow:hidden}
             .hpc-section summary{align-items:center;cursor:pointer;display:flex;font-size:15px;font-weight:800;gap:10px;justify-content:space-between;padding:15px 16px}
             .hpc-section summary::-webkit-details-marker{display:none}
             .hpc-section-body{border-top:1px solid var(--hpc-line);padding:16px}
             .hpc-callout{background:#f8fbff;border:1px solid #cfe0ff;border-left:4px solid var(--hpc-blue);border-radius:8px;color:#253650;padding:12px 14px}
+            .hpc-field{display:block;margin:0 0 12px}
+            .hpc-field span{color:#314056;display:block;font-size:12px;font-weight:800;margin:0 0 6px;text-transform:uppercase}
+            .hpc-field input,.hpc-field select,.hpc-field textarea{background:#fff;border:1px solid #a9b4c3;border-radius:6px;color:#172033;font-size:14px;min-height:40px;padding:8px 10px;width:100%}
+            .hpc-small{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:8px 0 0}
+            .hpc-steps{margin:8px 0 0 20px}
+            .hpc-steps li{margin:5px 0}
+            .hpc-credential-demo{display:grid;gap:12px}
+            .hpc-credential-head{align-items:flex-start;display:flex;gap:12px;justify-content:space-between}
+            .hpc-credential-head h4{font-size:15px;margin:0 0 6px}
+            .hpc-credential-head p{color:var(--hpc-muted);font-size:13px;margin:0}
+            .hpc-smart-search{position:relative}
+            .hpc-smart-search-status{color:var(--hpc-muted);font-size:12px;margin-top:6px}
+            .hpc-smart-search-results{background:#fff;border:1px solid #d3dce8;border-radius:8px;box-shadow:0 12px 30px rgba(15,23,42,.12);left:0;margin-top:6px;max-height:260px;overflow:auto;position:absolute;right:0;z-index:30}
+            .hpc-smart-search-result{background:#fff;border:0;border-bottom:1px solid #edf1f6;color:#172033;cursor:pointer;display:grid;gap:2px;grid-template-columns:minmax(0,1fr) auto;padding:10px 12px;text-align:left;width:100%}
+            .hpc-smart-search-result:hover,.hpc-smart-search-result.active{background:#eef4ff}
+            .hpc-smart-search-result strong{font-size:13px;grid-column:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .hpc-smart-search-result span{color:var(--hpc-muted);font-size:12px;grid-column:1}
+            .hpc-smart-search-result em{color:#8a98aa;font-size:11px;font-style:normal;grid-column:2;grid-row:1 / span 2}
+            .hpc-smart-search-selected{align-items:center;background:#eefbf3;border:1px solid #c7eed5;border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding:8px 10px}
+            .hpc-smart-search-selected strong{font-size:13px}
+            .hpc-smart-search-selected span:last-child{color:var(--hpc-muted);font-size:12px}
             .hpc-tooltip{align-items:center;background:#edf2f7;border:1px solid #cfdae7;border-radius:999px;color:#334155;cursor:help;display:inline-flex;font-size:11px;font-weight:800;height:20px;justify-content:center;position:relative;width:20px}
             .hpc-tooltip:focus{outline:2px solid var(--hpc-blue);outline-offset:2px}
             .hpc-tooltip[data-tooltip]:hover:after,.hpc-tooltip[data-tooltip]:focus:after{background:#111827;border-radius:6px;bottom:calc(100% + 8px);color:#fff;content:attr(data-tooltip);font-size:12px;font-weight:500;left:50%;line-height:1.4;max-width:280px;min-width:180px;padding:8px 10px;position:absolute;transform:translateX(-50%);white-space:normal;z-index:20}
