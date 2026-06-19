@@ -3,6 +3,7 @@
 namespace Hexa\PluginCore\CorePackageUpdates;
 
 use Hexa\PluginCore\CoreRuntime\CoreVersion;
+use Hexa\PluginCore\PluginUpdates\UpdaterConfig;
 
 final class CorePackageConfig {
     private array $values;
