@@ -133,7 +133,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.32 (Current)
+### v10.18.33 (Current)
+- Refreshed the vendored Hexa WordPress Plugin Core package after the upstream composer cleanup so HWS ships the canonical v0.5.0 package.
+
+### v10.18.32
 - Updated vendored Hexa WordPress Plugin Core to v0.5.0.
 - Reworked the Hexa Core dashboard into core-owned internal tabs: README, UI Elements, Activity Log, Smart Search / X-Search, API Keys, and Error Logs.
 - Added WordPress core equivalents for Laravel CredentialService and x-hexa-smart-search, including live visual examples.
