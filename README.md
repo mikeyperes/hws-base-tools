@@ -133,7 +133,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.28 (Current)
+### v10.18.29 (Current)
+- Added the Hexa WordPress Plugin Core package updater panel below the HWS Base Tools plugin updater.
+- Updated the vendored Hexa Plugin Core package to v0.2.0 and points it at the public core GitHub repository.
+
+### v10.18.28
 - Replaced the HWS-specific GitHub updater and Plugin Info AJAX handlers with the vendored Hexa Plugin Core abstract updater.
 - Added the Hexa Plugin Core library reference file to the HWS Base Tools package.
 

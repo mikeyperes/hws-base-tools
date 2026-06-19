@@ -27,6 +27,7 @@ The updater namespace starts with the HWS Base Tools updater behavior and makes 
 - GitHub `repo-main` folders are normalized to the canonical plugin folder
 - the direct updater downloads, extracts, backs up, installs, cleans duplicate folders, and clears caches
 - the admin panel can render the same update-status flow for any host plugin
+- a separate core-package panel compares a vendored Hexa WordPress Plugin Core `VERSION` file against the public core GitHub repository
 
 ## GitHub Slug Rule
 
@@ -65,6 +66,12 @@ PluginZipBuilder
 UpdaterAjaxController
 UpdaterPanelRenderer
 UpdaterFilesystem
+CorePackageConfig
+CorePackageVersionClient
+CorePackageStatus
+CorePackageInstaller
+CorePackageAjaxController
+CorePackagePanelRenderer
 ```
 
 ## Minimal Host Integration
@@ -105,6 +112,37 @@ $config = UpdaterConfig::from_slug_and_github_url(
         'version'             => '1.0.0',
     ]
 );
+```
+
+## Vendored Core Package Integration
+
+The Hexa WordPress Plugin Core is not a WordPress plugin. It uses a root `VERSION` file.
+
+Host plugins that vendor the core should render this panel below their own plugin updater:
+
+```php
+use Hexa\PluginCore\Updater\CorePackageAjaxController;
+use Hexa\PluginCore\Updater\CorePackageConfig;
+use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+
+$core_config = CorePackageConfig::from_core_root(
+    __DIR__ . '/lib/hexa-wordpress-plugin-core',
+    [
+        'github_repo'        => 'mikeyperes/hexa-wordpress-plugin-core',
+        'github_branch'      => 'main',
+        'nonce_action'       => 'example_plugin_nonce',
+        'ajax_action_prefix' => 'example_plugin_core_package',
+    ]
+);
+
+( new CorePackageAjaxController( $core_config ) )->register();
+( new CorePackagePanelRenderer( $core_config ) )->render();
+```
+
+`CorePackageStatus` compares the installed vendored `VERSION` against:
+
+```text
+https://raw.githubusercontent.com/mikeyperes/hexa-wordpress-plugin-core/main/VERSION
 ```
 
 ## Required Terms

@@ -20,6 +20,8 @@ The repository folder is:
 hexa-wordpress-plugin-core
 ```
 
+The package version is stored in the root `VERSION` file.
+
 ## Sub-Namespace Folders
 
 | Folder | Namespace | Purpose |
@@ -76,4 +78,3 @@ Then update:
 - `README.md`
 - `AGENTS.md`
 - `docs/folder-map.md`
-

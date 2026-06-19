@@ -10,6 +10,7 @@ Use these exact names:
 - Composer package: `hexa/plugin-core`
 - Root PHP namespace: `Hexa\PluginCore\`
 - Source folder: `src/`
+- Version file: `VERSION`
 
 Do not invent alternatives. Do not use host plugin names inside this package.
 
@@ -60,6 +61,7 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put activity log abstractions in `src/Activity`.
 - Put shortcode registries, definitions, and testing tools in `src/Shortcodes`.
 - Put update/GitHub configuration and updater abstractions in `src/Updater`.
+- Put vendored core package version checks and core package update UI in `src/Updater`; do not treat the shared core as a WordPress plugin.
 - Put bootstrap/lifecycle orchestration in `src/Bootstrap`.
 
 ## WordPress Rules

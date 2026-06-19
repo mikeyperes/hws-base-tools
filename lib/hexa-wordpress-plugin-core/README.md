@@ -14,6 +14,7 @@ These names are fixed. Do not rename them in plugin implementations.
 | Composer package | `hexa/plugin-core` |
 | Root namespace | `Hexa\PluginCore\` |
 | Autoload path | `src/` |
+| Version source | `VERSION` |
 
 ## Required Folder Map
 
@@ -21,6 +22,7 @@ Every sub-namespace has its own folder under `src/`.
 
 ```text
 hexa-wordpress-plugin-core/
+  VERSION
   src/
     Activity/    -> Hexa\PluginCore\Activity
     Bootstrap/   -> Hexa\PluginCore\Bootstrap
@@ -41,7 +43,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `Shortcodes`: shortcode definition registry, dashboard metadata, and test runner contracts.
 - `Support`: small shared value objects and helpers that are not specific to one module.
 - `Tabs`: admin tab definitions, registry, and rendering contracts.
-- `Updater`: shared GitHub/update configuration objects and updater contracts.
+- `Updater`: shared GitHub/update configuration objects, host plugin updater, and vendored core package updater.
 
 ## Host Plugin Integration Rule
 
@@ -108,3 +110,30 @@ Before adding implementations in another Codex or Claude chat, read:
 - the namespace-specific doc for the folder being changed
 
 If a new feature does not fit an existing namespace, document the proposed namespace first before adding code.
+
+## Core Package Versioning
+
+The shared core is a library, not a WordPress plugin. Its current version is stored in the repository root `VERSION` file.
+
+Host plugins that vendor this package should render a separate core-package status panel under the host plugin updater:
+
+```php
+use Hexa\PluginCore\Updater\CorePackageAjaxController;
+use Hexa\PluginCore\Updater\CorePackageConfig;
+use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+
+$core_config = CorePackageConfig::from_core_root(
+    __DIR__ . '/lib/hexa-wordpress-plugin-core',
+    [
+        'github_repo'        => 'mikeyperes/hexa-wordpress-plugin-core',
+        'github_branch'      => 'main',
+        'nonce_action'       => 'example_plugin_nonce',
+        'ajax_action_prefix' => 'example_plugin_core_package',
+    ]
+);
+
+( new CorePackageAjaxController( $core_config ) )->register();
+( new CorePackagePanelRenderer( $core_config ) )->render();
+```
+
+This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`.

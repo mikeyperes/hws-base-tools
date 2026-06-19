@@ -279,6 +279,28 @@ function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\Updater\Upd
     return $config;
 }
 
+function hws_get_hexa_plugin_core_package_config(): \Hexa\PluginCore\Updater\CorePackageConfig {
+    static $config = null;
+
+    if ( $config instanceof \Hexa\PluginCore\Updater\CorePackageConfig ) {
+        return $config;
+    }
+
+    $config = \Hexa\PluginCore\Updater\CorePackageConfig::from_core_root(
+        __DIR__ . '/lib/hexa-wordpress-plugin-core',
+        [
+            'github_repo'        => 'mikeyperes/hexa-wordpress-plugin-core',
+            'github_branch'      => 'main',
+            'nonce_action'       => 'hws_base_tools_ajax_nonce',
+            'nonce_param'        => 'nonce',
+            'ajax_action_prefix' => 'hws_base_tools_core_package',
+            'cache_key'          => 'hws_base_tools_hexa_plugin_core_package',
+        ]
+    );
+
+    return $config;
+}
+
 
 
 
@@ -319,7 +341,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.28";
+$plugin_version = "10.18.29";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -357,6 +379,7 @@ add_action( 'plugins_loaded', function() {
 
     ( new \Hexa\PluginCore\Updater\GitHubPluginUpdater( $updater_config ) )->register();
     ( new \Hexa\PluginCore\Updater\UpdaterAjaxController( $updater_config ) )->register();
+    ( new \Hexa\PluginCore\Updater\CorePackageAjaxController( hws_get_hexa_plugin_core_package_config() ) )->register();
 
     if ( is_admin() && isset( $_GET['force-update-check'] ) ) {
         wp_clean_update_cache();

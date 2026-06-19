@@ -11,6 +11,7 @@ Repository: hexa-wordpress-plugin-core
 Composer package: hexa/plugin-core
 Root namespace: Hexa\PluginCore\
 Source root: src/
+Version source: VERSION
 ```
 
 Do not rename these.
@@ -78,6 +79,7 @@ Purpose:
 - Normalized plugin ZIP downloads
 - Version history ZIP downloads
 - Transient-backed update activity log
+- Vendored Hexa WordPress Plugin Core status/update panel
 
 ### Required Updater Config
 
@@ -140,7 +142,47 @@ PluginZipBuilder
 UpdaterAjaxController
 UpdaterPanelRenderer
 UpdaterFilesystem
+CorePackageConfig
+CorePackageVersionClient
+CorePackageStatus
+CorePackageInstaller
+CorePackageAjaxController
+CorePackagePanelRenderer
 ```
+
+### Vendored Core Package Updater
+
+The Hexa WordPress Plugin Core is a library, not a WordPress plugin. Its version is stored in `VERSION`.
+
+Host plugins that vendor the core should place a core status panel directly under their plugin updater panel:
+
+```php
+use Hexa\PluginCore\Updater\CorePackageAjaxController;
+use Hexa\PluginCore\Updater\CorePackageConfig;
+use Hexa\PluginCore\Updater\CorePackagePanelRenderer;
+
+$core_config = CorePackageConfig::from_core_root(
+    __DIR__ . '/lib/hexa-wordpress-plugin-core',
+    [
+        'github_repo'        => 'mikeyperes/hexa-wordpress-plugin-core',
+        'github_branch'      => 'main',
+        'nonce_action'       => 'example_plugin_nonce',
+        'ajax_action_prefix' => 'example_plugin_core_package',
+    ]
+);
+
+( new CorePackageAjaxController( $core_config ) )->register();
+( new CorePackagePanelRenderer( $core_config ) )->render();
+```
+
+The panel compares:
+
+```text
+vendored VERSION in the host plugin
+public GitHub VERSION from mikeyperes/hexa-wordpress-plugin-core
+```
+
+Do not use the WordPress plugin header updater for the core library.
 
 ### Updater Input Terms
 
