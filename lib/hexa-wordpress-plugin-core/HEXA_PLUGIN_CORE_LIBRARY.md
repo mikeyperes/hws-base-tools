@@ -26,9 +26,12 @@ src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
+src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
+src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 ```
@@ -39,6 +42,64 @@ Namespace:
 
 ```text
 Hexa\PluginCore\WpAdminComponents
+```
+
+## WP Admin AJAX
+
+Namespace:
+
+```text
+Hexa\PluginCore\WpAdminAjax
+```
+
+Use `AjaxGuard` for admin-AJAX nonce creation, nonce validation, capability checks, and callback wrapping.
+
+```php
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
+$nonce = AjaxGuard::create_nonce( 'example_action' );
+AjaxGuard::require_nonce_or_error( 'example_action' );
+AjaxGuard::handle( $callback, [ 'nonce_action' => 'example_action' ] );
+```
+
+## System Environment
+
+Namespace:
+
+```text
+Hexa\PluginCore\SystemEnvironment
+```
+
+Use `SystemEnvironment` for safe constants/INI reads, shell wrappers, size parsing, cgroup-aware CPU/memory checks, and byte formatting.
+
+```php
+use Hexa\PluginCore\SystemEnvironment\SystemEnvironment;
+
+$memory = SystemEnvironment::get_memory_info();
+$cpu = SystemEnvironment::get_cpu_info();
+$bytes = SystemEnvironment::parse_size( ini_get( 'memory_limit' ) );
+```
+
+## Plugin Provisioning
+
+Namespace:
+
+```text
+Hexa\PluginCore\PluginProvisioning
+```
+
+Use `PluginProvisioner` for reusable plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation. Host plugins provide the catalog data; core performs the mechanics.
+
+```php
+use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
+
+$status = PluginProvisioner::plugin_status_by_folder( 'smp-verified-profiles' );
+$plugin_file = PluginProvisioner::find_plugin_file_by_folder( 'smp-verified-profiles' );
+$result = PluginProvisioner::ensure_github_plugin_active(
+    'smp-verified-profiles',
+    'mikeyperes/smp-verified-profiles',
+    [ 'branch' => 'main' ]
+);
 ```
 
 Class:

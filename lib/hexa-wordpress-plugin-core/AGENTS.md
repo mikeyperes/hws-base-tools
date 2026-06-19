@@ -37,9 +37,12 @@ src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
+src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
+src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 ```
@@ -65,12 +68,15 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put admin tab abstractions in `src/WpAdminTabs`.
 - Put reusable visual primitives in `src/WpAdminComponents`.
 - Put reusable error-log viewer/read/classification features in `src/LogFiles`.
+- Put reusable plugin discovery, install, activation, GitHub ZIP provisioning, and folder-normalization helpers in `src/PluginProvisioning`.
 - Put reusable API-key/secret storage, masking, and credential setup UI in `src/CredentialVault`.
 - Put reusable smart search/X-Search endpoint and typeahead UI in `src/SmartSearch`.
 - Put activity log abstractions, storage modes, and the shared dark renderer in `src/ActivityLog`.
 - Put shortcode registries, definitions, and testing tools in `src/ShortcodeRegistry`.
+- Put safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting in `src/SystemEnvironment`.
 - Put host plugin GitHub/update configuration and updater abstractions in `src/PluginUpdates`.
 - Put vendored core package version checks and core package update UI in `src/CorePackageUpdates`; do not treat the shared core as a WordPress plugin.
+- Put WordPress admin-AJAX nonce/capability/handler guards in `src/WpAdminAjax`.
 - Put bootstrap/lifecycle orchestration in `src/CoreBootstrap`.
 
 ## WordPress Rules

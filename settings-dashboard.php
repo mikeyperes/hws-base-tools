@@ -2122,12 +2122,12 @@ function render_tab_overview() {
     
     <!-- Log Files - Hexa Core Error Log View -->
     <?php
-    if ( class_exists( '\Hexa\PluginCore\Logs\ErrorLogPanelRenderer' ) ) {
-        ( new \Hexa\PluginCore\Logs\ErrorLogPanelRenderer() )->render(
+    if ( class_exists( '\Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer' ) ) {
+        ( new \Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer() )->render(
             [
-                new \Hexa\PluginCore\Logs\ErrorLogSource( 'debug', 'debug.log', $debug_log_path, true, 'delete-debug-log' ),
-                new \Hexa\PluginCore\Logs\ErrorLogSource( 'error', 'error_log', $error_log_path, true, 'delete-error-log' ),
-                new \Hexa\PluginCore\Logs\ErrorLogSource( 'admin-error', 'wp-admin/error_log', $admin_log_path ),
+                new \Hexa\PluginCore\LogFiles\ErrorLogSource( 'debug', 'debug.log', $debug_log_path, true, 'delete-debug-log' ),
+                new \Hexa\PluginCore\LogFiles\ErrorLogSource( 'error', 'error_log', $error_log_path, true, 'delete-error-log' ),
+                new \Hexa\PluginCore\LogFiles\ErrorLogSource( 'admin-error', 'wp-admin/error_log', $admin_log_path ),
             ],
             [
                 'id'          => 'hws-core-error-log-panel',

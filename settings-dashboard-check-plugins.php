@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
+
 /**
  * Plugin Status Monitoring System
  * 
@@ -64,34 +66,11 @@ function hws_get_additional_hws_plugin( string $slug ): ?array {
 }
 
 function hws_find_plugin_file_by_folder( string $slug ): string {
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-    $slug = sanitize_key( $slug );
-    wp_cache_delete( 'plugins', 'plugins' );
-
-    foreach ( get_plugins() as $plugin_file => $plugin_data ) {
-        if ( dirname( $plugin_file ) === $slug && ! empty( $plugin_data['Name'] ) ) {
-            return $plugin_file;
-        }
-    }
-
-    return '';
+    return PluginProvisioner::find_plugin_file_by_folder( $slug );
 }
 
 function hws_check_additional_hws_plugin_status( string $slug ): array {
-    $plugin_file = hws_find_plugin_file_by_folder( $slug );
-    $installed   = $plugin_file !== '';
-    $active      = $installed && is_plugin_active( $plugin_file );
-    $folder      = sanitize_key( $slug );
-
-    return [
-        'slug'        => $folder,
-        'folder'      => $folder,
-        'plugin_file' => $plugin_file,
-        'installed'   => $installed,
-        'active'      => $active,
-        'folder_path' => WP_PLUGIN_DIR . '/' . $folder,
-    ];
+    return PluginProvisioner::plugin_status_by_folder( $slug );
 }
 
 function hws_render_additional_hws_plugin_status( array $status ): string {
@@ -111,139 +90,27 @@ function hws_render_additional_hws_plugin_status( array $status ): string {
 }
 
 function hws_prepare_wp_filesystem() {
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-
-    global $wp_filesystem;
-
-    if ( ! function_exists( 'WP_Filesystem' ) || ! WP_Filesystem() || ! $wp_filesystem ) {
-        return new \WP_Error( 'hws_filesystem_unavailable', 'WordPress filesystem is unavailable.' );
-    }
-
-    return $wp_filesystem;
+    return PluginProvisioner::prepare_filesystem();
 }
 
 function hws_cleanup_install_work_dir( string $path ): void {
-    if ( $path === '' || strpos( $path, trailingslashit( WP_CONTENT_DIR ) . 'upgrade/hws-github-plugin-' ) !== 0 ) {
-        return;
-    }
-
-    $filesystem = hws_prepare_wp_filesystem();
-    if ( is_wp_error( $filesystem ) ) {
-        return;
-    }
-
-    $filesystem->delete( $path, true );
+    PluginProvisioner::cleanup_work_dir( $path, 'hws-github-plugin-' );
 }
 
 function hws_normalize_hws_github_plugin_folder( string $slug ) {
-    $filesystem = hws_prepare_wp_filesystem();
-    if ( is_wp_error( $filesystem ) ) {
-        return $filesystem;
-    }
-
-    $slug = sanitize_key( $slug );
-    $dest = trailingslashit( WP_PLUGIN_DIR ) . $slug;
-
-    if ( is_dir( $dest ) ) {
-        return true;
-    }
-
-    foreach ( [ $slug . '-main', $slug . '-master' ] as $github_folder ) {
-        $source = trailingslashit( WP_PLUGIN_DIR ) . $github_folder;
-
-        if ( ! is_dir( $source ) ) {
-            continue;
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-        foreach ( get_plugins() as $plugin_file => $plugin_data ) {
-            if ( dirname( $plugin_file ) === $github_folder && is_plugin_active( $plugin_file ) ) {
-                deactivate_plugins( $plugin_file, true, false );
-            }
-        }
-
-        if ( ! $filesystem->move( $source, $dest, false ) ) {
-            return new \WP_Error( 'hws_folder_normalize_failed', 'Could not rename ' . $github_folder . ' to ' . $slug . '.' );
-        }
-
-        wp_cache_delete( 'plugins', 'plugins' );
-        return true;
-    }
-
-    return true;
+    return PluginProvisioner::normalize_github_folder( $slug );
 }
 
 function hws_install_hws_github_plugin_package( string $slug, array $plugin ) {
-    $filesystem = hws_prepare_wp_filesystem();
-    if ( is_wp_error( $filesystem ) ) {
-        return $filesystem;
-    }
-
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-    $slug      = sanitize_key( $slug );
-    $repo      = sanitize_text_field( $plugin['repo'] ?? '' );
-    $zip_url   = 'https://github.com/' . $repo . '/archive/refs/heads/main.zip';
-    $dest_dir  = trailingslashit( WP_PLUGIN_DIR ) . $slug;
-    $work_dir  = trailingslashit( WP_CONTENT_DIR ) . 'upgrade/hws-github-plugin-' . $slug . '-' . wp_generate_password( 8, false, false );
-    $tmp_file  = download_url( $zip_url, 60 );
-
-    if ( is_wp_error( $tmp_file ) ) {
-        return $tmp_file;
-    }
-
-    if ( is_dir( $dest_dir ) ) {
-        @unlink( $tmp_file );
-        return new \WP_Error( 'hws_plugin_folder_exists', 'Plugin folder already exists: ' . $slug );
-    }
-
-    if ( ! wp_mkdir_p( $work_dir ) ) {
-        @unlink( $tmp_file );
-        return new \WP_Error( 'hws_work_dir_failed', 'Could not create temporary install directory.' );
-    }
-
-    $unzipped = unzip_file( $tmp_file, $work_dir );
-    @unlink( $tmp_file );
-
-    if ( is_wp_error( $unzipped ) ) {
-        hws_cleanup_install_work_dir( $work_dir );
-        return $unzipped;
-    }
-
-    $dirs = glob( trailingslashit( $work_dir ) . '*', GLOB_ONLYDIR );
-    if ( empty( $dirs ) ) {
-        hws_cleanup_install_work_dir( $work_dir );
-        return new \WP_Error( 'hws_zip_empty', 'GitHub ZIP did not contain a plugin folder.' );
-    }
-
-    $source_dir = '';
-    foreach ( $dirs as $dir ) {
-        if ( basename( $dir ) === $slug . '-main' || basename( $dir ) === $slug . '-master' || basename( $dir ) === $slug ) {
-            $source_dir = $dir;
-            break;
-        }
-    }
-
-    if ( $source_dir === '' ) {
-        $source_dir = $dirs[0];
-    }
-
-    if ( ! $filesystem->move( $source_dir, $dest_dir, false ) ) {
-        hws_cleanup_install_work_dir( $work_dir );
-        return new \WP_Error( 'hws_plugin_move_failed', 'Could not move extracted GitHub folder into the plugin slug folder.' );
-    }
-
-    hws_cleanup_install_work_dir( $work_dir );
-    wp_cache_delete( 'plugins', 'plugins' );
-
-    $plugin_file = hws_find_plugin_file_by_folder( $slug );
-    if ( $plugin_file === '' ) {
-        return new \WP_Error( 'hws_plugin_header_missing', 'Installed folder does not contain a WordPress plugin header.' );
-    }
-
-    return $plugin_file;
+    return PluginProvisioner::install_github_plugin(
+        $slug,
+        sanitize_text_field( $plugin['repo'] ?? '' ),
+        [
+            'branch'      => 'main',
+            'work_prefix' => 'hws-github-plugin',
+            'timeout'     => 60,
+        ]
+    );
 }
 
 function ajax_install_hws_github_plugin() {
@@ -338,58 +205,16 @@ function ajax_install_plugin() {
         return;
     }
     
-    // Load required files
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
-    require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    
-    // Get plugin info from WordPress.org
-    $api = plugins_api( 'plugin_information', [
-        'slug'   => $slug,
-        'fields' => [
-            'sections' => false,
-        ],
-    ]);
-    
-    if ( is_wp_error( $api ) ) {
-        wp_send_json_error( 'Plugin not found on WordPress.org: ' . $api->get_error_message() );
-        return;
-    }
-    
-    // Use a silent skin to prevent output
-    $skin = new \WP_Ajax_Upgrader_Skin();
-    $upgrader = new \Plugin_Upgrader( $skin );
-    
-    // Install the plugin
-    $result = $upgrader->install( $api->download_link );
-    
+    $result = PluginProvisioner::install_wordpress_org_plugin( $slug, true );
+
     if ( is_wp_error( $result ) ) {
         wp_send_json_error( 'Installation failed: ' . $result->get_error_message() );
         return;
     }
-    
-    if ( $result === false ) {
-        wp_send_json_error( 'Installation failed.' );
-        return;
-    }
-    
-    // Activate the plugin
-    $plugin_file = $upgrader->plugin_info();
-    if ( $plugin_file ) {
-        $activate_result = activate_plugin( $plugin_file );
-        if ( is_wp_error( $activate_result ) ) {
-            wp_send_json_success( [
-                'message'   => 'Installed but activation failed: ' . $activate_result->get_error_message(),
-                'activated' => false,
-            ]);
-            return;
-        }
-    }
-    
+
     wp_send_json_success( [
-        'message'   => 'Plugin installed and activated successfully.',
-        'activated' => true,
+        'message'   => $result['message'] ?? 'Plugin installed and activated successfully.',
+        'activated' => ! empty( $result['activated'] ),
     ]);
 }
 
@@ -427,34 +252,15 @@ function ajax_activate_plugin() {
         return;
     }
 
-    // — Load required files
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-    // — Check if the plugin file actually exists
-    if ( ! file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
-        wp_send_json_error( 'Plugin file not found: ' . $plugin_file );
-        return;
-    }
-
-    // — Check if already active
-    if ( is_plugin_active( $plugin_file ) ) {
-        wp_send_json_success( [
-            'message'   => 'Plugin is already active.',
-            'activated' => true,
-        ]);
-        return;
-    }
-
-    // — Activate the plugin
-    $result = activate_plugin( $plugin_file );
+    $result = PluginProvisioner::activate_plugin_file( $plugin_file );
     if ( is_wp_error( $result ) ) {
         wp_send_json_error( 'Activation failed: ' . $result->get_error_message() );
         return;
     }
 
     wp_send_json_success( [
-        'message'   => 'Plugin activated successfully.',
-        'activated' => true,
+        'message'   => $result['message'] ?? 'Plugin activated successfully.',
+        'activated' => ! empty( $result['activated'] ),
     ]);
 }
 
@@ -596,16 +402,7 @@ function hws_get_red_flag_plugins() {
  * @return array Status array with installed, active, auto_update keys
  */
 function hws_check_plugin_status( $plugin_path ) {
-    $all_plugins = get_plugins();
-    $active_plugins = get_option( 'active_plugins', [] );
-    $auto_updates = (array) get_site_option( 'auto_update_plugins', [] );
-    
-    return [
-        'installed'   => isset( $all_plugins[ $plugin_path ] ),
-        'active'      => in_array( $plugin_path, $active_plugins, true ),
-        'auto_update' => in_array( $plugin_path, $auto_updates, true ),
-        'version'     => isset( $all_plugins[ $plugin_path ] ) ? $all_plugins[ $plugin_path ]['Version'] : null,
-    ];
+    return PluginProvisioner::plugin_status_by_file( (string) $plugin_path );
 }
 
 function hws_render_additional_hws_plugins_panel(): void {

@@ -41,6 +41,23 @@ This file records the current HWS Base Tools dashboard feature inventory and the
 5. Update Center panels: replace local updater panels with core updater UI primitives.
 6. Tab framework: replace HWS tab output with the core tab registry while preserving existing tab IDs.
 
+## Deep Refactor Scan - 2026-06-19
+
+### Extracted To Hexa WordPress Plugin Core
+
+- Safe admin-AJAX guards: `safe-wrappers.php` functions `hws_create_nonce()`, `hws_verify_nonce( $nonce = null )`, `hws_require_ajax_nonce_or_error( $field = 'nonce' )`, and `hws_safe_ajax_handler( $callback, $capability = 'manage_options', $verify_nonce = true )` now delegate to `Hexa\PluginCore\WpAdminAjax\AjaxGuard`.
+- System environment helpers: `safe-wrappers.php` functions `hws_is_function_disabled( $function_name )`, `hws_safe_shell_exec( $command )`, `hws_safe_exec( $command, $timeout = 5 )`, `hws_get_constant( $name, $default = null )`, `hws_get_ini( $name, $default = null )`, `hws_parse_size( $size )`, `hws_read_system_file( $path )`, `hws_parse_cgroup_memory_limit( $value )`, `hws_get_cgroup_memory_limit()`, `hws_count_cpuset_cpus( $cpuset )`, `hws_get_cpu_info()`, `hws_get_memory_info()`, `hws_get_cpu_count()`, and `hws_format_bytes( $bytes, $precision = 2 )` now delegate to `Hexa\PluginCore\SystemEnvironment\SystemEnvironment`.
+- Plugin provisioning mechanics: `settings-dashboard-check-plugins.php` functions `hws_find_plugin_file_by_folder( string $slug ): string`, `hws_check_additional_hws_plugin_status( string $slug ): array`, `hws_prepare_wp_filesystem()`, `hws_cleanup_install_work_dir( string $path ): void`, `hws_normalize_hws_github_plugin_folder( string $slug )`, `hws_install_hws_github_plugin_package( string $slug, array $plugin )`, `hws_check_plugin_status( $plugin_path )`, `ajax_install_plugin()`, and `ajax_activate_plugin()` now delegate reusable discovery/install/activation logic to `Hexa\PluginCore\PluginProvisioning\PluginProvisioner`.
+
+### Next Generic Extractions
+
+- Plugin library UI: `settings-dashboard-check-plugins.php` still owns HWS-specific plugin catalog data (`hws_get_additional_hws_plugins(): array`, `hws_get_additional_hws_plugin( string $slug ): ?array`) and HTML rendering. Keep catalog data host-owned, but move reusable table/action UI into `WpAdminComponents` once another plugin needs the same panel.
+- Repeated scheduler panels: `settings-dashboard-log-delete-cron.php`, `settings-dashboard-backups.php`, and `settings-dashboard-elementor-db-cron.php` repeat enable/disable/update/run-now/state patterns. Extract to a core `ScheduledAdminTask` namespace before touching the individual UIs.
+- Secret/public action URLs: `settings-dashboard-update-center.php` and `settings-dashboard-masked-login.php` both define URL keys, shared master secret usage, public output rendering, logs, AJAX toggles, and status payloads. Extract route/key/output behavior to a core `SecretActions` namespace.
+- Media and brand assets: favicon generation, ICO writing, image cropping, attachment persistence, logo slots, gallery IDs, and shortcode output are spread across `settings-dashboard.php`, `register-acf-website-settings.php`, and `snippet-website-settings-functionality.php`. Extract generic image processing to `MediaAssets`, then brand-specific registry/output to `BrandAssets`.
+- WP config mutation: existing structured bridge `src/Admin/Dashboard/LegacyEventBridge.php` still calls HWS procedural config handlers. The wp-config read/write logic should move into a core `WpConfigFile` namespace before expanding memory/debug controls.
+- Feature registry: `initialization.php`, `settings-dashboard-features.php`, and snippet files duplicate feature metadata, toggles, tests, code examples, and logs. Extract definition/render/test contracts to a core `FeatureRegistry` namespace.
+
 ## Error Log Findings
 
 HWS currently has two log systems:

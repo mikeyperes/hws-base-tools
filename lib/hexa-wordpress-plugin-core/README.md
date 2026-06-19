@@ -31,10 +31,13 @@ hexa-wordpress-plugin-core/
     CoreRuntime/        -> Hexa\PluginCore\CoreRuntime
     CredentialVault/    -> Hexa\PluginCore\CredentialVault
     LogFiles/           -> Hexa\PluginCore\LogFiles
+    PluginProvisioning/ -> Hexa\PluginCore\PluginProvisioning
     PluginUpdates/      -> Hexa\PluginCore\PluginUpdates
     ShortcodeRegistry/  -> Hexa\PluginCore\ShortcodeRegistry
     SmartSearch/        -> Hexa\PluginCore\SmartSearch
+    SystemEnvironment/  -> Hexa\PluginCore\SystemEnvironment
     WpAdminComponents/  -> Hexa\PluginCore\WpAdminComponents
+    WpAdminAjax/        -> Hexa\PluginCore\WpAdminAjax
     WpAdminTabs/        -> Hexa\PluginCore\WpAdminTabs
 ```
 
@@ -49,10 +52,13 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
+- `PluginProvisioning`: shared plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
 - `PluginUpdates`: shared GitHub/update configuration objects and host plugin updater.
 - `ShortcodeRegistry`: shortcode definition registry, dashboard metadata, and test runner contracts.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
+- `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
+- `WpAdminAjax`: WordPress admin-AJAX nonce, capability, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 
 ## Host Plugin Integration Rule

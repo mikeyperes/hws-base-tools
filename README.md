@@ -133,7 +133,18 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.34 (Current)
+### v10.18.36 (Current)
+- Updated vendored Hexa WordPress Plugin Core to v0.8.0.
+- Added `Hexa\PluginCore\PluginProvisioning\PluginProvisioner` for reusable plugin status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
+- Refactored HWS plugin library/install handlers to delegate reusable provisioning mechanics to Hexa Plugin Core while keeping HWS plugin catalog data in HWS.
+- Corrected the Overview error-log renderer reference to the flat `Hexa\PluginCore\LogFiles` namespace.
+
+### v10.18.35
+- Updated vendored Hexa WordPress Plugin Core to v0.7.0.
+- Moved reusable HWS safe wrappers into core namespaces: `WpAdminAjax` for nonce/capability/AJAX guards and `SystemEnvironment` for safe shell, INI/constant reads, CPU/memory detection, size parsing, and byte formatting.
+- Converted HWS `safe-wrappers.php` into compatibility shims so existing dashboard and AJAX handlers keep the same function names while using the shared core implementation.
+
+### v10.18.34
 - Updated vendored Hexa WordPress Plugin Core to v0.6.0 and switched HWS to the flat core namespaces: PluginUpdates, CorePackageUpdates, WpAdminTabs, WpAdminComponents, ActivityLog, SmartSearch, CredentialVault, LogFiles, ShortcodeRegistry, CoreRuntime, CoreContracts, and CoreBootstrap.
 
 ### v10.18.33
