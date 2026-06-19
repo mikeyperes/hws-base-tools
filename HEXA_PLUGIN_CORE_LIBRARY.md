@@ -34,6 +34,7 @@ src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
 src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
+src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
 ```
 
 ## UI Components
@@ -100,6 +101,32 @@ $result = PluginProvisioner::ensure_github_plugin_active(
     'mikeyperes/smp-verified-profiles',
     [ 'branch' => 'main' ]
 );
+```
+
+## WP Config File
+
+Namespace:
+
+```text
+Hexa\PluginCore\WpConfigFile
+```
+
+Use `WpConfigFile` for safe `wp-config.php` constant and `ini_set()` reads/writes. Host plugins should not write direct regex file mutation code.
+
+```php
+use Hexa\PluginCore\WpConfigFile\WpConfigFile;
+
+$result = WpConfigFile::modify_constants([
+    'WP_DEBUG' => 'false',
+    'WP_MEMORY_LIMIT' => '4096M',
+    'ini_display_errors' => [
+        'type' => 'ini',
+        'value' => '0',
+    ],
+]);
+
+$memory = WpConfigFile::constant_status( 'WP_MEMORY_LIMIT' );
+$ini = WpConfigFile::get_php_ini_value( 'display_errors' );
 ```
 
 Class:

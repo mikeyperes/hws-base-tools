@@ -45,6 +45,7 @@ src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
 src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
+src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
 ```
 
 If you add a namespace, add it to `README.md`, `docs/folder-map.md`, and this file in the same change.
@@ -78,6 +79,7 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put vendored core package version checks and core package update UI in `src/CorePackageUpdates`; do not treat the shared core as a WordPress plugin.
 - Put WordPress admin-AJAX nonce/capability/handler guards in `src/WpAdminAjax`.
 - Put bootstrap/lifecycle orchestration in `src/CoreBootstrap`.
+- Put safe `wp-config.php` constant and `ini_set()` reads/writes in `src/WpConfigFile`.
 
 ## WordPress Rules
 

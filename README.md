@@ -133,7 +133,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.36 (Current)
+### v10.18.37 (Current)
+- Updated vendored Hexa WordPress Plugin Core to v0.9.0.
+- Added `Hexa\PluginCore\WpConfigFile\WpConfigFile` for safe `wp-config.php` constant and `ini_set()` reads/writes.
+- Refactored HWS wp-config helpers in `generic-functions.php` into compatibility shims that delegate to Hexa Plugin Core.
+
+### v10.18.36
 - Updated vendored Hexa WordPress Plugin Core to v0.8.0.
 - Added `Hexa\PluginCore\PluginProvisioning\PluginProvisioner` for reusable plugin status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
 - Refactored HWS plugin library/install handlers to delegate reusable provisioning mechanics to Hexa Plugin Core while keeping HWS plugin catalog data in HWS.

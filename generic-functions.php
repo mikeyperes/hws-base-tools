@@ -523,20 +523,7 @@ if (!function_exists(__NAMESPACE__ . '\\check_php_ini_status')) {
 
 if (!function_exists(__NAMESPACE__ . '\\check_wp_config_constant_status')) {
     function check_wp_config_constant_status($constant_name) {
-        if (defined($constant_name)) {
-            $constant_value = constant($constant_name);
-
-            // Check for booleans and handle them explicitly
-            if (is_bool($constant_value)) {
-                $log_value = $constant_value ? 'true' : 'false';
-            } else {
-                $log_value = $constant_value;
-            }
-
-    
-            // Return 'true' or 'false' if the constant is a boolean, otherwise return its value
-            return $log_value;
-        } else return 'undefined';  
+        return \Hexa\PluginCore\WpConfigFile\WpConfigFile::constant_status( (string) $constant_name );
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_wp_config_constant_status function is already declared", true);
 
@@ -1339,216 +1326,14 @@ if ( ! function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
      * @return array ['status' => bool, 'message' => string]
      */
     function modify_wp_config_constants( $constants_to_update ) {
-        $wp_config_path = ABSPATH . 'wp-config.php';
-        $backup_path = ABSPATH . 'wp-config.php.hws-backup-' . time();
-
-        // Check file exists and is writable
-        if ( ! file_exists( $wp_config_path ) || ! is_writable( $wp_config_path ) ) {
-            return [
-                'status'  => false,
-                'message' => 'wp-config.php does not exist or is not writable.',
-            ];
-        }
-
-        // Read the original file
-        $config_content = file_get_contents( $wp_config_path );
-        if ( false === $config_content || empty( $config_content ) ) {
-            return [
-                'status'  => false,
-                'message' => 'Failed to read wp-config.php or file is empty.',
-            ];
-        }
-
-        // Store original length for validation
-        $original_length = strlen( $config_content );
-        
-        // SAFETY: Minimum viable wp-config.php must be at least 500 bytes
-        if ( $original_length < 500 ) {
-            return [
-                'status'  => false,
-                'message' => 'wp-config.php appears too small (' . $original_length . ' bytes). Aborting to prevent corruption.',
-            ];
-        }
-
-        // SAFETY: Must contain critical WordPress markers
-        if ( strpos( $config_content, '<?php' ) === false ) {
-            return [
-                'status'  => false,
-                'message' => 'wp-config.php missing <?php tag. File may be corrupted.',
-            ];
-        }
-        
-        if ( strpos( $config_content, 'DB_NAME' ) === false && strpos( $config_content, 'wp-settings.php' ) === false ) {
-            return [
-                'status'  => false,
-                'message' => 'wp-config.php missing DB_NAME or wp-settings.php reference. File may be corrupted.',
-            ];
-        }
-
-        // SAFETY: Create backup BEFORE any modifications
-        if ( false === file_put_contents( $backup_path, $config_content ) ) {
-            return [
-                'status'  => false,
-                'message' => 'Failed to create backup. Aborting modification for safety.',
-            ];
-        }
-
-        // Store the modified content in a separate variable
-        $modified_content = $config_content;
-
-        foreach ( $constants_to_update as $constant => $raw_value ) {
-            $type  = 'define';
-            $value = $raw_value;
-
-            // If value is an array with a 'type' key, extract it
-            if ( is_array( $raw_value ) && isset( $raw_value['type'], $raw_value['value'] ) ) {
-                $type  = $raw_value['type'];
-                $value = $raw_value['value'];
-            }
-
-            // Allow shorthand: constant name prefixed with "ini_" implies type=ini
-            if ( 0 === stripos( $constant, 'ini_' ) ) {
-                $type       = 'ini';
-                $constant   = substr( $constant, 4 ); // remove "ini_" prefix
-            }
-
-            // Convert string "true"/"false" to boolean if needed
-            if ( is_string( $value ) ) {
-                if ( 'true' === strtolower( $value ) ) {
-                    $value = true;
-                } elseif ( 'false' === strtolower( $value ) ) {
-                    $value = false;
-                }
-            }
-
-            if ( 'ini' === $type ) {
-                // ini_set – preserve original casing
-                $escaped_value = str_replace( "'", "\\'", (string) $value );
-                $new_line      = "ini_set( '{$constant}', '{$escaped_value}' );";
-
-                // Remove existing ini_set for this constant
-                $pattern = "/ini_set\s*\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;\s*/i";
-                $result = preg_replace( $pattern, '', $modified_content );
-                
-                // SAFETY: Check for preg_replace failure (returns NULL on error)
-                if ( $result === null ) {
-                    @unlink( $backup_path );
-                    return [
-                        'status'  => false,
-                        'message' => "Regex error processing ini_set for {$constant}. Aborting.",
-                    ];
-                }
-                $modified_content = $result;
-
-                // Insert new ini_set after <?php using string manipulation (safer than regex)
-                $php_pos = strpos( $modified_content, '<?php' );
-                if ( $php_pos !== false ) {
-                    $insert_pos = $php_pos + 5; // After '<?php'
-                    // Skip any existing whitespace/newline right after <?php
-                    while ( isset( $modified_content[ $insert_pos ] ) && 
-                            ( $modified_content[ $insert_pos ] === ' ' || $modified_content[ $insert_pos ] === "\t" ) ) {
-                        $insert_pos++;
-                    }
-                    $modified_content = substr( $modified_content, 0, $insert_pos ) . 
-                                       "\n{$new_line}" . 
-                                       substr( $modified_content, $insert_pos );
-                }
-            } else {
-                // FORCE constant name to uppercase for define(...)
-                $constant = strtoupper( $constant );
-
-                if ( is_bool( $value ) ) {
-                    $new_constant = $value
-                        ? "define( '{$constant}', true );"
-                        : "define( '{$constant}', false );";
-                } elseif ( is_numeric( $value ) ) {
-                    $new_constant = "define( '{$constant}', {$value} );";
-                } else {
-                    $escaped = str_replace( "'", "\\'", (string) $value );
-                    $new_constant = "define( '{$constant}', '{$escaped}' );";
-                }
-
-                // Remove existing define for this constant
-                $pattern = "/define\s*\(\s*['\"]" . preg_quote( $constant, '/' ) . "['\"]\s*,\s*.*?\)\s*;\s*/i";
-                $result = preg_replace( $pattern, '', $modified_content );
-                
-                // SAFETY: Check for preg_replace failure
-                if ( $result === null ) {
-                    @unlink( $backup_path );
-                    return [
-                        'status'  => false,
-                        'message' => "Regex error removing old define for {$constant}. Aborting.",
-                    ];
-                }
-                $modified_content = $result;
-
-                // Insert new constant after <?php using string manipulation (safer than regex)
-                $php_pos = strpos( $modified_content, '<?php' );
-                if ( $php_pos !== false ) {
-                    $insert_pos = $php_pos + 5; // After '<?php'
-                    // Skip any existing whitespace/newline right after <?php
-                    while ( isset( $modified_content[ $insert_pos ] ) && 
-                            ( $modified_content[ $insert_pos ] === ' ' || $modified_content[ $insert_pos ] === "\t" ) ) {
-                        $insert_pos++;
-                    }
-                    $modified_content = substr( $modified_content, 0, $insert_pos ) . 
-                                       "\n{$new_constant}" . 
-                                       substr( $modified_content, $insert_pos );
-                }
-            }
-        }
-
-        // SAFETY: Final validation before writing
-        $final_length = strlen( $modified_content );
-        
-        // Content shouldn't shrink by more than 30%
-        if ( $final_length < ( $original_length * 0.7 ) ) {
-            @unlink( $backup_path );
-            return [
-                'status'  => false,
-                'message' => 'Modified content shrank too much (' . $final_length . ' vs ' . $original_length . ' bytes). Possible corruption. Aborting.',
-            ];
-        }
-        
-        // Must still contain critical markers
-        if ( strpos( $modified_content, '<?php' ) === false ) {
-            @unlink( $backup_path );
-            return [
-                'status'  => false,
-                'message' => 'Modified content missing <?php tag. Aborting to prevent corruption.',
-            ];
-        }
-        
-        if ( strpos( $modified_content, 'DB_NAME' ) === false && strpos( $modified_content, 'wp-settings.php' ) === false ) {
-            @unlink( $backup_path );
-            return [
-                'status'  => false,
-                'message' => 'Modified content missing critical WordPress markers. Aborting.',
-            ];
-        }
-
-        // Write the modified content
-        $write_result = file_put_contents( $wp_config_path, $modified_content );
-        if ( false === $write_result ) {
-            // SAFETY: Attempt to restore from backup
-            if ( file_exists( $backup_path ) ) {
-                @copy( $backup_path, $wp_config_path );
-            }
-            @unlink( $backup_path );
-            return [
-                'status'  => false,
-                'message' => 'Failed to write wp-config.php. Backup restored if possible.',
-            ];
-        }
-
-        // Keep a permanent backup (overwrite previous)
-        $permanent_backup = ABSPATH . 'wp-config.php.hws-last-backup';
-        @rename( $backup_path, $permanent_backup );
-
-        return [
-            'status'  => true,
-            'message' => 'Constants updated successfully. Backup saved as wp-config.php.hws-last-backup',
-        ];
+        return \Hexa\PluginCore\WpConfigFile\WpConfigFile::modify_constants(
+            (array) $constants_to_update,
+            ABSPATH . 'wp-config.php',
+            [
+                'backup_path'           => ABSPATH . 'wp-config.php.hws-backup-' . time(),
+                'permanent_backup_path' => ABSPATH . 'wp-config.php.hws-last-backup',
+            ]
+        );
     }
 }
 
@@ -1715,33 +1500,7 @@ function render_enable_plugin_auto_updates_button() {
 
     if (!function_exists(__NAMESPACE__ . '\\get_wp_config_defined_constants')) {
     function get_wp_config_defined_constants() {
-        // List of constants to exclude (security-sensitive)
-        $exclude_constants = [
-            'DB_NAME',
-            'DB_USER',
-            'DB_PASSWORD',
-            'DB_HOST',
-            'DB_CHARSET',
-            'DB_COLLATE',
-            'AUTH_KEY',
-            'SECURE_AUTH_KEY',
-            'LOGGED_IN_KEY',
-            'NONCE_KEY',
-            'AUTH_SALT',
-            'SECURE_AUTH_SALT',
-            'LOGGED_IN_SALT',
-            'NONCE_SALT',
-        ];
-
-        // Get all defined constants
-        $all_constants = get_defined_constants(true);
-
-        // Filter out the excluded constants
-        $filtered_constants = array_filter($all_constants['user'], function($key) use ($exclude_constants) {
-            return !in_array($key, $exclude_constants);
-        }, ARRAY_FILTER_USE_KEY);
-
-        return $filtered_constants;
+        return \Hexa\PluginCore\WpConfigFile\WpConfigFile::defined_constants();
     }
 }
 
@@ -2062,26 +1821,11 @@ $toggle_button = ($current_status === 'DISABLED')
 
 // Helper function to get the value of a PHP setting, considering wp-config.php overrides
 function get_php_ini_value($setting_name) {
-    // Step 1: Try getting the value from ini_get
-    $value = ini_get($setting_name);
-
-    // Log the value from ini_get
-   // write_log("ini_get value for $setting_name: " . var_export($value, true), true);
-
-    // Step 2: Try reading wp-config.php for ini_set() overrides
-    $wp_config_path = ABSPATH . 'wp-config.php';
-    if (file_exists($wp_config_path)) {
-        $config_content = file_get_contents($wp_config_path);
-
-        // Check if there's an ini_set line for this setting in wp-config.php
-        $pattern = "/ini_set\(\s*['\"]{$setting_name}['\"]\s*,\s*['\"](.*?)['\"]\s*\);/";
-        if (preg_match($pattern, $config_content, $matches)) {
-            $value = $matches[1]; // Override the value with what's found in wp-config.php
-            write_log("Overriding ini_get with value from wp-config.php for $setting_name: " . var_export($value, true), false);
-        }
-    }
-
-    return $value !== false ? $value : 'unknown'; // Return 'unknown' if nothing works
+    return \Hexa\PluginCore\WpConfigFile\WpConfigFile::get_php_ini_value(
+        (string) $setting_name,
+        ABSPATH . 'wp-config.php',
+        __NAMESPACE__ . '\\write_log'
+    );
 }
 
 
@@ -2091,50 +1835,16 @@ function get_php_ini_value($setting_name) {
 
 if (!function_exists(__NAMESPACE__ . '\\toggle_php_ini_value')) {
     function toggle_php_ini_value($setting_name, $new_value) {
-        // Attempt to set the ini value dynamically
-        $result = ini_set($setting_name, $new_value);
-
-        // Log whether the dynamic ini_set succeeded or failed
-        if ($result === false) {
-            write_log("Error: Failed to update {$setting_name} to {$new_value}.", true);
-            return 'fail';
-        }
-
-        // Proceed to update wp-config.php for persistence
-        $wp_config_path = ABSPATH . 'wp-config.php';
-
-        if (!file_exists($wp_config_path) || !is_writable($wp_config_path)) {
-            write_log("Error: wp-config.php is either missing or not writable.", true);
-            return 'fail';
-        }
-
-        // Read the current content of wp-config.php
-        $config_content = file_get_contents($wp_config_path);
-
-        // Check if the ini_set already exists and update or append the setting
-        if (strpos($config_content, "ini_set('{$setting_name}'") !== false) {
-            // Update the existing ini_set line
-            $config_content = preg_replace(
-                "/ini_set\('{$setting_name}',\s*'(.*)'\);/",
-                "ini_set('{$setting_name}', '{$new_value}');",
-                $config_content
-            );
-            write_log("Info: Updated existing {$setting_name} to {$new_value} in wp-config.php.", true);
-        } else {
-            // Append the new ini_set line before the final comment line
-            $new_line = "ini_set('{$setting_name}', '{$new_value}');\n";
-            $config_content = preg_replace('/(\/\* That\'s all, stop editing! Happy publishing\. \*\/)/', $new_line . "$1", $config_content);
-            write_log("Info: Added new ini_set for {$setting_name} with value {$new_value} in wp-config.php.", true);
-        }
-
-        // Write the updated content back to wp-config.php
-        if (file_put_contents($wp_config_path, $config_content)) {
-            write_log("Success: Changes to {$setting_name} have been persisted in wp-config.php.", true);
-            return 'success';
-        } else {
-            write_log("Error: Failed to write changes  {$setting_name} with value {$new_value} to wp-config.php.", true);
-            return 'fail';
-        }
+        return \Hexa\PluginCore\WpConfigFile\WpConfigFile::toggle_php_ini_value(
+            (string) $setting_name,
+            (string) $new_value,
+            ABSPATH . 'wp-config.php',
+            __NAMESPACE__ . '\\write_log',
+            [
+                'backup_path'           => ABSPATH . 'wp-config.php.hws-backup-' . time(),
+                'permanent_backup_path' => ABSPATH . 'wp-config.php.hws-last-backup',
+            ]
+        );
     }
 } else {
     write_log("Warning: hws_base_tools\toggle_php_ini_value is already declared.", true);
