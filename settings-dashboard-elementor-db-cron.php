@@ -117,13 +117,13 @@ function hws_elementor_db_ajax_get_state() {
 function hws_elementor_db_cron_schedules( $schedules ) {
     $interval_days = (int) get_option( Elementor_DB_Updater_Config::OPT_INTERVAL, Elementor_DB_Updater_Config::DEFAULT_INTERVAL );
     $interval_seconds = $interval_days * DAY_IN_SECONDS;
-    
-    $schedules['hws_elementor_db_interval'] = [
-        'interval' => $interval_seconds,
-        'display'  => sprintf( 'Every %d days (HWS Elementor DB Updater)', $interval_days ),
-    ];
-    
-    return $schedules;
+
+    return \Hexa\PluginCore\WpCronTasks\WpCronTask::add_interval_schedule(
+        (array) $schedules,
+        'hws_elementor_db_interval',
+        $interval_seconds,
+        sprintf( 'Every %d days (HWS Elementor DB Updater)', $interval_days )
+    );
 }
 
 
@@ -150,19 +150,18 @@ function hws_elementor_db_updater_first_run() {
  * Schedule the cron job
  */
 function hws_elementor_db_updater_schedule() {
-    // Clear existing schedule first
-    hws_elementor_db_updater_unschedule();
-    
-    // Schedule the event (interval is registered via filter in init)
-    if ( ! wp_next_scheduled( Elementor_DB_Updater_Config::CRON_HOOK ) ) {
-        $interval_days = (int) get_option( Elementor_DB_Updater_Config::OPT_INTERVAL, Elementor_DB_Updater_Config::DEFAULT_INTERVAL );
-        $interval_seconds = $interval_days * DAY_IN_SECONDS;
-        
-        wp_schedule_event( time() + $interval_seconds, 'hws_elementor_db_interval', Elementor_DB_Updater_Config::CRON_HOOK );
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "[HWS Elementor DB Updater] Cron scheduled: every {$interval_days} days" );
-        }
+    $interval_days = (int) get_option( Elementor_DB_Updater_Config::OPT_INTERVAL, Elementor_DB_Updater_Config::DEFAULT_INTERVAL );
+    $interval_seconds = $interval_days * DAY_IN_SECONDS;
+
+    $scheduled = \Hexa\PluginCore\WpCronTasks\WpCronTask::schedule_interval(
+        Elementor_DB_Updater_Config::CRON_HOOK,
+        'hws_elementor_db_interval',
+        $interval_seconds,
+        sprintf( 'Every %d days (HWS Elementor DB Updater)', $interval_days )
+    );
+
+    if ( $scheduled && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( "[HWS Elementor DB Updater] Cron scheduled: every {$interval_days} days" );
     }
 }
 
@@ -171,12 +170,7 @@ function hws_elementor_db_updater_schedule() {
  * Unschedule the cron job
  */
 function hws_elementor_db_updater_unschedule() {
-    $timestamp = wp_next_scheduled( Elementor_DB_Updater_Config::CRON_HOOK );
-    if ( $timestamp ) {
-        wp_unschedule_event( $timestamp, Elementor_DB_Updater_Config::CRON_HOOK );
-    }
-    // Clear all instances
-    wp_clear_scheduled_hook( Elementor_DB_Updater_Config::CRON_HOOK );
+    \Hexa\PluginCore\WpCronTasks\WpCronTask::unschedule_hook( Elementor_DB_Updater_Config::CRON_HOOK );
 }
 
 
@@ -374,16 +368,14 @@ function hws_elementor_db_ajax_run_now() {
  * Get cron job status
  */
 function hws_elementor_db_get_cron_status() {
-    $hook = Elementor_DB_Updater_Config::CRON_HOOK;
-    $next = wp_next_scheduled( $hook );
-    
-    return [
-        'hook'            => $hook,
-        'is_scheduled'    => (bool) $next,
-        'next_run'        => $next ? get_date_from_gmt( date( 'Y-m-d H:i:s', $next ), 'Y-m-d H:i:s' ) : null,
-        'next_run_human'  => $next ? human_time_diff( time(), $next ) : null,
-        'wp_cron_disabled'=> defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
-    ];
+    return \Hexa\PluginCore\WpCronTasks\WpCronTask::status(
+        Elementor_DB_Updater_Config::CRON_HOOK,
+        [
+            'callback'      => __NAMESPACE__ . '\\hws_elementor_db_updater_run',
+            'schedule_key'  => 'hws_elementor_db_interval',
+            'site_timezone' => true,
+        ]
+    );
 }
 
 

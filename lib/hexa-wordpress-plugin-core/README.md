@@ -40,6 +40,7 @@ hexa-wordpress-plugin-core/
     WpAdminAjax/        -> Hexa\PluginCore\WpAdminAjax
     WpAdminTabs/        -> Hexa\PluginCore\WpAdminTabs
     WpConfigFile/       -> Hexa\PluginCore\WpConfigFile
+    WpCronTasks/        -> Hexa\PluginCore\WpCronTasks
 ```
 
 Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`, or plugin-specific namespaces inside this package. Consuming plugins may have their own namespaces, but this shared package always stays under `Hexa\PluginCore`.
@@ -62,6 +63,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `WpAdminAjax`: WordPress admin-AJAX nonce, capability, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 - `WpConfigFile`: safe `wp-config.php` constant and `ini_set()` reads/writes with validation and rollback backup handling.
+- `WpCronTasks`: reusable WP-Cron interval registration, scheduling, unscheduling, event inspection, and health status payloads.
 
 ## Host Plugin Integration Rule
 

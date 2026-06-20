@@ -198,11 +198,11 @@ add_action( 'init', __NAMESPACE__ . '\\hws_backup_cleaner_init' );
  * Schedule cron
  */
 function hws_backup_cleaner_schedule() {
-    hws_backup_cleaner_unschedule();
-    
-    if ( ! wp_next_scheduled( Backup_Cleaner_Config::CRON_HOOK ) ) {
-        wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', Backup_Cleaner_Config::CRON_HOOK );
-    }
+    \Hexa\PluginCore\WpCronTasks\WpCronTask::schedule_existing(
+        Backup_Cleaner_Config::CRON_HOOK,
+        'daily',
+        time() + DAY_IN_SECONDS
+    );
 }
 
 
@@ -210,7 +210,7 @@ function hws_backup_cleaner_schedule() {
  * Unschedule cron
  */
 function hws_backup_cleaner_unschedule() {
-    wp_clear_scheduled_hook( Backup_Cleaner_Config::CRON_HOOK );
+    \Hexa\PluginCore\WpCronTasks\WpCronTask::unschedule_hook( Backup_Cleaner_Config::CRON_HOOK );
 }
 
 
@@ -259,17 +259,13 @@ function hws_backup_cleaner_run() {
  * Get cron status
  */
 function hws_backup_cleaner_get_cron_status() {
-    $next_run = wp_next_scheduled( Backup_Cleaner_Config::CRON_HOOK );
-    $callback_registered = has_action( Backup_Cleaner_Config::CRON_HOOK, __NAMESPACE__ . '\\hws_backup_cleaner_run' );
-    
-    return [
-        'hook'               => Backup_Cleaner_Config::CRON_HOOK,
-        'is_scheduled'       => ! empty( $next_run ),
-        'next_run'           => $next_run ? date( 'Y-m-d H:i:s', $next_run ) : null,
-        'next_run_human'     => $next_run ? human_time_diff( time(), $next_run ) : null,
-        'callback_registered'=> $callback_registered !== false,
-        'wp_cron_disabled'   => defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
-    ];
+    return \Hexa\PluginCore\WpCronTasks\WpCronTask::status(
+        Backup_Cleaner_Config::CRON_HOOK,
+        [
+            'callback'     => __NAMESPACE__ . '\\hws_backup_cleaner_run',
+            'schedule_key' => 'daily',
+        ]
+    );
 }
 
 

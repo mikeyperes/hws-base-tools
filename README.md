@@ -133,7 +133,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.37 (Current)
+### v10.18.38 (Current)
+- Updated vendored Hexa WordPress Plugin Core to v0.10.0.
+- Added `Hexa\PluginCore\WpCronTasks\WpCronTask` for reusable WP-Cron interval registration, scheduling, unscheduling, event inspection, and health status payloads.
+- Refactored log cleaner, backup cleaner, and Elementor DB updater cron helpers to delegate shared scheduling/status mechanics to Hexa Plugin Core.
+
+### v10.18.37
 - Updated vendored Hexa WordPress Plugin Core to v0.9.0.
 - Added `Hexa\PluginCore\WpConfigFile\WpConfigFile` for safe `wp-config.php` constant and `ini_set()` reads/writes.
 - Refactored HWS wp-config helpers in `generic-functions.php` into compatibility shims that delegate to Hexa Plugin Core.

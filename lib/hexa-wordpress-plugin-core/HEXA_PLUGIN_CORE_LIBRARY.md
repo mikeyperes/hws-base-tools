@@ -35,6 +35,7 @@ src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
+src/WpCronTasks/        Hexa\PluginCore\WpCronTasks
 ```
 
 ## UI Components
@@ -127,6 +128,35 @@ $result = WpConfigFile::modify_constants([
 
 $memory = WpConfigFile::constant_status( 'WP_MEMORY_LIMIT' );
 $ini = WpConfigFile::get_php_ini_value( 'display_errors' );
+```
+
+## WP Cron Tasks
+
+Namespace:
+
+```text
+Hexa\PluginCore\WpCronTasks
+```
+
+Use `WpCronTask` for reusable WP-Cron interval registration, scheduling, unscheduling, event inspection, and status payloads.
+
+```php
+use Hexa\PluginCore\WpCronTasks\WpCronTask;
+
+WpCronTask::schedule_interval(
+    'my_plugin_cleanup_cron',
+    'my_plugin_cleanup_interval',
+    5 * DAY_IN_SECONDS,
+    'Every 5 days'
+);
+
+$status = WpCronTask::status(
+    'my_plugin_cleanup_cron',
+    [
+        'callback' => 'my_plugin_cleanup_callback',
+        'schedule_key' => 'my_plugin_cleanup_interval',
+    ]
+);
 ```
 
 Class:

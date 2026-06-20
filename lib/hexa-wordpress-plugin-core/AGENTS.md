@@ -46,6 +46,7 @@ src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
+src/WpCronTasks/        Hexa\PluginCore\WpCronTasks
 ```
 
 If you add a namespace, add it to `README.md`, `docs/folder-map.md`, and this file in the same change.
@@ -80,6 +81,7 @@ Never make a module boot itself at file include time. Modules register hooks fro
 - Put WordPress admin-AJAX nonce/capability/handler guards in `src/WpAdminAjax`.
 - Put bootstrap/lifecycle orchestration in `src/CoreBootstrap`.
 - Put safe `wp-config.php` constant and `ini_set()` reads/writes in `src/WpConfigFile`.
+- Put reusable WP-Cron task scheduling, unscheduling, interval registration, and status inspection in `src/WpCronTasks`.
 
 ## WordPress Rules
 

@@ -125,28 +125,18 @@ function hws_log_cleaner_first_run() {
  * Schedule the cron job
  */
 function hws_log_cleaner_schedule() {
-    // Clear existing schedule first
-    hws_log_cleaner_unschedule();
-    
     $interval_days = (int) get_option( Log_Cleaner_Config::OPT_INTERVAL, Log_Cleaner_Config::DEFAULT_INTERVAL );
     $interval_seconds = $interval_days * DAY_IN_SECONDS;
-    
-    // Register custom interval
-    add_filter( 'cron_schedules', function( $schedules ) use ( $interval_days, $interval_seconds ) {
-        $schedules['hws_log_cleaner_interval'] = [
-            'interval' => $interval_seconds,
-            'display'  => sprintf( 'Every %d days (HWS Log Cleaner)', $interval_days ),
-        ];
-        return $schedules;
-    } );
-    
-    // Schedule the event
-    if ( ! wp_next_scheduled( Log_Cleaner_Config::CRON_HOOK ) ) {
-        wp_schedule_event( time() + $interval_seconds, 'hws_log_cleaner_interval', Log_Cleaner_Config::CRON_HOOK );
-        
-        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-            error_log( "[HWS Log Cleaner] Cron scheduled: every {$interval_days} days" );
-        }
+
+    $scheduled = \Hexa\PluginCore\WpCronTasks\WpCronTask::schedule_interval(
+        Log_Cleaner_Config::CRON_HOOK,
+        'hws_log_cleaner_interval',
+        $interval_seconds,
+        sprintf( 'Every %d days (HWS Log Cleaner)', $interval_days )
+    );
+
+    if ( $scheduled && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log( "[HWS Log Cleaner] Cron scheduled: every {$interval_days} days" );
     }
 }
 
@@ -155,12 +145,7 @@ function hws_log_cleaner_schedule() {
  * Unschedule the cron job
  */
 function hws_log_cleaner_unschedule() {
-    $timestamp = wp_next_scheduled( Log_Cleaner_Config::CRON_HOOK );
-    if ( $timestamp ) {
-        wp_unschedule_event( $timestamp, Log_Cleaner_Config::CRON_HOOK );
-    }
-    // Clear all instances
-    wp_clear_scheduled_hook( Log_Cleaner_Config::CRON_HOOK );
+    \Hexa\PluginCore\WpCronTasks\WpCronTask::unschedule_hook( Log_Cleaner_Config::CRON_HOOK );
 }
 
 
@@ -416,55 +401,13 @@ register_deactivation_hook( $hws_log_cleaner_main_file, __NAMESPACE__ . '\\hws_l
  * @return array Detailed cron status information
  */
 function hws_log_cleaner_get_cron_status() {
-    $cron_hook = Log_Cleaner_Config::CRON_HOOK;
-    $next_run = wp_next_scheduled( $cron_hook );
-    
-    // Get all cron events
-    $cron_array = _get_cron_array();
-    $hook_events = [];
-    
-    if ( is_array( $cron_array ) ) {
-        foreach ( $cron_array as $timestamp => $cron ) {
-            if ( isset( $cron[ $cron_hook ] ) ) {
-                foreach ( $cron[ $cron_hook ] as $hash => $event ) {
-                    $hook_events[] = [
-                        'timestamp'  => $timestamp,
-                        'datetime'   => date( 'Y-m-d H:i:s', $timestamp ),
-                        'schedule'   => $event['schedule'] ?? 'single',
-                        'interval'   => $event['interval'] ?? null,
-                        'args'       => $event['args'] ?? [],
-                    ];
-                }
-            }
-        }
-    }
-    
-    // Check if our custom interval is registered
-    $schedules = wp_get_schedules();
-    $custom_interval_registered = isset( $schedules['hws_log_cleaner_interval'] );
-    
-    // Check if callback is registered
-    $callback_registered = has_action( $cron_hook, __NAMESPACE__ . '\\hws_log_cleaner_run' );
-    
-    // Get cron status
-    $cron_disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
-    $alternate_cron = defined( 'ALTERNATE_WP_CRON' ) && ALTERNATE_WP_CRON;
-    
-    return [
-        'hook_name'            => $cron_hook,
-        'is_scheduled'         => ! empty( $next_run ),
-        'next_run_timestamp'   => $next_run ?: null,
-        'next_run_datetime'    => $next_run ? date( 'Y-m-d H:i:s', $next_run ) : null,
-        'next_run_human'       => $next_run ? human_time_diff( time(), $next_run ) : null,
-        'next_run_relative'    => $next_run ? ( $next_run > time() ? 'in ' . human_time_diff( time(), $next_run ) : 'overdue by ' . human_time_diff( $next_run, time() ) ) : 'Not scheduled',
-        'events'               => $hook_events,
-        'event_count'          => count( $hook_events ),
-        'custom_interval_ok'   => $custom_interval_registered,
-        'callback_registered'  => $callback_registered !== false,
-        'wp_cron_disabled'     => $cron_disabled,
-        'alternate_cron'       => $alternate_cron,
-        'cron_healthy'         => ! $cron_disabled && ! empty( $next_run ) && $callback_registered,
-    ];
+    return \Hexa\PluginCore\WpCronTasks\WpCronTask::status(
+        Log_Cleaner_Config::CRON_HOOK,
+        [
+            'callback'     => __NAMESPACE__ . '\\hws_log_cleaner_run',
+            'schedule_key' => 'hws_log_cleaner_interval',
+        ]
+    );
 }
 
 
