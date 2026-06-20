@@ -527,6 +527,7 @@ function hws_get_dashboard_tabs(): array {
         'features'      => '✨ Features',
         'snippets'      => '✂️ Snippets (Deprecated)',
         'brand-assets'  => '🖼️ Brand Assets',
+        'menu-tools'    => '🧭 Menu Tools',
     ];
 
     if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
@@ -606,6 +607,11 @@ function hws_render_dashboard_tab( string $tab_id ): void {
             break;
         case 'brand-assets':
             render_tab_brand_assets();
+            break;
+        case 'menu-tools':
+            if ( function_exists( __NAMESPACE__ . '\display_settings_menu_tools' ) ) {
+                display_settings_menu_tools();
+            }
             break;
         case 'website-types':
             if ( function_exists( __NAMESPACE__ . '\\display_settings_website_types' ) ) {

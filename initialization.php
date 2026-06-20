@@ -480,6 +480,7 @@ include_once("settings-dashboard-theme-checks.php");
 include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-rank-math-settings.php");
 include_once("settings-dashboard-shortcode-tests.php");
+include_once("settings-dashboard-menu-tools.php");
 
 include_once("snippet-allow-svg-upload.php");
 include_once("snippet-rss.php");

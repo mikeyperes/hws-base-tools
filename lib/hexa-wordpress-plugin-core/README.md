@@ -30,10 +30,14 @@ hexa-wordpress-plugin-core/
     CorePackageUpdates/ -> Hexa\PluginCore\CorePackageUpdates
     CoreRuntime/        -> Hexa\PluginCore\CoreRuntime
     CredentialVault/    -> Hexa\PluginCore\CredentialVault
+    FieldStructures/    -> Hexa\PluginCore\FieldStructures
+    FaqSets/            -> Hexa\PluginCore\FaqSets
     LogFiles/           -> Hexa\PluginCore\LogFiles
     PluginProvisioning/ -> Hexa\PluginCore\PluginProvisioning
     PluginUpdates/      -> Hexa\PluginCore\PluginUpdates
     ShortcodeRegistry/  -> Hexa\PluginCore\ShortcodeRegistry
+    SiteStructure/      -> Hexa\PluginCore\SiteStructure
+    SchemaDetection/    -> Hexa\PluginCore\SchemaDetection
     SmartSearch/        -> Hexa\PluginCore\SmartSearch
     SystemEnvironment/  -> Hexa\PluginCore\SystemEnvironment
     WpAdminComponents/  -> Hexa\PluginCore\WpAdminComponents
@@ -53,14 +57,18 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
 - `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
+- `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
+- `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
 - `PluginProvisioning`: shared plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
 - `PluginUpdates`: shared GitHub/update configuration objects and host plugin updater.
-- `ShortcodeRegistry`: shortcode definition registry, dashboard metadata, and test runner contracts.
+- `ShortcodeRegistry`: shortcode definition registry, dashboard display renderer, examples, live output, and test runner contracts.
+- `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
+- `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
-- `WpAdminAjax`: WordPress admin-AJAX nonce, capability, and handler guards.
+- `WpAdminAjax`: WordPress admin-AJAX nonce, capability, request parsing, action registration, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 - `WpConfigFile`: safe `wp-config.php` constant and `ini_set()` reads/writes with validation and rollback backup handling.
 - `WpCronTasks`: reusable WP-Cron interval registration, scheduling, unscheduling, event inspection, and health status payloads.
@@ -127,6 +135,11 @@ Before adding implementations in another Codex or Claude chat, read:
 - `docs/folder-map.md`
 - `docs/setup-protocol.md`
 - `docs/implementation-checklist.md`
+- `docs/new-plugin-master-checklist.md`
+- `docs/site-structure.md`
+- `docs/schema-detection.md`
+- `docs/field-structures.md`
+- `docs/faq-sets.md`
 - the namespace-specific doc for the folder being changed
 
 If a new feature does not fit an existing namespace, document the proposed namespace first before adding code.
@@ -157,6 +170,10 @@ $core_config = CorePackageConfig::from_core_root(
 ```
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`.
+
+## SiteStructure Section Rendering
+
+`Hexa\PluginCore\SiteStructure\SiteStructureRenderer` can render page assignments and menu tools together or separately. Use `show_pages => false` for a menu-only tab, and `show_menus => false` when a plugin keeps navigation tools somewhere else. This keeps menu building generic while host plugins provide their own page blueprint and action names.
 
 ## Activity Log Component
 
@@ -277,6 +294,61 @@ The core module registers:
 wp_ajax_hexa_plugin_core_smart_search
 ```
 
+## WP Admin AJAX Registry
+
+Use `Hexa\PluginCore\WpAdminAjax\AjaxActionRegistry` for host plugin admin-AJAX actions. Host plugins provide action names and callbacks; core performs capability checks, nonce checks, request normalization, exception handling, and JSON responses.
+
+```php
+use Hexa\PluginCore\WpAdminAjax\AjaxActionRegistry;
+use Hexa\PluginCore\WpAdminAjax\AjaxRequest;
+
+( new AjaxActionRegistry(
+    [
+        'capability'   => 'manage_options',
+        'nonce_action' => 'example_admin',
+        'nonce_field'  => 'nonce',
+    ]
+) )->register(
+    [
+        'example_load_tab' => [
+            'callback' => static function ( AjaxRequest $request ): array {
+                return [ 'tab' => $request->key( 'tab', 'overview' ) ];
+            },
+        ],
+    ]
+);
+```
+
+## Shortcode Display Renderer
+
+Use `Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer` for shortcode admin lists. Every row should show the shortcode, description, real output value, and examples with parameters.
+
+```php
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
+
+echo ( new ShortcodeDisplayRenderer() )->render(
+    [
+        [
+            'label'       => 'Publication Name',
+            'shortcode'   => '[smp_publication_field field="legal_name" format="text"]',
+            'description' => 'Outputs the publication legal name.',
+            'source'      => 'publication option: legal_name',
+            'examples'    => [
+                [
+                    'label'      => 'Text value',
+                    'shortcode'  => '[smp_publication_field field="legal_name" format="text"]',
+                    'parameters' => [ 'field' => 'legal_name', 'format' => 'text' ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'title'       => 'Shortcodes',
+        'description' => 'Copy examples or inspect live output.',
+    ]
+);
+```
+
 ## Error Log Viewer
 
 Use `Hexa\PluginCore\LogFiles` for reusable error-log monitoring.
@@ -289,6 +361,52 @@ use Hexa\PluginCore\LogFiles\ErrorLogSource;
     [
         new ErrorLogSource( 'debug', 'debug.log', WP_CONTENT_DIR . '/debug.log', true, 'delete-debug-log' ),
         new ErrorLogSource( 'error', 'error_log', ABSPATH . 'error_log', true, 'delete-error-log' ),
+    ]
+);
+```
+
+
+## Host Dashboard Tabs
+
+Use `Hexa\PluginCore\WpAdminTabs\HostTabsRenderer` when the host dashboard itself needs the shared Hexa tab bar, AJAX loader, loading status, and browser-history behavior.
+
+```php
+( new \Hexa\PluginCore\WpAdminTabs\HostTabsRenderer() )->render(
+    [
+        "tabs"            => $tabs,
+        "active"          => $active,
+        "page_url"        => admin_url( "options-general.php?page=example-plugin" ),
+        "ajax_action"     => "example_load_tab",
+        "nonce"           => $nonce,
+        "render_callback" => [ $dashboard, "tab" ],
+    ]
+);
+```
+
+## System Checks
+
+`Hexa\PluginCore\SystemChecks\SystemChecksRenderer` renders grouped pass/fail/warn/info checklists from a flat item array. Use it for launch readiness, plugin health, schema audits, and environment checks instead of duplicating checklist HTML in host plugins. See `docs/system-checks.md`.
+
+## Schema Detection
+
+`Hexa\PluginCore\SchemaDetection\SchemaPageScanner` fetches public URLs and extracts JSON-LD schema blocks into structured payloads. `Hexa\PluginCore\SchemaDetection\SchemaScanRenderer` renders those payloads as a dark admin report with source labels, duplicate-type conflict warnings, invalid JSON rows, and FAQPage validation. Host plugins keep their own expectations and pass those expected rows into the renderer. See `docs/schema-detection.md`.
+
+```php
+echo ( new \Hexa\PluginCore\SchemaDetection\SchemaScanRenderer() )->renderReport( [ $scan ], [ "title" => "Schema Detection Results" ] );
+```
+
+## FAQ Sets
+
+`Hexa\PluginCore\FaqSets\FaqSetManager` sanitizes repeatable FAQ set data, normalizes question and answer items, resolves a `primary` set, adds safe link attributes to answer HTML, generates FAQPage schema, and renders reusable list or accordion output. Host plugins keep their own option names and shortcodes. See `docs/faq-sets.md`.
+
+```php
+$manager = new \Hexa\PluginCore\FaqSets\FaqSetManager();
+$set = $manager->resolveSet( $sets, "primary", $primary_slug );
+echo $manager->renderFaqs(
+    $set,
+    [
+        "style" => "accordion",
+        "inject_schema" => true,
     ]
 );
 ```
