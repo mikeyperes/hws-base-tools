@@ -233,7 +233,7 @@ const DEFAULT_SLUG = 'hexa-admin';
         foreach ( $wp_rewrite->rules as $rule_pattern => $target ) {
             if ( $rule_pattern === $pattern ) {
                 // — Rules confirmed present, cache for 24h to avoid checking every request
-                set_transient( 'hws_login_mask_rules_ok', '1', 0 );
+                set_transient( 'hws_login_mask_rules_ok', '1', DAY_IN_SECONDS );
                 return true;
             }
         }
@@ -258,14 +258,25 @@ const DEFAULT_SLUG = 'hexa-admin';
         $o = self::opts();
         if ( empty( $o['enabled'] ) ) return;
 
+        $is_cli = defined( 'WP_CLI' ) && WP_CLI;
+        if ( ! is_admin() && ! $is_cli ) {
+            return;
+        }
+
+        if ( get_transient( 'hws_login_mask_auto_flush_lock' ) ) {
+            return;
+        }
+
         // — If rules are already confirmed, nothing to do
         if ( self::rules_installed() ) return;
+
+        set_transient( 'hws_login_mask_auto_flush_lock', '1', 10 * MINUTE_IN_SECONDS );
 
         // — Rules are missing — auto-flush now
         self::flush_rewrites();
 
         // — Mark as flushed so we don't run this again immediately
-        set_transient( 'hws_login_mask_rules_ok', '1', 0 );
+        set_transient( 'hws_login_mask_rules_ok', '1', DAY_IN_SECONDS );
 
         // — Log the auto-flush event (if logging function exists)
         if ( function_exists( __NAMESPACE__ . '\\hws_login_log' ) ) {

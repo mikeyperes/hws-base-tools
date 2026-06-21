@@ -659,6 +659,12 @@ add_action( 'admin_head', __NAMESPACE__ . '\\inject_ui_cleanup_css', 999 );
  * Rank Math credit text and the right-side version/update footer content.
  */
 function apply_rankmath_admin_footer_cleanup() {
+    static $applied = false;
+
+    if ( $applied ) {
+        return;
+    }
+
     if ( ! get_ui_cleanup_option( 'hide_rankmath_admin_footer' ) ) {
         return;
     }
@@ -672,6 +678,7 @@ function apply_rankmath_admin_footer_cleanup() {
     }, PHP_INT_MAX );
 
     add_filter( 'update_footer', '__return_empty_string', PHP_INT_MAX );
+    $applied = true;
 }
 
 /**
@@ -684,6 +691,12 @@ function apply_rankmath_admin_footer_cleanup() {
  * @since 10.8.0
  */
 function apply_rankmath_content_ai_cleanup() {
+    static $applied = false;
+
+    if ( $applied ) {
+        return;
+    }
+
     // — Only act if the toggle is enabled (default: true)
     if ( ! get_ui_cleanup_option( 'hide_rankmath_content_ai' ) ) {
         return;
@@ -707,8 +720,10 @@ function apply_rankmath_content_ai_cleanup() {
 .rank-math-content-ai-wrapper,
 .rank-math-ca-credits,
 #rank-math-ca-wrap { display: none !important; }
-</style>\n";
+	</style>\n";
     }, 999 );
+
+    $applied = true;
 }
 
 // — Run the Content AI cleanup immediately at include time + admin_init fallback

@@ -249,6 +249,96 @@ public static function get_github_config() {
 }
 }
 
+function hws_request_value( string $key ): string {
+    if ( ! isset( $_REQUEST[ $key ] ) || is_array( $_REQUEST[ $key ] ) ) {
+        return '';
+    }
+
+    return sanitize_key( wp_unslash( $_REQUEST[ $key ] ) );
+}
+
+function hws_is_dashboard_ajax_request(): bool {
+    if ( ! function_exists( 'wp_doing_ajax' ) || ! wp_doing_ajax() ) {
+        return false;
+    }
+
+    $action = hws_request_value( 'action' );
+    if ( '' === $action ) {
+        return false;
+    }
+
+    if ( 0 === strpos( $action, 'hws_' ) || 0 === strpos( $action, 'hws_base_tools_' ) ) {
+        return true;
+    }
+
+    return in_array( $action, [ 'modify_wp_config_constants', 'delete_debug_log', 'delete_error_log' ], true );
+}
+
+function hws_is_dashboard_request(): bool {
+    if ( ! is_admin() ) {
+        return false;
+    }
+
+    if ( Config::$settings_page_slug === hws_request_value( 'page' ) ) {
+        return true;
+    }
+
+    return hws_is_dashboard_ajax_request();
+}
+
+function hws_load_dashboard_files(): void {
+    static $loaded = false;
+
+    if ( $loaded ) {
+        return;
+    }
+
+    include_once __DIR__ . "/helper.php";
+    include_once __DIR__ . "/safe-wrappers.php";
+    hws_boot_structured_admin_modules();
+
+    // Build Dashboard - New modular structure
+    include_once __DIR__ . "/settings-dashboard.php";           // Main dashboard with tabs
+    include_once __DIR__ . "/settings-dashboard-system-checks.php";  // System checks (restored original)
+    include_once __DIR__ . "/settings-dashboard-check-plugins.php";  // Plugin status monitoring
+    include_once __DIR__ . "/settings-dashboard-config.php";    // Configuration & PHP info
+    include_once __DIR__ . "/settings-dashboard-backups.php";   // Backup detection & cleanup
+    include_once __DIR__ . "/settings-dashboard-log-delete-cron.php";  // Log file cleaner
+    include_once __DIR__ . "/settings-dashboard-elementor-db-cron.php"; // Elementor DB auto-updater
+    include_once __DIR__ . "/settings-dashboard-snippets.php";
+    include_once __DIR__ . "/settings-dashboard-features.php";
+    include_once __DIR__ . "/settings-dashboard-website-types.php";  // Website type presets
+    include_once __DIR__ . "/settings-dashboard-footer-text.php";    // Footer text module settings
+    include_once __DIR__ . "/settings-dashboard-ui-cleanup.php";     // UI Cleanup (hide profile elements)
+    include_once __DIR__ . "/settings-dashboard-theme-checks.php";
+    include_once __DIR__ . "/settings-dashboard-plugin-info.php";
+    include_once __DIR__ . "/settings-dashboard-rank-math-settings.php";
+    include_once __DIR__ . "/settings-dashboard-shortcode-tests.php";
+    include_once __DIR__ . "/settings-dashboard-menu-tools.php";
+    include_once __DIR__ . "/settings-dashboard-pages.php";
+
+    $loaded = true;
+}
+
+function hws_render_wp_admin_settings_page(): void {
+    hws_load_dashboard_files();
+
+    if ( function_exists( __NAMESPACE__ . '\\display_wp_admin_settings_page' ) ) {
+        display_wp_admin_settings_page();
+    }
+}
+
+function hws_add_wp_admin_settings_page(): void {
+    add_options_page(
+        Config::$settings_page_name,
+        Config::$settings_page_name,
+        Config::$settings_page_capability,
+        Config::$settings_page_slug,
+        __NAMESPACE__ . '\\hws_render_wp_admin_settings_page'
+    );
+}
+add_action( 'admin_menu', __NAMESPACE__ . '\\hws_add_wp_admin_settings_page' );
+
 function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\PluginUpdates\UpdaterConfig {
     static $config = null;
 
@@ -461,27 +551,9 @@ if (is_admin()){
 
 include_once("helper.php");
 include_once("safe-wrappers.php");  // Safe AJAX, shell_exec, and error handling utilities
-hws_boot_structured_admin_modules();
-
-// Build Dashboard - New modular structure
-include_once("settings-dashboard.php");           // Main dashboard with tabs
-include_once("settings-dashboard-system-checks.php");  // System checks (restored original)
-include_once("settings-dashboard-check-plugins.php");  // Plugin status monitoring
-include_once("settings-dashboard-config.php");    // Configuration & PHP info
-include_once("settings-dashboard-backups.php");   // Backup detection & cleanup
-include_once("settings-dashboard-log-delete-cron.php");  // Log file cleaner
-include_once("settings-dashboard-elementor-db-cron.php"); // Elementor DB auto-updater
-include_once("settings-dashboard-snippets.php");
-include_once("settings-dashboard-features.php");
-include_once("settings-dashboard-website-types.php");  // Website type presets
-include_once("settings-dashboard-footer-text.php");    // Footer text module settings
-include_once("settings-dashboard-ui-cleanup.php");     // UI Cleanup (hide profile elements)
-include_once("settings-dashboard-theme-checks.php");
-include_once("settings-dashboard-plugin-info.php");
-include_once("settings-dashboard-rank-math-settings.php");
-include_once("settings-dashboard-shortcode-tests.php");
-include_once("settings-dashboard-menu-tools.php");
-include_once("settings-dashboard-pages.php");
+if ( hws_is_dashboard_request() ) {
+    hws_load_dashboard_files();
+}
 
 include_once("snippet-allow-svg-upload.php");
 include_once("snippet-rss.php");

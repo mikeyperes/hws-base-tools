@@ -378,7 +378,6 @@ function add_wp_admin_settings_page() {
         __NAMESPACE__ . '\\display_wp_admin_settings_page'
     );
 }
-add_action( 'admin_menu', __NAMESPACE__ . '\\add_wp_admin_settings_page' );
 
 // — Enqueue WP media uploader scripts on our settings page (for favicon upload)
 add_action( 'admin_enqueue_scripts', function( $hook ) {
