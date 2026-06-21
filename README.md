@@ -117,6 +117,10 @@ All in `generic-functions.php` for site-wide use:
 
 ---
 
+## Implementation Queue
+
+- Add a Pages tab to HWS Base Tools to own shared site-level page structures currently tracked in SMP: Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs. Include create/select/reuse flow, page details, template support, menu attachment where appropriate, and admin links from the SMP Pages tab to other installed page-management plugins. Cross-plugin links should open in a new tab and only show when installed: SMP Verified Profiles, Hexa PR Wire, and SFPF Person Profile Integration.
+
 ## Requirements
 
 | Requirement | Minimum |
