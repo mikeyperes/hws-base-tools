@@ -50,13 +50,7 @@ function hws_menu_tools_manager(): PageStructureManager {
     $pages = hws_menu_tools_page_definitions();
     return new PageStructureManager( [
         'pages' => $pages,
-        'menu_structures' => empty( $pages ) ? [] : [
-            'published_pages' => [
-                'title' => 'All Published Pages',
-                'description' => 'Attach every currently published WordPress page to a selected menu.',
-                'page_keys' => array_keys( $pages ),
-            ],
-        ],
+        'menu_structures' => [],
         'option_prefix' => 'hws_menu_tool_page_',
         'assignment_getter' => __NAMESPACE__ . '\\hws_menu_tools_assigned_page_id',
         'assignment_statuses' => [ 'publish' ],
@@ -78,7 +72,7 @@ function hws_menu_tools_actions(): array {
         'create_menu_item' => 'hws_menu_tools_create_menu_item',
         'attach_page_to_menu_item' => 'hws_menu_tools_attach_page_to_menu_item',
         'attach_menu_structure' => 'hws_menu_tools_attach_menu_structure',
-        'add_pages_to_menu' => 'hws_menu_tools_add_pages_to_menu',
+        'menu_inventory' => 'hws_menu_tools_menu_inventory',
     ];
 }
 
@@ -118,7 +112,7 @@ function display_settings_menu_tools(): void {
         'labels' => [
             'menus_title' => 'Navigation Menus',
             'menus_heading' => 'WordPress Menu Items',
-            'menus_description' => 'Build menus from published WordPress pages or custom URL items, then attach assigned pages beneath a specific menu item when needed.',
+            'menus_description' => 'Create custom URL menu items, attach a specific published page beneath an existing menu item, and review the current WordPress menu item structure.',
         ],
     ] ) )->render();
 }
