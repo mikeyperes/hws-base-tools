@@ -144,7 +144,11 @@ function hws_register_pages_ajax(): void {
         },
     ] ) )->register();
 }
-add_action( "init", __NAMESPACE__ . "\\hws_register_pages_ajax" );
+if ( function_exists( "did_action" ) && did_action( "init" ) ) {
+    hws_register_pages_ajax();
+} else {
+    add_action( "init", __NAMESPACE__ . "\\hws_register_pages_ajax" );
+}
 
 function hws_pages_admin_url(): string {
     return admin_url( "options-general.php?page=" . Config::$settings_page_slug . "&tab=pages" );
