@@ -341,7 +341,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.38";
+$plugin_version = "10.18.42";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -481,6 +481,7 @@ include_once("settings-dashboard-plugin-info.php");
 include_once("settings-dashboard-rank-math-settings.php");
 include_once("settings-dashboard-shortcode-tests.php");
 include_once("settings-dashboard-menu-tools.php");
+include_once("settings-dashboard-pages.php");
 
 include_once("snippet-allow-svg-upload.php");
 include_once("snippet-rss.php");

@@ -527,6 +527,7 @@ function hws_get_dashboard_tabs(): array {
         'features'      => '✨ Features',
         'snippets'      => '✂️ Snippets (Deprecated)',
         'brand-assets'  => '🖼️ Brand Assets',
+        'pages'         => '📄 Pages',
         'menu-tools'    => '🧭 Menu Tools',
     ];
 
@@ -607,6 +608,11 @@ function hws_render_dashboard_tab( string $tab_id ): void {
             break;
         case 'brand-assets':
             render_tab_brand_assets();
+            break;
+        case 'pages':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_pages' ) ) {
+                display_settings_pages();
+            }
             break;
         case 'menu-tools':
             if ( function_exists( __NAMESPACE__ . '\display_settings_menu_tools' ) ) {

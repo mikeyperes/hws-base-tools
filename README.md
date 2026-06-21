@@ -119,7 +119,7 @@ All in `generic-functions.php` for site-wide use:
 
 ## Implementation Queue
 
-- Add a Pages tab to HWS Base Tools to own shared site-level page structures currently tracked in SMP: Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs. Include create/select/reuse flow, page details, template support, menu attachment where appropriate, and admin links from the SMP Pages tab to other installed page-management plugins. Cross-plugin links should open in a new tab and only show when installed: SMP Verified Profiles, Hexa PR Wire, and SFPF Person Profile Integration.
+- No active README-tracked implementation queue remains.
 
 ## Requirements
 
@@ -137,7 +137,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.38 (Current)
+### v10.18.42 (Current)
+- Added a Pages tab for shared site-level page structures: Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs.
+- Pages tab supports create/select/reuse flow, template editing, page detail display, and menu attachment through Hexa Plugin Core SiteStructure.
+
+### v10.18.38
 - Updated vendored Hexa WordPress Plugin Core to v0.10.0.
 - Added `Hexa\PluginCore\WpCronTasks\WpCronTask` for reusable WP-Cron interval registration, scheduling, unscheduling, event inspection, and health status payloads.
 - Refactored log cleaner, backup cleaner, and Elementor DB updater cron helpers to delegate shared scheduling/status mechanics to Hexa Plugin Core.
