@@ -68,17 +68,32 @@ function hws_pages_menu_structures(): array {
 }
 
 function hws_pages_default_templates(): array {
-    $site_name = esc_html( get_bloginfo( "name" ) ?: "this website" );
-    $site_url = esc_html( home_url( "/" ) );
+    $templates = [];
+    foreach ( hws_pages_page_definitions() as $type => $config ) {
+        if ( empty( $config["template"] ) ) {
+            continue;
+        }
+        $templates[ $type ] = "[hws_site_page_template type=" . sanitize_key( (string) $type ) . "]";
+    }
+    return $templates;
+}
 
-    return [
-        "terms" => "<h2>Terms of Use</h2>\n\n<p>These Terms of Use govern access to and use of {$site_name} at <a href=\"{$site_url}\">{$site_url}</a>.</p>\n\n<h3>Use of the website</h3>\n<p>Use this page to define permitted use of website content, user conduct, submissions, intellectual property, disclaimers, and limitations of liability. Legal counsel should review this page before publishing.</p>",
-        "privacy" => "<h2>Privacy Policy</h2>\n\n<p>This Privacy Policy explains how {$site_name} handles information collected through <a href=\"{$site_url}\">{$site_url}</a>.</p>\n\n<h3>Information we collect</h3>\n<p>Document analytics, cookies, forms, newsletter tools, advertising partners, retention, user rights, and the privacy contact path. Legal counsel should review this page before publishing.</p>",
-        "brand_assets" => "<h2>Brand Assets</h2>\n\n<p>This page provides approved brand assets for {$site_name}, including logos, marks, colors, screenshots, and usage guidance.</p>\n\n<p>[site_logo key=\"logo\" size=\"medium\"]</p>\n\n<h3>Usage guidelines</h3>\n<ul><li>Use approved logo files without alteration.</li><li>Do not imply endorsement without written approval.</li><li>Contact the publication before using assets in campaigns, press kits, or paid placements.</li></ul>",
-        "headquarters" => "<h2>Headquarters</h2>\n\n<p>This page identifies the public headquarters, operating location, or mailing address context for {$site_name}.</p>\n\n<h3>Location context</h3>\n<p>State whether the organization operates locally, nationally, globally, remotely, or from a public office. Include only approved public address information.</p>",
-        "contact" => "<h2>Contact</h2>\n\n<p>Use this page to list approved public contact paths for {$site_name}.</p>\n\n<h3>Departments</h3>\n<ul><li>General inquiries</li><li>Editorial and corrections</li><li>Advertising and partnerships</li><li>Legal, privacy, and rights requests</li><li>Reader support</li></ul>",
-        "faqs" => "<h2>FAQs</h2>\n\n<h3>How do I contact the team?</h3>\n<p>Use the Contact page for general, editorial, legal, advertising, and support inquiries.</p>\n\n<h3>How are corrections handled?</h3>\n<p>Explain the correction request path and review workflow here.</p>\n\n<h3>Where can I find brand assets?</h3>\n<p>Link to the Brand Assets page and describe approved usage.</p>",
-    ];
+function hws_pages_should_refresh_default_template( string $template ): bool {
+    foreach ( [ "Legal counsel should review this page", "This Privacy Policy explains how", "This page provides approved brand assets", "<h2>FAQs</h2>" ] as $marker ) {
+        if ( false !== strpos( $template, $marker ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function hws_pages_stored_template( string $page_key ): string {
+    $stored = (string) get_option( "hws_site_page_template_" . sanitize_key( $page_key ), "" );
+    if ( "" === trim( $stored ) || hws_pages_should_refresh_default_template( $stored ) ) {
+        $defaults = hws_pages_default_templates();
+        return (string) ( $defaults[ $page_key ] ?? "" );
+    }
+    return $stored;
 }
 
 function hws_pages_actions(): array {
@@ -112,6 +127,7 @@ function hws_pages_manager(): PageStructureManager {
         "assignment_statuses" => [ "publish", "draft", "private", "pending" ],
         "reuse_existing_pages" => true,
         "default_templates" => hws_pages_default_templates(),
+        "template_getter" => __NAMESPACE__ . "\\hws_pages_stored_template",
         "page_detail_renderer" => __NAMESPACE__ . "\\hws_pages_page_detail_html",
         "logger" => static function( string $message ): void {
             if ( function_exists( __NAMESPACE__ . "\\write_log" ) ) {

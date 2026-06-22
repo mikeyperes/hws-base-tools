@@ -45,6 +45,95 @@ add_shortcode( 'hws_brand_asset', __NAMESPACE__ . '\\hws_brand_asset_shortcode' 
 add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 add_shortcode( 'brand_asset_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
 add_shortcode( 'site_gallery', __NAMESPACE__ . '\\hws_brand_gallery_shortcode' );
+add_shortcode( "hws_site_value", __NAMESPACE__ . "\\hws_site_value_shortcode" );
+add_shortcode( "hws_site_page_template", __NAMESPACE__ . "\\hws_site_page_template_shortcode" );
+add_shortcode( "site_page_template", __NAMESPACE__ . "\\hws_site_page_template_shortcode" );
+
+
+function hws_site_value_shortcode( $atts ): string {
+    $atts = shortcode_atts( [ "field" => "site_name", "format" => "text", "fallback" => "" ], $atts, "hws_site_value" );
+    $field = sanitize_key( (string) $atts["field"] );
+    $value = hws_site_value_raw( $field );
+    if ( "" === trim( (string) $value ) && "" !== (string) $atts["fallback"] ) {
+        $value = hws_site_value_raw( sanitize_key( (string) $atts["fallback"] ) );
+    }
+    $format = sanitize_key( (string) $atts["format"] );
+    if ( "url" === $format ) {
+        return esc_url( (string) $value );
+    }
+    if ( "email" === $format ) {
+        return esc_html( sanitize_email( (string) $value ) );
+    }
+    if ( "html" === $format ) {
+        return wp_kses_post( (string) $value );
+    }
+    return esc_html( wp_strip_all_tags( (string) $value ) );
+}
+
+function hws_site_value_raw( string $field ) {
+    switch ( $field ) {
+        case "site_name":
+        case "publication_name":
+            return get_bloginfo( "name" );
+        case "home_url":
+        case "site_url":
+        case "website":
+            return home_url( "/" );
+        case "admin_email":
+        case "contact_email":
+        case "email":
+            return get_option( "admin_email" );
+        case "company_name":
+            $company = do_shortcode( "[company id=name]" );
+            return "" !== trim( wp_strip_all_tags( $company ) ) ? $company : get_bloginfo( "name" );
+    }
+    if ( function_exists( "get_field" ) ) {
+        $value = get_field( $field, "option" );
+        if ( is_scalar( $value ) ) {
+            return $value;
+        }
+    }
+    return "";
+}
+
+function hws_site_page_template_shortcode( $atts ): string {
+    $atts = shortcode_atts( [ "type" => "" ], $atts, "hws_site_page_template" );
+    $type = sanitize_key( (string) $atts["type"] );
+    $definition = "" !== $type ? hws_site_page_template_definition( $type ) : [];
+    return $definition ? wp_kses_post( do_shortcode( hws_site_page_template_html( $type, $definition ) ) ) : "";
+}
+
+function hws_site_page_template_definition( string $type ): array {
+    $definitions = [
+        "terms" => [ "title" => "Terms of Use", "intro" => "These Terms explain the rules for accessing and using [hws_site_value field=site_name] and its website.", "sections" => [ "Using The Website" => [ "Readers may access public content for personal and informational use unless a separate written agreement says otherwise.", "Do not misuse the website, interfere with security, scrape in abusive ways, or submit unlawful, misleading, infringing, or harmful material.", "Content may include opinions, contributed material, press releases, advertising, affiliate links, or third-party references when properly labeled." ], "Submissions And Rights" => [ "Submitted material may be reviewed, edited, declined, or removed according to editorial, legal, and operational standards.", "Users are responsible for rights, permissions, accuracy, disclosures, and lawful use of material they submit.", "Questions should be sent through the Contact page or the approved site email." ] ] ],
+        "privacy" => [ "title" => "Privacy Policy", "intro" => "This Privacy Policy explains how [hws_site_value field=site_name] handles information connected to [hws_site_value field=home_url format=url].", "sections" => [ "Information We Handle" => [ "The site may receive information from forms, comments, newsletters, analytics tools, cookies, advertising partners, security logs, and direct messages.", "Only approved public contact paths should be used for privacy requests; do not publish private staff contact data here.", "Privacy practices should be reviewed against actual forms, analytics, advertising, email, and vendor configurations before publishing." ], "Choices And Contact" => [ "Readers can contact the site about access, deletion, correction, opt-out, cookie, or privacy questions where applicable law provides those rights.", "Privacy inquiries should be sent to [hws_site_value field=contact_email format=email fallback=admin_email].", "This page should be updated when site tools, vendors, forms, or advertising partners change." ] ] ],
+        "brand_assets" => [ "title" => "Brand Assets", "intro" => "This page provides approved brand assets and usage guidance for [hws_site_value field=site_name].", "sections" => [ "Approved Assets" => [ "[site_logo key=logo size=medium]", "[brand_asset_gallery size=medium columns=4]", "Use approved logos, marks, screenshots, and media-kit files without alteration unless written permission is granted." ], "Usage Rules" => [ "Do not imply endorsement, partnership, sponsorship, or editorial approval without written permission.", "Do not distort marks, remove attribution, combine assets with confusing marks, or use assets in misleading campaigns.", "Brand and media requests should go to the approved contact email." ] ] ],
+        "headquarters" => [ "title" => "Headquarters", "intro" => "This page identifies the public headquarters or operating-location context for [hws_site_value field=site_name].", "sections" => [ "Location Context" => [ "List only approved public address, city, region, country, or remote-operating information.", "If the organization uses a mailing address, registered address, or distributed team, explain the distinction clearly.", "Use this page as the public location reference for organization transparency and schema support." ], "Contact" => [ "General location or business inquiries should route through [hws_site_value field=contact_email format=email fallback=admin_email].", "Do not publish private home addresses, private staff locations, or sensitive operational details." ] ] ],
+        "contact" => [ "title" => "Contact", "intro" => "Use this page to route reader, editorial, business, legal, privacy, and support inquiries for [hws_site_value field=site_name].", "sections" => [ "Contact Paths" => [ "General inquiries: [hws_site_value field=contact_email format=email fallback=admin_email].", "Editorial, corrections, tips, press releases, advertising, legal, and privacy inquiries should include the relevant article URL or context.", "Private staff emails, phone numbers, and internal workflows should not be published unless explicitly approved." ], "Response Expectations" => [ "Messages are routed by topic and may not receive a response if they are spam, abusive, or unrelated.", "Correction requests should include the URL, requested change, supporting source, and contact information.", "Advertising or partnership requests should include campaign goals, timing, market, and contact details." ] ] ],
+        "faqs" => [ "title" => "FAQs", "intro" => "These FAQs answer common questions about [hws_site_value field=site_name] and point readers to the right public contact paths.", "sections" => [ "Common Questions" => [ "How do I contact the team? Use the Contact page or email [hws_site_value field=contact_email format=email fallback=admin_email].", "How do I request a correction? Send the article URL, the issue, and supporting information through the approved contact path.", "Where can I find brand assets? Use the Brand Assets page for approved logos, gallery assets, and usage rules.", "How do I submit a press release or pitch? Use the publication-specific submission page when one is available, or send the inquiry through the Contact page." ] ] ],
+    ];
+    return $definitions[ $type ] ?? [];
+}
+
+function hws_site_page_template_html( string $type, array $definition ): string {
+    $html = "<article>";
+    $html .= "<h2>" . esc_html( (string) $definition["title"] ) . "</h2>";
+    $html .= "<p>" . wp_kses_post( (string) $definition["intro"] ) . "</p>";
+    $html .= "<ul>";
+    $html .= "<li><strong>Site:</strong> [hws_site_value field=site_name]</li>";
+    $html .= "<li><strong>URL:</strong> [hws_site_value field=home_url format=url]</li>";
+    $html .= "<li><strong>Contact:</strong> [hws_site_value field=contact_email format=email fallback=admin_email]</li>";
+    $html .= "</ul>";
+    foreach ( (array) $definition["sections"] as $heading => $items ) {
+        $html .= "<h3>" . esc_html( (string) $heading ) . "</h3><ul>";
+        foreach ( (array) $items as $item ) {
+            $html .= "<li>" . wp_kses_post( (string) $item ) . "</li>";
+        }
+        $html .= "</ul>";
+    }
+    $html .= "</article>";
+    return $html;
+}
 
 function hws_get_brand_highlight_background_color(): string {
 	$legacy_background = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
