@@ -137,8 +137,8 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.50 (Current)
-- Added HEXA_UI_CLEANUP_HANDOFF.md with the reusable Hexa Core extraction plan, option map, selector map, AJAX contract, and required Puppeteer proof path for UI Cleanup.
+### v10.18.51 (Current)
+- Removed the transient UI Cleanup handoff file from the plugin package. The handoff was provided in chat and should not ship inside the plugin.
 
 ### v10.18.49
 - Fixed UI Cleanup so Rank Math Content AI, admin footer cleanup, and editor/profile controls load on the screens they target instead of only inside the HWS dashboard.
