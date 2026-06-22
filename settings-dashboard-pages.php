@@ -126,7 +126,7 @@ function hws_pages_manager(): PageStructureManager {
         "template_option_prefix" => "hws_site_page_template_",
         "managed_meta_key" => "_hws_site_managed_page",
         "managed_key_meta_key" => "_hws_site_page_key",
-        "created_page_status" => "draft",
+        "created_page_status" => "publish",
         "select_post_statuses" => [ "publish", "draft", "private", "pending" ],
         "assignment_statuses" => [ "publish", "draft", "private", "pending" ],
         "reuse_existing_pages" => true,
@@ -222,7 +222,7 @@ function display_settings_pages(): void {
         "labels" => [
             "pages_title" => "Shared Site Pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "Create draft pages or assign existing pages for Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs.",
+            "pages_description" => "Create published pages or assign existing pages for Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",

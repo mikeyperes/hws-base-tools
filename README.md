@@ -137,7 +137,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.51 (Current)
+### v10.18.52 (Current)
+- Site Pages now creates required shared pages as published pages by default instead of drafts.
+
+### v10.18.51
 - Removed the transient UI Cleanup handoff file from the plugin package. The handoff was provided in chat and should not ship inside the plugin.
 
 ### v10.18.49
