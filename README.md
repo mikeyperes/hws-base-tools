@@ -137,7 +137,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.49 (Current)
+### v10.18.50 (Current)
+- Added HEXA_UI_CLEANUP_HANDOFF.md with the reusable Hexa Core extraction plan, option map, selector map, AJAX contract, and required Puppeteer proof path for UI Cleanup.
+
+### v10.18.49
 - Fixed UI Cleanup so Rank Math Content AI, admin footer cleanup, and editor/profile controls load on the screens they target instead of only inside the HWS dashboard.
 - Added UI Cleanup options for hiding the classic Comments metabox, hiding the LiteSpeed metabox, forcing LiteSpeed collapsed, and forcing Post Attributes collapsed on editor screens.
 - Renamed the WordPress cleanup group to WordPress User & Editor Screens.
