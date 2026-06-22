@@ -137,7 +137,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.42 (Current)
+### v10.18.49 (Current)
+- Fixed UI Cleanup so Rank Math Content AI, admin footer cleanup, and editor/profile controls load on the screens they target instead of only inside the HWS dashboard.
+- Added UI Cleanup options for hiding the classic Comments metabox, hiding the LiteSpeed metabox, forcing LiteSpeed collapsed, and forcing Post Attributes collapsed on editor screens.
+- Renamed the WordPress cleanup group to WordPress User & Editor Screens.
+
+### v10.18.42
 - Added a Pages tab for shared site-level page structures: Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs.
 - Pages tab supports create/select/reuse flow, template editing, page detail display, and menu attachment through Hexa Plugin Core SiteStructure.
 

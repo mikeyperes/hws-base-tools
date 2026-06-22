@@ -4,7 +4,7 @@
  * HWS Base Tools - UI Cleanup Settings
  * 
  * Hides unnecessary/cluttery UI elements from WordPress admin pages,
- * particularly on the user profile edit screen.
+ * including user profile and post editor screens.
  * 
  * @since 10.7
  */
@@ -32,7 +32,7 @@ add_action( 'wp_ajax_hws_ui_cleanup_bulk', __NAMESPACE__ . '\\ajax_ui_cleanup_bu
 function get_ui_cleanup_options(): array {
     return [
         // ========================================
-        // User Profile - WordPress Core
+        // WordPress user/profile and editor screens
         // ========================================
         'hide_admin_color_scheme' => [
             'label'         => 'Admin Color Scheme',
@@ -99,6 +99,32 @@ function get_ui_cleanup_options(): array {
             'default'       => false,
             'section'       => 'wordpress',
         ],
+        'hide_post_editor_comments' => [
+            'label'         => 'Post Editor Comments',
+            'description'   => 'Hides the Comments metabox on post and page editor screens.',
+            'css_selectors' => '#commentsdiv, #commentsdiv-hide, label[for="commentsdiv-hide"]',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'hide_litespeed_editor_box' => [
+            'label'         => 'LiteSpeed Post Editor Box',
+            'description'   => 'Hides the LiteSpeed metabox on post and page editor screens.',
+            'css_selectors' => '#litespeed_meta_boxes, #litespeed_meta_boxes-hide, label[for="litespeed_meta_boxes-hide"], .postbox[id*="litespeed"]',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'collapse_litespeed_editor_box' => [
+            'label'         => 'LiteSpeed Collapsed By Default',
+            'description'   => 'Keeps the LiteSpeed metabox loaded but forces it closed on post and page editor screens.',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
+        'collapse_post_attributes_box' => [
+            'label'         => 'Post Attributes Collapsed By Default',
+            'description'   => 'Keeps the Post Attributes box loaded but forces it closed on post and page editor screens.',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
 
         // ========================================
         // User Profile - Wordfence
@@ -150,7 +176,7 @@ function display_settings_ui_cleanup() {
     // Group options by section
     $sections = [
         'wordpress'  => [
-            'title' => 'WordPress Core',
+            'title' => 'WordPress User & Editor Screens',
             'icon'  => '🔷',
             'items' => [],
         ],
@@ -346,7 +372,7 @@ function display_settings_ui_cleanup() {
     
     <div class="hws-ui-cleanup-intro">
         <h3>🧹 UI Cleanup</h3>
-        <p>Hide unnecessary or cluttery elements from the WordPress User Profile page. Toggle each option to hide the corresponding UI element.</p>
+        <p>Hide unnecessary or cluttery elements from WordPress profile, user-edit, and post editor screens. Toggle each option to hide or collapse the matching UI element.</p>
     </div>
     
     <div class="hws-ui-bulk-actions">
@@ -552,9 +578,9 @@ function ajax_ui_cleanup_bulk() {
  * Hooked to admin_head
  */
 function inject_ui_cleanup_css() {
-    // Only run on user profile pages
+    // Run on user/profile screens and classic post editor screens.
     global $pagenow;
-    if ( ! in_array( $pagenow, [ 'user-edit.php', 'profile.php' ], true ) ) {
+    if ( ! in_array( $pagenow, [ 'user-edit.php', 'profile.php', 'post.php', 'post-new.php' ], true ) ) {
         return;
     }
     
@@ -562,6 +588,7 @@ function inject_ui_cleanup_css() {
     $css_rules = [];
     $js_hide_headers = [];
     $js_hide_inputs = [];
+    $collapse_editor_boxes = [];
     
     foreach ( $options as $key => $opt ) {
         if ( get_ui_cleanup_option( $key ) ) {
@@ -579,6 +606,13 @@ function inject_ui_cleanup_css() {
             }
         }
     }
+
+    if ( get_ui_cleanup_option( 'collapse_litespeed_editor_box' ) ) {
+        $collapse_editor_boxes[] = '#litespeed_meta_boxes';
+    }
+    if ( get_ui_cleanup_option( 'collapse_post_attributes_box' ) ) {
+        $collapse_editor_boxes[] = '#pageparentdiv';
+    }
     
     // Output CSS if any rules exist
     if ( ! empty( $css_rules ) ) {
@@ -591,7 +625,7 @@ function inject_ui_cleanup_css() {
     }
     
     // Output JS for elements that need text-based matching
-    if ( ! empty( $js_hide_headers ) || ! empty( $js_hide_inputs ) ) {
+    if ( ! empty( $js_hide_headers ) || ! empty( $js_hide_inputs ) || ! empty( $collapse_editor_boxes ) ) {
         ?>
         <script id='hws-ui-cleanup-js'>
         jQuery(document).ready(function($) {
@@ -622,6 +656,33 @@ function inject_ui_cleanup_css() {
             
             $('#<?php echo $escaped; ?>').closest('tr').hide();
             <?php endforeach; ?>
+
+            <?php if ( ! empty( $collapse_editor_boxes ) ) : ?>
+            // Force selected editor metaboxes into collapsed mode without removing them.
+            var hwsCollapseEditorBoxes = <?php echo wp_json_encode( array_values( $collapse_editor_boxes ) ); ?>;
+            function hwsCollapseEditorPostbox(selector) {
+                var $boxes = $(selector).filter(".postbox").add($(selector).closest(".postbox")).filter(".postbox");
+                $boxes.each(function() {
+                    var $box = $(this);
+                    if (!$box.hasClass("closed")) {
+                        $box.addClass("closed");
+                        $box.children(".inside").hide();
+                    }
+                });
+            }
+            function hwsRunEditorPostboxCollapse() {
+                hwsCollapseEditorBoxes.forEach(hwsCollapseEditorPostbox);
+            }
+            hwsRunEditorPostboxCollapse();
+            setTimeout(hwsRunEditorPostboxCollapse, 300);
+            setTimeout(hwsRunEditorPostboxCollapse, 1000);
+            if (window.MutationObserver) {
+                var hwsEditorBoxObserver = new MutationObserver(function() {
+                    hwsRunEditorPostboxCollapse();
+                });
+                hwsEditorBoxObserver.observe(document.body, { childList: true, subtree: true });
+            }
+            <?php endif; ?>
             
             <?php if ( in_array( 'Wordfence Login Security', $js_hide_headers ) ) : ?>
             // Special handling for Wordfence 2FA section
@@ -682,6 +743,33 @@ function apply_rankmath_admin_footer_cleanup() {
 }
 
 /**
+ * Remove Rank Math Content AI from module arrays/options.
+ *
+ * @param mixed $modules Rank Math module array.
+ * @return mixed
+ */
+function hws_remove_rankmath_content_ai_module( $modules ) {
+    if ( ! is_array( $modules ) ) {
+        return $modules;
+    }
+
+    unset( $modules["content-ai"] );
+
+    foreach ( $modules as $key => $module ) {
+        if ( $module === "content-ai" ) {
+            unset( $modules[ $key ] );
+            continue;
+        }
+
+        if ( is_array( $module ) && isset( $module["slug"] ) && $module["slug"] === "content-ai" ) {
+            unset( $modules[ $key ] );
+        }
+    }
+
+    return $modules;
+}
+
+/**
  * Apply Rank Math Content AI cleanup
  * 
  * Disables the Content AI module by filtering Rank Math's module list.
@@ -702,11 +790,10 @@ function apply_rankmath_content_ai_cleanup() {
         return;
     }
 
-    // — Filter: Remove Content AI from Rank Math's active modules
-    add_filter( 'rank_math/modules', function( $modules ) {
-        unset( $modules['content-ai'] );
-        return $modules;
-    }, 999 );
+    // — Filter: Remove Content AI from Rank Math active modules/options.
+    add_filter( 'rank_math/modules', __NAMESPACE__ . '\\hws_remove_rankmath_content_ai_module', PHP_INT_MAX );
+    add_filter( 'option_rank_math_modules', __NAMESPACE__ . '\\hws_remove_rankmath_content_ai_module', PHP_INT_MAX );
+    add_filter( 'default_option_rank_math_modules', __NAMESPACE__ . '\\hws_remove_rankmath_content_ai_module', PHP_INT_MAX );
 
     // — CSS fallback: Hide Content AI elements from the dashboard and editor
     add_action( 'admin_head', function() {
@@ -715,11 +802,23 @@ function apply_rankmath_content_ai_cleanup() {
 .rank-math-content-ai-tab,
 .rank-math-content-ai-score,
 #rank-math-content-ai-metabox,
+#rank_math_metabox_content_ai,
+#rank_math_metabox_content_ai-hide,
+label[for='rank_math_metabox_content_ai-hide'],
 .rank-math-toolbar .content-ai,
 [data-module='content-ai'],
 .rank-math-content-ai-wrapper,
+.rank-math-tab-content-content-ai,
+.rank-math-content-ai-data,
+.rank-math-content-ai-warning-wrapper,
 .rank-math-ca-credits,
-#rank-math-ca-wrap { display: none !important; }
+#rank-math-ca-wrap,
+#rank-math-pro-cta,
+[id$='-content-ai-view'],
+button[id$='contentAI'],
+#wp-admin-bar-rank-math-content-ai-page,
+#adminmenu a[href*='rank-math-content-ai'],
+#adminmenu a[href*='content-ai'] { display: none !important; }
 	</style>\n";
     }, 999 );
 
