@@ -3594,9 +3594,10 @@ function hws_get_brand_asset_payload( string $key ): array {
         'url'           => $full_url ?: '',
         'thumbnail_url' => $thumb_url ?: ( $full_url ?: '' ),
         'shortcodes'    => [
-            'image' => '[site_logo key="' . $key . '" size="medium"]',
-            'url'   => '[site_logo key="' . $key . '" size="full" output="url"]',
+            'image'       => '[site_logo key="' . $key . '" size="medium"]',
+            'url'         => '[site_logo key="' . $key . '" size="full" output="url"]',
             'custom_size' => '[site_logo key="' . $key . '" size="300x120"]',
+            'dimensions'  => '[site_logo key="' . $key . '" width="300" height="120"]',
         ],
     ];
 }
@@ -4136,6 +4137,7 @@ function render_brand_logo_assets_panel() {
                             <code><?php echo esc_html( $payload['shortcodes']['image'] ); ?></code>
                             <code><?php echo esc_html( $payload['shortcodes']['url'] ); ?></code>
                             <code><?php echo esc_html( $payload['shortcodes']['custom_size'] ); ?></code>
+                            <code><?php echo esc_html( $payload['shortcodes']['dimensions'] ); ?></code>
                         </div>
 
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;">

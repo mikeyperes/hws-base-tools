@@ -306,6 +306,62 @@ function hws_get_brand_asset_url( string $key, string $size = 'full' ): string {
 	return $url ? (string) $url : '';
 }
 
+function hws_brand_asset_shortcode_dimension( $value ): int {
+	$value = absint( $value );
+
+	return $value > 0 ? min( $value, 10000 ) : 0;
+}
+
+function hws_brand_asset_constrained_dimensions( int $attachment_id, $size, int $requested_width, int $requested_height ): array {
+	if ( ! $requested_width && ! $requested_height ) {
+		return [];
+	}
+
+	$image = wp_get_attachment_image_src( $attachment_id, $size );
+	$source_width = is_array( $image ) ? (int) ( $image[1] ?? 0 ) : 0;
+	$source_height = is_array( $image ) ? (int) ( $image[2] ?? 0 ) : 0;
+
+	if ( ! $source_width || ! $source_height ) {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+		$source_width = is_array( $metadata ) ? (int) ( $metadata['width'] ?? 0 ) : 0;
+		$source_height = is_array( $metadata ) ? (int) ( $metadata['height'] ?? 0 ) : 0;
+	}
+
+	if ( ! $source_width || ! $source_height ) {
+		return [];
+	}
+
+	if ( $requested_width && $requested_height ) {
+		$scale = min( $requested_width / $source_width, $requested_height / $source_height );
+		return [
+			'width'  => max( 1, (int) round( $source_width * $scale ) ),
+			'height' => max( 1, (int) round( $source_height * $scale ) ),
+		];
+	}
+
+	if ( $requested_width ) {
+		return [
+			'width'  => $requested_width,
+			'height' => max( 1, (int) round( $requested_width * $source_height / $source_width ) ),
+		];
+	}
+
+	return [
+		'width'  => max( 1, (int) round( $requested_height * $source_width / $source_height ) ),
+		'height' => $requested_height,
+	];
+}
+
+function hws_brand_asset_shortcode_style( string $style, bool $has_dimensions ): string {
+	if ( ! $has_dimensions ) {
+		return $style;
+	}
+
+	$preserve_ratio_style = 'max-width:100%;height:auto;object-fit:contain;';
+
+	return trim( $style ) !== '' ? rtrim( trim( $style ), ';' ) . ';' . $preserve_ratio_style : $preserve_ratio_style;
+}
+
 function hws_normalize_brand_gallery_ids( $ids ): array {
 	if ( is_string( $ids ) ) {
 		$ids = preg_split( '/[,\s]+/', $ids );
@@ -431,6 +487,9 @@ function hws_brand_asset_shortcode( $atts ): string {
 			'class' => '',
 			'alt' => '',
 			'loading' => 'lazy',
+			'width' => '',
+			'height' => '',
+			'style' => '',
 		],
 		$atts,
 		'hws_brand_asset'
@@ -449,14 +508,27 @@ function hws_brand_asset_shortcode( $atts ): string {
 	}
 
 	$definition = hws_get_brand_asset_definition( $key );
+	$requested_width = hws_brand_asset_shortcode_dimension( $atts['width'] );
+	$requested_height = hws_brand_asset_shortcode_dimension( $atts['height'] );
+	$constrained_dimensions = hws_brand_asset_constrained_dimensions( $attachment_id, $size, $requested_width, $requested_height );
 	$attributes = [
 		'class' => sanitize_html_class( (string) $atts['class'] ),
 		'alt' => $atts['alt'] !== '' ? sanitize_text_field( (string) $atts['alt'] ) : ( $definition['label'] ?? 'Site logo' ),
 		'loading' => sanitize_key( (string) $atts['loading'] ),
+		'style' => hws_brand_asset_shortcode_style( sanitize_text_field( (string) $atts['style'] ), [] !== $constrained_dimensions ),
 	];
 
 	if ( $attributes['class'] === '' ) {
 		unset( $attributes['class'] );
+	}
+
+	if ( $attributes['style'] === '' ) {
+		unset( $attributes['style'] );
+	}
+
+	if ( [] !== $constrained_dimensions ) {
+		$attributes['width'] = (string) $constrained_dimensions['width'];
+		$attributes['height'] = (string) $constrained_dimensions['height'];
 	}
 
 	return wp_get_attachment_image( $attachment_id, $size, false, $attributes );
