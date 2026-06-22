@@ -79,6 +79,10 @@ function hws_pages_default_templates(): array {
 }
 
 function hws_pages_should_refresh_default_template( string $template ): bool {
+    if ( false === strpos( $template, "[hws_site_page_template type=" ) ) {
+        return true;
+    }
+
     foreach ( [ "Legal counsel should review this page", "This Privacy Policy explains how", "This page provides approved brand assets", "<h2>FAQs</h2>" ] as $marker ) {
         if ( false !== strpos( $template, $marker ) ) {
             return true;
