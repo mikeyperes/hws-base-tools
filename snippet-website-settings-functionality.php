@@ -154,11 +154,25 @@ function hws_is_brand_highlight_enabled(): bool {
 	return (string) get_option( 'hws_brand_highlight_enabled', '1' ) === '1';
 }
 
+function hws_get_brand_primary_color(): string {
+	$color = sanitize_hex_color( (string) get_option( 'hws_brand_primary_color', '#000000' ) );
+
+	return $color ?: '#000000';
+}
+
+function hws_get_brand_secondary_color(): string {
+	$color = sanitize_hex_color( (string) get_option( 'hws_brand_secondary_color', '#ffffff' ) );
+
+	return $color ?: '#ffffff';
+}
+
 function hws_print_brand_color_css_variables(): void {
+	$primary_color    = hws_get_brand_primary_color();
+	$secondary_color  = hws_get_brand_secondary_color();
 	$background_color = hws_get_brand_highlight_background_color();
 	$text_color       = hws_get_brand_highlight_text_color();
 	$enabled          = hws_is_brand_highlight_enabled();
-	$css              = ':root{--hws-highlight-background-color:' . $background_color . ';--hws-highlight-text-color:' . $text_color . ';}';
+	$css              = ':root{--hws-brand-primary-color:' . $primary_color . ';--hws-brand-secondary-color:' . $secondary_color . ';--hws-highlight-background-color:' . $background_color . ';--hws-highlight-text-color:' . $text_color . ';}';
 
 	if ( $enabled ) {
 		$css .= '::selection{background:' . $background_color . ' !important;color:' . $text_color . ' !important;text-shadow:none !important;}';

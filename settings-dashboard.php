@@ -3602,8 +3602,14 @@ function hws_get_brand_asset_payload( string $key ): array {
 }
 
 function hws_get_brand_colors_payload(): array {
+    $default_primary    = function_exists( __NAMESPACE__ . '\\hws_get_elementor_color_by_id' ) ? hws_get_elementor_color_by_id( 'primary' ) : '';
+    $default_secondary  = function_exists( __NAMESPACE__ . '\\hws_get_elementor_color_by_id' ) ? hws_get_elementor_color_by_id( 'secondary' ) : '';
+    $default_primary    = $default_primary ?: '#000000';
+    $default_secondary  = $default_secondary ?: '#ffffff';
     $default_background = '#facc15';
     $default_text       = '#111827';
+    $primary_color      = sanitize_hex_color( (string) get_option( 'hws_brand_primary_color', $default_primary ) );
+    $secondary_color    = sanitize_hex_color( (string) get_option( 'hws_brand_secondary_color', $default_secondary ) );
     $background_color   = function_exists( __NAMESPACE__ . '\\hws_get_brand_highlight_background_color' )
         ? hws_get_brand_highlight_background_color()
         : sanitize_hex_color( (string) get_option( 'hws_brand_highlight_background_color', $default_background ) );
@@ -3614,6 +3620,14 @@ function hws_get_brand_colors_payload(): array {
         ? hws_is_brand_highlight_enabled()
         : ( (string) get_option( 'hws_brand_highlight_enabled', '1' ) === '1' );
 
+    if ( ! $primary_color ) {
+        $primary_color = $default_primary;
+    }
+
+    if ( ! $secondary_color ) {
+        $secondary_color = $default_secondary;
+    }
+
     if ( ! $background_color ) {
         $background_color = $default_background;
     }
@@ -3623,15 +3637,21 @@ function hws_get_brand_colors_payload(): array {
     }
 
     return [
+        'primary_color'               => $primary_color,
+        'secondary_color'             => $secondary_color,
         'highlight_enabled'          => $enabled,
         'highlight_background_color' => $background_color,
         'highlight_text_color'       => $text_color,
         'options'                    => [
+            'primary'    => 'hws_brand_primary_color',
+            'secondary'  => 'hws_brand_secondary_color',
             'enabled'    => 'hws_brand_highlight_enabled',
             'background' => 'hws_brand_highlight_background_color',
             'text'       => 'hws_brand_highlight_text_color',
         ],
         'css_variables'              => [
+            'primary'    => '--hws-brand-primary-color',
+            'secondary'  => '--hws-brand-secondary-color',
             'background' => '--hws-highlight-background-color',
             'text'       => '--hws-highlight-text-color',
         ],
@@ -3640,6 +3660,21 @@ function hws_get_brand_colors_payload(): array {
 
 function hws_is_valid_elementor_color_value( string $color ): bool {
     return (bool) preg_match( '/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/', trim( $color ) );
+}
+
+function hws_get_elementor_color_by_id( string $id ): string {
+    $id     = sanitize_key( $id );
+    $assets = hws_get_elementor_color_assets();
+
+    foreach ( $assets['groups'] as $group ) {
+        foreach ( $group['items'] as $item ) {
+            if ( $id === ( $item['id'] ?? '' ) && ! empty( $item['color'] ) ) {
+                return (string) $item['color'];
+            }
+        }
+    }
+
+    return '';
 }
 
 function hws_get_elementor_color_assets(): array {
@@ -3782,11 +3817,33 @@ function render_brand_colors_panel() {
                 #hws-brand-colors-panel .hws-brand-toggle input:checked + .hws-brand-toggle-track::before {
                     transform: translateX(24px);
                 }
-                #hws-brand-colors-panel .hws-brand-toggle input:focus + .hws-brand-toggle-track {
-                    box-shadow: 0 0 0 2px rgba(63,70,229,.25);
-                }
-            </style>
-            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
+	                #hws-brand-colors-panel .hws-brand-toggle input:focus + .hws-brand-toggle-track {
+	                    box-shadow: 0 0 0 2px rgba(63,70,229,.25);
+	                }
+	            </style>
+	            <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;margin-bottom:16px;">
+	                <strong style="display:block;font-size:14px;margin-bottom:6px;">Primary and secondary brand colors</strong>
+	                <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Use these as the saved HWS brand color pair. Elementor rows below can set either value directly.</p>
+	                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+	                    <div>
+	                        <label for="hws-brand-primary-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Primary color</label>
+	                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+	                            <input type="color" id="hws-brand-primary-color" value="<?php echo esc_attr( $colors['primary_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
+	                            <input type="text" id="hws-brand-primary-color-hex" value="<?php echo esc_attr( $colors['primary_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
+	                            <span id="hws-brand-primary-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['primary_color'] ); ?>;"></span>
+	                        </div>
+	                    </div>
+	                    <div>
+	                        <label for="hws-brand-secondary-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Secondary color</label>
+	                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+	                            <input type="color" id="hws-brand-secondary-color" value="<?php echo esc_attr( $colors['secondary_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
+	                            <input type="text" id="hws-brand-secondary-color-hex" value="<?php echo esc_attr( $colors['secondary_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
+	                            <span id="hws-brand-secondary-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['secondary_color'] ); ?>;"></span>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                     <strong style="display:block;font-size:14px;margin-bottom:6px;">Site highlight override</strong>
                     <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Controls browser text selection and HWS highlight output with separate background and text colors.</p>
@@ -3819,12 +3876,14 @@ function render_brand_colors_panel() {
                     </div>
                 </div>
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#f8f9fa;padding:14px;min-width:0;">
-                    <strong style="display:block;margin-bottom:8px;">Current output</strong>
-                    <div style="display:grid;gap:8px;font-size:12.5px;color:#50575e;">
-                        <div>Status: <code id="hws-highlight-enabled-current"><?php echo $colors['highlight_enabled'] ? 'enabled' : 'disabled'; ?></code></div>
-                        <div>Options: <code><?php echo esc_html( $colors['options']['enabled'] ); ?></code>, <code><?php echo esc_html( $colors['options']['background'] ); ?></code>, <code><?php echo esc_html( $colors['options']['text'] ); ?></code></div>
-                        <div>CSS variables: <code><?php echo esc_html( $colors['css_variables']['background'] ); ?></code>, <code><?php echo esc_html( $colors['css_variables']['text'] ); ?></code></div>
-                        <div>Background: <code id="hws-highlight-background-color-current"><?php echo esc_html( $colors['highlight_background_color'] ); ?></code></div>
+	                    <strong style="display:block;margin-bottom:8px;">Current output</strong>
+	                    <div style="display:grid;gap:8px;font-size:12.5px;color:#50575e;">
+	                        <div>Primary: <code id="hws-brand-primary-color-current"><?php echo esc_html( $colors['primary_color'] ); ?></code></div>
+	                        <div>Secondary: <code id="hws-brand-secondary-color-current"><?php echo esc_html( $colors['secondary_color'] ); ?></code></div>
+	                        <div>Status: <code id="hws-highlight-enabled-current"><?php echo $colors['highlight_enabled'] ? 'enabled' : 'disabled'; ?></code></div>
+	                        <div>Options: <code><?php echo esc_html( $colors['options']['primary'] ); ?></code>, <code><?php echo esc_html( $colors['options']['secondary'] ); ?></code>, <code><?php echo esc_html( $colors['options']['enabled'] ); ?></code>, <code><?php echo esc_html( $colors['options']['background'] ); ?></code>, <code><?php echo esc_html( $colors['options']['text'] ); ?></code></div>
+	                        <div>CSS variables: <code><?php echo esc_html( $colors['css_variables']['primary'] ); ?></code>, <code><?php echo esc_html( $colors['css_variables']['secondary'] ); ?></code>, <code><?php echo esc_html( $colors['css_variables']['background'] ); ?></code>, <code><?php echo esc_html( $colors['css_variables']['text'] ); ?></code></div>
+	                        <div>Background: <code id="hws-highlight-background-color-current"><?php echo esc_html( $colors['highlight_background_color'] ); ?></code></div>
                         <div>Text: <code id="hws-highlight-text-color-current"><?php echo esc_html( $colors['highlight_text_color'] ); ?></code></div>
                         <div style="margin-top:4px;padding:10px 12px;border-radius:6px;background:#fff;border:1px solid #e0e0e0;">
                             Preview: <span id="hws-highlight-preview" style="background:<?php echo esc_attr( $colors['highlight_background_color'] ); ?>;color:<?php echo esc_attr( $colors['highlight_text_color'] ); ?>;padding:2px 7px;border-radius:3px;font-weight:700;">highlight text</span>
@@ -4304,15 +4363,59 @@ function render_brand_logo_assets_panel() {
             }
         }
 
+        function syncBrandBaseColor(kind, value) {
+            if (!isHexColor(value)) {
+                return;
+            }
+
+            value = value.toLowerCase();
+            $('#hws-brand-' + kind + '-color').val(value);
+            $('#hws-brand-' + kind + '-color-hex').val(value);
+            $('#hws-brand-' + kind + '-color-swatch').css('background', value);
+            $('#hws-brand-' + kind + '-color-current').text(value);
+        }
+
         function syncHighlightPayload(data) {
             if (!data) {
                 return;
             }
 
+            syncBrandBaseColor('primary', data.primary_color);
+            syncBrandBaseColor('secondary', data.secondary_color);
             syncHighlightColor('background', data.highlight_background_color);
             syncHighlightColor('text', data.highlight_text_color);
             $('#hws-highlight-enabled').prop('checked', !!data.highlight_enabled);
             $('#hws-highlight-enabled-current').text(data.highlight_enabled ? 'enabled' : 'disabled');
+        }
+
+        function saveBrandColors($status, successMessage) {
+            var primary = ($('#hws-brand-primary-color-hex').val() || '').trim();
+            var secondary = ($('#hws-brand-secondary-color-hex').val() || '').trim();
+            var background = ($('#hws-highlight-background-color-hex').val() || '').trim();
+            var text = ($('#hws-highlight-text-color-hex').val() || '').trim();
+
+            if (!isHexColor(primary) || !isHexColor(secondary) || !isHexColor(background) || !isHexColor(text)) {
+                setStatus($status, 'Enter valid 6-digit hex colors.', false);
+                return;
+            }
+
+            setStatus($status, 'Saving...', true);
+            $.post(ajaxurl, {
+                action: 'hws_save_brand_colors',
+                nonce: hwsNonce,
+                primary_color: primary,
+                secondary_color: secondary,
+                highlight_enabled: $('#hws-highlight-enabled').is(':checked') ? 1 : 0,
+                highlight_background_color: background,
+                highlight_text_color: text
+            }, function(response) {
+                if (response && response.success) {
+                    syncHighlightPayload(response.data);
+                    setStatus($status, successMessage || 'Saved.', true);
+                } else {
+                    setStatus($status, response && response.data ? response.data : 'Save failed.', false);
+                }
+            }, 'json');
         }
 
         function renderElementorColorAssets(data) {
@@ -4334,8 +4437,8 @@ function render_brand_logo_assets_panel() {
                     return;
                 }
 
-                html += '<table class="widefat striped" style="min-width:720px;">';
-                html += '<thead><tr><th style="width:80px;">Color</th><th>Name</th><th>Hex</th><th>CSS variable</th><th style="width:90px;">Copy</th></tr></thead><tbody>';
+                html += '<table class="widefat striped" style="min-width:900px;">';
+                html += '<thead><tr><th style="width:80px;">Color</th><th>Name</th><th>Hex</th><th>CSS variable</th><th style="width:260px;">Actions</th></tr></thead><tbody>';
 
                 items.forEach(function(item) {
                     var color = item.color || '';
@@ -4351,7 +4454,11 @@ function render_brand_logo_assets_panel() {
                     html += '<td>' + escapeText(title) + '</td>';
                     html += '<td><code class="hws-elementor-color-hex">' + escapeText(color || 'not set') + '</code></td>';
                     html += '<td><code>' + escapeText(variable || 'not set') + '</code></td>';
-                    html += '<td><button type="button" class="button button-small hws-copy-color"' + disabled + '>Copy</button></td>';
+                    html += '<td style="display:flex;gap:6px;flex-wrap:wrap;">';
+                    html += '<button type="button" class="button button-small hws-copy-color"' + disabled + '>Copy</button>';
+                    html += '<button type="button" class="button button-small hws-set-brand-color" data-target="primary"' + disabled + '>Set Primary</button>';
+                    html += '<button type="button" class="button button-small hws-set-brand-color" data-target="secondary"' + disabled + '>Set Secondary</button>';
+                    html += '</td>';
                     html += '</tr>';
                 });
 
@@ -4410,6 +4517,28 @@ function render_brand_logo_assets_panel() {
             }, 'json');
         });
 
+        $('#hws-brand-primary-color').on('input change', function() {
+            syncBrandBaseColor('primary', $(this).val());
+        });
+
+        $('#hws-brand-primary-color-hex').on('input change', function() {
+            var value = ($(this).val() || '').trim();
+            if (isHexColor(value)) {
+                syncBrandBaseColor('primary', value);
+            }
+        });
+
+        $('#hws-brand-secondary-color').on('input change', function() {
+            syncBrandBaseColor('secondary', $(this).val());
+        });
+
+        $('#hws-brand-secondary-color-hex').on('input change', function() {
+            var value = ($(this).val() || '').trim();
+            if (isHexColor(value)) {
+                syncBrandBaseColor('secondary', value);
+            }
+        });
+
         $('#hws-highlight-background-color').on('input change', function() {
             syncHighlightColor('background', $(this).val());
         });
@@ -4433,30 +4562,7 @@ function render_brand_logo_assets_panel() {
         });
 
         $('#hws-save-brand-colors').on('click', function() {
-            var background = ($('#hws-highlight-background-color-hex').val() || '').trim();
-            var text = ($('#hws-highlight-text-color-hex').val() || '').trim();
-            var $status = $('#hws-brand-colors-status');
-
-            if (!isHexColor(background) || !isHexColor(text)) {
-                setStatus($status, 'Enter valid 6-digit hex colors.', false);
-                return;
-            }
-
-            setStatus($status, 'Saving...', true);
-            $.post(ajaxurl, {
-                action: 'hws_save_brand_colors',
-                nonce: hwsNonce,
-                highlight_enabled: $('#hws-highlight-enabled').is(':checked') ? 1 : 0,
-                highlight_background_color: background,
-                highlight_text_color: text
-            }, function(response) {
-                if (response && response.success) {
-                    syncHighlightPayload(response.data);
-                    setStatus($status, 'Saved.', true);
-                } else {
-                    setStatus($status, response && response.data ? response.data : 'Save failed.', false);
-                }
-            }, 'json');
+            saveBrandColors($('#hws-brand-colors-status'), 'Saved.');
         });
 
         $('#hws-toggle-elementor-colors').on('click', function() {
@@ -4508,6 +4614,21 @@ function render_brand_logo_assets_panel() {
             }).catch(function() {
                 setStatus($('#hws-elementor-colors-status'), 'Copy failed.', false);
             });
+        });
+
+        $('#hws-elementor-colors-panel').on('click', '.hws-set-brand-color', function() {
+            var $row = $(this).closest('.hws-elementor-color-row');
+            var color = $row.data('color') || '';
+            var target = $(this).data('target') === 'secondary' ? 'secondary' : 'primary';
+            var label = target === 'secondary' ? 'secondary' : 'primary';
+
+            if (!color || !isHexColor(color)) {
+                setStatus($('#hws-elementor-colors-status'), 'No hex value to set.', false);
+                return;
+            }
+
+            syncBrandBaseColor(target, color);
+            saveBrandColors($('#hws-elementor-colors-status'), 'Set as ' + label + ' color.');
         });
 
         $('.hws-brand-upload').on('click', function(e) {
@@ -4833,18 +4954,27 @@ function ajax_save_brand_colors() {
 
     hws_require_ajax_nonce_or_error();
 
+    $current           = hws_get_brand_colors_payload();
+    $primary_color     = isset( $_POST['primary_color'] )
+        ? sanitize_hex_color( wp_unslash( $_POST['primary_color'] ) )
+        : ( $current['primary_color'] ?? '' );
+    $secondary_color   = isset( $_POST['secondary_color'] )
+        ? sanitize_hex_color( wp_unslash( $_POST['secondary_color'] ) )
+        : ( $current['secondary_color'] ?? '' );
     $highlight_enabled = isset( $_POST['highlight_enabled'] ) && (string) wp_unslash( $_POST['highlight_enabled'] ) === '1';
     $background_color  = isset( $_POST['highlight_background_color'] )
         ? sanitize_hex_color( wp_unslash( $_POST['highlight_background_color'] ) )
-        : '';
+        : ( $current['highlight_background_color'] ?? '' );
     $text_color        = isset( $_POST['highlight_text_color'] )
         ? sanitize_hex_color( wp_unslash( $_POST['highlight_text_color'] ) )
-        : '';
+        : ( $current['highlight_text_color'] ?? '' );
 
-    if ( ! $background_color || ! $text_color ) {
+    if ( ! $primary_color || ! $secondary_color || ! $background_color || ! $text_color ) {
         wp_send_json_error( 'Enter valid 6-digit hex colors.' );
     }
 
+    update_option( 'hws_brand_primary_color', strtolower( $primary_color ), false );
+    update_option( 'hws_brand_secondary_color', strtolower( $secondary_color ), false );
     update_option( 'hws_brand_highlight_enabled', $highlight_enabled ? '1' : '0', false );
     update_option( 'hws_brand_highlight_background_color', strtolower( $background_color ), false );
     update_option( 'hws_brand_highlight_text_color', strtolower( $text_color ), false );

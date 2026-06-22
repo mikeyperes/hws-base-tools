@@ -65,7 +65,7 @@ Structured feature management with toggles, optional settings, use instructions,
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions
 - Letter-based favicon generator
-- Brand Colors panel with Highlight Text Color picker saved as `hws_brand_highlight_text_color`
+- Brand Colors panel with primary/secondary color settings, Elementor color row import buttons, and Highlight Text Color picker saved as `hws_brand_highlight_text_color`
 - Six logo slots: `logo`, `logo_1x1`, `logo_text`, `logo_dark`, `logo_dark_1x1`, `logo_text_dark`
 - Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`
 
