@@ -67,7 +67,7 @@ One place for favicon and logo assets:
 - Letter-based favicon generator
 - Brand Colors panel with primary/secondary color settings, Elementor color row import buttons, and Highlight Text Color picker saved as `hws_brand_highlight_text_color`
 - Six logo slots: `logo`, `logo_1x1`, `logo_text`, `logo_dark`, `logo_dark_1x1`, `logo_text_dark`
-- Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`, `[site_logo key="logo_text" width="300" height="120"]`
+- Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`, `[site_logo key="logo_text" size="medium" width="180"]`
 
 ## UI Cleanup Tab
 WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, footer text.
@@ -86,7 +86,7 @@ WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, foote
 | `[current_year]` | Current year alias |
 | `[site_logo key="logo" size="medium"]` | Brand/logo asset image |
 | `[site_logo key="logo" size="full" output="url"]` | Brand/logo asset URL |
-| `[site_logo key="logo_text" width="300" height="120"]` | Brand/logo image constrained inside the requested box without skewing |
+| `[site_logo key="logo_text" size="medium" width="180"]` | Brand/logo image constrained inside the requested box without skewing |
 
 ---
 
@@ -138,7 +138,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.54 (Current)
+### v10.18.55 (Current)
+- Process HWS brand/logo shortcodes inside Elementor widget output, including Heading widgets, so header logo shortcodes render instead of displaying raw text.
+- Enforce shortcode `width` / `height` as inline ratio-safe image styles, so `width="180"` and `width="180px"` both render at the requested width without skewing.
+
+### v10.18.54
 - Added `width` and `height` support to `[site_logo]` / `[hws_brand_asset]`; requested dimensions are treated as a bounding box and recalculated from the real image ratio so logos never skew.
 
 ### v10.18.52

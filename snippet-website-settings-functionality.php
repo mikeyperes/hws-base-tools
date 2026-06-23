@@ -49,6 +49,35 @@ add_shortcode( "hws_site_value", __NAMESPACE__ . "\\hws_site_value_shortcode" );
 add_shortcode( "hws_site_page_template", __NAMESPACE__ . "\\hws_site_page_template_shortcode" );
 add_shortcode( "site_page_template", __NAMESPACE__ . "\\hws_site_page_template_shortcode" );
 
+add_filter( "elementor/widget/render_content", __NAMESPACE__ . "\\hws_render_shortcodes_in_elementor_widget_content", 20, 2 );
+
+function hws_render_shortcodes_in_elementor_widget_content( $content, $widget = null ): string {
+    if ( ! is_string( $content ) || false === strpos( $content, "[" ) ) {
+        return (string) $content;
+    }
+
+    $shortcode_markers = [
+        "[site_logo",
+        "[hws_brand_asset",
+        "[brand_asset_gallery",
+        "[site_gallery",
+        "[website_url",
+        "[website_content",
+        "[founder",
+        "[company",
+        "[hws_site_value",
+        "[hws_site_page_template",
+        "[site_page_template",
+    ];
+
+    foreach ( $shortcode_markers as $marker ) {
+        if ( false !== strpos( $content, $marker ) ) {
+            return do_shortcode( $content );
+        }
+    }
+
+    return $content;
+}
 
 function hws_site_value_shortcode( $atts ): string {
     $atts = shortcode_atts( [ "field" => "site_name", "format" => "text", "fallback" => "" ], $atts, "hws_site_value" );
@@ -307,9 +336,17 @@ function hws_get_brand_asset_url( string $key, string $size = 'full' ): string {
 }
 
 function hws_brand_asset_shortcode_dimension( $value ): int {
-	$value = absint( $value );
+    if ( is_numeric( $value ) ) {
+        $value = (float) $value;
+    } elseif ( is_string( $value ) && preg_match( "/^\s*(\d+(?:\.\d+)?)\s*(?:px)?\s*$/i", $value, $matches ) ) {
+        $value = (float) $matches[1];
+    } else {
+        return 0;
+    }
 
-	return $value > 0 ? min( $value, 10000 ) : 0;
+    $value = (int) round( abs( $value ) );
+
+    return $value > 0 ? min( $value, 10000 ) : 0;
 }
 
 function hws_brand_asset_constrained_dimensions( int $attachment_id, $size, int $requested_width, int $requested_height ): array {
@@ -352,14 +389,32 @@ function hws_brand_asset_constrained_dimensions( int $attachment_id, $size, int 
 	];
 }
 
-function hws_brand_asset_shortcode_style( string $style, bool $has_dimensions ): string {
-	if ( ! $has_dimensions ) {
-		return $style;
-	}
+function hws_brand_asset_shortcode_style( string $style, array $dimensions, int $requested_width, int $requested_height ): string {
+    if ( empty( $dimensions ) ) {
+        return $style;
+    }
 
-	$preserve_ratio_style = 'max-width:100%;height:auto;object-fit:contain;';
+    $width  = max( 1, (int) ( $dimensions["width"] ?? 0 ) );
+    $height = max( 1, (int) ( $dimensions["height"] ?? 0 ) );
+    $rules  = [
+        "max-width:100%",
+        "object-fit:contain",
+    ];
 
-	return trim( $style ) !== '' ? rtrim( trim( $style ), ';' ) . ';' . $preserve_ratio_style : $preserve_ratio_style;
+    if ( $requested_height && ! $requested_width ) {
+        $rules[] = "width:auto";
+        $rules[] = "height:" . $height . "px";
+    } else {
+        $rules[] = "width:" . $width . "px";
+        $rules[] = "height:auto";
+        if ( $requested_height ) {
+            $rules[] = "max-height:" . $height . "px";
+        }
+    }
+
+    $preserve_ratio_style = implode( ";", $rules ) . ";";
+
+    return trim( $style ) !== "" ? rtrim( trim( $style ), ";" ) . ";" . $preserve_ratio_style : $preserve_ratio_style;
 }
 
 function hws_normalize_brand_gallery_ids( $ids ): array {
@@ -515,7 +570,7 @@ function hws_brand_asset_shortcode( $atts ): string {
 		'class' => sanitize_html_class( (string) $atts['class'] ),
 		'alt' => $atts['alt'] !== '' ? sanitize_text_field( (string) $atts['alt'] ) : ( $definition['label'] ?? 'Site logo' ),
 		'loading' => sanitize_key( (string) $atts['loading'] ),
-		'style' => hws_brand_asset_shortcode_style( sanitize_text_field( (string) $atts['style'] ), [] !== $constrained_dimensions ),
+		'style' => hws_brand_asset_shortcode_style( sanitize_text_field( (string) $atts["style"] ), $constrained_dimensions, $requested_width, $requested_height ),
 	];
 
 	if ( $attributes['class'] === '' ) {
