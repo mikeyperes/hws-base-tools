@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.56 (Current)
+### v10.18.57 (Current)
+- Fixed the Footer Text admin tab editor by explicitly loading WordPress editor assets, restoring readable Code-mode textarea colors, and hardening TinyMCE/Code toggle sync for preview and AJAX saves.
+
+### v10.18.56
 - Added a UI Cleanup option to hide the Simple Local Avatar rating controls on profile and user-edit screens.
 - Removed the older duplicate local ACF Team Member and Team Member Title fields from the HWS User - Admin field group.
 

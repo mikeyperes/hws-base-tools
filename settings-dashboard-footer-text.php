@@ -7,6 +7,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'wp_ajax_hws_footer_text_save_settings', __NAMESPACE__ . '\\ajax_save_footer_text_settings' );
 add_action( 'wp_ajax_hws_footer_text_save_targeted_injection', __NAMESPACE__ . '\\ajax_save_footer_text_targeted_injection' );
 add_action( 'acf/save_post', __NAMESPACE__ . '\\maybe_purge_footer_text_cache_after_acf_save', 20 );
+add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\hws_footer_text_enqueue_editor_assets' );
+
+function hws_footer_text_enqueue_editor_assets(): void {
+    $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+    $tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+
+    if ( 'hws-core-tools' !== $page || 'footer-text' !== $tab ) {
+        return;
+    }
+
+    wp_enqueue_media();
+
+    if ( function_exists( 'wp_enqueue_editor' ) ) {
+        wp_enqueue_editor();
+    }
+
+    wp_enqueue_script( 'editor' );
+    wp_enqueue_script( 'quicktags' );
+}
 
 function hws_purge_footer_text_cache(): void {
     if ( function_exists( 'wp_cache_flush' ) ) {
@@ -502,6 +521,49 @@ function display_settings_footer_text() {
             border-color: #116329;
         }
 
+        .hws-ft-wrap .wp-editor-wrap {
+            max-width: 100%;
+            color: #1d2327;
+        }
+
+        .hws-ft-wrap .wp-editor-container {
+            border-color: #dcdcde;
+            background: #fff;
+        }
+
+        .hws-ft-wrap .wp-editor-tabs .wp-switch-editor {
+            color: #1d2327;
+            background: #f6f7f7;
+            border-color: #dcdcde;
+            box-shadow: none;
+        }
+
+        .hws-ft-wrap .wp-editor-wrap.tmce-active .switch-tmce,
+        .hws-ft-wrap .wp-editor-wrap.html-active .switch-html {
+            color: #1d2327;
+            background: #fff;
+            border-bottom-color: #fff;
+        }
+
+        .hws-ft-wrap textarea.wp-editor-area,
+        .hws-ft-wrap textarea#hws_footer_text_editor {
+            display: block;
+            width: 100%;
+            min-height: 260px;
+            color: #1d2327 !important;
+            -webkit-text-fill-color: #1d2327;
+            background: #fff !important;
+            caret-color: #1d2327;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .hws-ft-wrap .mce-edit-area,
+        .hws-ft-wrap .mce-edit-area iframe {
+            background: #fff;
+        }
+
         .hws-ft-target-grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
@@ -812,9 +874,15 @@ function display_settings_footer_text() {
                         [
                             'textarea_name' => 'hws_footer_text_editor',
                             'textarea_rows' => 10,
+                            'editor_height' => 260,
+                            'editor_class'  => 'hws-footer-text-editor-area',
                             'media_buttons' => true,
                             'teeny'         => false,
                             'quicktags'     => true,
+                            'tinymce'       => [
+                                'wpautop'       => true,
+                                'content_style' => 'body#tinymce.wp-editor{color:#1d2327;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:14px;line-height:1.6;} body#tinymce.wp-editor p{color:#1d2327;}',
+                            ],
                         ]
                     );
                     ?>
@@ -956,10 +1024,18 @@ function display_settings_footer_text() {
             return $alignmentInputs.filter(':checked').val() || 'center';
         }
 
-        function getEditorContent() {
-            if (window.tinymce && tinymce.get('hws_footer_text_editor')) {
-                return tinymce.get('hws_footer_text_editor').getContent();
+        function syncEditorToTextarea() {
+            if (window.tinymce && typeof tinymce.triggerSave === 'function') {
+                tinymce.triggerSave();
             }
+        }
+
+        function getEditorContent() {
+            var editor = window.tinymce && tinymce.get('hws_footer_text_editor');
+            if (editor && !editor.isHidden()) {
+                return editor.getContent();
+            }
+            syncEditorToTextarea();
             return $('#hws_footer_text_editor').val() || '';
         }
 
@@ -1025,12 +1101,17 @@ function display_settings_footer_text() {
             });
         }
 
+        var tinyMceBindAttempts = 0;
+
         function bindTinyMcePreview() {
-            if (!(window.tinymce && tinymce.get('hws_footer_text_editor'))) {
-                window.setTimeout(bindTinyMcePreview, 300);
+            var editor = window.tinymce && tinymce.get('hws_footer_text_editor');
+            if (!editor) {
+                tinyMceBindAttempts += 1;
+                if (tinyMceBindAttempts < 40) {
+                    window.setTimeout(bindTinyMcePreview, 300);
+                }
                 return;
             }
-            var editor = tinymce.get('hws_footer_text_editor');
             if (editor._hwsPreviewBound) return;
             editor._hwsPreviewBound = true;
             editor.on('keyup change input SetContent Paste Undo Redo', function() {
@@ -1323,6 +1404,9 @@ function display_settings_footer_text() {
             var enabled   = $toggle.is(':checked') ? 1 : 0;
             var template  = getSelectedTemplate();
             var alignment = getSelectedAlignment();
+
+            syncEditorToTextarea();
+
             var payload   = {
                 action: 'hws_footer_text_save_settings',
                 nonce: hwsNonce,
@@ -1382,6 +1466,14 @@ function display_settings_footer_text() {
 
         $('#hws_footer_text_editor').on('input keyup change', function() {
             updatePreviewFromEditor();
+        });
+
+        $(document).on('click', '#hws_footer_text_editor-tmce, #hws_footer_text_editor-html', function() {
+            window.setTimeout(function() {
+                syncEditorToTextarea();
+                bindTinyMcePreview();
+                updatePreviewFromEditor();
+            }, 180);
         });
 
         $copyBtn.on('click', function() {
