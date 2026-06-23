@@ -138,7 +138,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.55 (Current)
+### v10.18.56 (Current)
+- Added a UI Cleanup option to hide the Simple Local Avatar rating controls on profile and user-edit screens.
+- Removed the older duplicate local ACF Team Member and Team Member Title fields from the HWS User - Admin field group.
+
+### v10.18.55
 - Process HWS brand/logo shortcodes inside Elementor widget output, including Heading widgets, so header logo shortcodes render instead of displaying raw text.
 - Enforce shortcode `width` / `height` as inline ratio-safe image styles, so `width="180"` and `width="180px"` both render at the requested width without skewing.
 

@@ -99,6 +99,13 @@ function get_ui_cleanup_options(): array {
             'default'       => false,
             'section'       => 'wordpress',
         ],
+        'hide_simple_local_avatar_rating' => [
+            'label'         => 'Local Avatar Rating',
+            'description'   => 'Hides the Simple Local Avatar rating controls on profile and user-edit screens.',
+            'css_selectors' => 'tr.ratings-row, #simple-local-avatar-ratings',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
         'hide_post_editor_comments' => [
             'label'         => 'Post Editor Comments',
             'description'   => 'Hides the Comments metabox on post and page editor screens.',
