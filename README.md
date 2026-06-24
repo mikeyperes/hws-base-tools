@@ -138,7 +138,14 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.57 (Current)
+### v10.18.59 (Current)
+- Added a UI Cleanup toggle to hide the Post Attributes metabox and hardened the collapsed-by-default behavior so WordPress postbox state restoration cannot reopen it on editor load.
+- Preserved the live ACF Source Tracker feature in the Git source and corrected the runtime plugin version metadata.
+
+### v10.18.58
+- Added the ACF Source Tracker feature toggle for showing source/context cards on ACF field groups.
+
+### v10.18.57
 - Fixed the Footer Text admin tab editor by explicitly loading WordPress editor assets, restoring readable Code-mode textarea colors, and hardening TinyMCE/Code toggle sync for preview and AJAX saves.
 
 ### v10.18.56

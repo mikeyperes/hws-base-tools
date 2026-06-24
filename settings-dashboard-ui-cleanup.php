@@ -113,6 +113,13 @@ function get_ui_cleanup_options(): array {
             'default'       => false,
             'section'       => 'wordpress',
         ],
+        'hide_post_attributes_box' => [
+            'label'         => 'Post Attributes Box',
+            'description'   => 'Hides the Post Attributes metabox on post and page editor screens.',
+            'css_selectors' => '#pageparentdiv, #pageparentdiv-hide, label[for="pageparentdiv-hide"]',
+            'default'       => false,
+            'section'       => 'wordpress',
+        ],
         'hide_litespeed_editor_box' => [
             'label'         => 'LiteSpeed Post Editor Box',
             'description'   => 'Hides the LiteSpeed metabox on post and page editor screens.',
@@ -667,27 +674,55 @@ function inject_ui_cleanup_css() {
             <?php if ( ! empty( $collapse_editor_boxes ) ) : ?>
             // Force selected editor metaboxes into collapsed mode without removing them.
             var hwsCollapseEditorBoxes = <?php echo wp_json_encode( array_values( $collapse_editor_boxes ) ); ?>;
+            var hwsCollapseObserver = null;
+            var hwsCollapseObserverTimer = null;
+
+            function hwsResolveEditorPostboxes(selector) {
+                return $(selector)
+                    .filter(".postbox")
+                    .add($(selector).closest(".postbox"))
+                    .filter(".postbox");
+            }
+
             function hwsCollapseEditorPostbox(selector) {
-                var $boxes = $(selector).filter(".postbox").add($(selector).closest(".postbox")).filter(".postbox");
+                var $boxes = hwsResolveEditorPostboxes(selector);
                 $boxes.each(function() {
                     var $box = $(this);
-                    if (!$box.hasClass("closed")) {
-                        $box.addClass("closed");
-                        $box.children(".inside").hide();
-                    }
+                    $box.addClass("closed");
+                    $box.children(".inside").hide();
+                    $box.find("> .postbox-header .handlediv, > .handlediv").attr("aria-expanded", "false");
                 });
             }
+
             function hwsRunEditorPostboxCollapse() {
                 hwsCollapseEditorBoxes.forEach(hwsCollapseEditorPostbox);
             }
+
+            function hwsScheduleEditorPostboxCollapse() {
+                window.clearTimeout(hwsCollapseObserverTimer);
+                hwsCollapseObserverTimer = window.setTimeout(hwsRunEditorPostboxCollapse, 25);
+            }
+
             hwsRunEditorPostboxCollapse();
+            setTimeout(hwsRunEditorPostboxCollapse, 50);
             setTimeout(hwsRunEditorPostboxCollapse, 300);
             setTimeout(hwsRunEditorPostboxCollapse, 1000);
+            setTimeout(hwsRunEditorPostboxCollapse, 2500);
+            $(window).on("load", hwsRunEditorPostboxCollapse);
+            $(document).on("postbox-toggled", hwsRunEditorPostboxCollapse);
+            hwsCollapseEditorBoxes.forEach(function(selector) {
+                $(document).on("click", selector + " .handlediv, " + selector + " .postbox-header", hwsScheduleEditorPostboxCollapse);
+            });
             if (window.MutationObserver) {
-                var hwsEditorBoxObserver = new MutationObserver(function() {
-                    hwsRunEditorPostboxCollapse();
+                hwsCollapseObserver = new MutationObserver(hwsScheduleEditorPostboxCollapse);
+                hwsCollapseEditorBoxes.forEach(function(selector) {
+                    hwsResolveEditorPostboxes(selector).each(function() {
+                        hwsCollapseObserver.observe(this, {
+                            attributes: true,
+                            attributeFilter: ["class", "style"]
+                        });
+                    });
                 });
-                hwsEditorBoxObserver.observe(document.body, { childList: true, subtree: true });
             }
             <?php endif; ?>
             

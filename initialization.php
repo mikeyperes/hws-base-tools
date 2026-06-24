@@ -431,7 +431,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.57";
+$plugin_version = "10.18.59";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
@@ -574,6 +574,7 @@ include_once("snippet-seo-amp.php");
 // NOTE: snippet-website-settings-functionality.php moved outside is_admin() block
 // so shortcodes work on frontend
 
+include_once("snippet-acf-source-tracker.php");
 activate_snippets("admin");
 }
 
@@ -718,6 +719,14 @@ function get_snippets($type = "")
 
     // ─── ADMIN / SETTINGS SNIPPETS ─────────────────────────────────────
     $snippets_admin = [
+    [
+        'id'               => 'enable_acf_source_tracker',
+        'name'             => 'ACF Source Tracker',
+        'description'      => 'Shows a subtle source header on each ACF field group (registering plugin plus the unique group key) with a faint per-source colour accent, so field origins are trackable. Generic engine; currently active on the user edit/profile screen.',
+        'info'             => 'Default off. Generic: auto-detects which plugin or theme registered each group by its unique key. Active screens are filterable via the hws_acf_source_tracker_screens filter.',
+        'function'         => 'enable_acf_source_tracker',
+        'scope_admin_only' => true,
+    ],
     // ★ RECOMMENDED
     [  
         'id' => 'enable_website_settings_functionality',
