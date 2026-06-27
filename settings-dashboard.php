@@ -3769,6 +3769,47 @@ function hws_get_brand_gallery_payload(): array {
     ];
 }
 
+function hws_render_brand_color_control( string $key, string $label, string $value, string $picker_id, string $control_class, string $hex_class, string $default = '#000000' ): string {
+    if ( class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\ColorControl' ) ) {
+        return \Hexa\PluginCore\WpAdminComponents\ColorControl::render(
+            [
+                'id'              => $picker_id,
+                'key'             => $key,
+                'label'           => $label,
+                'value'           => $value,
+                'default'         => $default,
+                'control_class'   => 'hws-brand-color-control ' . $control_class,
+                'hex_input_class' => $hex_class,
+                'show_rgb'        => true,
+                'show_hex_code'   => false,
+            ]
+        );
+    }
+
+    return '<div class="hws-brand-color-control ' . esc_attr( $control_class ) . '">'
+        . '<label for="' . esc_attr( $picker_id ) . '" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">' . esc_html( $label ) . '</label>'
+        . '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">'
+        . '<input type="color" id="' . esc_attr( $picker_id ) . '" value="' . esc_attr( $value ) . '" data-hpc-color-picker style="width:52px;height:38px;padding:2px;">'
+        . '<input type="text" class="' . esc_attr( $hex_class ) . '" value="' . esc_attr( $value ) . '" data-hpc-color-hex-input pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">'
+        . '</div></div>';
+}
+
+function hws_render_elementor_palette_detector(): string {
+    if ( ! class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\ElementorPaletteDetector' ) ) {
+        return '';
+    }
+
+    return \Hexa\PluginCore\WpAdminComponents\ElementorPaletteDetector::render(
+        [
+            'id'           => 'hws-brand-elementor-palette',
+            'title'        => 'Elementor palette',
+            'button_label' => 'Load Elementor colors',
+            'description'  => 'Reference only. Load the Elementor site colors, then copy any hex value into the HWS brand fields above.',
+            'empty_label'  => 'Click "Load Elementor colors" to show the Elementor palette.',
+        ]
+    );
+}
+
 function render_brand_colors_panel() {
     $colors = hws_get_brand_colors_payload();
     ?>
@@ -3824,24 +3865,10 @@ function render_brand_colors_panel() {
 	            </style>
 	            <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;margin-bottom:16px;">
 	                <strong style="display:block;font-size:14px;margin-bottom:6px;">Primary and secondary brand colors</strong>
-	                <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Use these as the saved HWS brand color pair. Elementor rows below can set either value directly.</p>
+	                <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Use these as the saved HWS brand color pair. The fields are rendered by Hexa WP Core and saved through the existing HWS AJAX endpoint.</p>
 	                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
-	                    <div>
-	                        <label for="hws-brand-primary-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Primary color</label>
-	                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-	                            <input type="color" id="hws-brand-primary-color" value="<?php echo esc_attr( $colors['primary_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
-	                            <input type="text" id="hws-brand-primary-color-hex" value="<?php echo esc_attr( $colors['primary_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
-	                            <span id="hws-brand-primary-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['primary_color'] ); ?>;"></span>
-	                        </div>
-	                    </div>
-	                    <div>
-	                        <label for="hws-brand-secondary-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Secondary color</label>
-	                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-	                            <input type="color" id="hws-brand-secondary-color" value="<?php echo esc_attr( $colors['secondary_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
-	                            <input type="text" id="hws-brand-secondary-color-hex" value="<?php echo esc_attr( $colors['secondary_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
-	                            <span id="hws-brand-secondary-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['secondary_color'] ); ?>;"></span>
-	                        </div>
-	                    </div>
+                        <?php echo hws_render_brand_color_control( 'brand_primary_color', 'Primary color', $colors['primary_color'], 'hws-brand-primary-color', 'hws-brand-primary-control', 'hws-brand-primary-color-hex', '#000000' ); ?>
+                        <?php echo hws_render_brand_color_control( 'brand_secondary_color', 'Secondary color', $colors['secondary_color'], 'hws-brand-secondary-color', 'hws-brand-secondary-control', 'hws-brand-secondary-color-hex', '#ffffff' ); ?>
 	                </div>
 	            </div>
 	            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
@@ -3854,22 +3881,8 @@ function render_brand_colors_panel() {
                         Enable highlight color override
                     </label>
                     <div style="display:grid;gap:12px;">
-                        <div>
-                            <label for="hws-highlight-background-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Highlight background color</label>
-                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                                <input type="color" id="hws-highlight-background-color" value="<?php echo esc_attr( $colors['highlight_background_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
-                                <input type="text" id="hws-highlight-background-color-hex" value="<?php echo esc_attr( $colors['highlight_background_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
-                                <span id="hws-highlight-background-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['highlight_background_color'] ); ?>;"></span>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="hws-highlight-text-color" style="display:block;font-weight:700;font-size:13px;margin-bottom:6px;">Highlight text color</label>
-                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                                <input type="color" id="hws-highlight-text-color" value="<?php echo esc_attr( $colors['highlight_text_color'] ); ?>" style="width:52px;height:38px;padding:2px;">
-                                <input type="text" id="hws-highlight-text-color-hex" value="<?php echo esc_attr( $colors['highlight_text_color'] ); ?>" pattern="^#[0-9a-fA-F]{6}$" style="width:110px;font-family:monospace;text-transform:lowercase;">
-                                <span id="hws-highlight-text-color-swatch" style="display:inline-block;width:38px;height:38px;border:1px solid #c3c4c7;border-radius:6px;background:<?php echo esc_attr( $colors['highlight_text_color'] ); ?>;"></span>
-                            </div>
-                        </div>
+                        <?php echo hws_render_brand_color_control( 'highlight_background_color', 'Highlight background color', $colors['highlight_background_color'], 'hws-highlight-background-color', 'hws-highlight-background-control', 'hws-highlight-background-color-hex', '#facc15' ); ?>
+                        <?php echo hws_render_brand_color_control( 'highlight_text_color', 'Highlight text color', $colors['highlight_text_color'], 'hws-highlight-text-color', 'hws-highlight-text-control', 'hws-highlight-text-color-hex', '#111827' ); ?>
                     </div>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
                         <button type="button" id="hws-save-brand-colors" class="button button-primary">Save Brand Colors</button>
@@ -3892,20 +3905,8 @@ function render_brand_colors_panel() {
                     </div>
                 </div>
             </div>
-            <div style="margin-top:16px;border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div>
-                        <strong style="display:block;font-size:14px;margin-bottom:4px;">Elementor color assets</strong>
-                        <span style="color:#646970;font-size:12.5px;">Collapsed by default. Colors load only when this section is opened. Active kit: <code id="hws-elementor-kit-id">not loaded</code>. Colors found: <strong id="hws-elementor-color-count">not loaded</strong>.</span>
-                    </div>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <button type="button" id="hws-toggle-elementor-colors" class="button" aria-expanded="false">Show Elementor Colors</button>
-                        <span id="hws-elementor-colors-status" style="font-size:12px;" aria-live="polite"></span>
-                    </div>
-                </div>
-                <div id="hws-elementor-colors-panel" hidden style="margin-top:12px;overflow:auto;">
-                    <div id="hws-elementor-colors-content"></div>
-                </div>
+            <div style="margin-top:16px;">
+                <?php echo hws_render_elementor_palette_detector(); ?>
             </div>
         </div>
     </div>
@@ -4347,15 +4348,41 @@ function render_brand_logo_assets_panel() {
             return fallbackCopy();
         }
 
+        function hexToRgbString(value) {
+            value = (value || '').replace('#', '');
+            if (value.length !== 6) {
+                return '';
+            }
+
+            return 'rgb(' + parseInt(value.substring(0, 2), 16) + ', ' + parseInt(value.substring(2, 4), 16) + ', ' + parseInt(value.substring(4, 6), 16) + ')';
+        }
+
+        function syncCoreColorControl(selector, value) {
+            if (!isHexColor(value)) {
+                return;
+            }
+
+            value = value.toLowerCase();
+            var $control = $(selector);
+            $control.find('[data-hpc-color-picker]').val(value);
+            $control.find('[data-hpc-color-hex-input]').val(value);
+            $control.find('[data-hpc-color-swatch]').css('background', value);
+            $control.find('[data-hpc-color-rgb]').text(hexToRgbString(value));
+            $control.find('[data-hpc-color-hex]').text(value);
+            $control.find('[data-hpc-copy]').attr('data-hpc-copy', value);
+        }
+
+        function readCoreColorControl(selector) {
+            return ($(selector).find('[data-hpc-color-hex-input]').first().val() || '').trim();
+        }
+
         function syncHighlightColor(kind, value) {
             if (!isHexColor(value)) {
                 return;
             }
 
             value = value.toLowerCase();
-            $('#hws-highlight-' + kind + '-color').val(value);
-            $('#hws-highlight-' + kind + '-color-hex').val(value);
-            $('#hws-highlight-' + kind + '-color-swatch').css('background', value);
+            syncCoreColorControl('.hws-highlight-' + kind + '-control', value);
             $('#hws-highlight-' + kind + '-color-current').text(value);
 
             if (kind === 'background') {
@@ -4371,9 +4398,7 @@ function render_brand_logo_assets_panel() {
             }
 
             value = value.toLowerCase();
-            $('#hws-brand-' + kind + '-color').val(value);
-            $('#hws-brand-' + kind + '-color-hex').val(value);
-            $('#hws-brand-' + kind + '-color-swatch').css('background', value);
+            syncCoreColorControl('.hws-brand-' + kind + '-control', value);
             $('#hws-brand-' + kind + '-color-current').text(value);
         }
 
@@ -4391,10 +4416,10 @@ function render_brand_logo_assets_panel() {
         }
 
         function saveBrandColors($status, successMessage) {
-            var primary = ($('#hws-brand-primary-color-hex').val() || '').trim();
-            var secondary = ($('#hws-brand-secondary-color-hex').val() || '').trim();
-            var background = ($('#hws-highlight-background-color-hex').val() || '').trim();
-            var text = ($('#hws-highlight-text-color-hex').val() || '').trim();
+            var primary = readCoreColorControl('.hws-brand-primary-control');
+            var secondary = readCoreColorControl('.hws-brand-secondary-control');
+            var background = readCoreColorControl('.hws-highlight-background-control');
+            var text = readCoreColorControl('.hws-highlight-text-control');
 
             if (!isHexColor(primary) || !isHexColor(secondary) || !isHexColor(background) || !isHexColor(text)) {
                 setStatus($status, 'Enter valid 6-digit hex colors.', false);
@@ -4418,56 +4443,6 @@ function render_brand_logo_assets_panel() {
                     setStatus($status, response && response.data ? response.data : 'Save failed.', false);
                 }
             }, 'json');
-        }
-
-        function renderElementorColorAssets(data) {
-            var groups = data && data.groups ? data.groups : {};
-            var groupKeys = ['system_colors', 'custom_colors'];
-            var html = '';
-
-            $('#hws-elementor-kit-id').text(data && data.kit_id ? data.kit_id : 'not found');
-            $('#hws-elementor-color-count').text(data && data.count !== undefined ? data.count : 0);
-
-            groupKeys.forEach(function(groupKey) {
-                var group = groups[groupKey] || {};
-                var items = group.items || [];
-
-                html += '<strong style="display:block;margin:12px 0 6px;">' + escapeText(group.label || groupKey) + '</strong>';
-
-                if (!items.length) {
-                    html += '<p style="margin:0 0 8px;color:#8c8f94;">No colors found.</p>';
-                    return;
-                }
-
-                html += '<table class="widefat striped" style="min-width:900px;">';
-                html += '<thead><tr><th style="width:80px;">Color</th><th>Name</th><th>Hex</th><th>CSS variable</th><th style="width:260px;">Actions</th></tr></thead><tbody>';
-
-                items.forEach(function(item) {
-                    var color = item.color || '';
-                    var title = item.title || item.id || '';
-                    var variable = item.variable || '';
-                    var swatch = color
-                        ? '<span style="display:inline-block;width:34px;height:24px;border:1px solid #c3c4c7;border-radius:4px;background:' + escapeText(color) + ';"></span>'
-                        : '<span style="color:#8c8f94;">Not set</span>';
-                    var disabled = color ? '' : ' disabled';
-
-                    html += '<tr class="hws-elementor-color-row" data-color="' + escapeText(color) + '" data-title="' + escapeText(title) + '" data-variable="' + escapeText(variable) + '">';
-                    html += '<td>' + swatch + '</td>';
-                    html += '<td>' + escapeText(title) + '</td>';
-                    html += '<td><code class="hws-elementor-color-hex">' + escapeText(color || 'not set') + '</code></td>';
-                    html += '<td><code>' + escapeText(variable || 'not set') + '</code></td>';
-                    html += '<td style="display:flex;gap:6px;flex-wrap:wrap;">';
-                    html += '<button type="button" class="button button-small hws-copy-color"' + disabled + '>Copy</button>';
-                    html += '<button type="button" class="button button-small hws-set-brand-color" data-target="primary"' + disabled + '>Set Primary</button>';
-                    html += '<button type="button" class="button button-small hws-set-brand-color" data-target="secondary"' + disabled + '>Set Secondary</button>';
-                    html += '</td>';
-                    html += '</tr>';
-                });
-
-                html += '</tbody></table>';
-            });
-
-            $('#hws-elementor-colors-content').html(html);
         }
 
         $('#hws-upload-favicon').on('click', function(e) {
@@ -4519,118 +4494,24 @@ function render_brand_logo_assets_panel() {
             }, 'json');
         });
 
-        $('#hws-brand-primary-color').on('input change', function() {
+        $('#hws-brand-colors-panel').on('input change', '.hws-brand-primary-control [data-hpc-color-picker], .hws-brand-primary-control [data-hpc-color-hex-input]', function() {
             syncBrandBaseColor('primary', $(this).val());
         });
 
-        $('#hws-brand-primary-color-hex').on('input change', function() {
-            var value = ($(this).val() || '').trim();
-            if (isHexColor(value)) {
-                syncBrandBaseColor('primary', value);
-            }
-        });
-
-        $('#hws-brand-secondary-color').on('input change', function() {
+        $('#hws-brand-colors-panel').on('input change', '.hws-brand-secondary-control [data-hpc-color-picker], .hws-brand-secondary-control [data-hpc-color-hex-input]', function() {
             syncBrandBaseColor('secondary', $(this).val());
         });
 
-        $('#hws-brand-secondary-color-hex').on('input change', function() {
-            var value = ($(this).val() || '').trim();
-            if (isHexColor(value)) {
-                syncBrandBaseColor('secondary', value);
-            }
-        });
-
-        $('#hws-highlight-background-color').on('input change', function() {
+        $('#hws-brand-colors-panel').on('input change', '.hws-highlight-background-control [data-hpc-color-picker], .hws-highlight-background-control [data-hpc-color-hex-input]', function() {
             syncHighlightColor('background', $(this).val());
         });
 
-        $('#hws-highlight-background-color-hex').on('input change', function() {
-            var value = ($(this).val() || '').trim();
-            if (isHexColor(value)) {
-                syncHighlightColor('background', value);
-            }
-        });
-
-        $('#hws-highlight-text-color').on('input change', function() {
+        $('#hws-brand-colors-panel').on('input change', '.hws-highlight-text-control [data-hpc-color-picker], .hws-highlight-text-control [data-hpc-color-hex-input]', function() {
             syncHighlightColor('text', $(this).val());
-        });
-
-        $('#hws-highlight-text-color-hex').on('input change', function() {
-            var value = ($(this).val() || '').trim();
-            if (isHexColor(value)) {
-                syncHighlightColor('text', value);
-            }
         });
 
         $('#hws-save-brand-colors').on('click', function() {
             saveBrandColors($('#hws-brand-colors-status'), 'Saved.');
-        });
-
-        $('#hws-toggle-elementor-colors').on('click', function() {
-            var $panel = $('#hws-elementor-colors-panel');
-            var $button = $(this);
-            var willShow = $panel.prop('hidden');
-
-            if (!willShow) {
-                $panel.prop('hidden', true);
-                $button.attr('aria-expanded', 'false').text('Show Elementor Colors');
-                setStatus($('#hws-elementor-colors-status'), '', true);
-                return;
-            }
-
-            $panel.prop('hidden', false);
-            $button.attr('aria-expanded', 'true').text('Hide Elementor Colors');
-
-            if ($button.data('loaded')) {
-                return;
-            }
-
-            $button.prop('disabled', true).text('Loading...');
-            setStatus($('#hws-elementor-colors-status'), 'Loading...', true);
-
-            $.post(ajaxurl, { action: 'hws_get_elementor_colors', nonce: hwsNonce }, function(response) {
-                if (response && response.success) {
-                    renderElementorColorAssets(response.data);
-                    $button.data('loaded', true);
-                    setStatus($('#hws-elementor-colors-status'), 'Loaded.', true);
-                } else {
-                    setStatus($('#hws-elementor-colors-status'), response && response.data ? response.data : 'Load failed.', false);
-                }
-            }, 'json').always(function() {
-                $button.prop('disabled', false).text('Hide Elementor Colors');
-            });
-        });
-
-        $('#hws-elementor-colors-panel').on('click', '.hws-copy-color', function() {
-            var $row = $(this).closest('.hws-elementor-color-row');
-            var color = $row.data('color') || '';
-
-            if (!color) {
-                setStatus($('#hws-elementor-colors-status'), 'No hex value to copy.', false);
-                return;
-            }
-
-            copyTextToClipboard(color).then(function() {
-                setStatus($('#hws-elementor-colors-status'), 'Copied ' + color + '.', true);
-            }).catch(function() {
-                setStatus($('#hws-elementor-colors-status'), 'Copy failed.', false);
-            });
-        });
-
-        $('#hws-elementor-colors-panel').on('click', '.hws-set-brand-color', function() {
-            var $row = $(this).closest('.hws-elementor-color-row');
-            var color = $row.data('color') || '';
-            var target = $(this).data('target') === 'secondary' ? 'secondary' : 'primary';
-            var label = target === 'secondary' ? 'secondary' : 'primary';
-
-            if (!color || !isHexColor(color)) {
-                setStatus($('#hws-elementor-colors-status'), 'No hex value to set.', false);
-                return;
-            }
-
-            syncBrandBaseColor(target, color);
-            saveBrandColors($('#hws-elementor-colors-status'), 'Set as ' + label + ' color.');
         });
 
         $('.hws-brand-upload').on('click', function(e) {

@@ -20,6 +20,7 @@ Do not rename these.
 
 ```text
 src/ActivityLog/        Hexa\PluginCore\ActivityLog
+src/AcfFieldFactory/    Hexa\PluginCore\AcfFieldFactory
 src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
 src/CoreContracts/      Hexa\PluginCore\CoreContracts
 src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
@@ -28,13 +29,16 @@ src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
 src/FaqSets/            Hexa\PluginCore\FaqSets
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
+src/SnippetRegistry/    Hexa\PluginCore\SnippetRegistry
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SiteStructure/      Hexa\PluginCore\SiteStructure
 src/SchemaDetection/    Hexa\PluginCore\SchemaDetection
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
 src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
+src/WpAdminUiCleanup/   Hexa\PluginCore\WpAdminUiCleanup
 src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
@@ -50,6 +54,36 @@ Namespace:
 Hexa\PluginCore\WpAdminComponents
 ```
 
+
+## WP Admin UI Cleanup
+
+Namespace:
+
+```text
+Hexa\PluginCore\WpAdminUiCleanup
+```
+
+Use `CleanupRegistry` to define admin cleanup options once, render toggle rows, save settings through AJAX, and apply behavior on the target admin screens.
+
+Required rules:
+
+- Register cleanup behavior admin-wide, not only inside the settings tab.
+- Use plugin-specific option prefixes and AJAX action names.
+- Use `css_hide` for direct selectors and `postbox_collapse` when the box should stay visible but load closed.
+- Test through the visible admin UI and exact target screen with Puppeteer or Playwright.
+
+Example definition shape:
+
+```text
+key: hide_post_editor_comments
+label: Post Editor Comments
+section: wordpress_editor
+default: true
+admin_pages: post.php, post-new.php
+mode: css_hide
+selectors: #commentsdiv, #commentsdiv-hide, label[for="commentsdiv-hide"]
+```
+
 ## WP Admin AJAX
 
 Namespace:
@@ -59,6 +93,22 @@ Hexa\PluginCore\WpAdminAjax
 ```
 
 Use `AjaxActionRegistry` for host plugin admin-AJAX actions. Use `AjaxRequest` for sanitized request values. Use `AjaxFailure` for expected validation errors. `AjaxGuard` remains available for low-level nonce/capability checks.
+
+## Snippet Registry
+
+Namespace:
+
+```text
+Hexa\PluginCore\SnippetRegistry
+```
+
+Use `SnippetDefinition` and `SnippetRegistry` to normalize host plugin snippets. Use `SnippetRenderer` to render description, testing, snippets, shortcodes, and basic README components. Use `SnippetAjaxController` when a host plugin wants generic toggle/test AJAX handlers.
+
+Required host responsibilities:
+
+- Host plugins own snippet functions and option keys.
+- Core owns the generic registry, UI, test rule evaluation, and AJAX response shape.
+- Testing rules should include at least option-enabled and function-exists checks for each feature snippet.
 
 ```php
 use Hexa\PluginCore\WpAdminAjax\AjaxActionRegistry;
@@ -666,6 +716,25 @@ public GitHub VERSION from mikeyperes/hexa-wordpress-plugin-core
 ```
 
 Do not use the WordPress plugin header updater for the core library.
+
+The host plugin updater and vendored core updater must use the same report shape:
+
+```text
+Git repo
+Git URL
+Git branch
+Git version
+current installed version
+current-vs-Git comparison
+green Current flag
+red Outdated flag
+Check for Updates button
+Pull from GitHub button
+normalized ZIP download without the GitHub -main folder suffix
+live activity log for update work
+```
+
+Wrap each updater in one default-open `CoreUi` expandable section with browser-persistent collapse memory.
 
 ### Updater Input Terms
 

@@ -65,7 +65,7 @@ Structured feature management with toggles, optional settings, use instructions,
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions
 - Letter-based favicon generator
-- Brand Colors panel with primary/secondary color settings, Elementor color row import buttons, and Highlight Text Color picker saved as `hws_brand_highlight_text_color`
+- Brand Colors panel with Hexa WP Core color controls for primary/secondary/highlight colors plus the generic Elementor palette detector
 - Six logo slots: `logo`, `logo_1x1`, `logo_text`, `logo_dark`, `logo_dark_1x1`, `logo_text_dark`
 - Shortcodes: `[site_logo key="logo" size="medium"]`, `[site_logo key="logo" size="full" output="url"]`, `[site_logo key="logo" size="300x120"]`, `[site_logo key="logo_text" size="medium" width="180"]`
 
@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.59 (Current)
+### v10.18.60 (Current)
+- Moved the Brand Colors panel to Hexa WP Core color controls and the generic Elementor palette detector while keeping the existing AJAX save endpoint.
+
+### v10.18.59
 - Added a UI Cleanup toggle to hide the Post Attributes metabox and hardened the collapsed-by-default behavior so WordPress postbox state restoration cannot reopen it on editor load.
 - Preserved the live ACF Source Tracker feature in the Git source and corrected the runtime plugin version metadata.
 

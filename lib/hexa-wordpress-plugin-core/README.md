@@ -24,7 +24,9 @@ Every sub-namespace has its own folder under `src/`.
 hexa-wordpress-plugin-core/
   VERSION
   src/
+    AcfFieldFactory/    -> Hexa\PluginCore\AcfFieldFactory
     ActivityLog/        -> Hexa\PluginCore\ActivityLog
+    BrandColors/        -> Hexa\PluginCore\BrandColors
     CoreBootstrap/      -> Hexa\PluginCore\CoreBootstrap
     CoreContracts/      -> Hexa\PluginCore\CoreContracts
     CorePackageUpdates/ -> Hexa\PluginCore\CorePackageUpdates
@@ -33,13 +35,16 @@ hexa-wordpress-plugin-core/
     FieldStructures/    -> Hexa\PluginCore\FieldStructures
     FaqSets/            -> Hexa\PluginCore\FaqSets
     LogFiles/           -> Hexa\PluginCore\LogFiles
+    PluginChecks/       -> Hexa\PluginCore\PluginChecks
     PluginProvisioning/ -> Hexa\PluginCore\PluginProvisioning
     PluginUpdates/      -> Hexa\PluginCore\PluginUpdates
+    SnippetRegistry/    -> Hexa\PluginCore\SnippetRegistry
     ShortcodeRegistry/  -> Hexa\PluginCore\ShortcodeRegistry
     SiteStructure/      -> Hexa\PluginCore\SiteStructure
     SchemaDetection/    -> Hexa\PluginCore\SchemaDetection
     SmartSearch/        -> Hexa\PluginCore\SmartSearch
     SystemEnvironment/  -> Hexa\PluginCore\SystemEnvironment
+    WpAdminUiCleanup/   -> Hexa\PluginCore\WpAdminUiCleanup
     WpAdminComponents/  -> Hexa\PluginCore\WpAdminComponents
     WpAdminAjax/        -> Hexa\PluginCore\WpAdminAjax
     WpAdminTabs/        -> Hexa\PluginCore\WpAdminTabs
@@ -51,7 +56,9 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 
 ## First Core Areas
 
+- `AcfFieldFactory`: reusable ACF field array factories for host field-group registrations.
 - `ActivityLog`: shared activity log records, storage modes, and expandable dark log renderer.
+- `BrandColors`: shared HWS Base Tools brand color readers, hex normalization, RGB conversion, and color-control payloads.
 - `CoreBootstrap`: consistent setup/init protocol for loading this core in a host plugin.
 - `CoreContracts`: interfaces that host plugins and core modules must follow.
 - `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
@@ -60,13 +67,16 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
+- `PluginChecks`: shared required-plugin definition checks, status renderer, AJAX install/activate actions, update-cache refresh, and activity-log UI.
 - `PluginProvisioning`: shared plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
 - `PluginUpdates`: shared GitHub/update configuration objects and host plugin updater.
+- `SnippetRegistry`: shared snippet definitions, option toggles, test rules, related snippets, related shortcodes, basic README rendering, generic AJAX handlers, and the canonical snippets table UI.
 - `ShortcodeRegistry`: shortcode definition registry, dashboard display renderer, examples, live output, and test runner contracts.
 - `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
 - `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
+- `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
 - `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections.
 - `WpAdminAjax`: WordPress admin-AJAX nonce, capability, request parsing, action registration, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
@@ -140,6 +150,8 @@ Before adding implementations in another Codex or Claude chat, read:
 - `docs/schema-detection.md`
 - `docs/field-structures.md`
 - `docs/faq-sets.md`
+- `docs/brand-colors.md`
+- `docs/snippet-registry.md`
 - the namespace-specific doc for the folder being changed
 
 If a new feature does not fit an existing namespace, document the proposed namespace first before adding code.
@@ -169,7 +181,80 @@ $core_config = CorePackageConfig::from_core_root(
 ( new CorePackagePanelRenderer( $core_config ) )->render();
 ```
 
-This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`.
+This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`. The host plugin updater and the vendored core updater both render as default-open persistent collapse cards. Each card reports the Git repo, Git URL, Git branch, Git version, current version, current-vs-Git comparison, green/red status flag, check-for-updates action, normalized ZIP download, and live update activity log.
+
+## Brand Color Controls
+
+`Hexa\PluginCore\BrandColors\BrandColorProvider` reads the HWS Base Tools Brand Assets primary and secondary color options and can read Elementor site-setting color/font tokens. `Hexa\PluginCore\WpAdminComponents\ColorControl` renders one reusable admin color control with picker, editable hex value, RGB value, swatch, copy button, and optional HWS primary import button hooks. `Hexa\PluginCore\WpAdminComponents\DetailedColorPicker` renders the paired primary/secondary control with optional Elementor import and optional font controls.
+
+Host plugins should pass their own setting key and wire save/import AJAX while reusing this markup instead of recreating color pickers.
+
+```php
+use Hexa\PluginCore\BrandColors\BrandColorProvider;
+use Hexa\PluginCore\WpAdminComponents\ColorControl;
+
+$brand = BrandColorProvider::payload('#2d5277');
+
+echo ColorControl::render([
+    'key' => 'accent_color',
+    'label' => 'Accent color',
+    'value' => $settings['accent_color'] ?? $brand['primary_color'],
+    'default' => $brand['primary_color'],
+    'import_brand' => true,
+]);
+```
+
+Detailed visual example:
+
+```text
+Detailed Color Picker
++----------------------+----------------------+
+| Primary color        | Secondary color      |
+| Picker Hex RGB Copy  | Picker Hex RGB Copy  |
+| Swatch               | Swatch               |
++----------------------+----------------------+
+[Import Elementor colors and fonts]
+```
+
+```php
+use Hexa\PluginCore\BrandColors\BrandColorProvider;
+use Hexa\PluginCore\WpAdminComponents\DetailedColorPicker;
+
+$brand = BrandColorProvider::payload('#2d5277');
+
+echo DetailedColorPicker::render([
+    'title' => 'Brand card colors',
+    'description' => 'Use site design tokens or override this card.',
+    'primary' => [
+        'key' => 'primary_color',
+        'value' => $settings['primary_color'] ?? $brand['primary_color'],
+        'hex_input_class' => 'plugin-primary-color',
+    ],
+    'secondary' => [
+        'key' => 'secondary_color',
+        'value' => $settings['secondary_color'] ?? $brand['secondary_color'],
+        'hex_input_class' => 'plugin-secondary-color',
+    ],
+    'show_primary' => true,
+    'show_secondary' => true,
+    'show_elementor_import' => true,
+    'show_fonts' => true,
+    'fonts' => [
+        [
+            'key' => 'primary_font_family',
+            'token' => 'primary_font_family',
+            'label' => 'Primary font family',
+            'value' => $settings['primary_font_family'] ?? '',
+        ],
+        [
+            'key' => 'secondary_font_family',
+            'token' => 'secondary_font_family',
+            'label' => 'Secondary font family',
+            'value' => $settings['secondary_font_family'] ?? '',
+        ],
+    ],
+]);
+```
 
 ## SiteStructure Section Rendering
 
