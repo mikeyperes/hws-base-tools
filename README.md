@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.63 (Current)
+### v10.18.64 (Current)
+- Reworked the Sitemaps tab layout so settings links are full-width, sitemap URLs appear before actions, and the no-cache action displays its current enabled state.
+
+### v10.18.63
 - Added an Overview Website Profile selector for site type classification and made the Sitemaps tab include Rank Math News Sitemap checks when the site type is News Outlet.
 
 ### v10.18.62

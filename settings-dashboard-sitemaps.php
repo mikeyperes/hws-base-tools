@@ -399,6 +399,8 @@ function render_tab_sitemaps(): void {
     $site_type  = hws_get_site_type_label();
     $news_site  = hws_site_type_is_news_outlet();
     $news_on    = hws_sitemaps_rank_math_news_sitemap_enabled();
+    $nocache_button_label = $nocache_on ? 'Sitemap Cache Disabled' : 'Disable Cache for Sitemaps';
+    $nocache_button_class = $nocache_on ? 'hpc-button hws-sitemap-state-enabled' : 'hpc-button secondary';
     ?>
     <div id="hws-sitemaps" class="hpc-ui hws-sitemaps" data-nonce="<?php echo esc_attr( $nonce ); ?>">
         <style>
@@ -411,6 +413,7 @@ function render_tab_sitemaps(): void {
             #hws-sitemaps .hws-sitemap-log{background:#0f1720;border-radius:8px;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;min-height:54px;padding:12px;white-space:pre-wrap}
             #hws-sitemaps .hws-sitemap-nocache-on{border-left:4px solid var(--hpc-green)}
             #hws-sitemaps .hws-sitemap-nocache-off{border-left:4px solid var(--hpc-amber)}
+            #hws-sitemaps .hws-sitemap-state-enabled{background:#16803c!important;border-color:#16803c!important;color:#fff!important;opacity:1}
         </style>
 
         <div class="hpc-hero">
@@ -428,30 +431,17 @@ function render_tab_sitemaps(): void {
             </div>
         </div>
 
-        <div class="hpc-grid two">
-            <section class="hpc-card <?php echo $nocache_on ? 'hws-sitemap-nocache-on' : 'hws-sitemap-nocache-off'; ?>">
-                <h3>Actions</h3>
-                <p>Run a live scan, disable LiteSpeed cache for sitemap requests, purge sitemap URLs, or refresh rewrite rules.</p>
-                <div class="hpc-actions">
-                    <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-scan', 'label' => 'Scan Sitemaps', 'working_label' => 'Scanning...', 'success_label' => 'Scanned', 'class' => 'hpc-button', 'attrs' => [ 'data-hws-sitemap-action' => 'scan' ] ] ); ?>
-                    <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-disable-cache', 'label' => 'Disable Cache for Sitemaps', 'working_label' => 'Applying...', 'success_label' => 'No-cache enabled', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-hws-sitemap-action' => 'disable-cache' ] ] ); ?>
-                    <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-purge', 'label' => 'LiteSpeed Purge Sitemaps', 'working_label' => 'Purging...', 'success_label' => 'Purge fired', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-hws-sitemap-action' => 'purge' ] ] ); ?>
-                    <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-flush-permalinks', 'label' => 'Refresh Permalinks', 'working_label' => 'Refreshing...', 'success_label' => 'Refreshed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-hws-sitemap-action' => 'flush-permalinks' ] ] ); ?>
-                </div>
-            </section>
-
-            <section class="hpc-card">
-                <h3>Settings Links</h3>
-                <p>Open related WordPress, Rank Math, and LiteSpeed settings in a new tab.</p>
-                <div class="hpc-actions">
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#sitemap-general' ), 'Rank Math Sitemaps', 'hpc-button secondary' ); ?>
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#post-types' ), 'Rank Math Post Types', 'hpc-button secondary' ); ?>
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#news-sitemap' ), 'Rank Math News Sitemap', 'hpc-button secondary' ); ?>
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=litespeed' ), 'LiteSpeed Cache', 'hpc-button secondary' ); ?>
-                    <?php echo CoreUi::external_link( admin_url( 'options-permalink.php' ), 'Permalink Settings', 'hpc-button secondary' ); ?>
-                </div>
-            </section>
-        </div>
+        <section class="hpc-card">
+            <h3>Settings Links</h3>
+            <p>Open related WordPress, Rank Math, and LiteSpeed settings in a new tab.</p>
+            <div class="hpc-actions">
+                <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#sitemap-general' ), 'Rank Math Sitemaps', 'hpc-button secondary' ); ?>
+                <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#post-types' ), 'Rank Math Post Types', 'hpc-button secondary' ); ?>
+                <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap#news-sitemap' ), 'Rank Math News Sitemap', 'hpc-button secondary' ); ?>
+                <?php echo CoreUi::external_link( admin_url( 'admin.php?page=litespeed' ), 'LiteSpeed Cache', 'hpc-button secondary' ); ?>
+                <?php echo CoreUi::external_link( admin_url( 'options-permalink.php' ), 'Permalink Settings', 'hpc-button secondary' ); ?>
+            </div>
+        </section>
 
         <section class="hpc-card">
             <h3>Sitemap URLs</h3>
@@ -480,6 +470,18 @@ function render_tab_sitemaps(): void {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </section>
+
+        <section class="hpc-card <?php echo $nocache_on ? 'hws-sitemap-nocache-on' : 'hws-sitemap-nocache-off'; ?>">
+            <h3>Actions</h3>
+            <p>Run a live scan, disable LiteSpeed cache for sitemap requests, purge sitemap URLs, or refresh rewrite rules.</p>
+            <p class="hws-sitemap-meta">Current cache state: <?php echo esc_html( $nocache_on ? 'disabled for sitemap requests' : 'not disabled by HWS Base Tools' ); ?>.</p>
+            <div class="hpc-actions">
+                <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-scan', 'label' => 'Scan Sitemaps', 'working_label' => 'Scanning...', 'success_label' => 'Scanned', 'class' => 'hpc-button', 'attrs' => [ 'data-hws-sitemap-action' => 'scan' ] ] ); ?>
+                <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-disable-cache', 'label' => $nocache_button_label, 'working_label' => 'Applying...', 'success_label' => 'Sitemap Cache Disabled', 'class' => $nocache_button_class, 'disabled' => $nocache_on, 'attrs' => [ 'data-hws-sitemap-action' => $nocache_on ? null : 'disable-cache', 'data-hws-state' => $nocache_on ? 'enabled' : 'disabled' ] ] ); ?>
+                <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-purge', 'label' => 'LiteSpeed Purge Sitemaps', 'working_label' => 'Purging...', 'success_label' => 'Purge fired', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-hws-sitemap-action' => 'purge' ] ] ); ?>
+                <?php echo DynamicButton::render( [ 'id' => 'hws-sitemap-flush-permalinks', 'label' => 'Refresh Permalinks', 'working_label' => 'Refreshing...', 'success_label' => 'Refreshed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-hws-sitemap-action' => 'flush-permalinks' ] ] ); ?>
+            </div>
         </section>
 
         <section class="hpc-card">
@@ -539,7 +541,7 @@ function render_tab_sitemaps(): void {
                 if (response && response.success) {
                     applyRows(response.data.rows || []);
                     var inactive = (response.data.rows || []).filter(function(row){ return !row.active; }).length;
-                    var cached = (response.data.rows || []).filter(function(row){ return !row.cache_ok; }).length;
+                    var cached = (response.data.rows || []).filter(function(row){ return row.cache_applicable !== false && !row.cache_ok; }).length;
                     setLog('Scan complete. Inactive: ' + inactive + '. LiteSpeed cached: ' + cached + '.');
                     if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.success(button, 'Scanned');
                 } else {
@@ -574,7 +576,15 @@ function render_tab_sitemaps(): void {
             ajax(ajaxAction).done(function(response){
                 if (response && response.success) {
                     setLog(response.data && response.data.message ? response.data.message : 'Done.');
-                    if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.success(button);
+                    if (window.HexaWpCoreDynamicButton) {
+                        if (action === 'disable-cache') {
+                            window.HexaWpCoreDynamicButton.success(button, 'Sitemap Cache Disabled', false);
+                            $(button).addClass('hws-sitemap-state-enabled').removeClass('secondary').data('hws-state', 'enabled').removeAttr('data-hws-sitemap-action');
+                            button.disabled = true;
+                        } else {
+                            window.HexaWpCoreDynamicButton.success(button);
+                        }
+                    }
                     if (action === 'disable-cache' || action === 'purge' || action === 'flush-permalinks') {
                         runScan(root.find('[data-hws-sitemap-action="scan"]').get(0));
                     }
