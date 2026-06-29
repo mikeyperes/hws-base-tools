@@ -9,8 +9,29 @@ defined( 'ABSPATH' ) || exit;
 
 const HWS_SITEMAP_NOCACHE_OPTION = 'hws_sitemaps_litespeed_nocache_enabled';
 
+function hws_sitemaps_nocache_option_value(): string {
+    $value = get_option( HWS_SITEMAP_NOCACHE_OPTION, null );
+
+    if ( null === $value || false === $value ) {
+        global $wpdb;
+
+        $raw = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+                HWS_SITEMAP_NOCACHE_OPTION
+            )
+        );
+
+        if ( null !== $raw ) {
+            return (string) $raw;
+        }
+    }
+
+    return null === $value || false === $value ? 'no' : (string) $value;
+}
+
 function hws_sitemaps_nocache_enabled(): bool {
-    return 'yes' === (string) get_option( HWS_SITEMAP_NOCACHE_OPTION, 'no' );
+    return 'yes' === hws_sitemaps_nocache_option_value();
 }
 
 function hws_sitemaps_is_sitemap_uri( ?string $uri = null ): bool {
@@ -264,6 +285,8 @@ function hws_sitemaps_ajax_disable_cache(): void {
 
     hws_require_ajax_nonce_or_error();
     update_option( HWS_SITEMAP_NOCACHE_OPTION, 'yes', false );
+    wp_cache_delete( HWS_SITEMAP_NOCACHE_OPTION, 'options' );
+    wp_cache_delete( 'notoptions', 'options' );
 
     wp_send_json_success(
         [

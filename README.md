@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.61 (Current)
+### v10.18.62 (Current)
+- Fixed sitemap no-cache option reads on persistent object-cache installs by falling back to the concrete options table and clearing stale option/notoptions cache entries after the AJAX save.
+
+### v10.18.61
 - Updated the vendored Hexa WP Core package to 0.19.1 and added a Sitemaps tab with AJAX sitemap scanning, LiteSpeed cache header checks, sitemap no-cache controls, LiteSpeed sitemap purge, Rank Math settings links, and AJAX permalink refresh.
 
 ### v10.18.60
