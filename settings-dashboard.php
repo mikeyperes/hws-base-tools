@@ -527,6 +527,7 @@ function hws_get_dashboard_tabs(): array {
         'snippets'      => '✂️ Snippets (Deprecated)',
         'brand-assets'  => '🖼️ Brand Assets',
         'pages'         => '📄 Pages',
+        'sitemaps'      => '🗺️ Sitemaps',
         'menu-tools'    => '🧭 Menu Tools',
     ];
 
@@ -611,6 +612,11 @@ function hws_render_dashboard_tab( string $tab_id ): void {
         case 'pages':
             if ( function_exists( __NAMESPACE__ . '\\display_settings_pages' ) ) {
                 display_settings_pages();
+            }
+            break;
+        case 'sitemaps':
+            if ( function_exists( __NAMESPACE__ . '\\render_tab_sitemaps' ) ) {
+                render_tab_sitemaps();
             }
             break;
         case 'menu-tools':

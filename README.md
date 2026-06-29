@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.60 (Current)
+### v10.18.61 (Current)
+- Updated the vendored Hexa WP Core package to 0.19.1 and added a Sitemaps tab with AJAX sitemap scanning, LiteSpeed cache header checks, sitemap no-cache controls, LiteSpeed sitemap purge, Rank Math settings links, and AJAX permalink refresh.
+
+### v10.18.60
 - Moved the Brand Colors panel to Hexa WP Core color controls and the generic Elementor palette detector while keeping the existing AJAX save endpoint.
 
 ### v10.18.59
