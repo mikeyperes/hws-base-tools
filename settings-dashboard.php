@@ -398,6 +398,7 @@ function hws_dashboard_register_ajax() {
     add_action( 'wp_ajax_hws_toggle_secret_permalinks', __NAMESPACE__ . '\\ajax_toggle_secret_permalinks' );
     add_action( 'wp_ajax_hws_enable_all_auto_updates', __NAMESPACE__ . '\\ajax_enable_all_auto_updates' );
     add_action( 'wp_ajax_hws_save_master_secret', __NAMESPACE__ . '\\ajax_save_master_secret' );
+    add_action( 'wp_ajax_hws_save_site_type', __NAMESPACE__ . '\\ajax_save_site_type' );
     add_action( 'wp_ajax_hws_save_site_basics', __NAMESPACE__ . '\\ajax_save_site_basics' );
     add_action( 'wp_ajax_hws_test_site_basics', __NAMESPACE__ . '\\ajax_test_site_basics' );
     add_action( 'wp_ajax_hws_copy_favicon', __NAMESPACE__ . '\\ajax_copy_favicon' );
@@ -2025,6 +2026,8 @@ function render_tab_overview() {
     $memory_limit_healthy = hws_wp_memory_limit_is_healthy( $wp_memory_limit );
     ?>
 
+    <?php render_site_profile_panel(); ?>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          GOING LIVE CHECKLIST (GLC)
          Checks recommended snippets + essential plugins are active.
@@ -2184,6 +2187,60 @@ function render_tab_overview() {
         hws_ct_display_plugin_info();
     }
     ?>
+    <?php
+}
+
+function render_site_profile_panel(): void {
+    $site_type = hws_get_site_type();
+    ?>
+    <div class="hws-panel" id="hws-site-profile-panel">
+        <div class="hws-panel-header">Website Profile</div>
+        <div class="hws-panel-body">
+            <div style="display:grid;grid-template-columns:minmax(220px,360px) minmax(260px,1fr);gap:16px;align-items:end;">
+                <label>
+                    <strong style="display:block;margin-bottom:6px;">Website Type</strong>
+                    <select id="hws-site-type" style="width:100%;max-width:360px;">
+                        <?php foreach ( hws_site_type_options() as $value => $label ) : ?>
+                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $site_type, $value ); ?>><?php echo esc_html( $label ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <div>
+                    <p style="margin:0 0 8px;color:#50575e;font-size:13px;">This classification controls contextual checks throughout HWS Base Tools. For News Outlet sites, the Sitemaps tab also checks the Rank Math News Sitemap.</p>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="button button-primary" id="hws-save-site-type">Save Website Type</button>
+                        <span id="hws-site-type-status" style="font-size:13px;" aria-live="polite"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    jQuery(function($) {
+        $('#hws-save-site-type').on('click', function() {
+            var $button = $(this);
+            var $status = $('#hws-site-type-status');
+            $button.prop('disabled', true);
+            $status.text('Saving...');
+            $.post(ajaxurl, {
+                action: 'hws_save_site_type',
+                nonce: hwsNonce,
+                site_type: $('#hws-site-type').val() || 'other'
+            }, function(response) {
+                if (!response || !response.success) {
+                    $status.text('Save failed.');
+                    return;
+                }
+                $status.text('Saved: ' + (response.data && response.data.label ? response.data.label : 'Website type updated') + '.');
+            }, 'json').fail(function() {
+                $status.text('AJAX error.');
+            }).always(function() {
+                $button.prop('disabled', false);
+            });
+        });
+    });
+    </script>
     <?php
 }
 
@@ -3022,6 +3079,25 @@ function ajax_get_overview_state() {
     hws_require_ajax_nonce_or_error();
 
     wp_send_json_success( hws_get_overview_state_payload() );
+}
+
+function ajax_save_site_type() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+    }
+
+    hws_require_ajax_nonce_or_error();
+
+    $site_type = isset( $_POST['site_type'] ) ? hws_sanitize_site_type( (string) wp_unslash( $_POST['site_type'] ) ) : 'other';
+
+    update_option( HWS_SITE_TYPE_OPTION, $site_type, false );
+
+    wp_send_json_success(
+        [
+            'site_type' => $site_type,
+            'label'     => hws_get_site_type_label( $site_type ),
+        ]
+    );
 }
 
 function ajax_save_site_basics() {

@@ -97,10 +97,29 @@ function hws_sitemaps_provider_label(): string {
     return 'rank_math' === hws_sitemaps_provider() ? 'Rank Math' : 'WordPress Core';
 }
 
+function hws_sitemaps_rank_math_module_enabled( string $module ): bool {
+    $modules = get_option( 'rank_math_modules', [] );
+
+    if ( is_string( $modules ) ) {
+        $decoded = maybe_unserialize( $modules );
+        $modules = is_array( $decoded ) ? $decoded : [];
+    }
+
+    return in_array( $module, (array) $modules, true );
+}
+
+function hws_sitemaps_rank_math_news_sitemap_enabled(): bool {
+    return hws_sitemaps_rank_math_active() && hws_sitemaps_rank_math_module_enabled( 'news-sitemap' );
+}
+
 function hws_sitemaps_index_url(): string {
     return 'rank_math' === hws_sitemaps_provider()
         ? home_url( '/sitemap_index.xml' )
         : home_url( '/wp-sitemap.xml' );
+}
+
+function hws_sitemaps_news_url(): string {
+    return home_url( '/news-sitemap.xml' );
 }
 
 function hws_sitemaps_url_for_post_type( string $post_type ): string {
@@ -122,6 +141,19 @@ function hws_sitemaps_rows(): array {
             'url'       => hws_sitemaps_index_url(),
         ],
     ];
+
+    if ( hws_site_type_is_news_outlet() ) {
+        $rows[] = [
+            'key'                     => 'rank_math_news_sitemap',
+            'label'                   => 'News Sitemap',
+            'post_type'               => '',
+            'type'                    => 'News Outlet',
+            'provider'                => 'Rank Math',
+            'url'                     => hws_sitemaps_news_url(),
+            'requires_rank_math_news' => true,
+            'rank_math_news_enabled'  => hws_sitemaps_rank_math_news_sitemap_enabled(),
+        ];
+    }
 
     $objects = get_post_types( [ 'public' => true ], 'objects' );
     unset( $objects['attachment'] );
@@ -201,6 +233,23 @@ function hws_sitemaps_litespeed_cache_state( array $headers ): array {
 }
 
 function hws_sitemaps_scan_url( array $row ): array {
+    if ( ! empty( $row['requires_rank_math_news'] ) && ! hws_sitemaps_rank_math_news_sitemap_enabled() ) {
+        return array_merge(
+            $row,
+            [
+                'active'           => false,
+                'status_code'      => 0,
+                'content_type'     => '',
+                'cache_ok'         => false,
+                'cache_applicable' => false,
+                'cache_message'    => 'Not checked until Rank Math News Sitemap is enabled.',
+                'message'          => hws_sitemaps_rank_math_active()
+                    ? 'Rank Math is active, but the News Sitemap module is not enabled.'
+                    : 'Rank Math is not active, so the News Sitemap cannot be checked.',
+            ]
+        );
+    }
+
     $url      = (string) $row['url'];
     $response = wp_remote_get(
         $url,
@@ -219,12 +268,13 @@ function hws_sitemaps_scan_url( array $row ): array {
         return array_merge(
             $row,
             [
-                'active'        => false,
-                'status_code'   => 0,
-                'content_type'  => '',
-                'cache_ok'      => false,
-                'cache_message' => 'Request failed before cache headers could be read.',
-                'message'       => $response->get_error_message(),
+                'active'           => false,
+                'status_code'      => 0,
+                'content_type'     => '',
+                'cache_ok'         => false,
+                'cache_applicable' => false,
+                'cache_message'    => 'Request failed before cache headers could be read.',
+                'message'          => $response->get_error_message(),
             ]
         );
     }
@@ -243,13 +293,14 @@ function hws_sitemaps_scan_url( array $row ): array {
     return array_merge(
         $row,
         [
-            'active'        => $active,
-            'status_code'   => $code,
-            'content_type'  => $content_type,
-            'cache_ok'      => (bool) $cache_state['ok'],
-            'cache_message' => (string) $cache_state['message'],
-            'cache_headers' => $cache_state['headers'],
-            'message'       => $active ? 'Sitemap returned XML.' : 'Sitemap did not return a valid XML response.',
+            'active'           => $active,
+            'status_code'      => $code,
+            'content_type'     => $content_type,
+            'cache_ok'         => (bool) $cache_state['ok'],
+            'cache_applicable' => true,
+            'cache_message'    => (string) $cache_state['message'],
+            'cache_headers'    => $cache_state['headers'],
+            'message'          => $active ? 'Sitemap returned XML.' : 'Sitemap did not return a valid XML response.',
         ]
     );
 }
@@ -345,6 +396,9 @@ function render_tab_sitemaps(): void {
     $rows       = hws_sitemaps_rows();
     $nonce      = wp_create_nonce( HWS_AJAX_NONCE );
     $nocache_on = hws_sitemaps_nocache_enabled();
+    $site_type  = hws_get_site_type_label();
+    $news_site  = hws_site_type_is_news_outlet();
+    $news_on    = hws_sitemaps_rank_math_news_sitemap_enabled();
     ?>
     <div id="hws-sitemaps" class="hpc-ui hws-sitemaps" data-nonce="<?php echo esc_attr( $nonce ); ?>">
         <style>
@@ -365,7 +419,11 @@ function render_tab_sitemaps(): void {
                 <p>Scan Rank Math or WordPress sitemap endpoints for posts, pages, and public custom post types. Confirm active XML responses and LiteSpeed cache state from response headers.</p>
             </div>
             <div class="hpc-actions">
+                <?php echo CoreUi::pill( 'Website type: ' . $site_type, 'dark' ); ?>
                 <?php echo CoreUi::pill( 'Provider: ' . hws_sitemaps_provider_label(), 'dark' ); ?>
+                <?php if ( $news_site ) : ?>
+                    <?php echo CoreUi::pill( $news_on ? 'Rank Math News Sitemap enabled' : 'Rank Math News Sitemap disabled', $news_on ? 'success' : 'danger' ); ?>
+                <?php endif; ?>
                 <?php echo CoreUi::pill( $nocache_on ? 'Sitemap no-cache enabled' : 'Sitemap no-cache not enabled', $nocache_on ? 'success' : 'warning' ); ?>
             </div>
         </div>
@@ -465,7 +523,11 @@ function render_tab_sitemaps(): void {
                 var tr = root.find('tr[data-sitemap-key="' + row.key + '"]');
                 if (!tr.length) return;
                 tr.find('[data-role="active-status"]').html(pill(!!row.active, 'Active', 'Inactive') + '<div class="hws-sitemap-meta">HTTP ' + (row.status_code || 0) + '</div>');
-                tr.find('[data-role="cache-status"]').html(pill(!!row.cache_ok, 'Not cached', 'Cached') + '<div class="hws-sitemap-meta"></div>');
+                if (row.cache_applicable === false) {
+                    tr.find('[data-role="cache-status"]').html(warning('Not checked') + '<div class="hws-sitemap-meta"></div>');
+                } else {
+                    tr.find('[data-role="cache-status"]').html(pill(!!row.cache_ok, 'Not cached', 'Cached') + '<div class="hws-sitemap-meta"></div>');
+                }
                 tr.find('[data-role="cache-status"] .hws-sitemap-meta').text(row.cache_message || '');
             });
         }

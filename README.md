@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.62 (Current)
+### v10.18.63 (Current)
+- Added an Overview Website Profile selector for site type classification and made the Sitemaps tab include Rank Math News Sitemap checks when the site type is News Outlet.
+
+### v10.18.62
 - Fixed sitemap no-cache option reads on persistent object-cache installs by falling back to the concrete options table and clearing stale option/notoptions cache entries after the AJAX save.
 
 ### v10.18.61
