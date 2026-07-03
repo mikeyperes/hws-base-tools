@@ -138,7 +138,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.66 (Current)
+### v10.18.68 (Current)
+- Updated vendored Hexa WP Core to 0.19.5 so backup cleanup correctly requires both file and parent directory writability before enabling delete actions.
+
+### v10.18.67
+- Updated vendored Hexa WP Core to 0.19.4 and expanded the Cleanup tab with Core-powered backup file cleanup plus article/media cleanup. Backup rows delete in real time with loaders/logs. Article cleanup supports filters, keep-most-recent, select-all, post-only deletion by default, and explicit associated featured/inline media deletion.
+
+### v10.18.66
 - Updated vendored Hexa WP Core to 0.19.3 and changed the Cleanup tab to a report-only Core rules view. It now flags non-front-page Home pages in yellow and Old/Delete pages in red without showing manual detection filters.
 
 ### v10.18.65

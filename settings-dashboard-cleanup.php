@@ -2,6 +2,12 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupRenderer;
+use Hexa\PluginCore\ContentCleanup\BackupCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\BackupCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\BackupCleanupRenderer;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
@@ -78,6 +84,92 @@ function hws_content_cleanup_protected_page_ids(): array {
     return array_values( array_unique( $ids ) );
 }
 
+function hws_backup_file_cleanup_config(): BackupCleanupConfig {
+    return new BackupCleanupConfig(
+        [
+            'root_id'       => 'hws-backup-file-cleanup',
+            'title'         => 'Backup Files',
+            'description'   => 'Reports backup files from configured WordPress backup plugin folders. Delete actions run through Hexa WP Core with a loader and activity log for each file.',
+            'capability'    => 'manage_options',
+            'nonce_action'  => HWS_CONTENT_CLEANUP_NONCE_ACTION,
+            'nonce_field'   => 'nonce',
+            'scan_action'   => 'hws_backup_file_cleanup_scan',
+            'delete_action' => 'hws_backup_file_cleanup_delete',
+            'locations'     => hws_content_cleanup_backup_locations(),
+            'empty_message' => 'No backup files were detected in the configured backup locations.',
+        ]
+    );
+}
+
+function hws_content_cleanup_backup_locations(): array {
+    return [
+        'all-in-one-wp-migration' => [
+            'name'       => 'All-in-One WP Migration',
+            'path'       => WP_CONTENT_DIR . '/ai1wm-backups/',
+            'extensions' => [ 'wpress' ],
+        ],
+        'updraftplus' => [
+            'name'       => 'UpdraftPlus',
+            'path'       => WP_CONTENT_DIR . '/updraft/',
+            'extensions' => [ 'zip', 'gz', 'sql' ],
+        ],
+        'backwpup' => [
+            'name'       => 'BackWPup',
+            'path'       => WP_CONTENT_DIR . '/uploads/backwpup*/',
+            'extensions' => [ 'zip', 'tar', 'gz' ],
+        ],
+        'duplicator' => [
+            'name'       => 'Duplicator',
+            'path'       => WP_CONTENT_DIR . '/backups-dup-lite/',
+            'extensions' => [ 'zip', 'daf' ],
+        ],
+        'duplicator-pro' => [
+            'name'       => 'Duplicator Pro',
+            'path'       => WP_CONTENT_DIR . '/backups-dup-pro/',
+            'extensions' => [ 'zip', 'daf' ],
+        ],
+        'wpvivid' => [
+            'name'       => 'WPVivid',
+            'path'       => WP_CONTENT_DIR . '/wpvivid/',
+            'extensions' => [ 'zip' ],
+        ],
+        'backup-migration' => [
+            'name'       => 'Backup Migration',
+            'path'       => WP_CONTENT_DIR . '/backup-migration*/',
+            'extensions' => [ 'zip' ],
+        ],
+    ];
+}
+
+function hws_article_media_cleanup_config(): ArticleMediaCleanupConfig {
+    return new ArticleMediaCleanupConfig(
+        [
+            'root_id'             => 'hws-article-media-cleanup',
+            'title'               => 'Article & Media Cleanup',
+            'description'         => 'Filter posts, keep the most recent X matches, select rows, and delete selected articles. Associated media deletion is off by default and must be explicitly enabled.',
+            'capability'          => 'manage_options',
+            'nonce_action'        => HWS_CONTENT_CLEANUP_NONCE_ACTION,
+            'nonce_field'         => 'nonce',
+            'scan_action'         => 'hws_article_media_cleanup_scan',
+            'delete_action'       => 'hws_article_media_cleanup_delete',
+            'post_types'          => [ 'post' => 'Posts' ],
+            'statuses'            => [
+                'publish' => 'Published',
+                'draft'   => 'Draft',
+                'private' => 'Private',
+                'pending' => 'Pending',
+                'any'     => 'Any active status',
+            ],
+            'default_post_type'   => 'post',
+            'default_status'      => 'publish',
+            'default_keep_recent' => 25,
+            'default_limit'       => 50,
+            'max_limit'           => 250,
+            'empty_message'       => 'No matching articles were found for the selected filters.',
+        ]
+    );
+}
+
 function hws_register_content_cleanup_ajax(): void {
     static $registered = false;
 
@@ -86,6 +178,8 @@ function hws_register_content_cleanup_ajax(): void {
     }
 
     ( new ContentCleanupAjaxController( hws_content_cleanup_config() ) )->register();
+    ( new BackupCleanupAjaxController( hws_backup_file_cleanup_config() ) )->register();
+    ( new ArticleMediaCleanupAjaxController( hws_article_media_cleanup_config() ) )->register();
 
     $registered = true;
 }
@@ -95,4 +189,6 @@ function display_settings_cleanup(): void {
     hws_register_content_cleanup_ajax();
 
     ( new ContentCleanupRenderer( hws_content_cleanup_config() ) )->render();
+    ( new BackupCleanupRenderer( hws_backup_file_cleanup_config() ) )->render();
+    ( new ArticleMediaCleanupRenderer( hws_article_media_cleanup_config() ) )->render();
 }

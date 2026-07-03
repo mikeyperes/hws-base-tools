@@ -69,7 +69,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CoreContracts`: interfaces that host plugins and core modules must follow.
 - `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
 - `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
-- `ContentCleanup`: old content detection, filterable WordPress content scans, guarded trash/delete actions, AJAX table updates, and Hexa Core Log Type 1 cleanup activity UI.
+- `ContentCleanup`: old content detection, backup file detection/deletion, article/media cleanup, guarded AJAX actions, AJAX table updates, and Hexa Core Log Type 1 cleanup activity UI.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
@@ -193,7 +193,7 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Content Cleanup
 
-`Hexa\PluginCore\ContentCleanup` provides a reusable old-content cleanup structure for wp-admin. Host plugins pass their own action names and allowed post types; Core renders the filters or fixed report mode, results table, edit links, row flags, destructive buttons, and live dark activity log.
+`Hexa\PluginCore\ContentCleanup` provides reusable cleanup structures for wp-admin. Host plugins pass their own action names, allowed post types, backup locations, and deletion limits; Core renders fixed reports, filters, result tables, edit links, row flags, destructive buttons, row loaders, and live dark activity logs.
 
 ```php
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
@@ -226,6 +226,11 @@ $config = new ContentCleanupConfig([
 ( new ContentCleanupAjaxController( $config ) )->register();
 ( new ContentCleanupRenderer( $config ) )->render();
 ```
+
+Version 0.19.4 adds:
+
+- `BackupCleanupConfig`, `BackupCleanupScanner`, `BackupCleanupAjaxController`, and `BackupCleanupRenderer` for configured backup-file roots and extension-limited AJAX deletion.
+- `ArticleMediaCleanupConfig`, `ArticleMediaCleanupScanner`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` for filtering posts, keeping the most recent X matches, selecting rows, deleting posts, and optionally deleting detected featured/inline/gallery media attachments.
 
 ## Brand Color Controls
 

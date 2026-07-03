@@ -95,6 +95,10 @@ Hexa\PluginCore\ContentCleanup
 
 Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, fixed report mode, detection rules, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for the filters or no-filter report UI, detected rows table, row flags, edit-new-tab links, red destructive buttons, and Hexa Core Log Type 1 live activity log.
 
+Use `BackupCleanupConfig`, `BackupCleanupAjaxController`, and `BackupCleanupRenderer` when a plugin needs a reusable backup-file cleanup table. The host plugin supplies configured roots and allowed extensions; Core scans those locations, returns row IDs, and deletes only files that still match the configured roots/extensions.
+
+Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` when a plugin needs reusable post cleanup. Core renders filters, "keep most recent X posts", select-all/row selection, row-by-row AJAX deletion, and optional associated media deletion. Media deletion is off by default and only runs when the visible checkbox is enabled. Associated media includes featured images plus inline/gallery attachment IDs detected from post content.
+
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
 
 ```php
@@ -127,6 +131,50 @@ $config = new ContentCleanupConfig([
 
 ( new ContentCleanupAjaxController( $config ) )->register();
 ( new ContentCleanupRenderer( $config ) )->render();
+```
+
+Backup cleanup example:
+
+```php
+use Hexa\PluginCore\ContentCleanup\BackupCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\BackupCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\BackupCleanupRenderer;
+
+$backup_config = new BackupCleanupConfig([
+    'root_id'       => 'example-backup-cleanup',
+    'nonce_action'  => 'example_cleanup',
+    'scan_action'   => 'example_backup_scan',
+    'delete_action' => 'example_backup_delete',
+    'locations'     => [
+        'updraftplus' => [
+            'name'       => 'UpdraftPlus',
+            'path'       => WP_CONTENT_DIR . '/updraft/',
+            'extensions' => [ 'zip', 'gz', 'sql' ],
+        ],
+    ],
+]);
+
+( new BackupCleanupAjaxController( $backup_config ) )->register();
+( new BackupCleanupRenderer( $backup_config ) )->render();
+```
+
+Article cleanup example:
+
+```php
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupRenderer;
+
+$article_config = new ArticleMediaCleanupConfig([
+    'root_id'       => 'example-article-cleanup',
+    'nonce_action'  => 'example_cleanup',
+    'scan_action'   => 'example_article_scan',
+    'delete_action' => 'example_article_delete',
+    'post_types'    => [ 'post' => 'Posts' ],
+]);
+
+( new ArticleMediaCleanupAjaxController( $article_config ) )->register();
+( new ArticleMediaCleanupRenderer( $article_config ) )->render();
 ```
 
 ## WP Admin AJAX
