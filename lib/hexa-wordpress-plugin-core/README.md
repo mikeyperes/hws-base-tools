@@ -193,7 +193,7 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Content Cleanup
 
-`Hexa\PluginCore\ContentCleanup` provides a reusable old-content cleanup structure for wp-admin. Host plugins pass their own action names and allowed post types; Core renders the filters, results table, edit links, destructive buttons, and live dark activity log.
+`Hexa\PluginCore\ContentCleanup` provides a reusable old-content cleanup structure for wp-admin. Host plugins pass their own action names and allowed post types; Core renders the filters or fixed report mode, results table, edit links, row flags, destructive buttons, and live dark activity log.
 
 ```php
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
@@ -209,6 +209,18 @@ $config = new ContentCleanupConfig([
     'delete_action'          => 'example_cleanup_delete',
     'post_types'             => [ 'page' => 'Pages' ],
     'default_published_days' => 365,
+    'show_filters'           => false,
+    'count_label'            => 'Reported',
+    'detection_rules'        => [
+        [
+            'id'                 => 'home_not_front',
+            'label'              => 'Home',
+            'tone'               => 'warning',
+            'terms'              => [ 'home' ],
+            'fields'             => [ 'title', 'slug' ],
+            'exclude_option_ids' => [ 'page_on_front' ],
+        ],
+    ],
 ]);
 
 ( new ContentCleanupAjaxController( $config ) )->register();

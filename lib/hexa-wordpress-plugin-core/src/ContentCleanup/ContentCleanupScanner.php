@@ -35,9 +35,10 @@ final class ContentCleanupScanner {
 
     public function scan( array $criteria ): array {
         $criteria = $this->normalize_criteria( $criteria );
+        $rules    = $this->config->detection_rules();
         $log      = [
             $this->log( 'info', 'Normalized cleanup criteria.', $criteria ),
-            $this->log( 'info', 'Building WordPress content query.' ),
+            $this->log( 'info', [] !== $rules ? 'Building WordPress content report from detection rules.' : 'Building WordPress content query.' ),
         ];
 
         $args = [
@@ -52,18 +53,18 @@ final class ContentCleanupScanner {
             'update_post_term_cache' => false,
         ];
 
-        if ( '' !== $criteria['search'] ) {
+        if ( '' !== $criteria['search'] && [] === $rules ) {
             $args['s'] = $criteria['search'];
         }
 
         $date_query = [];
-        if ( $criteria['published_before_days'] > 0 ) {
+        if ( $criteria['published_before_days'] > 0 && [] === $rules ) {
             $date_query[] = [
                 'column' => 'post_date',
                 'before' => gmdate( 'Y-m-d H:i:s', time() - ( DAY_IN_SECONDS * $criteria['published_before_days'] ) ),
             ];
         }
-        if ( $criteria['modified_before_days'] > 0 ) {
+        if ( $criteria['modified_before_days'] > 0 && [] === $rules ) {
             $date_query[] = [
                 'column' => 'post_modified',
                 'before' => gmdate( 'Y-m-d H:i:s', time() - ( DAY_IN_SECONDS * $criteria['modified_before_days'] ) ),
@@ -81,16 +82,28 @@ final class ContentCleanupScanner {
                 continue;
             }
             $row = $this->row_from_post( $post );
+            if ( [] !== $rules && empty( $row['flags'] ) ) {
+                continue;
+            }
             if ( $this->config->exclude_protected() && ! empty( $row['protected'] ) ) {
                 continue;
             }
             $rows[] = $row;
         }
 
-        $log[] = $this->log( 'success', 'Detected ' . count( $rows ) . ' matching content records.' );
+        if ( [] !== $rules ) {
+            usort(
+                $rows,
+                static fn( array $a, array $b ): int => (int) ( $b['severity'] ?? 0 ) <=> (int) ( $a['severity'] ?? 0 )
+                    ?: strcmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) )
+            );
+        }
+
+        $log[] = $this->log( 'success', ( [] !== $rules ? 'Reported ' : 'Detected ' ) . count( $rows ) . ' matching content records.' );
 
         return [
             'criteria' => $criteria,
+            'mode'     => [] !== $rules ? 'rules' : 'criteria',
             'rows'     => $rows,
             'count'    => count( $rows ),
             'log'      => $log,
@@ -144,6 +157,7 @@ final class ContentCleanupScanner {
         $protection = $this->protection_reason( (int) $post->ID );
         $slug       = '' !== (string) $post->post_name ? (string) $post->post_name : '(no slug)';
         $title      = get_the_title( $post );
+        $flags      = $this->flags_for_post( $post );
 
         return [
             'id'               => (int) $post->ID,
@@ -159,6 +173,8 @@ final class ContentCleanupScanner {
             'view_url'         => function_exists( 'get_permalink' ) ? (string) get_permalink( $post ) : '',
             'protected'        => '' !== $protection,
             'protected_reason' => $protection,
+            'flags'            => $flags,
+            'severity'         => $this->max_severity( $flags ),
         ];
     }
 
@@ -219,6 +235,110 @@ final class ContentCleanupScanner {
         }
 
         return array_values( array_filter( array_keys( $this->config->statuses() ), static fn( string $item ): bool => 'any' !== $item ) );
+    }
+
+    private function flags_for_post( \WP_Post $post ): array {
+        $flags = [];
+
+        foreach ( $this->config->detection_rules() as $rule ) {
+            if ( $this->rule_excludes_post( $rule, (int) $post->ID ) ) {
+                continue;
+            }
+
+            $matched_term = $this->matched_rule_term( $post, $rule );
+            if ( '' === $matched_term ) {
+                continue;
+            }
+
+            $flags[] = [
+                'id'          => (string) $rule['id'],
+                'label'       => (string) $rule['label'],
+                'tone'        => (string) $rule['tone'],
+                'term'        => $matched_term,
+                'description' => (string) $rule['description'],
+            ];
+        }
+
+        return $flags;
+    }
+
+    private function matched_rule_term( \WP_Post $post, array $rule ): string {
+        $haystack = $this->rule_haystack( $post, (array) ( $rule['fields'] ?? [ 'title', 'slug' ] ) );
+        foreach ( (array) ( $rule['terms'] ?? [] ) as $term ) {
+            $term = trim( (string) $term );
+            if ( '' === $term ) {
+                continue;
+            }
+
+            if ( $this->term_matches( $haystack, $term, (string) ( $rule['match'] ?? 'word' ) ) ) {
+                return $term;
+            }
+        }
+
+        return '';
+    }
+
+    private function rule_haystack( \WP_Post $post, array $fields ): string {
+        $parts = [];
+        foreach ( $fields as $field ) {
+            switch ( $field ) {
+                case 'title':
+                    $parts[] = get_the_title( $post );
+                    break;
+                case 'slug':
+                    $parts[] = (string) $post->post_name;
+                    break;
+                case 'content':
+                    $parts[] = (string) $post->post_content;
+                    break;
+                case 'excerpt':
+                    $parts[] = (string) $post->post_excerpt;
+                    break;
+            }
+        }
+
+        return implode( "\n", $parts );
+    }
+
+    private function term_matches( string $haystack, string $term, string $match ): bool {
+        if ( 'contains' === $match ) {
+            return false !== stripos( $haystack, $term );
+        }
+
+        return 1 === preg_match( '/(?<![A-Za-z0-9])' . preg_quote( $term, '/' ) . '(?![A-Za-z0-9])/i', $haystack );
+    }
+
+    private function rule_excludes_post( array $rule, int $post_id ): bool {
+        if ( in_array( $post_id, (array) ( $rule['exclude_post_ids'] ?? [] ), true ) ) {
+            return true;
+        }
+
+        if ( function_exists( 'get_option' ) ) {
+            foreach ( (array) ( $rule['exclude_option_ids'] ?? [] ) as $option ) {
+                if ( $post_id === absint( get_option( (string) $option ) ) ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function max_severity( array $flags ): int {
+        $max = 0;
+        foreach ( $flags as $flag ) {
+            $max = max(
+                $max,
+                match ( (string) ( $flag['tone'] ?? '' ) ) {
+                    'danger' => 3,
+                    'warning' => 2,
+                    'success' => 1,
+                    default => 0,
+                }
+            );
+        }
+
+        return $max;
     }
 
     private function log( string $level, string $message, array $context = [] ): array {

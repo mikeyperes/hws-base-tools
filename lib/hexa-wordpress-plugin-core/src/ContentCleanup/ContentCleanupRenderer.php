@@ -19,8 +19,9 @@ final class ContentCleanupRenderer {
         $root_id  = $this->config->root_id();
         $defaults = $this->config->default_criteria();
         $nonce    = function_exists( 'wp_create_nonce' ) ? wp_create_nonce( $this->config->nonce_action() ) : '';
+        $show_filters = $this->config->show_filters();
         ?>
-        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-content-cleanup" data-hpc-content-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-trash-action="<?php echo esc_attr( $this->config->trash_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>">
+        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-content-cleanup" data-hpc-content-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-trash-action="<?php echo esc_attr( $this->config->trash_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>" data-default-criteria="<?php echo esc_attr( wp_json_encode( $defaults ) ); ?>" data-count-label="<?php echo esc_attr( $this->config->count_label() ); ?>">
             <style>
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}
@@ -35,6 +36,12 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-actions .hpc-button{padding:8px 10px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-muted{color:var(--hpc-muted);font-size:12px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-count{align-items:center;display:flex;gap:8px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flags{align-items:center;display:flex;flex-wrap:wrap;gap:6px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag{border-radius:999px;display:inline-flex;font-size:12px;font-weight:800;line-height:1;padding:7px 9px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.warning{background:#fff7e0;border:1px solid #f5df9c;color:#9a6700}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.danger{background:#fff0f2;border:1px solid #ffd0d8;color:#b42336}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.success{background:#eaf8ef;border:1px solid #ccefd7;color:#16803c}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.dark,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.info{background:#eef2ff;border:1px solid #dbe4ff;color:#2944ad}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log{border-radius:8px;overflow:hidden;border:1px solid #263241;background:#0f1720;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;margin-top:16px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-head{align-items:center;background:#111c2a;border-bottom:1px solid #263241;display:flex;gap:12px;justify-content:space-between;padding:14px 16px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:800;margin:0}
@@ -59,26 +66,33 @@ final class ContentCleanupRenderer {
                     <p><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
                 </div>
                 <div class="hpc-cleanup-count">
-                    <?php echo CoreUi::pill( 'Detected: 0', 'dark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php echo CoreUi::pill( $this->config->count_label() . ': 0', 'dark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
             </div>
 
-            <?php
-            echo CoreUi::collapsible(
-                [
-                    'title'       => 'Detection Filters',
-                    'open'        => true,
-                    'persist_key' => $root_id . '-filters',
-                    'body_html'   => $this->filters_html( $defaults ),
-                ]
-            ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            ?>
+            <?php if ( $show_filters ) : ?>
+                <?php
+                echo CoreUi::collapsible(
+                    [
+                        'title'       => 'Detection Filters',
+                        'open'        => true,
+                        'persist_key' => $root_id . '-filters',
+                        'body_html'   => $this->filters_html( $defaults ),
+                    ]
+                ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                ?>
+            <?php else : ?>
+                <div class="hpc-actions" style="margin:0 0 14px;">
+                    <?php echo DynamicButton::render( [ 'label' => 'Refresh Report', 'working_label' => 'Scanning...', 'success_label' => 'Updated', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-cleanup-scan' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                </div>
+            <?php endif; ?>
 
             <div class="hpc-cleanup-table-wrap">
                 <table class="hpc-cleanup-table">
                     <thead>
                         <tr>
                             <th>Title / Slug</th>
+                            <th>Flag</th>
                             <th>Status</th>
                             <th>Date Published</th>
                             <th>Date Modified</th>
@@ -87,7 +101,7 @@ final class ContentCleanupRenderer {
                         </tr>
                     </thead>
                     <tbody data-cleanup-results>
-                        <tr><td colspan="6" class="hpc-cleanup-muted">Loading old page detection...</td></tr>
+                        <tr><td colspan="7" class="hpc-cleanup-muted">Loading cleanup report...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -131,6 +145,9 @@ final class ContentCleanupRenderer {
                 }
                 function addLogs(logs){ (logs || []).forEach(addLog); }
                 function criteria(){
+                    if (!form) {
+                        try { return JSON.parse(root.dataset.defaultCriteria || '{}') || {}; } catch(e) { return {}; }
+                    }
                     var data = new FormData(form);
                     return {
                         post_type: data.get('post_type') || '',
@@ -159,13 +176,22 @@ final class ContentCleanupRenderer {
                         return payload.data || {};
                     });
                 }
-                function setCount(count){ if (countPill) countPill.textContent = 'Detected: ' + count; }
+                function setCount(count){ if (countPill) countPill.textContent = (root.dataset.countLabel || 'Detected') + ': ' + count; }
+                function flagsHtml(row) {
+                    var flags = row.flags || [];
+                    if (!flags.length) return '<span class="hpc-cleanup-muted">No flag</span>';
+                    return '<div class="hpc-cleanup-flags">' + flags.map(function(flag){
+                        var title = flag.description ? ' title="' + esc(flag.description) + '"' : '';
+                        return '<span class="hpc-cleanup-flag ' + esc(flag.tone || 'warning') + '"' + title + '>' + esc(flag.label || 'Flag') + '</span>';
+                    }).join('') + '</div>';
+                }
                 function rowHtml(row){
                     var disabled = row.protected ? ' disabled title="' + esc(row.protected_reason || 'Protected item') + '"' : '';
                     var protectedPill = row.protected ? ' <span class="hpc-pill warning">Protected</span>' : '';
                     var edit = row.edit_url ? '<a class="hpc-button secondary hpc-external" href="' + esc(row.edit_url) + '" target="_blank" rel="noopener noreferrer">Edit</a>' : '<span class="hpc-cleanup-muted">No edit link</span>';
                     return '<tr class="hpc-cleanup-row" data-post-id="' + esc(row.id) + '">'
                         + '<td><div class="hpc-cleanup-title">' + esc(row.title) + protectedPill + '</div><div class="hpc-cleanup-slug">' + esc(row.slug) + '</div></td>'
+                        + '<td>' + flagsHtml(row) + '</td>'
                         + '<td>' + esc(row.status) + '</td>'
                         + '<td>' + esc(row.published_label) + '</td>'
                         + '<td>' + esc(row.modified_label) + '</td>'
@@ -178,14 +204,14 @@ final class ContentCleanupRenderer {
                     setCount(rows.length);
                     if (!tbody) return;
                     if (!rows.length) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="hpc-cleanup-muted">' + esc(root.dataset.emptyMessage || 'No matching items found.') + '</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="hpc-cleanup-muted">' + esc(root.dataset.emptyMessage || 'No matching items found.') + '</td></tr>';
                         return;
                     }
                     tbody.innerHTML = rows.map(rowHtml).join('');
                 }
                 function scan(button){
                     dynamicStart(button, 'Scanning...');
-                    addLog({level:'info', message:'Starting old page detection request.', context: criteria()});
+                    addLog({level:'info', message:'Starting content cleanup report request.', context: criteria()});
                     post(root.dataset.scanAction || '', criteria()).then(function(data){
                         addLogs(data.log);
                         renderRows(data.rows || []);
@@ -201,7 +227,7 @@ final class ContentCleanupRenderer {
                     var remaining = root.querySelectorAll('.hpc-cleanup-row').length;
                     setCount(remaining);
                     if (!remaining && tbody) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="hpc-cleanup-muted">' + esc(root.dataset.emptyMessage || 'No matching items found.') + '</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="hpc-cleanup-muted">' + esc(root.dataset.emptyMessage || 'No matching items found.') + '</td></tr>';
                     }
                 }
                 root.addEventListener('click', function(event){
@@ -257,7 +283,7 @@ final class ContentCleanupRenderer {
                         scan(root.querySelector('[data-cleanup-scan]'));
                     });
                 }
-                addLog({level:'info', message:'Cleanup UI loaded. Auto-running the default old page scan.'});
+                addLog({level:'info', message:'Cleanup UI loaded. Auto-running the content cleanup report.'});
                 scan(root.querySelector('[data-cleanup-scan]'));
             })();
             </script>

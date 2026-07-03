@@ -31,6 +31,9 @@ final class ContentCleanupConfig {
             'default_modified_days'  => 0,
             'default_limit'          => 50,
             'max_limit'              => 250,
+            'show_filters'           => true,
+            'count_label'            => 'Detected',
+            'detection_rules'        => [],
             'exclude_protected'      => false,
             'protected_post_ids'     => [],
             'empty_message'          => 'No matching old pages were detected for the selected filters.',
@@ -119,6 +122,80 @@ final class ContentCleanupConfig {
 
     public function exclude_protected(): bool {
         return (bool) $this->get( 'exclude_protected', false );
+    }
+
+    public function show_filters(): bool {
+        return (bool) $this->get( 'show_filters', true );
+    }
+
+    public function count_label(): string {
+        $label = trim( (string) $this->get( 'count_label', 'Detected' ) );
+
+        return '' !== $label ? $label : 'Detected';
+    }
+
+    public function detection_rules(): array {
+        $rules = $this->get( 'detection_rules', [] );
+        if ( is_callable( $rules ) ) {
+            $rules = call_user_func( $rules );
+        }
+
+        $normalized = [];
+        foreach ( (array) $rules as $rule ) {
+            if ( ! is_array( $rule ) ) {
+                continue;
+            }
+
+            $id    = $this->clean_key( (string) ( $rule['id'] ?? $rule['label'] ?? '' ) );
+            $label = trim( (string) ( $rule['label'] ?? $id ) );
+            if ( '' === $id || '' === $label ) {
+                continue;
+            }
+
+            $terms = array_values(
+                array_filter(
+                    array_map(
+                        static fn( mixed $term ): string => is_scalar( $term ) ? trim( (string) $term ) : '',
+                        (array) ( $rule['terms'] ?? [] )
+                    ),
+                    static fn( string $term ): bool => '' !== $term
+                )
+            );
+            if ( [] === $terms ) {
+                continue;
+            }
+
+            $fields = array_values(
+                array_filter(
+                    array_map( [ $this, 'clean_key' ], (array) ( $rule['fields'] ?? [ 'title', 'slug' ] ) ),
+                    static fn( string $field ): bool => in_array( $field, [ 'title', 'slug', 'content', 'excerpt' ], true )
+                )
+            );
+
+            $match = $this->clean_key( (string) ( $rule['match'] ?? 'word' ) );
+            if ( ! in_array( $match, [ 'word', 'contains' ], true ) ) {
+                $match = 'word';
+            }
+
+            $tone = $this->clean_key( (string) ( $rule['tone'] ?? 'warning' ) );
+            if ( ! in_array( $tone, [ 'warning', 'danger', 'success', 'dark', 'info' ], true ) ) {
+                $tone = 'warning';
+            }
+
+            $normalized[] = [
+                'id'                 => $id,
+                'label'              => $label,
+                'tone'               => $tone,
+                'terms'              => $terms,
+                'fields'             => [] !== $fields ? $fields : [ 'title', 'slug' ],
+                'match'              => $match,
+                'description'        => trim( (string) ( $rule['description'] ?? '' ) ),
+                'exclude_post_ids'   => array_values( array_unique( array_filter( array_map( 'absint', (array) ( $rule['exclude_post_ids'] ?? [] ) ) ) ) ),
+                'exclude_option_ids' => array_values( array_filter( array_map( [ $this, 'clean_key' ], (array) ( $rule['exclude_option_ids'] ?? [] ) ) ) ),
+            ];
+        }
+
+        return $normalized;
     }
 
     public function protected_post_ids(): array {

@@ -93,7 +93,7 @@ Namespace:
 Hexa\PluginCore\ContentCleanup
 ```
 
-Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for the filters, detected rows table, edit-new-tab links, red destructive buttons, and Hexa Core Log Type 1 live activity log.
+Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, fixed report mode, detection rules, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for the filters or no-filter report UI, detected rows table, row flags, edit-new-tab links, red destructive buttons, and Hexa Core Log Type 1 live activity log.
 
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
 
@@ -111,6 +111,18 @@ $config = new ContentCleanupConfig([
     'delete_action'          => 'example_cleanup_delete',
     'post_types'             => [ 'page' => 'Pages' ],
     'default_published_days' => 365,
+    'show_filters'           => false,
+    'count_label'            => 'Reported',
+    'detection_rules'        => [
+        [
+            'id'                 => 'home_not_front',
+            'label'              => 'Home',
+            'tone'               => 'warning',
+            'terms'              => [ 'home' ],
+            'fields'             => [ 'title', 'slug' ],
+            'exclude_option_ids' => [ 'page_on_front' ],
+        ],
+    ],
 ]);
 
 ( new ContentCleanupAjaxController( $config ) )->register();

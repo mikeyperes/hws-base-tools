@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.65 (Current)
+### v10.18.66 (Current)
+- Updated vendored Hexa WP Core to 0.19.3 and changed the Cleanup tab to a report-only Core rules view. It now flags non-front-page Home pages in yellow and Old/Delete pages in red without showing manual detection filters.
+
+### v10.18.65
 - Updated vendored Hexa WP Core to 0.19.2 and added a Cleanup tab using the reusable ContentCleanup module for old page detection, edit links, AJAX trash/delete actions, and live activity logging.
 
 ### v10.18.64
