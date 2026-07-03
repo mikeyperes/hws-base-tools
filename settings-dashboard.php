@@ -529,6 +529,7 @@ function hws_get_dashboard_tabs(): array {
         'brand-assets'  => '🖼️ Brand Assets',
         'pages'         => '📄 Pages',
         'sitemaps'      => '🗺️ Sitemaps',
+        'cleanup'       => '🧽 Cleanup',
         'menu-tools'    => '🧭 Menu Tools',
     ];
 
@@ -618,6 +619,11 @@ function hws_render_dashboard_tab( string $tab_id ): void {
         case 'sitemaps':
             if ( function_exists( __NAMESPACE__ . '\\render_tab_sitemaps' ) ) {
                 render_tab_sitemaps();
+            }
+            break;
+        case 'cleanup':
+            if ( function_exists( __NAMESPACE__ . '\\display_settings_cleanup' ) ) {
+                display_settings_cleanup();
             }
             break;
         case 'menu-tools':

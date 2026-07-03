@@ -31,6 +31,7 @@ hexa-wordpress-plugin-core/
     CoreContracts/      -> Hexa\PluginCore\CoreContracts
     CorePackageUpdates/ -> Hexa\PluginCore\CorePackageUpdates
     CoreRuntime/        -> Hexa\PluginCore\CoreRuntime
+    ContentCleanup/     -> Hexa\PluginCore\ContentCleanup
     CredentialVault/    -> Hexa\PluginCore\CredentialVault
     FieldStructures/    -> Hexa\PluginCore\FieldStructures
     FaqSets/            -> Hexa\PluginCore\FaqSets
@@ -68,6 +69,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CoreContracts`: interfaces that host plugins and core modules must follow.
 - `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
 - `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
+- `ContentCleanup`: old content detection, filterable WordPress content scans, guarded trash/delete actions, AJAX table updates, and Hexa Core Log Type 1 cleanup activity UI.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
@@ -151,6 +153,7 @@ Before adding implementations in another Codex or Claude chat, read:
 - `docs/setup-protocol.md`
 - `docs/implementation-checklist.md`
 - `docs/new-plugin-master-checklist.md`
+- `docs/content-cleanup.md`
 - `docs/site-structure.md`
 - `docs/schema-detection.md`
 - `docs/field-structures.md`
@@ -187,6 +190,30 @@ $core_config = CorePackageConfig::from_core_root(
 ```
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`. The host plugin updater and the vendored core updater both render as default-open persistent collapse cards. Each card reports the Git repo, Git URL, Git branch, Git version, current version, current-vs-Git comparison, green/red status flag, check-for-updates action, normalized ZIP download, and live update activity log.
+
+## Content Cleanup
+
+`Hexa\PluginCore\ContentCleanup` provides a reusable old-content cleanup structure for wp-admin. Host plugins pass their own action names and allowed post types; Core renders the filters, results table, edit links, destructive buttons, and live dark activity log.
+
+```php
+use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
+
+$config = new ContentCleanupConfig([
+    'root_id'                => 'example-cleanup',
+    'title'                  => 'Cleanup',
+    'nonce_action'           => 'example_cleanup',
+    'scan_action'            => 'example_cleanup_scan',
+    'trash_action'           => 'example_cleanup_trash',
+    'delete_action'          => 'example_cleanup_delete',
+    'post_types'             => [ 'page' => 'Pages' ],
+    'default_published_days' => 365,
+]);
+
+( new ContentCleanupAjaxController( $config ) )->register();
+( new ContentCleanupRenderer( $config ) )->render();
+```
 
 ## Brand Color Controls
 

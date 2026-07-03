@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.64 (Current)
+### v10.18.65 (Current)
+- Updated vendored Hexa WP Core to 0.19.2 and added a Cleanup tab using the reusable ContentCleanup module for old page detection, edit links, AJAX trash/delete actions, and live activity logging.
+
+### v10.18.64
 - Reworked the Sitemaps tab layout so settings links are full-width, sitemap URLs appear before actions, and the no-cache action displays its current enabled state.
 
 ### v10.18.63

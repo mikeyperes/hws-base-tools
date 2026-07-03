@@ -25,6 +25,7 @@ src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
 src/CoreContracts/      Hexa\PluginCore\CoreContracts
 src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
+src/ContentCleanup/     Hexa\PluginCore\ContentCleanup
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
 src/FaqSets/            Hexa\PluginCore\FaqSets
@@ -82,6 +83,38 @@ default: true
 admin_pages: post.php, post-new.php
 mode: css_hide
 selectors: #commentsdiv, #commentsdiv-hide, label[for="commentsdiv-hide"]
+```
+
+## Content Cleanup
+
+Namespace:
+
+```text
+Hexa\PluginCore\ContentCleanup
+```
+
+Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for the filters, detected rows table, edit-new-tab links, red destructive buttons, and Hexa Core Log Type 1 live activity log.
+
+Core automatically protects the WordPress front page, posts page, and privacy policy page.
+
+```php
+use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
+
+$config = new ContentCleanupConfig([
+    'root_id'                => 'example-cleanup',
+    'title'                  => 'Cleanup',
+    'nonce_action'           => 'example_cleanup',
+    'scan_action'            => 'example_cleanup_scan',
+    'trash_action'           => 'example_cleanup_trash',
+    'delete_action'          => 'example_cleanup_delete',
+    'post_types'             => [ 'page' => 'Pages' ],
+    'default_published_days' => 365,
+]);
+
+( new ContentCleanupAjaxController( $config ) )->register();
+( new ContentCleanupRenderer( $config ) )->render();
 ```
 
 ## WP Admin AJAX

@@ -20,17 +20,26 @@ Do not rename these.
 
 ```text
 src/ActivityLog/        Hexa\PluginCore\ActivityLog
+src/AcfFieldFactory/    Hexa\PluginCore\AcfFieldFactory
 src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
 src/CoreContracts/      Hexa\PluginCore\CoreContracts
 src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
+src/ContentCleanup/     Hexa\PluginCore\ContentCleanup
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
+src/FieldStructures/    Hexa\PluginCore\FieldStructures
+src/FaqSets/            Hexa\PluginCore\FaqSets
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
+src/SnippetRegistry/    Hexa\PluginCore\SnippetRegistry
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
+src/SiteStructure/      Hexa\PluginCore\SiteStructure
+src/SchemaDetection/    Hexa\PluginCore\SchemaDetection
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
 src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
+src/WpAdminUiCleanup/   Hexa\PluginCore\WpAdminUiCleanup
 src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
@@ -46,6 +55,68 @@ Namespace:
 Hexa\PluginCore\WpAdminComponents
 ```
 
+
+## WP Admin UI Cleanup
+
+Namespace:
+
+```text
+Hexa\PluginCore\WpAdminUiCleanup
+```
+
+Use `CleanupRegistry` to define admin cleanup options once, render toggle rows, save settings through AJAX, and apply behavior on the target admin screens.
+
+Required rules:
+
+- Register cleanup behavior admin-wide, not only inside the settings tab.
+- Use plugin-specific option prefixes and AJAX action names.
+- Use `css_hide` for direct selectors and `postbox_collapse` when the box should stay visible but load closed.
+- Test through the visible admin UI and exact target screen with Puppeteer or Playwright.
+
+Example definition shape:
+
+```text
+key: hide_post_editor_comments
+label: Post Editor Comments
+section: wordpress_editor
+default: true
+admin_pages: post.php, post-new.php
+mode: css_hide
+selectors: #commentsdiv, #commentsdiv-hide, label[for="commentsdiv-hide"]
+```
+
+## Content Cleanup
+
+Namespace:
+
+```text
+Hexa\PluginCore\ContentCleanup
+```
+
+Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for the filters, detected rows table, edit-new-tab links, red destructive buttons, and Hexa Core Log Type 1 live activity log.
+
+Core automatically protects the WordPress front page, posts page, and privacy policy page.
+
+```php
+use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
+use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
+
+$config = new ContentCleanupConfig([
+    'root_id'                => 'example-cleanup',
+    'title'                  => 'Cleanup',
+    'nonce_action'           => 'example_cleanup',
+    'scan_action'            => 'example_cleanup_scan',
+    'trash_action'           => 'example_cleanup_trash',
+    'delete_action'          => 'example_cleanup_delete',
+    'post_types'             => [ 'page' => 'Pages' ],
+    'default_published_days' => 365,
+]);
+
+( new ContentCleanupAjaxController( $config ) )->register();
+( new ContentCleanupRenderer( $config ) )->render();
+```
+
 ## WP Admin AJAX
 
 Namespace:
@@ -54,14 +125,50 @@ Namespace:
 Hexa\PluginCore\WpAdminAjax
 ```
 
-Use `AjaxGuard` for admin-AJAX nonce creation, nonce validation, capability checks, and callback wrapping.
+Use `AjaxActionRegistry` for host plugin admin-AJAX actions. Use `AjaxRequest` for sanitized request values. Use `AjaxFailure` for expected validation errors. `AjaxGuard` remains available for low-level nonce/capability checks.
+
+## Snippet Registry
+
+Namespace:
+
+```text
+Hexa\PluginCore\SnippetRegistry
+```
+
+Use `SnippetDefinition` and `SnippetRegistry` to normalize host plugin snippets. Use `SnippetRenderer` to render description, testing, snippets, shortcodes, and basic README components. Use `SnippetAjaxController` when a host plugin wants generic toggle/test AJAX handlers.
+
+Required host responsibilities:
+
+- Host plugins own snippet functions and option keys.
+- Core owns the generic registry, UI, test rule evaluation, and AJAX response shape.
+- Testing rules should include at least option-enabled and function-exists checks for each feature snippet.
 
 ```php
-use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+use Hexa\PluginCore\WpAdminAjax\AjaxActionRegistry;
+use Hexa\PluginCore\WpAdminAjax\AjaxFailure;
+use Hexa\PluginCore\WpAdminAjax\AjaxRequest;
 
-$nonce = AjaxGuard::create_nonce( 'example_action' );
-AjaxGuard::require_nonce_or_error( 'example_action' );
-AjaxGuard::handle( $callback, [ 'nonce_action' => 'example_action' ] );
+( new AjaxActionRegistry(
+    [
+        'capability'   => 'manage_options',
+        'nonce_action' => 'example_admin',
+        'nonce_field'  => 'nonce',
+    ]
+) )->register(
+    [
+        'example_search' => [
+            'callback' => static function ( AjaxRequest $request ): array {
+                $term = $request->text( 'term', '' );
+
+                if ( '' === $term ) {
+                    throw AjaxFailure::bad_request( 'Search term is required.' );
+                }
+
+                return [ 'results' => [] ];
+            },
+        ],
+    ]
+);
 ```
 
 ## System Environment
@@ -159,6 +266,92 @@ $status = WpCronTask::status(
 );
 ```
 
+## Site Structure
+
+Namespace:
+
+```text
+Hexa\PluginCore\SiteStructure
+```
+
+Use `PageStructureManager` for critical page blueprints, callback-backed assigned page storage, starter/template content, page details, managed page create/delete protection, WordPress navigation menu creation, custom menu items, add-all-pages menu actions, menu blueprint attachment, and page-to-menu-item attachment. Use `SiteStructureAjaxController` to keep host-specific AJAX action names while sharing nonce, capability, and request handling. Use `SiteStructureRenderer` for the admin UI. The renderer accepts `show_pages` and `show_menus` so hosts can split page assignment and menu building into separate tabs without duplicating menu code.
+
+```php
+use Hexa\PluginCore\SiteStructure\PageStructureManager;
+use Hexa\PluginCore\SiteStructure\SiteStructureAjaxController;
+use Hexa\PluginCore\SiteStructure\SiteStructureRenderer;
+
+$manager = new PageStructureManager([
+    'option_prefix' => 'my_plugin_page_',
+    'template_option_prefix' => 'my_plugin_page_template_',
+    'managed_meta_key' => '_my_plugin_managed_page',
+    'managed_key_meta_key' => '_my_plugin_page_key',
+    'created_page_status' => 'draft',
+    'select_post_statuses' => ['publish', 'draft', 'private'],
+    'assignment_statuses' => ['publish', 'draft', 'private'],
+    'reuse_existing_pages' => true,
+    'pages' => [
+        'about' => ['title' => 'About', 'slug' => 'about', 'template' => true, 'children' => []],
+    ],
+    'default_templates' => [
+        'about' => '<h2>About</h2>',
+    ],
+    'menu_structures' => [
+        'header' => ['title' => 'Header', 'page_keys' => ['about']],
+    ],
+]);
+
+(new SiteStructureAjaxController($manager, [
+    'nonce_action' => 'my_plugin_ajax',
+    'actions' => [
+        'assign_page' => 'my_plugin_assign_page',
+        'create_page' => 'my_plugin_create_page',
+        'delete_page' => 'my_plugin_delete_page',
+        'create_navigation_menu' => 'my_plugin_create_navigation_menu',
+        'delete_navigation_menu' => 'my_plugin_delete_navigation_menu',
+        'create_menu_item' => 'my_plugin_create_menu_item',
+        'attach_page_to_menu_item' => 'my_plugin_attach_page_to_menu_item',
+        'attach_menu_structure' => 'my_plugin_attach_menu_structure',
+        'menu_inventory' => 'my_plugin_menu_inventory',
+        'save_template' => 'my_plugin_save_template',
+        'apply_template' => 'my_plugin_apply_template',
+        'page_details' => 'my_plugin_page_details',
+        'update_page_slug' => 'my_plugin_update_page_slug',
+    ],
+]))->register();
+
+echo (new SiteStructureRenderer($manager, [
+    'nonce' => wp_create_nonce('my_plugin_ajax'),
+    'enable_template_editors' => true,
+    'show_page_details' => true,
+    'actions' => [
+        'assign_page' => 'my_plugin_assign_page',
+        'create_page' => 'my_plugin_create_page',
+        'delete_page' => 'my_plugin_delete_page',
+        'create_navigation_menu' => 'my_plugin_create_navigation_menu',
+        'delete_navigation_menu' => 'my_plugin_delete_navigation_menu',
+        'create_menu_item' => 'my_plugin_create_menu_item',
+        'attach_page_to_menu_item' => 'my_plugin_attach_page_to_menu_item',
+        'attach_menu_structure' => 'my_plugin_attach_menu_structure',
+        'menu_inventory' => 'my_plugin_menu_inventory',
+        'save_template' => 'my_plugin_save_template',
+        'apply_template' => 'my_plugin_apply_template',
+        'page_details' => 'my_plugin_page_details',
+        'update_page_slug' => 'my_plugin_update_page_slug',
+    ],
+]))->render();
+```
+
+Host plugins can use plain option prefixes or callback storage. Use callbacks when assignments and starter templates live inside an existing settings array instead of one option per page. Keep action names plugin-specific; the core maps those names to generic handlers.
+
+Generic SiteStructure AJAX actions:
+
+```text
+assign_page, create_page, delete_page, create_navigation_menu, delete_navigation_menu,
+create_menu_item, attach_page_to_menu_item, attach_menu_structure, menu_inventory,
+save_template, apply_template, page_details, update_page_slug
+```
+
 Class:
 
 ```text
@@ -246,6 +439,18 @@ Example:
     'post_type' => 'any',
 ]);
 ```
+
+## Field Structures
+
+Namespace: Hexa\PluginCore\FieldStructures
+
+Classes: FieldStructureManager, FieldStructureRenderer
+
+Use this for admin displays that explain and test ACF field groups, custom post types, taxonomies, and option-backed structures. Host plugins provide definitions; Hexa Core normalizes them, renders one row per structure, shows enabled and registered status, exposes setting toggles through the host save AJAX action, and keeps fields, dependencies, code examples, test reports, and activity notes in a consistent layout.
+
+Definition keys: id, label, type, setting_key, enabled, registered, acf_group_key, object_name, location, fields, dependencies, instructions, code_example, test_report, activity, edit_url. The registered and test_report values may be callbacks. Do not move plugin-specific ACF registration arrays into core; core owns the display and status model only.
+
+Example use: create a FieldStructureRenderer, pass an array of structure definitions, and pass save_action plus nonce when toggles should save through AJAX.
 
 ## Error Logs
 
@@ -545,6 +750,25 @@ public GitHub VERSION from mikeyperes/hexa-wordpress-plugin-core
 
 Do not use the WordPress plugin header updater for the core library.
 
+The host plugin updater and vendored core updater must use the same report shape:
+
+```text
+Git repo
+Git URL
+Git branch
+Git version
+current installed version
+current-vs-Git comparison
+green Current flag
+red Outdated flag
+Check for Updates button
+Pull from GitHub button
+normalized ZIP download without the GitHub -main folder suffix
+live activity log for update work
+```
+
+Wrap each updater in one default-open `CoreUi` expandable section with browser-persistent collapse memory.
+
 ### Updater Input Terms
 
 Use these terms consistently:
@@ -599,14 +823,16 @@ Purpose:
 
 - define shortcode metadata
 - collect shortcodes in a registry
+- render shortcode admin rows with real output
 - prepare one shortcode test at a time
-- support admin UIs that show shortcode, description, test method, test input, and output
+- support admin UIs that show shortcode, description, real output value, examples with parameters, test method, and source
 
 Core classes:
 
 ```text
 ShortcodeDefinition
 ShortcodeRegistry
+ShortcodeDisplayRenderer
 ShortcodeTestResult
 ShortcodeTester
 ```
@@ -627,6 +853,31 @@ $registry = ( new ShortcodeRegistry() )
             'Runs without input and checks for non-empty output.'
         )
     );
+```
+
+Display example:
+
+```php
+use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
+
+echo ( new ShortcodeDisplayRenderer() )->render(
+    [
+        [
+            'label'       => 'Publication Name',
+            'shortcode'   => '[smp_publication_field field="legal_name" format="text"]',
+            'description' => 'Outputs the publication legal name.',
+            'source'      => 'publication option: legal_name',
+            'examples'    => [
+                [
+                    'label'      => 'Text output',
+                    'shortcode'  => '[smp_publication_field field="legal_name" format="text"]',
+                    'parameters' => [ 'field' => 'legal_name', 'format' => 'text' ],
+                ],
+            ],
+        ],
+    ],
+    [ 'title' => 'Plugin Shortcodes' ]
+);
 ```
 
 ## Tabs
@@ -730,3 +981,114 @@ Before changing a plugin that consumes this core:
 4. Use the exact folder/namespace map above.
 5. Do not invent new names for existing concepts.
 6. Update this file when adding public core behavior.
+7. For new plugin audits, start with `docs/new-plugin-master-checklist.md`.
+
+
+## Host Dashboard Tabs
+
+Namespace: `Hexa\PluginCore\WpAdminTabs`
+
+Use `HostTabsRenderer` for the visible host plugin tab shell. It owns the shared Hexa tab bar, AJAX tab loading, status text, history updates, and load events. Host plugins provide the tab array, active tab, admin page URL, AJAX action, nonce, and first-render callback.
+
+```php
+( new \Hexa\PluginCore\WpAdminTabs\HostTabsRenderer() )->render(
+    [
+        "tabs"            => $tabs,
+        "active"          => $active,
+        "page_url"        => admin_url( "options-general.php?page=example-plugin" ),
+        "ajax_action"     => "example_load_tab",
+        "nonce"           => $nonce,
+        "render_callback" => [ $dashboard, "tab" ],
+    ]
+);
+```
+
+## System Checks
+
+`Hexa\PluginCore\SystemChecks\SystemChecksRenderer` renders grouped pass/fail/warn/info checklists from a flat item array. Use it for launch readiness, plugin health, schema audits, and environment checks instead of duplicating checklist HTML in host plugins. See `docs/system-checks.md`.
+
+## Schema Detection
+
+Namespace:
+
+```text
+Hexa\PluginCore\SchemaDetection
+```
+
+Use schema detection for plugin pages that fetch frontend URLs and inspect JSON-LD output. Host plugins own the list of URLs and expected schema types. The core owns fetching, JSON-LD extraction, source labels, duplicate-type conflicts, FAQPage validation, and the dark report UI.
+
+Primary classes:
+
+```text
+SchemaPageScanner
+SchemaScanRenderer
+```
+
+```php
+use Hexa\PluginCore\SchemaDetection\SchemaPageScanner;
+use Hexa\PluginCore\SchemaDetection\SchemaScanRenderer;
+
+$scanner = new SchemaPageScanner();
+$scan = $scanner->scanUrl(
+    home_url( "/" ),
+    [
+        "title" => "Homepage",
+        "cache_bust" => true,
+    ]
+);
+
+echo ( new SchemaScanRenderer() )->renderReport(
+    [ $scan ],
+    [
+        "title" => "Schema Detection Results: HOMEPAGE",
+        "expected" => [ "Expected: Person" ],
+    ]
+);
+```
+
+## FAQ Sets
+
+Namespace:
+
+```text
+Hexa\PluginCore\FaqSets
+```
+
+Use FAQ sets for repeatable question and answer collections that need shortcode output and FAQPage schema.
+
+Primary class:
+
+```text
+FaqSetManager
+```
+
+```php
+use Hexa\PluginCore\FaqSets\FaqSetManager;
+
+$manager = new FaqSetManager();
+$sets = $manager->sanitizeSets( $raw_sets );
+$set = $manager->resolveSet(
+    $sets,
+    "primary",
+    $primary_slug
+);
+
+echo $manager->renderFaqs(
+    $set,
+    [
+        "style" => "accordion",
+        "inject_schema" => true,
+    ]
+);
+```
+
+Core owns:
+
+- sanitizing FAQ set arrays
+- normalizing question and answer item arrays
+- resolving primary sets
+- safe answer link attributes
+- FAQPage schema arrays and JSON-LD script output
+- reusable list and accordion output
+
+Host plugins own option names, shortcode names, and any plugin-specific source of truth messaging.
