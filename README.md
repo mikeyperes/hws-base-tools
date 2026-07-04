@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.70 (Current)
+### v10.18.71 (Current)
+- Hardened the Plugins tab so HWS loads its own vendored Hexa WP Core PluginChecks classes before rendering plugin inventory sections, preventing another plugin's autoloader from serving an older renderer.
+
+### v10.18.70
 - Updated vendored Hexa WP Core to 0.19.7, changed plugin inventory title icons to reflect actual plugin presence, added Required/Optional badges and missing-required row styling, and added visible scenario examples for required/optional present/missing states.
 
 ### v10.18.69

@@ -17,6 +17,24 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+function hws_require_plugin_inventory_core(): void {
+    $files = [
+        'Hexa\\PluginCore\\PluginChecks\\PluginCheckDefinition'        => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginCheckDefinition.php',
+        'Hexa\\PluginCore\\PluginChecks\\PluginCheckService'           => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginCheckService.php',
+        'Hexa\\PluginCore\\PluginChecks\\PluginInventoryRenderer'      => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginInventoryRenderer.php',
+        'Hexa\\PluginCore\\PluginChecks\\PluginInventoryAjaxController'=> __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginInventoryAjaxController.php',
+        'Hexa\\PluginCore\\PluginProvisioning\\PluginProvisioner'      => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginProvisioning/PluginProvisioner.php',
+    ];
+
+    foreach ( $files as $class_name => $file ) {
+        if ( ! class_exists( $class_name, false ) && is_readable( $file ) ) {
+            require_once $file;
+        }
+    }
+}
+
+hws_require_plugin_inventory_core();
+
 // Register AJAX handler for plugin installation (from WordPress.org → install + activate)
 add_action( 'wp_ajax_hws_install_plugin', __NAMESPACE__ . '\\ajax_install_plugin' );
 
