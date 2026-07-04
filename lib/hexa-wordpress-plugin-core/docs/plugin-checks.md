@@ -16,7 +16,7 @@ src/PluginChecks/
 
 Plugin Checks is the shared Hexa WP Core feature for dependency/plugin requirement tabs.
 
-Host plugins pass a list of plugin definitions. Core checks whether each plugin is installed, active, up to date, and optionally aligned with the expected auto-update state. It can render either the original plugin-check cards or the reusable plugin inventory table with Core collapsible sections, Font Awesome-style green/red indicators, AJAX install/activate actions, and an activity log.
+Host plugins pass a list of plugin definitions. Core checks whether each plugin is installed, active, up to date, and optionally aligned with the expected auto-update state. It can render either the original plugin-check cards or the reusable plugin inventory table with Core collapsible sections, green/red title indicators, AJAX install/activate actions, and an activity log.
 
 ## Public Classes
 
@@ -24,7 +24,7 @@ Host plugins pass a list of plugin definitions. Core checks whether each plugin 
 - `PluginCheckService`: resolves installed/active/update status and calls shared install/activate helpers.
 - `PluginChecksRenderer`: renders the admin UI, summary pills, plugin cards, dynamic buttons, and activity log.
 - `PluginChecksAjaxController`: registers AJAX actions for status refresh, update-cache refresh, install-and-activate, and activate.
-- `PluginInventoryRenderer`: renders reusable expanded-by-default collapsible inventory cards with Plugin, Installed, Status, Auto-Update, Version, Source, and Action columns.
+- `PluginInventoryRenderer`: renders reusable expanded-by-default collapsible inventory cards with Plugin, Status, Auto-Update, Version, Source, and Action columns.
 - `PluginInventoryAjaxController`: registers AJAX actions for the inventory renderer and returns refreshed table HTML.
 
 ## Definition Shape
@@ -138,6 +138,6 @@ echo ( new \Hexa\PluginCore\PluginChecks\PluginInventoryRenderer() )->render(
 - The **Refresh checks** button refreshes the WordPress plugin update cache through AJAX.
 - The **Install and activate missing** button processes visible install/activate actions sequentially with no page refresh.
 - The inventory renderer puts each section in a Core collapsible card, expanded by default, with memory persistence through `persist_key`.
-- Installed and Status columns use green/red icon classes only; the Installed column intentionally does not print the word "Installed".
-- The title icon is based on actual plugin presence, not recommendation. Required/Optional is shown separately with a badge.
+- Plugin presence is shown with a green check or red X beside the plugin title; the separate Installed column is not rendered.
+- The title icon is based on actual plugin presence, not recommendation, and exposes hover text such as "Plugin installed" or "Plugin missing". Required/Optional is shown separately with a badge.
 - Missing required rows are grayed out, keep a red missing icon, and get a red left-side required marker.

@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.71 (Current)
+### v10.18.72 (Current)
+- Updated vendored Hexa WP Core to 0.19.8 and removed the separate Installed column from plugin inventory tables. Installed/missing state now appears as a hoverable green check or red X beside each plugin title.
+
+### v10.18.71
 - Hardened the Plugins tab so HWS loads its own vendored Hexa WP Core PluginChecks classes before rendering plugin inventory sections, preventing another plugin's autoloader from serving an older renderer.
 
 ### v10.18.70

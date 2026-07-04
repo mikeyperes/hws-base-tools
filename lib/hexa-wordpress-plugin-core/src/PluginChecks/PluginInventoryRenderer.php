@@ -66,7 +66,6 @@ final class PluginInventoryRenderer {
                 <thead>
                     <tr>
                         <th>Plugin</th>
-                        <th class="hpc-plugin-inventory-icon-col">Installed</th>
                         <th>Status</th>
                         <?php if ( ! empty( $args['columns']['auto_update'] ) ) : ?>
                             <th>Auto-Update</th>
@@ -82,7 +81,7 @@ final class PluginInventoryRenderer {
                 </thead>
                 <tbody>
                     <?php if ( [] === $items ) : ?>
-                        <tr><td colspan="7"><?php echo esc_html( (string) $args['empty_text'] ); ?></td></tr>
+                        <tr><td colspan="<?php echo esc_attr( (string) $this->column_count( $args ) ); ?>"><?php echo esc_html( (string) $args['empty_text'] ); ?></td></tr>
                     <?php endif; ?>
                     <?php foreach ( $items as $definition ) : ?>
                         <?php echo $this->row_html( $definition, $status_by_id[ $definition->id ] ?? PluginCheckService::status( $definition ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -149,7 +148,7 @@ final class PluginInventoryRenderer {
         <tr class="<?php echo esc_attr( $row_class ); ?>" data-plugin-inventory-row data-plugin-id="<?php echo esc_attr( $definition->id ); ?>" data-plugin-installed="<?php echo $installed ? '1' : '0'; ?>" data-plugin-active="<?php echo $active ? '1' : '0'; ?>" data-plugin-required="<?php echo $required ? '1' : '0'; ?>">
             <td class="hpc-plugin-inventory-plugin-cell">
                 <div class="hpc-plugin-inventory-title">
-                    <?php echo $this->icon( $installed, $installed ? 'Present' : 'Missing' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php echo $this->icon( $installed, $installed ? 'Plugin installed' : 'Plugin missing' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <strong><?php echo esc_html( $definition->name ); ?></strong>
                     <?php echo $this->requirement_badge( $required ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
@@ -159,9 +158,6 @@ final class PluginInventoryRenderer {
                         <span><?php echo esc_html( wp_strip_all_tags( $definition->notes ) ); ?></span>
                     <?php endif; ?>
                 </div>
-            </td>
-            <td class="hpc-plugin-inventory-icon-col">
-                <?php echo $this->icon( $installed, $installed ? 'Installed' : 'Not installed' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </td>
             <td>
                 <?php echo $this->status_text( $active, $active ? 'Active' : 'Inactive' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -297,7 +293,7 @@ final class PluginInventoryRenderer {
     }
 
     private function icon( bool $passed, string $label ): string {
-        return '<span class="hpc-plugin-inventory-fa ' . ( $passed ? 'hpc-plugin-inventory-fa-check' : 'hpc-plugin-inventory-fa-xmark' ) . '" aria-label="' . esc_attr( $label ) . '" role="img"></span>';
+        return '<span class="hpc-plugin-inventory-fa ' . ( $passed ? 'hpc-plugin-inventory-fa-check' : 'hpc-plugin-inventory-fa-xmark' ) . '" aria-label="' . esc_attr( $label ) . '" title="' . esc_attr( $label ) . '" role="img"></span>';
     }
 
     private function requirement_badge( bool $required ): string {
@@ -306,6 +302,25 @@ final class PluginInventoryRenderer {
 
     private function summary_item( string $label, int $count, string $tone ): string {
         return '<span class="hpc-plugin-inventory-summary-item is-' . esc_attr( $tone ) . '"><strong>' . $count . '</strong> ' . esc_html( $label ) . '</span>';
+    }
+
+    /**
+     * @param array<string,mixed> $args
+     */
+    private function column_count( array $args ): int {
+        $count = 3; // Plugin, Status, Action.
+
+        if ( ! empty( $args['columns']['auto_update'] ) ) {
+            $count++;
+        }
+        if ( ! empty( $args['columns']['version'] ) ) {
+            $count++;
+        }
+        if ( ! empty( $args['columns']['source'] ) ) {
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -383,7 +398,6 @@ final class PluginInventoryRenderer {
 .hpc-plugin-inventory-table tr.is-missing td{background:#f8fafc;color:#546179}
 .hpc-plugin-inventory-table tr.is-required-missing td:first-child{box-shadow:inset 4px 0 0 var(--hpc-red)}
 .hpc-plugin-inventory-table tr.is-required-missing .hpc-plugin-inventory-title strong{color:#3f4d63}
-.hpc-plugin-inventory-icon-col{text-align:center;width:86px}
 .hpc-plugin-inventory-plugin-cell{min-width:280px}
 .hpc-plugin-inventory-title{align-items:center;display:flex;gap:8px;margin:0 0 7px}
 .hpc-plugin-inventory-title strong{font-size:14px}
@@ -396,11 +410,11 @@ final class PluginInventoryRenderer {
 .hpc-plugin-inventory-status{align-items:center;display:inline-flex;font-size:13px;font-weight:900;gap:5px;white-space:nowrap}
 .hpc-plugin-inventory-status.is-pass{color:var(--hpc-green)}
 .hpc-plugin-inventory-status.is-fail{color:var(--hpc-red)}
-.hpc-plugin-inventory-fa{display:inline-flex;font-family:"Font Awesome 6 Free","Font Awesome 5 Free","FontAwesome",Arial,sans-serif;font-size:14px;font-weight:900;justify-content:center;line-height:1;min-width:16px}
+.hpc-plugin-inventory-fa{align-items:center;border-radius:999px;display:inline-flex;font-family:Arial,sans-serif;font-size:14px;font-weight:900;height:18px;justify-content:center;line-height:1;min-width:18px;width:18px}
 .hpc-plugin-inventory-fa-check{color:var(--hpc-green)}
-.hpc-plugin-inventory-fa-check:before{content:"\f00c"}
+.hpc-plugin-inventory-fa-check:before{content:"\2713"}
 .hpc-plugin-inventory-fa-xmark{color:var(--hpc-red)}
-.hpc-plugin-inventory-fa-xmark:before{content:"\f00d"}
+.hpc-plugin-inventory-fa-xmark:before{content:"\00d7"}
 .hpc-plugin-inventory-source-link{color:var(--hpc-blue);font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap}
 .hpc-plugin-inventory-source-text,.hpc-plugin-inventory-muted{color:var(--hpc-muted);font-size:12px}
 .hpc-plugin-inventory-update{color:var(--hpc-amber);font-size:12px;font-weight:800}
