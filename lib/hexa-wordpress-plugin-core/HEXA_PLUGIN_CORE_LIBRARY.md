@@ -101,6 +101,84 @@ Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `Artic
 
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
 
+## Plugin Checks And Plugin Inventory
+
+Namespace:
+
+```text
+Hexa\PluginCore\PluginChecks
+```
+
+Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheckService` for installed/active/update/auto-update status. Use `PluginInventoryRenderer` when a plugin needs a reusable table UI for plugin status or a plugin library. Use `PluginInventoryAjaxController` for no-refresh refresh, install-and-activate, and activate actions.
+
+Required rules:
+
+- Keep plugin-specific catalog data in the host plugin.
+- Keep table UI, collapsible cards, install/activate actions, and status rendering in Hexa Core.
+- Use `recommended` to control the green check or red X beside the plugin title.
+- Use `source => wordpress_org` with `wp_org_slug` for WordPress.org installs.
+- Use `source => github` with `github_repo` for GitHub ZIP installs. Core normalizes extracted `repo-main` folders to the configured slug.
+- Use `source => pro` or `manual` when a plugin requires a manual upload/download.
+- The Installed column prints only the icon. Do not add the word "Installed" inside that column.
+- The Status column prints the icon plus `Active` or `Inactive`.
+- Do not use emoji indicators in plugin inventory UIs.
+
+Example:
+
+```php
+$definitions = [
+    [
+        'id'                   => 'classic-editor',
+        'name'                 => 'Classic Editor',
+        'plugin_file'          => 'classic-editor/classic-editor.php',
+        'slug'                 => 'classic-editor',
+        'source'               => 'wordpress_org',
+        'wp_org_slug'          => 'classic-editor',
+        'required'             => true,
+        'recommended'          => true,
+        'auto_update_expected' => true,
+        'checks'               => [
+            'installed'   => true,
+            'active'      => true,
+            'up_to_date'  => false,
+            'auto_update' => true,
+        ],
+    ],
+];
+
+( new \Hexa\PluginCore\PluginChecks\PluginInventoryAjaxController(
+    $definitions,
+    [
+        'capability'    => 'install_plugins',
+        'nonce_action'  => 'my_plugin_admin',
+        'nonce_field'   => 'nonce',
+        'action_prefix' => 'my_plugin_inventory',
+        'renderer_args' => [
+            'title'       => 'Plugin Status',
+            'persist_key' => 'my-plugin-status',
+            'columns'     => [
+                'auto_update' => true,
+                'version'     => true,
+                'source'      => true,
+            ],
+        ],
+    ]
+) )->register();
+
+echo ( new \Hexa\PluginCore\PluginChecks\PluginInventoryRenderer() )->render(
+    $definitions,
+    [
+        'title'         => 'Plugin Status',
+        'description'   => 'Plugin health for this integration.',
+        'nonce'         => wp_create_nonce( 'my_plugin_admin' ),
+        'nonce_field'   => 'nonce',
+        'action_prefix' => 'my_plugin_inventory',
+        'persist_key'   => 'my-plugin-status',
+        'open'          => true,
+    ]
+);
+```
+
 ```php
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;

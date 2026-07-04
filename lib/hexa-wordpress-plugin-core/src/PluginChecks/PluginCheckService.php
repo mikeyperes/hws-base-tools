@@ -60,20 +60,27 @@ final class PluginCheckService {
 
         $version          = $installed ? (string) ( $plugins[ $plugin_file ]['Version'] ?? '' ) : '';
         $active           = $installed && is_plugin_active( $plugin_file );
+        $auto_updates     = (array) get_site_option( 'auto_update_plugins', [] );
+        $auto_update      = $installed && in_array( $plugin_file, $auto_updates, true );
         $updates          = self::plugin_updates();
         $update_available = $installed && isset( $updates[ $plugin_file ] );
         $new_version      = $update_available ? (string) ( $updates[ $plugin_file ]->update->new_version ?? '' ) : '';
         $up_to_date       = $installed && ! $update_available;
+        $recommended      = property_exists( $definition, 'recommended' ) ? (bool) $definition->recommended : (bool) $definition->required;
+        $auto_update_expected = property_exists( $definition, 'auto_update_expected' ) ? (bool) $definition->auto_update_expected : false;
 
         $required_failures = [];
-        if ( $definition->checks['installed'] && ! $installed ) {
+        if ( ! empty( $definition->checks['installed'] ) && ! $installed ) {
             $required_failures[] = 'missing';
         }
-        if ( $definition->checks['active'] && ! $active ) {
+        if ( ! empty( $definition->checks['active'] ) && ! $active ) {
             $required_failures[] = 'inactive';
         }
-        if ( $definition->checks['up_to_date'] && $installed && ! $up_to_date ) {
+        if ( ! empty( $definition->checks['up_to_date'] ) && $installed && ! $up_to_date ) {
             $required_failures[] = 'outdated';
+        }
+        if ( ! empty( $definition->checks['auto_update'] ) && $installed && $auto_update_expected !== $auto_update ) {
+            $required_failures[] = $auto_update ? 'auto_update_enabled' : 'auto_update_disabled';
         }
 
         return [
@@ -84,9 +91,12 @@ final class PluginCheckService {
             'slug'              => $definition->slug,
             'source'            => $definition->source,
             'required'          => $definition->required,
+            'recommended'       => $recommended,
+            'auto_update_expected' => $auto_update_expected,
             'checks'            => $definition->checks,
             'installed'         => $installed,
             'active'            => $active,
+            'auto_update'       => $auto_update,
             'version'           => $version,
             'up_to_date'        => $up_to_date,
             'update_available'  => $update_available,

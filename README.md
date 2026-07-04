@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.68 (Current)
+### v10.18.69 (Current)
+- Updated vendored Hexa WP Core to 0.19.6 and rebuilt the Plugins tab HWS Plugin Library and Plugin Status sections with reusable Core plugin inventory cards, AJAX refresh/install/activate actions, and green/red Font Awesome-style indicators.
+
+### v10.18.68
 - Updated vendored Hexa WP Core to 0.19.5 so backup cleanup correctly requires both file and parent directory writability before enabling delete actions.
 
 ### v10.18.67

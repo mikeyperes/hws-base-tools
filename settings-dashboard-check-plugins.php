@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\PluginChecks\PluginInventoryAjaxController;
+use Hexa\PluginCore\PluginChecks\PluginInventoryRenderer;
 use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
 
 /**
@@ -405,60 +407,167 @@ function hws_check_plugin_status( $plugin_path ) {
     return PluginProvisioner::plugin_status_by_file( (string) $plugin_path );
 }
 
+function hws_plugin_inventory_slug_from_download( string $download ): string {
+    if ( preg_match( '#wordpress\.org/plugins/([^/]+)/?#', $download, $matches ) ) {
+        return sanitize_key( $matches[1] );
+    }
+
+    return '';
+}
+
+function hws_get_monitored_plugin_definitions(): array {
+    $definitions = [];
+
+    foreach ( hws_get_monitored_plugins() as $plugin_file => $config ) {
+        $download    = (string) ( $config['download'] ?? '' );
+        $wp_org_slug = hws_plugin_inventory_slug_from_download( $download );
+        $is_pro      = ! empty( $config['pro'] );
+        $is_manual   = 'manual' === $download || '' === $download;
+        $recommended = 'essential' === (string) ( $config['category'] ?? 'essential' );
+        $source      = $is_pro ? 'pro' : ( $wp_org_slug ? 'wordpress_org' : 'manual' );
+        $active_expected = 'active' === (string) ( $config['should_be'] ?? 'active' );
+
+        $definitions[] = [
+            'id'                   => str_replace( '/', '-', (string) $plugin_file ),
+            'name'                 => (string) ( $config['name'] ?? $plugin_file ),
+            'plugin_file'          => (string) $plugin_file,
+            'slug'                 => dirname( (string) $plugin_file ),
+            'source'               => $source,
+            'wp_org_slug'          => $wp_org_slug,
+            'download_url'         => $is_manual ? admin_url( 'plugin-install.php?tab=upload' ) : $download,
+            'download_label'       => $is_manual ? 'Upload plugin' : 'Download plugin',
+            'required'             => $recommended,
+            'recommended'          => $recommended,
+            'auto_update_expected' => ! empty( $config['auto_update'] ),
+            'checks'               => [
+                'installed'   => true,
+                'active'      => $active_expected,
+                'up_to_date'  => false,
+                'auto_update' => true,
+            ],
+            'notes'                => sprintf(
+                '%s%s. Expected state: %s.',
+                ucfirst( (string) ( $config['category'] ?? 'essential' ) ),
+                $is_pro ? ' pro plugin' : ' plugin',
+                $active_expected ? 'active' : 'inactive'
+            ),
+        ];
+    }
+
+    return $definitions;
+}
+
+function hws_get_hws_plugin_library_definitions(): array {
+    $definitions = [];
+
+    foreach ( hws_get_additional_hws_plugins() as $slug => $plugin ) {
+        $slug          = sanitize_key( (string) $slug );
+        $definitions[] = [
+            'id'            => $slug,
+            'name'          => (string) ( $plugin['name'] ?? $slug ),
+            'slug'          => $slug,
+            'source'        => 'github',
+            'github_repo'   => (string) ( $plugin['repo'] ?? '' ),
+            'github_branch' => 'main',
+            'download_url'  => 'https://github.com/' . (string) ( $plugin['repo'] ?? '' ),
+            'download_label'=> 'Open GitHub',
+            'required'      => true,
+            'recommended'   => true,
+            'checks'        => [
+                'installed'   => true,
+                'active'      => true,
+                'up_to_date'  => false,
+                'auto_update' => false,
+            ],
+            'notes'         => (string) ( $plugin['description'] ?? '' ),
+        ];
+    }
+
+    return $definitions;
+}
+
+function hws_register_plugin_inventory_ajax(): void {
+    static $registered = false;
+
+    if ( $registered ) {
+        return;
+    }
+
+    $registered = true;
+
+    ( new PluginInventoryAjaxController(
+        hws_get_hws_plugin_library_definitions(),
+        [
+            'capability'    => 'install_plugins',
+            'nonce_action'  => HWS_AJAX_NONCE,
+            'nonce_field'   => 'nonce',
+            'action_prefix' => 'hws_plugin_library',
+            'renderer_args' => hws_get_hws_plugin_library_renderer_args(),
+        ]
+    ) )->register();
+
+    ( new PluginInventoryAjaxController(
+        hws_get_monitored_plugin_definitions(),
+        [
+            'capability'    => 'install_plugins',
+            'nonce_action'  => HWS_AJAX_NONCE,
+            'nonce_field'   => 'nonce',
+            'action_prefix' => 'hws_plugin_status',
+            'renderer_args' => hws_get_monitored_plugin_renderer_args(),
+        ]
+    ) )->register();
+}
+
+add_action( 'admin_init', __NAMESPACE__ . '\\hws_register_plugin_inventory_ajax' );
+
+function hws_get_hws_plugin_library_renderer_args(): array {
+    return [
+        'title'            => 'HWS Plugin Library',
+        'description'      => 'Install additional HWS plugins directly from GitHub. ZIP folders are normalized from repo-main to the correct WordPress plugin slug before activation.',
+        'action_prefix'    => 'hws_plugin_library',
+        'nonce'            => wp_create_nonce( HWS_AJAX_NONCE ),
+        'nonce_field'      => 'nonce',
+        'persist_key'      => 'hws-plugin-library',
+        'open'             => true,
+        'show_install_all' => true,
+        'columns'          => [
+            'auto_update' => false,
+            'version'     => true,
+            'source'      => true,
+        ],
+    ];
+}
+
+function hws_get_monitored_plugin_renderer_args(): array {
+    return [
+        'title'            => 'Plugin Status',
+        'description'      => 'Recommended and optional plugin health for this site. Missing WordPress.org and GitHub plugins can be installed from this table without a page refresh.',
+        'action_prefix'    => 'hws_plugin_status',
+        'nonce'            => wp_create_nonce( HWS_AJAX_NONCE ),
+        'nonce_field'      => 'nonce',
+        'persist_key'      => 'hws-plugin-status',
+        'open'             => true,
+        'show_install_all' => true,
+        'columns'          => [
+            'auto_update' => true,
+            'version'     => true,
+            'source'      => true,
+        ],
+    ];
+}
+
+function hws_render_monitored_plugins_panel(): void {
+    echo ( new PluginInventoryRenderer() )->render(
+        hws_get_monitored_plugin_definitions(),
+        hws_get_monitored_plugin_renderer_args()
+    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
 function hws_render_additional_hws_plugins_panel(): void {
-    $plugins = hws_get_additional_hws_plugins();
-    ?>
-    <div class="hws-panel" id="hws-additional-hws-plugins-panel">
-        <div class="hws-panel-header">HWS Plugin Library</div>
-        <div class="hws-panel-body">
-            <p style="margin-top:0;color:#50575e;">
-                Install additional HWS plugins directly from GitHub. ZIP folders are normalized from <code>repo-main</code> to the correct WordPress plugin slug before activation.
-            </p>
-            <table class="hws-plugin-table">
-                <thead>
-                    <tr>
-                        <th>Plugin</th>
-                        <th>GitHub</th>
-                        <th>Folder Slug</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ( $plugins as $slug => $plugin ) : ?>
-                        <?php $status = hws_check_additional_hws_plugin_status( $slug ); ?>
-                        <tr data-hws-github-plugin-row="<?php echo esc_attr( $slug ); ?>">
-                            <td>
-                                <strong><?php echo esc_html( $plugin['name'] ); ?></strong>
-                                <br><small style="color:#646970;"><?php echo esc_html( $plugin['description'] ); ?></small>
-                            </td>
-                            <td>
-                                <a href="<?php echo esc_url( 'https://github.com/' . $plugin['repo'] ); ?>" target="_blank" rel="noopener">
-                                    <?php echo esc_html( $plugin['repo'] ); ?> ↗
-                                </a>
-                            </td>
-                            <td>
-                                <code><?php echo esc_html( $slug ); ?></code>
-                            </td>
-                            <td class="hws-hws-plugin-status">
-                                <?php echo hws_render_additional_hws_plugin_status( $status ); ?>
-                            </td>
-                            <td>
-                                <button
-                                    type="button"
-                                    class="hws-btn hws-install-hws-github-plugin"
-                                    data-slug="<?php echo esc_attr( $slug ); ?>"
-                                    <?php disabled( $status['active'] ); ?>
-                                ><?php echo $status['active'] ? 'Active' : ( $status['installed'] ? 'Activate' : 'Install & Activate' ); ?></button>
-                                <div class="hws-hws-plugin-message" style="margin-top:6px;font-size:12px;" aria-live="polite"></div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <?php
+    echo ( new PluginInventoryRenderer() )->render(
+        hws_get_hws_plugin_library_definitions(),
+        hws_get_hws_plugin_library_renderer_args()
+    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
 
@@ -489,7 +598,7 @@ function render_tab_plugins() {
     if ( ! empty( $found_red_flags ) ) :
     ?>
     <div class="hws-red-flag">
-        <h4>🚨 RED FLAG - Remove These Plugins!</h4>
+        <h4>Red Flag Plugins - Remove These Plugins</h4>
         <?php foreach ( $found_red_flags as $path => $info ) : ?>
             <p>
                 <strong><?php echo esc_html( $info['name'] ); ?></strong><br>
@@ -502,7 +611,7 @@ function render_tab_plugins() {
     
     <!-- Updates Center -->
     <div class="hws-panel">
-        <div class="hws-panel-header">📦 Updates Center</div>
+        <div class="hws-panel-header">Updates Center</div>
         <div class="hws-panel-body">
             <div class="hws-status-grid">
                 <div class="hws-status-card <?php echo $core_update_available ? 'bad' : 'good'; ?>">
@@ -523,168 +632,26 @@ function render_tab_plugins() {
             <a href="<?php echo admin_url( 'update-core.php' ); ?>" class="hws-btn" target="_blank">Go to Updates Page</a>
             <a href="<?php echo admin_url( 'update-core.php?force-check=1' ); ?>" class="hws-btn hws-btn-secondary" target="_blank">Force Update Check</a>
             <?php else : ?>
-            <p class="status-ok">✅ Everything is up to date!</p>
+            <p class="status-ok">Everything is up to date.</p>
             <?php endif; ?>
         </div>
     </div>
 
-    <?php hws_render_additional_hws_plugins_panel(); ?>
-    
-    <!-- Monitored Plugins Status -->
-    <div class="hws-panel">
-        <div class="hws-panel-header">🔌 Plugin Status</div>
-        <div class="hws-panel-body">
-            <table class="hws-plugin-table">
-                <thead>
-                    <tr>
-                        <th>Plugin</th>
-                        <th>Installed</th>
-                        <th>Status</th>
-                        <th>Auto-Update</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    $missing_plugins = [];
-                    foreach ( $monitored as $plugin_path => $config ) : 
-                        $status = hws_check_plugin_status( $plugin_path );
-                        $expected_active = ( $config['should_be'] === 'active' );
-                        
-                        // Track missing plugins for batch install
-                        if ( ! $status['installed'] && $config['download'] !== 'manual' ) {
-                            // Extract slug from download URL
-                            if ( preg_match( '/wordpress\.org\/plugins\/([^\/]+)/', $config['download'], $matches ) ) {
-                                $missing_plugins[ $matches[1] ] = $config['name'];
-                            }
-                        }
-                        
-                        // Determine status correctness
-                        $installed_ok = $status['installed'];
-                        $active_ok = ( $expected_active && $status['active'] ) || ( ! $expected_active && ! $status['active'] );
-                        $autoupdate_ok = ( $config['auto_update'] && $status['auto_update'] ) || ( ! $config['auto_update'] );
-                    ?>
-                    <tr>
-                        <td>
-                            <strong><?php echo esc_html( $config['name'] ); ?></strong>
-                            <?php
-                            // — Category badge (essential / optional)
-                            $cat = $config['category'] ?? 'essential';
-                            $cat_colors = [ 'essential' => '#2271b1', 'optional' => '#646970' ];
-                            ?>
-                            <span style="background:<?php echo $cat_colors[ $cat ] ?? '#646970'; ?>;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;"><?php echo strtoupper( $cat ); ?></span>
-                            <?php if ( ! empty( $config['pro'] ) ) : ?>
-                                <span style="background:#8c5e00;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px;vertical-align:middle;">PRO</span>
-                            <?php endif; ?>
-                            <?php if ( $status['version'] ) : ?>
-                                <br><small style="color: #666;">v<?php echo esc_html( $status['version'] ); ?></small>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ( $status['installed'] ) : ?>
-                                <span class="status-ok">✅ Installed</span>
-                            <?php else : ?>
-                                <span class="status-bad">❌ Not Installed</span>
-                                <?php if ( $config['download'] !== 'manual' && preg_match( '/wordpress\.org\/plugins\/([^\/]+)/', $config['download'], $slug_match ) ) : ?>
-                                    <br><input type="checkbox" class="hws-missing-plugin-checkbox" value="<?php echo esc_attr( $slug_match[1] ); ?>" data-name="<?php echo esc_attr( $config['name'] ); ?>" style="margin-top: 5px;" checked>
-                                    <small style="color: #666;">Include in batch</small>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ( ! $status['installed'] ) : ?>
-                                <span style="color: #999;">—</span>
-                            <?php elseif ( $active_ok ) : ?>
-                                <?php if ( $status['active'] ) : ?>
-                                    <span class="status-ok">✅ Active</span>
-                                <?php else : ?>
-                                    <span class="status-ok">✅ Inactive (Correct)</span>
-                                <?php endif; ?>
-                            <?php else : ?>
-                                <?php if ( $status['active'] ) : ?>
-                                    <span class="status-bad">❌ Active (Should be Inactive)</span>
-                                <?php else : ?>
-                                    <span class="status-bad">❌ Inactive (Should be Active)</span>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ( ! $status['installed'] ) : ?>
-                                <span style="color: #999;">—</span>
-                            <?php elseif ( $status['auto_update'] ) : ?>
-                                <span class="status-ok">✅ Enabled</span>
-                            <?php else : ?>
-                                <span class="<?php echo $config['auto_update'] ? 'status-bad' : 'status-ok'; ?>">
-                                    <?php echo $config['auto_update'] ? '❌ Disabled' : '✅ Disabled (OK)'; ?>
-                                </span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ( ! $status['installed'] ) : ?>
-                                <?php if ( $config['download'] === 'manual' ) : ?>
-                                    <span style="color: #666; font-size: 12px;">Upload manually</span>
-                                <?php else : ?>
-                                    <a href="<?php echo esc_url( $config['download'] ); ?>" target="_blank" class="hws-btn hws-btn-secondary" style="padding: 4px 8px; font-size: 11px;">Download</a>
-                                <?php endif; ?>
-                            <?php elseif ( $status['active'] && ! $expected_active ) : ?>
-                                <?php
-                                $deactivate_url = wp_nonce_url(
-                                    admin_url( 'plugins.php?action=deactivate&plugin=' . urlencode( $plugin_path ) ),
-                                    'deactivate-plugin_' . $plugin_path
-                                );
-                                ?>
-                                <a href="<?php echo esc_url( $deactivate_url ); ?>" class="hws-btn hws-btn-secondary" style="padding: 4px 8px; font-size: 11px;">Deactivate</a>
-                            <?php elseif ( ! $status['active'] && $expected_active ) : ?>
-                                <?php
-                                $activate_url = wp_nonce_url(
-                                    admin_url( 'plugins.php?action=activate&plugin=' . urlencode( $plugin_path ) ),
-                                    'activate-plugin_' . $plugin_path
-                                );
-                                ?>
-                                <a href="<?php echo esc_url( $activate_url ); ?>" class="hws-btn" style="padding: 4px 8px; font-size: 11px;">Activate</a>
-                            <?php else : ?>
-                                <span style="color: #00a32a;">✓</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            
-            <div style="margin-top: 15px;">
-                <a href="<?php echo admin_url( 'plugins.php' ); ?>" class="hws-btn hws-btn-secondary" target="_blank">Manage All Plugins</a>
-                <button type="button" id="enable-plugin-auto-updates" class="hws-btn">Enable Auto-Updates for All</button>
-                
-                <?php if ( ! empty( $missing_plugins ) ) : ?>
-                <button type="button" id="hws-batch-install-plugins" class="hws-btn" style="background: #2271b1; margin-left: 10px;">
-                    📥 Install Selected Missing Plugins
-                </button>
-                <?php endif; ?>
-            </div>
-            
-            <?php if ( ! empty( $missing_plugins ) ) : ?>
-            <div id="hws-batch-install-status" style="margin-top: 15px; padding: 10px; background: #f0f6fc; border-radius: 4px; display: none;">
-                <strong>Installation Progress:</strong>
-                <div id="hws-batch-install-log" style="margin-top: 10px; font-family: monospace; font-size: 12px;"></div>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    
-    <!-- Theme Info -->
     <?php
+    hws_render_additional_hws_plugins_panel();
+    hws_render_monitored_plugins_panel();
+
     if ( function_exists( __NAMESPACE__ . '\\display_settings_theme_checks' ) ) {
         display_settings_theme_checks();
     }
     ?>
-    
+
     <script>
     jQuery(document).ready(function($) {
-        // Enable auto-updates for ALL plugins
         $('#enable-plugin-auto-updates').on('click', function() {
             var $btn = $(this);
             $btn.prop('disabled', true).text('Enabling...');
-            
+
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
@@ -694,11 +661,12 @@ function render_tab_plugins() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        $btn.text('✅ ' + response.data.message);
-                    } else {
-                        $btn.prop('disabled', false).text('Enable Auto-Updates for All');
-                        alert('Error: ' + (response.data || 'Unknown error'));
+                        $btn.text(response.data.message || 'Auto-updates enabled');
+                        return;
                     }
+
+                    $btn.prop('disabled', false).text('Enable Auto-Updates for All');
+                    alert('Error: ' + (response.data || 'Unknown error'));
                 },
                 error: function(xhr, status, error) {
                     $btn.prop('disabled', false).text('Enable Auto-Updates for All');
@@ -706,118 +674,10 @@ function render_tab_plugins() {
                 }
             });
         });
-        
-        // Batch install missing plugins
-        $('#hws-batch-install-plugins').on('click', function() {
-            var selectedPlugins = [];
-            $('.hws-missing-plugin-checkbox:checked').each(function() {
-                selectedPlugins.push({
-                    slug: $(this).val(),
-                    name: $(this).data('name')
-                });
-            });
-            
-            if (selectedPlugins.length === 0) {
-                alert('Please select at least one plugin to install.');
-                return;
-            }
-            
-            if (!confirm('Install ' + selectedPlugins.length + ' plugin(s)?\n\nThis will download and install from WordPress.org.')) {
-                return;
-            }
-            
-            var $btn = $(this);
-            var $status = $('#hws-batch-install-status');
-            var $log = $('#hws-batch-install-log');
-            
-            $btn.prop('disabled', true).text('Installing...');
-            $status.show();
-            $log.html('');
-            
-            // Install plugins one by one
-            var installNext = function(index) {
-                if (index >= selectedPlugins.length) {
-                    $log.append('<br><strong style="color: green;">✅ All installations complete!</strong>');
-                    $btn.text('✅ Complete');
-                    return;
-                }
-                
-                var plugin = selectedPlugins[index];
-                $log.append('Installing ' + plugin.name + '...<br>');
-                
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'hws_install_plugin',
-                        slug: plugin.slug,
-                        nonce: '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $log.append('<span style="color: green;">✅ ' + plugin.name + ' installed successfully</span><br>');
-                        } else {
-                            $log.append('<span style="color: red;">❌ ' + plugin.name + ': ' + response.data + '</span><br>');
-                        }
-                        installNext(index + 1);
-                    },
-                    error: function() {
-                        $log.append('<span style="color: red;">❌ ' + plugin.name + ': AJAX Error</span><br>');
-                        installNext(index + 1);
-                    }
-                });
-            };
-            
-            installNext(0);
-        });
-
-        $('#hws-additional-hws-plugins-panel').on('click', '.hws-install-hws-github-plugin', function() {
-            var $btn = $(this);
-            var slug = $btn.data('slug');
-            var $row = $btn.closest('[data-hws-github-plugin-row]');
-            var $message = $row.find('.hws-hws-plugin-message');
-            var originalText = $btn.text();
-
-            if (!slug) {
-                return;
-            }
-
-            if (!confirm('Install and activate ' + slug + ' from GitHub?')) {
-                return;
-            }
-
-            $btn.prop('disabled', true).text('Installing...');
-            $message.css('color', '#50575e').text('Downloading from GitHub...');
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    action: 'hws_install_hws_github_plugin',
-                    slug: slug,
-                    nonce: '<?php echo wp_create_nonce( HWS_AJAX_NONCE ); ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $row.find('.hws-hws-plugin-status').html(response.data.status_html || '<span class="status-ok">Active</span>');
-                        $message.css('color', '#00a32a').text(response.data.message || 'Installed and activated.');
-                        $btn.text(response.data.button_text || 'Active').prop('disabled', !!response.data.active);
-                        return;
-                    }
-
-                    $message.css('color', '#d63638').text(response.data || 'Install failed.');
-                    $btn.prop('disabled', false).text(originalText);
-                },
-                error: function(xhr, status, error) {
-                    $message.css('color', '#d63638').text('AJAX error: ' + (error || status));
-                    $btn.prop('disabled', false).text(originalText);
-                }
-            });
-        });
     });
     </script>
     <?php
+    return;
 }
 
 
