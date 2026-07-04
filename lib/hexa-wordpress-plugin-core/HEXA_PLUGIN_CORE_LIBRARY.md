@@ -55,6 +55,8 @@ Namespace:
 Hexa\PluginCore\WpAdminComponents
 ```
 
+Use `CoreUi::collapsible()` for expandable cards. The shared component owns the native `<details>` structure, persistent open/closed state, and visible chevron SVG indicator, so users can tell the card expands.
+
 
 ## WP Admin UI Cleanup
 

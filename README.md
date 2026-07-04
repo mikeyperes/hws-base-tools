@@ -138,7 +138,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.73 (Current)
+### v10.18.74 (Current)
+- Removed the temporary plugin inventory scenario examples from the live Plugins tab. The tab now shows only real plugin library/status sections.
+- Updated vendored Hexa WP Core to 0.19.10 so Core collapsible cards show a visible chevron toggle indicator.
+- Preloaded the HWS vendored Hexa Core admin UI on wp-admin requests so older active plugin core copies cannot render stale collapsible markup first.
+
+### v10.18.73
 - Updated vendored Hexa WP Core to 0.19.9 and switched plugin inventory installed/missing indicators to inline Font Awesome SVGs.
 
 ### v10.18.72
@@ -148,7 +153,7 @@ All in `generic-functions.php` for site-wide use:
 - Hardened the Plugins tab so HWS loads its own vendored Hexa WP Core PluginChecks classes before rendering plugin inventory sections, preventing another plugin's autoloader from serving an older renderer.
 
 ### v10.18.70
-- Updated vendored Hexa WP Core to 0.19.7, changed plugin inventory title icons to reflect actual plugin presence, added Required/Optional badges and missing-required row styling, and added visible scenario examples for required/optional present/missing states.
+- Updated vendored Hexa WP Core to 0.19.7, changed plugin inventory title icons to reflect actual plugin presence, added Required/Optional badges and missing-required row styling, and validated required/optional present/missing states.
 
 ### v10.18.69
 - Updated vendored Hexa WP Core to 0.19.6 and rebuilt the Plugins tab HWS Plugin Library and Plugin Status sections with reusable Core plugin inventory cards, AJAX refresh/install/activate actions, and green/red Font Awesome-style indicators.

@@ -108,6 +108,10 @@ function hws_register_hexa_plugin_core_autoloader(): void {
 
 hws_register_hexa_plugin_core_autoloader();
 
+if ( is_admin() && ! class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\CoreUi', false ) ) {
+    class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\CoreUi' );
+}
+
 include_once __DIR__ . '/safe-wrappers.php';
 include_once __DIR__ . '/settings-dashboard-site-profile.php';
 include_once __DIR__ . '/settings-dashboard-sitemaps.php';
@@ -439,7 +443,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.73";
+$plugin_version = "10.18.74";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";
