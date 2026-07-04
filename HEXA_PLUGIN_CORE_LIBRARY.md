@@ -121,7 +121,7 @@ Required rules:
 - Use `source => github` with `github_repo` for GitHub ZIP installs. Core normalizes extracted `repo-main` folders to the configured slug.
 - Use `source => pro` or `manual` when a plugin requires a manual upload/download.
 - Use `source => must_use` or `dropin` for MU plugins and WordPress drop-ins; Core treats installed/present as active and skips update/auto-update checks.
-- Do not render a separate Installed column. Show installed/missing state as a green check or red X beside the plugin title, with hover text explaining the state.
+- Do not render a separate Installed column. Show installed/missing state as a Font Awesome SVG green check or red X beside the plugin title, with hover text explaining the state.
 - The Status column prints the icon plus `Active` or `Inactive`.
 - Do not use emoji indicators in plugin inventory UIs.
 

@@ -293,7 +293,12 @@ final class PluginInventoryRenderer {
     }
 
     private function icon( bool $passed, string $label ): string {
-        return '<span class="hpc-plugin-inventory-fa ' . ( $passed ? 'hpc-plugin-inventory-fa-check' : 'hpc-plugin-inventory-fa-xmark' ) . '" aria-label="' . esc_attr( $label ) . '" title="' . esc_attr( $label ) . '" role="img"></span>';
+        $path    = $passed
+            ? 'M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z'
+            : 'M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z';
+        $viewbox = $passed ? '0 0 448 512' : '0 0 384 512';
+
+        return '<span class="hpc-plugin-inventory-fa ' . ( $passed ? 'hpc-plugin-inventory-fa-check' : 'hpc-plugin-inventory-fa-xmark' ) . '" aria-label="' . esc_attr( $label ) . '" title="' . esc_attr( $label ) . '" role="img"><svg class="hpc-plugin-inventory-fa-svg" viewBox="' . esc_attr( $viewbox ) . '" aria-hidden="true" focusable="false"><path d="' . esc_attr( $path ) . '"></path></svg></span>';
     }
 
     private function requirement_badge( bool $required ): string {
@@ -410,11 +415,10 @@ final class PluginInventoryRenderer {
 .hpc-plugin-inventory-status{align-items:center;display:inline-flex;font-size:13px;font-weight:900;gap:5px;white-space:nowrap}
 .hpc-plugin-inventory-status.is-pass{color:var(--hpc-green)}
 .hpc-plugin-inventory-status.is-fail{color:var(--hpc-red)}
-.hpc-plugin-inventory-fa{align-items:center;border-radius:999px;display:inline-flex;font-family:Arial,sans-serif;font-size:14px;font-weight:900;height:18px;justify-content:center;line-height:1;min-width:18px;width:18px}
+.hpc-plugin-inventory-fa{align-items:center;border-radius:999px;display:inline-flex;height:18px;justify-content:center;line-height:1;min-width:18px;width:18px}
 .hpc-plugin-inventory-fa-check{color:var(--hpc-green)}
-.hpc-plugin-inventory-fa-check:before{content:"\2713"}
 .hpc-plugin-inventory-fa-xmark{color:var(--hpc-red)}
-.hpc-plugin-inventory-fa-xmark:before{content:"\00d7"}
+.hpc-plugin-inventory-fa-svg{display:block;fill:currentColor;height:14px;width:14px}
 .hpc-plugin-inventory-source-link{color:var(--hpc-blue);font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap}
 .hpc-plugin-inventory-source-text,.hpc-plugin-inventory-muted{color:var(--hpc-muted);font-size:12px}
 .hpc-plugin-inventory-update{color:var(--hpc-amber);font-size:12px;font-weight:800}

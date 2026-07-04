@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.72 (Current)
+### v10.18.73 (Current)
+- Updated vendored Hexa WP Core to 0.19.9 and switched plugin inventory installed/missing indicators to inline Font Awesome SVGs.
+
+### v10.18.72
 - Updated vendored Hexa WP Core to 0.19.8 and removed the separate Installed column from plugin inventory tables. Installed/missing state now appears as a hoverable green check or red X beside each plugin title.
 
 ### v10.18.71
