@@ -471,7 +471,7 @@ function hws_get_hws_plugin_library_definitions(): array {
             'github_branch' => 'main',
             'download_url'  => 'https://github.com/' . (string) ( $plugin['repo'] ?? '' ),
             'download_label'=> 'Open GitHub',
-            'required'      => true,
+            'required'      => false,
             'recommended'   => true,
             'checks'        => [
                 'installed'   => true,
@@ -484,6 +484,81 @@ function hws_get_hws_plugin_library_definitions(): array {
     }
 
     return $definitions;
+}
+
+function hws_get_plugin_inventory_scenario_definitions(): array {
+    return [
+        [
+            'id'          => 'scenario-required-installed',
+            'name'        => 'Scenario 1: Plugin is there and required',
+            'plugin_file' => 'classic-editor/classic-editor.php',
+            'slug'        => 'classic-editor',
+            'source'      => 'wordpress_org',
+            'wp_org_slug' => 'classic-editor',
+            'required'    => true,
+            'recommended' => true,
+            'checks'      => [
+                'installed'   => true,
+                'active'      => true,
+                'up_to_date'  => false,
+                'auto_update' => false,
+            ],
+            'notes'       => 'Expected visual: green check beside title, Required badge, installed check, Active status.',
+        ],
+        [
+            'id'          => 'scenario-optional-installed',
+            'name'        => 'Scenario 2: Plugin is there and not required',
+            'plugin_file' => 'code-snippets/code-snippets.php',
+            'slug'        => 'code-snippets',
+            'source'      => 'wordpress_org',
+            'wp_org_slug' => 'code-snippets',
+            'required'    => false,
+            'recommended' => false,
+            'checks'      => [
+                'installed'   => true,
+                'active'      => false,
+                'up_to_date'  => false,
+                'auto_update' => false,
+            ],
+            'notes'       => 'Expected visual: green check beside title, Optional badge, installed check, no required action.',
+        ],
+        [
+            'id'             => 'scenario-required-missing',
+            'name'           => 'Scenario 3: Plugin is required and not there',
+            'plugin_file'    => 'hws-required-demo-missing/hws-required-demo-missing.php',
+            'slug'           => 'hws-required-demo-missing',
+            'source'         => 'manual',
+            'download_url'   => admin_url( 'plugin-install.php?tab=upload' ),
+            'download_label' => 'Upload plugin',
+            'required'       => true,
+            'recommended'    => true,
+            'checks'         => [
+                'installed'   => true,
+                'active'      => true,
+                'up_to_date'  => false,
+                'auto_update' => false,
+            ],
+            'notes'          => 'Expected visual: red X beside title, Required badge, grayed row, install/upload action.',
+        ],
+        [
+            'id'             => 'scenario-optional-missing',
+            'name'           => 'Scenario 4: Plugin is optional and not there',
+            'plugin_file'    => 'hws-optional-demo-missing/hws-optional-demo-missing.php',
+            'slug'           => 'hws-optional-demo-missing',
+            'source'         => 'manual',
+            'download_url'   => admin_url( 'plugin-install.php?tab=upload' ),
+            'download_label' => 'Upload plugin',
+            'required'       => false,
+            'recommended'    => false,
+            'checks'         => [
+                'installed'   => true,
+                'active'      => false,
+                'up_to_date'  => false,
+                'auto_update' => false,
+            ],
+            'notes'          => 'Expected visual: red X beside title, Optional badge, grayed row, upload action.',
+        ],
+    ];
 }
 
 function hws_register_plugin_inventory_ajax(): void {
@@ -514,6 +589,17 @@ function hws_register_plugin_inventory_ajax(): void {
             'nonce_field'   => 'nonce',
             'action_prefix' => 'hws_plugin_status',
             'renderer_args' => hws_get_monitored_plugin_renderer_args(),
+        ]
+    ) )->register();
+
+    ( new PluginInventoryAjaxController(
+        hws_get_plugin_inventory_scenario_definitions(),
+        [
+            'capability'    => 'install_plugins',
+            'nonce_action'  => HWS_AJAX_NONCE,
+            'nonce_field'   => 'nonce',
+            'action_prefix' => 'hws_plugin_scenarios',
+            'renderer_args' => hws_get_plugin_inventory_scenario_renderer_args(),
         ]
     ) )->register();
 }
@@ -556,10 +642,35 @@ function hws_get_monitored_plugin_renderer_args(): array {
     ];
 }
 
+function hws_get_plugin_inventory_scenario_renderer_args(): array {
+    return [
+        'title'            => 'Plugin Inventory Scenario Examples',
+        'description'      => 'Visual test cases for every required/optional and present/missing plugin state. These rows are examples only.',
+        'action_prefix'    => 'hws_plugin_scenarios',
+        'nonce'            => wp_create_nonce( HWS_AJAX_NONCE ),
+        'nonce_field'      => 'nonce',
+        'persist_key'      => 'hws-plugin-scenarios',
+        'open'             => true,
+        'show_install_all' => false,
+        'columns'          => [
+            'auto_update' => false,
+            'version'     => true,
+            'source'      => true,
+        ],
+    ];
+}
+
 function hws_render_monitored_plugins_panel(): void {
     echo ( new PluginInventoryRenderer() )->render(
         hws_get_monitored_plugin_definitions(),
         hws_get_monitored_plugin_renderer_args()
+    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+function hws_render_plugin_inventory_scenarios_panel(): void {
+    echo ( new PluginInventoryRenderer() )->render(
+        hws_get_plugin_inventory_scenario_definitions(),
+        hws_get_plugin_inventory_scenario_renderer_args()
     ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
@@ -637,9 +748,10 @@ function render_tab_plugins() {
         </div>
     </div>
 
-    <?php
-    hws_render_additional_hws_plugins_panel();
-    hws_render_monitored_plugins_panel();
+	    <?php
+	    hws_render_additional_hws_plugins_panel();
+	    hws_render_plugin_inventory_scenarios_panel();
+	    hws_render_monitored_plugins_panel();
 
     if ( function_exists( __NAMESPACE__ . '\\display_settings_theme_checks' ) ) {
         display_settings_theme_checks();

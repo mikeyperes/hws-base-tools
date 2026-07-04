@@ -55,6 +55,8 @@ Supported sources:
 - `github`: installs from a GitHub repository using `github_repo` and optional `github_branch`.
 - `pro`: shows the configured `download_url` and does not attempt AJAX install.
 - `manual`: shows the configured `download_url` or the WordPress plugin upload page.
+- `must_use`: checks a must-use plugin from `get_mu_plugins()` and treats presence as active.
+- `dropin`: checks a WordPress drop-in from `get_dropins()` or `_get_dropins()` and treats presence as active.
 
 ## Host Integration
 
@@ -137,3 +139,5 @@ echo ( new \Hexa\PluginCore\PluginChecks\PluginInventoryRenderer() )->render(
 - The **Install and activate missing** button processes visible install/activate actions sequentially with no page refresh.
 - The inventory renderer puts each section in a Core collapsible card, expanded by default, with memory persistence through `persist_key`.
 - Installed and Status columns use green/red icon classes only; the Installed column intentionally does not print the word "Installed".
+- The title icon is based on actual plugin presence, not recommendation. Required/Optional is shown separately with a badge.
+- Missing required rows are grayed out, keep a red missing icon, and get a red left-side required marker.

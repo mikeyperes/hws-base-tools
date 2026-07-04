@@ -135,15 +135,23 @@ final class PluginInventoryRenderer {
     private function row_html( PluginCheckDefinition $definition, array $status, array $args ): string {
         $installed = ! empty( $status['installed'] );
         $active    = ! empty( $status['active'] );
-        $recommended = $this->is_recommended( $definition, $status );
+        $required  = $this->is_required( $definition, $status );
+        $row_class = trim(
+            ( $installed ? 'is-installed' : 'is-missing' )
+            . ' '
+            . ( $required ? 'is-required' : 'is-optional' )
+            . ' '
+            . ( ! $installed && $required ? 'is-required-missing' : '' )
+        );
 
         ob_start();
         ?>
-        <tr data-plugin-inventory-row data-plugin-id="<?php echo esc_attr( $definition->id ); ?>" data-plugin-installed="<?php echo $installed ? '1' : '0'; ?>" data-plugin-active="<?php echo $active ? '1' : '0'; ?>">
+        <tr class="<?php echo esc_attr( $row_class ); ?>" data-plugin-inventory-row data-plugin-id="<?php echo esc_attr( $definition->id ); ?>" data-plugin-installed="<?php echo $installed ? '1' : '0'; ?>" data-plugin-active="<?php echo $active ? '1' : '0'; ?>" data-plugin-required="<?php echo $required ? '1' : '0'; ?>">
             <td class="hpc-plugin-inventory-plugin-cell">
                 <div class="hpc-plugin-inventory-title">
-                    <?php echo $this->icon( $recommended, $recommended ? 'Recommended' : 'Not recommended' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php echo $this->icon( $installed, $installed ? 'Present' : 'Missing' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     <strong><?php echo esc_html( $definition->name ); ?></strong>
+                    <?php echo $this->requirement_badge( $required ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
                 <div class="hpc-plugin-inventory-meta">
                     <code><?php echo esc_html( (string) $status['plugin_file'] ?: $definition->plugin_file ?: $definition->slug ); ?></code>
@@ -218,7 +226,7 @@ final class PluginInventoryRenderer {
             return '<span class="hpc-plugin-inventory-muted">Manual install required</span>';
         }
 
-        if ( empty( $status['active'] ) ) {
+        if ( empty( $status['active'] ) && ! empty( $definition->checks['active'] ) ) {
             return DynamicButton::render(
                 [
                     'label'         => 'Activate',
@@ -232,6 +240,10 @@ final class PluginInventoryRenderer {
                     ],
                 ]
             );
+        }
+
+        if ( empty( $definition->checks['active'] ) ) {
+            return '<span class="hpc-plugin-inventory-muted">No action required</span>';
         }
 
         if ( ! empty( $status['update_available'] ) && function_exists( 'admin_url' ) ) {
@@ -258,6 +270,14 @@ final class PluginInventoryRenderer {
             return '<span class="hpc-plugin-inventory-source-text">Pro/manual</span>';
         }
 
+        if ( 'must_use' === $definition->source ) {
+            return '<span class="hpc-plugin-inventory-source-text">Must-use</span>';
+        }
+
+        if ( 'dropin' === $definition->source ) {
+            return '<span class="hpc-plugin-inventory-source-text">Drop-in</span>';
+        }
+
         return '<span class="hpc-plugin-inventory-source-text">Manual</span>';
     }
 
@@ -268,20 +288,20 @@ final class PluginInventoryRenderer {
     /**
      * @param array<string,mixed> $status
      */
-    private function is_recommended( PluginCheckDefinition $definition, array $status ): bool {
-        if ( array_key_exists( 'recommended', $status ) ) {
-            return (bool) $status['recommended'];
+    private function is_required( PluginCheckDefinition $definition, array $status ): bool {
+        if ( array_key_exists( 'required', $status ) ) {
+            return (bool) $status['required'];
         }
 
-        if ( property_exists( $definition, 'recommended' ) ) {
-            return (bool) $definition->recommended;
-        }
-
-        return (bool) $definition->required;
+        return property_exists( $definition, 'required' ) ? (bool) $definition->required : true;
     }
 
     private function icon( bool $passed, string $label ): string {
         return '<span class="hpc-plugin-inventory-fa ' . ( $passed ? 'hpc-plugin-inventory-fa-check' : 'hpc-plugin-inventory-fa-xmark' ) . '" aria-label="' . esc_attr( $label ) . '" role="img"></span>';
+    }
+
+    private function requirement_badge( bool $required ): string {
+        return '<span class="hpc-plugin-inventory-requirement ' . ( $required ? 'is-required' : 'is-optional' ) . '">' . ( $required ? 'Required' : 'Optional' ) . '</span>';
     }
 
     private function summary_item( string $label, int $count, string $tone ): string {
@@ -360,10 +380,16 @@ final class PluginInventoryRenderer {
 .hpc-plugin-inventory-table th{background:#f8fafc;border-bottom:1px solid var(--hpc-line);color:#253650;font-size:12px;font-weight:900;letter-spacing:.02em;padding:11px 12px;text-align:left;text-transform:uppercase;white-space:nowrap}
 .hpc-plugin-inventory-table td{border-bottom:1px solid #edf1f6;padding:12px;vertical-align:middle}
 .hpc-plugin-inventory-table tr:last-child td{border-bottom:0}
+.hpc-plugin-inventory-table tr.is-missing td{background:#f8fafc;color:#546179}
+.hpc-plugin-inventory-table tr.is-required-missing td:first-child{box-shadow:inset 4px 0 0 var(--hpc-red)}
+.hpc-plugin-inventory-table tr.is-required-missing .hpc-plugin-inventory-title strong{color:#3f4d63}
 .hpc-plugin-inventory-icon-col{text-align:center;width:86px}
 .hpc-plugin-inventory-plugin-cell{min-width:280px}
 .hpc-plugin-inventory-title{align-items:center;display:flex;gap:8px;margin:0 0 7px}
 .hpc-plugin-inventory-title strong{font-size:14px}
+.hpc-plugin-inventory-requirement{border-radius:999px;display:inline-flex;font-size:10px;font-weight:900;line-height:1;padding:5px 7px;text-transform:uppercase}
+.hpc-plugin-inventory-requirement.is-required{background:#fff0f2;border:1px solid #ffd0d8;color:var(--hpc-red)}
+.hpc-plugin-inventory-requirement.is-optional{background:#eef2ff;border:1px solid #dbe4ff;color:#2944ad}
 .hpc-plugin-inventory-meta{display:grid;gap:5px}
 .hpc-plugin-inventory-meta code{background:#eef0f2;border-radius:5px;color:#2f3a4a;font-size:12px;padding:2px 5px;word-break:break-all}
 .hpc-plugin-inventory-meta span{color:var(--hpc-muted);font-size:12px;line-height:1.35}

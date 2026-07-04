@@ -115,10 +115,12 @@ Required rules:
 
 - Keep plugin-specific catalog data in the host plugin.
 - Keep table UI, collapsible cards, install/activate actions, and status rendering in Hexa Core.
-- Use `recommended` to control the green check or red X beside the plugin title.
+- The green check or red X beside the plugin title is based on actual installed/present status.
+- Use `required` to show the Required/Optional badge and to style missing required rows.
 - Use `source => wordpress_org` with `wp_org_slug` for WordPress.org installs.
 - Use `source => github` with `github_repo` for GitHub ZIP installs. Core normalizes extracted `repo-main` folders to the configured slug.
 - Use `source => pro` or `manual` when a plugin requires a manual upload/download.
+- Use `source => must_use` or `dropin` for MU plugins and WordPress drop-ins; Core treats installed/present as active and skips update/auto-update checks.
 - The Installed column prints only the icon. Do not add the word "Installed" inside that column.
 - The Status column prints the icon plus `Active` or `Inactive`.
 - Do not use emoji indicators in plugin inventory UIs.

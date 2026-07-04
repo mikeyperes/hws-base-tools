@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.69 (Current)
+### v10.18.70 (Current)
+- Updated vendored Hexa WP Core to 0.19.7, changed plugin inventory title icons to reflect actual plugin presence, added Required/Optional badges and missing-required row styling, and added visible scenario examples for required/optional present/missing states.
+
+### v10.18.69
 - Updated vendored Hexa WP Core to 0.19.6 and rebuilt the Plugins tab HWS Plugin Library and Plugin Status sections with reusable Core plugin inventory cards, AJAX refresh/install/activate actions, and green/red Font Awesome-style indicators.
 
 ### v10.18.68

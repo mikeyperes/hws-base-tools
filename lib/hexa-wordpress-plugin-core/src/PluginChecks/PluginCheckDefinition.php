@@ -92,6 +92,6 @@ final class PluginCheckDefinition {
     private static function clean_source( string $source ): string {
         $source = function_exists( 'sanitize_key' ) ? sanitize_key( $source ) : strtolower( preg_replace( '/[^a-z0-9_\-]/', '', $source ) );
 
-        return in_array( $source, [ 'wordpress_org', 'github', 'manual', 'pro' ], true ) ? $source : 'manual';
+        return in_array( $source, [ 'wordpress_org', 'github', 'manual', 'pro', 'must_use', 'dropin' ], true ) ? $source : 'manual';
     }
 }
