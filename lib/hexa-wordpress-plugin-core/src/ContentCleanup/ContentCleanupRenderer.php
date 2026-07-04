@@ -23,9 +23,12 @@ final class ContentCleanupRenderer {
         ?>
         <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-content-cleanup" data-hpc-content-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-trash-action="<?php echo esc_attr( $this->config->trash_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>" data-default-criteria="<?php echo esc_attr( wp_json_encode( $defaults ) ); ?>" data-count-label="<?php echo esc_attr( $this->config->count_label() ); ?>">
             <style>
+                #<?php echo esc_attr( $root_id ); ?>{max-width:100%;overflow:hidden}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;overflow:auto}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:980px;width:100%}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th{background:#f8fafc;color:#314056;font-size:12px;text-transform:uppercase}
@@ -42,12 +45,20 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.danger{background:#fff0f2;border:1px solid #ffd0d8;color:#b42336}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.success{background:#eaf8ef;border:1px solid #ccefd7;color:#16803c}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.dark,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-flag.info{background:#eef2ff;border:1px solid #dbe4ff;color:#2944ad}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log{border-radius:8px;overflow:hidden;border:1px solid #263241;background:#0f1720;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;margin-top:16px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-head{align-items:center;background:#111c2a;border-bottom:1px solid #263241;display:flex;gap:12px;justify-content:space-between;padding:14px 16px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log{border-radius:8px;overflow:hidden;border:1px solid #263241;background:#0f1720;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;margin-top:16px;max-width:100%}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log summary{list-style:none}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log summary::-webkit-details-marker{display:none}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-head{align-items:center;background:#111c2a;cursor:pointer;display:flex;gap:12px;justify-content:space-between;padding:14px 16px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log[open] .hpc-cleanup-log-head{border-bottom:1px solid #263241}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:800;margin:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-pill{background:#1f2f44;border:1px solid #34465d;border-radius:999px;color:#b9c7d8;font-size:12px;padding:4px 9px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-body{max-height:360px;overflow:auto}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{border-top:1px solid #1f2f44;display:grid;gap:10px;grid-template-columns:92px 82px 1fr;padding:12px 16px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-controls{align-items:center;display:inline-flex;gap:10px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-chevron{align-items:center;background:#1f2f44;border:1px solid #34465d;border-radius:999px;color:#cbd5e1;display:inline-flex;height:28px;justify-content:center;width:28px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-chevron svg{fill:currentColor;height:12px;transform:rotate(0deg);transition:transform .18s;width:12px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log[open] .hpc-cleanup-log-chevron svg{transform:rotate(180deg)}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-body{max-height:360px;max-width:100%;overflow:auto}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{border-top:1px solid #1f2f44;display:grid;gap:10px;grid-template-columns:minmax(70px,92px) minmax(58px,82px) minmax(0,1fr);padding:12px 16px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row>*{min-width:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-time{color:#8ca1b8;font-size:12px;white-space:nowrap}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level{border-radius:5px;font-size:11px;font-weight:900;letter-spacing:.04em;padding:3px 7px;text-align:center;text-transform:uppercase}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.info{background:#16324f;color:#9bd0ff}
@@ -55,67 +66,74 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.warning{background:#493813;color:#ffd37a}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.error{background:#4c1720;color:#ff9cac}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-message{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:650;margin-bottom:4px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-context{color:#9fb1c6;font-size:12px;white-space:pre-wrap}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-context{color:#9fb1c6;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;word-break:break-word}
                 @media(max-width:1100px){#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}}
                 @media(max-width:700px){#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{grid-template-columns:1fr}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:auto}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{grid-template-columns:1fr}}
             </style>
 
-            <div class="hpc-hero">
-                <div>
-                    <h2><?php echo esc_html( (string) $this->config->get( 'title' ) ); ?></h2>
-                    <p><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
-                </div>
-                <div class="hpc-cleanup-count">
-                    <?php echo CoreUi::pill( $this->config->count_label() . ': 0', 'dark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                </div>
-            </div>
-
-            <?php if ( $show_filters ) : ?>
-                <?php
-                echo CoreUi::collapsible(
-                    [
-                        'title'       => 'Detection Filters',
-                        'open'        => true,
-                        'persist_key' => $root_id . '-filters',
-                        'body_html'   => $this->filters_html( $defaults ),
-                    ]
-                ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                ?>
-            <?php else : ?>
-                <div class="hpc-actions" style="margin:0 0 14px;">
-                    <?php echo DynamicButton::render( [ 'label' => 'Refresh Report', 'working_label' => 'Scanning...', 'success_label' => 'Updated', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-cleanup-scan' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                </div>
-            <?php endif; ?>
-
-            <div class="hpc-cleanup-table-wrap">
-                <table class="hpc-cleanup-table">
-                    <thead>
-                        <tr>
-                            <th>Title / Slug</th>
-                            <th>Flag</th>
-                            <th>Status</th>
-                            <th>Date Published</th>
-                            <th>Date Modified</th>
-                            <th>Edit</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody data-cleanup-results>
-                        <tr><td colspan="7" class="hpc-cleanup-muted">Loading cleanup report...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <section class="hpc-cleanup-log" data-cleanup-log>
-                <div class="hpc-cleanup-log-head">
-                    <div>
-                        <h3 class="hpc-cleanup-log-title">Activity Log</h3>
-                        <span class="hpc-cleanup-log-pill">Hexa Core Log Type 1</span>
+            <?php ob_start(); ?>
+                <p class="hpc-cleanup-section-description"><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
+                <?php if ( $show_filters ) : ?>
+                    <?php
+                    echo CoreUi::collapsible(
+                        [
+                            'title'       => 'Detection Filters',
+                            'open'        => true,
+                            'persist_key' => $root_id . '-filters',
+                            'body_html'   => $this->filters_html( $defaults ),
+                        ]
+                    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                    ?>
+                <?php else : ?>
+                    <div class="hpc-actions" style="margin:0 0 14px;">
+                        <?php echo DynamicButton::render( [ 'label' => 'Refresh Report', 'working_label' => 'Scanning...', 'success_label' => 'Updated', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-cleanup-scan' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                     </div>
-                    <button type="button" class="hpc-button secondary" data-cleanup-clear-log>Clear</button>
+                <?php endif; ?>
+
+                <div class="hpc-cleanup-table-wrap">
+                    <table class="hpc-cleanup-table">
+                        <thead>
+                            <tr>
+                                <th>Title / Slug</th>
+                                <th>Flag</th>
+                                <th>Status</th>
+                                <th>Date Published</th>
+                                <th>Date Modified</th>
+                                <th>Edit</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody data-cleanup-results>
+                            <tr><td colspan="7" class="hpc-cleanup-muted">Loading cleanup report...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="hpc-cleanup-log-body" data-cleanup-log-body></div>
-            </section>
+
+                <details class="hpc-cleanup-log" data-cleanup-log>
+                    <summary class="hpc-cleanup-log-head">
+                        <div>
+                            <h3 class="hpc-cleanup-log-title">Activity Log</h3>
+                            <span class="hpc-cleanup-log-pill">Hexa Core Log Type 1</span>
+                        </div>
+                        <span class="hpc-cleanup-log-controls">
+                            <span class="hpc-cleanup-log-chevron" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>
+                            <button type="button" class="hpc-button secondary" data-cleanup-clear-log>Clear</button>
+                        </span>
+                    </summary>
+                    <div class="hpc-cleanup-log-body" data-cleanup-log-body></div>
+                </details>
+            <?php
+            $section_body = (string) ob_get_clean();
+            echo CoreUi::collapsible(
+                [
+                    'title'       => (string) $this->config->get( 'title' ),
+                    'open'        => true,
+                    'persist_key' => $root_id . '-section',
+                    'meta_html'   => '<span class="hpc-cleanup-count">' . CoreUi::pill( $this->config->count_label() . ': 0', 'dark' ) . '</span>',
+                    'body_html'   => $section_body,
+                ]
+            ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>
 
             <script>
             (function(){
@@ -240,6 +258,7 @@ final class ContentCleanupRenderer {
                     var clearButton = event.target.closest('[data-cleanup-clear-log]');
                     if (clearButton) {
                         event.preventDefault();
+                        event.stopPropagation();
                         if (logBody) logBody.innerHTML = '';
                         addLog({level:'info', message:'Activity log cleared.'});
                         return;

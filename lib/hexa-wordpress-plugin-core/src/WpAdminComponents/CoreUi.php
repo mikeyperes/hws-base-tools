@@ -87,7 +87,7 @@ final class CoreUi {
             .hpc-toggle-list{display:grid;gap:10px;margin:10px 0}
             .hpc-toggle-row{align-items:flex-start;background:#fff;border:1px solid var(--hpc-line);border-radius:8px;display:flex;gap:10px;padding:10px 12px}
             .hpc-toggle{align-items:center;cursor:pointer;display:inline-flex;gap:9px;font-weight:800;line-height:1.3}
-            .hpc-toggle input{opacity:0;position:absolute}
+            .hpc-toggle input{clip:rect(0 0 0 0);height:1px;margin:-1px;opacity:0;overflow:hidden;position:absolute;width:1px}
             .hpc-toggle-ui{background:#cbd5e1;border-radius:999px;display:inline-block;flex:0 0 auto;height:22px;position:relative;width:40px}
             .hpc-toggle-ui:before{background:#fff;border-radius:999px;content:"";height:16px;left:3px;position:absolute;top:3px;transition:.18s;width:16px}
             .hpc-toggle input:checked+.hpc-toggle-ui{background:var(--hpc-blue)}

@@ -138,7 +138,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.74 (Current)
+### v10.18.76 (Current)
+- Updated vendored Hexa WP Core to 0.19.12 so Core toggle inputs cannot create horizontal page overflow on the Cleanup tab.
+
+### v10.18.75
+- Updated vendored Hexa WP Core to 0.19.11 so Cleanup tab services render as separate collapsible Core cards with closed-by-default activity logs and contained table/log overflow.
+
+### v10.18.74
 - Removed the temporary plugin inventory scenario examples from the live Plugins tab. The tab now shows only real plugin library/status sections.
 - Updated vendored Hexa WP Core to 0.19.10 so Core collapsible cards show a visible chevron toggle indicator.
 - Preloaded the HWS vendored Hexa Core admin UI on wp-admin requests so older active plugin core copies cannot render stale collapsible markup first.

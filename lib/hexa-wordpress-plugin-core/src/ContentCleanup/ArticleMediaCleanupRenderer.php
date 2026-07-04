@@ -22,21 +22,28 @@ final class ArticleMediaCleanupRenderer {
         ?>
         <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-cleanup-module hpc-article-media-cleanup" data-hpc-article-media-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>">
             <?php $this->styles( $root_id ); ?>
-            <div class="hpc-hero">
-                <div>
-                    <h2><?php echo esc_html( (string) $this->config->get( 'title' ) ); ?></h2>
-                    <p><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
+            <?php ob_start(); ?>
+                <p class="hpc-cleanup-section-description"><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
+                <?php echo CoreUi::collapsible( [ 'title' => 'Article Filters', 'open' => true, 'persist_key' => $root_id . '-filters', 'body_html' => $this->filters_html( $defaults ) ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <div class="hpc-cleanup-table-wrap">
+                    <table class="hpc-cleanup-table">
+                        <thead><tr><th><label><input type="checkbox" data-article-select-all> Select</label></th><th>Article</th><th>Status</th><th>Published</th><th>Author</th><th>Associated Media</th><th>Edit</th><th>Row Action</th></tr></thead>
+                        <tbody data-article-results><tr><td colspan="8" class="hpc-cleanup-muted">Loading article cleanup candidates...</td></tr></tbody>
+                    </table>
                 </div>
-                <div class="hpc-cleanup-count"><?php echo CoreUi::pill( 'Articles: 0', 'dark' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-            </div>
-            <?php echo CoreUi::collapsible( [ 'title' => 'Article Filters', 'open' => true, 'persist_key' => $root_id . '-filters', 'body_html' => $this->filters_html( $defaults ) ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-            <div class="hpc-cleanup-table-wrap">
-                <table class="hpc-cleanup-table">
-                    <thead><tr><th><label><input type="checkbox" data-article-select-all> Select</label></th><th>Article</th><th>Status</th><th>Published</th><th>Author</th><th>Associated Media</th><th>Edit</th><th>Row Action</th></tr></thead>
-                    <tbody data-article-results><tr><td colspan="8" class="hpc-cleanup-muted">Loading article cleanup candidates...</td></tr></tbody>
-                </table>
-            </div>
-            <?php $this->log_html(); ?>
+                <?php $this->log_html(); ?>
+            <?php
+            $section_body = (string) ob_get_clean();
+            echo CoreUi::collapsible(
+                [
+                    'title'       => (string) $this->config->get( 'title' ),
+                    'open'        => true,
+                    'persist_key' => $root_id . '-section',
+                    'meta_html'   => '<span class="hpc-cleanup-count">' . CoreUi::pill( 'Articles: 0', 'dark' ) . '</span>',
+                    'body_html'   => $section_body,
+                ]
+            ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>
             <?php $this->script( $root_id ); ?>
         </div>
         <?php
@@ -74,12 +81,14 @@ final class ArticleMediaCleanupRenderer {
     private function styles( string $root_id ): void {
         ?>
         <style>
-            #<?php echo esc_attr( $root_id ); ?>{margin-top:18px}
+            #<?php echo esc_attr( $root_id ); ?>{margin-top:14px;max-width:100%;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:4px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide{grid-column:span 2}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle{grid-column:span 2}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{align-self:end;grid-column:span 2}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;overflow:auto}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:1180px;width:100%}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th{background:#f8fafc;color:#314056;font-size:12px;text-transform:uppercase}
@@ -89,12 +98,20 @@ final class ArticleMediaCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-row.is-working{opacity:.58}
             #<?php echo esc_attr( $root_id ); ?> .hpc-media-list{display:grid;gap:5px;max-width:280px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-media-item{background:#f8fafc;border:1px solid #e0e6ef;border-radius:6px;font-size:12px;padding:6px 8px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log{border-radius:8px;overflow:hidden;border:1px solid #263241;background:#0f1720;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;margin-top:16px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-head{align-items:center;background:#111c2a;border-bottom:1px solid #263241;display:flex;gap:12px;justify-content:space-between;padding:14px 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log{border-radius:8px;overflow:hidden;border:1px solid #263241;background:#0f1720;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;margin-top:16px;max-width:100%}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log summary{list-style:none}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log summary::-webkit-details-marker{display:none}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-head{align-items:center;background:#111c2a;cursor:pointer;display:flex;gap:12px;justify-content:space-between;padding:14px 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log[open] .hpc-cleanup-log-head{border-bottom:1px solid #263241}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-title{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;font-weight:800;margin:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-pill{background:#1f2f44;border:1px solid #34465d;border-radius:999px;color:#b9c7d8;font-size:12px;padding:4px 9px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-body{max-height:360px;overflow:auto}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{border-top:1px solid #1f2f44;display:grid;gap:10px;grid-template-columns:92px 82px 1fr;padding:12px 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-controls{align-items:center;display:inline-flex;gap:10px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-chevron{align-items:center;background:#1f2f44;border:1px solid #34465d;border-radius:999px;color:#cbd5e1;display:inline-flex;height:28px;justify-content:center;width:28px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-chevron svg{fill:currentColor;height:12px;transform:rotate(0deg);transition:transform .18s;width:12px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log[open] .hpc-cleanup-log-chevron svg{transform:rotate(180deg)}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-body{max-height:360px;max-width:100%;overflow:auto}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{border-top:1px solid #1f2f44;display:grid;gap:10px;grid-template-columns:minmax(70px,92px) minmax(58px,82px) minmax(0,1fr);padding:12px 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row>*{min-width:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-time{color:#8ca1b8;font-size:12px;white-space:nowrap}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level{border-radius:5px;font-size:11px;font-weight:900;letter-spacing:.04em;padding:3px 7px;text-align:center;text-transform:uppercase}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.info{background:#16324f;color:#9bd0ff}
@@ -102,7 +119,7 @@ final class ArticleMediaCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.warning{background:#493813;color:#ffd37a}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.error{background:#4c1720;color:#ff9cac}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-message{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:650;margin-bottom:4px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-context{color:#9fb1c6;font-size:12px;white-space:pre-wrap}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-context{color:#9fb1c6;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;word-break:break-word}
             @media(max-width:1100px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:span 2}}
             @media(max-width:700px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:1fr}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:auto}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{grid-template-columns:1fr}}
         </style>
@@ -111,13 +128,16 @@ final class ArticleMediaCleanupRenderer {
 
     private function log_html(): void {
         ?>
-        <section class="hpc-cleanup-log">
-            <div class="hpc-cleanup-log-head">
+        <details class="hpc-cleanup-log">
+            <summary class="hpc-cleanup-log-head">
                 <div><h3 class="hpc-cleanup-log-title">Article Cleanup Activity Log</h3><span class="hpc-cleanup-log-pill">Hexa Core Log Type 1</span></div>
-                <button type="button" class="hpc-button secondary" data-article-clear-log>Clear</button>
-            </div>
+                <span class="hpc-cleanup-log-controls">
+                    <span class="hpc-cleanup-log-chevron" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>
+                    <button type="button" class="hpc-button secondary" data-article-clear-log>Clear</button>
+                </span>
+            </summary>
             <div class="hpc-cleanup-log-body" data-article-log-body></div>
-        </section>
+        </details>
         <?php
     }
 
@@ -140,7 +160,7 @@ final class ArticleMediaCleanupRenderer {
             function scan(button){dynStart(button,'Scanning...');addLog({level:'info',message:'Starting article cleanup scan.',context:criteria()});post(root.dataset.scanAction||'',criteria()).then(function(data){addLogs(data.log);renderRows(data.rows||[]);dynOk(button,'Scanned')}).catch(function(error){addLog({level:'error',message:error.message||'Scan failed.'});dynFail(button,'Failed')})}
             function removeRow(postId){var row=root.querySelector('.hpc-cleanup-row[data-post-id="'+postId+'"]');if(row)row.remove();var remaining=root.querySelectorAll('.hpc-cleanup-row').length;setCount(remaining);if(!remaining&&tbody)tbody.innerHTML='<tr><td colspan="8" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No matching articles found.')+'</td></tr>'}
             function deleteOne(postId,button){var row=root.querySelector('.hpc-cleanup-row[data-post-id="'+postId+'"]');if(row)row.classList.add('is-working');dynStart(button,'Deleting...');addLog({level:'warning',message:'Sending article delete AJAX request.',context:{post_id:postId,delete_media:deleteMediaEnabled()?'yes':'no'}});return post(root.dataset.deleteAction||'',{post_id:postId,delete_media:deleteMediaEnabled()?'1':'0'}).then(function(data){addLogs(data.log);removeRow(postId);dynOk(button,'Deleted');return data}).catch(function(error){if(row)row.classList.remove('is-working');addLog({level:'error',message:error.message||'Delete failed.',context:{post_id:postId}});dynFail(button,'Failed');throw error})}
-            root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-article-scan]');if(scanButton){event.preventDefault();scan(scanButton);return}var clear=event.target.closest('[data-article-clear-log]');if(clear){event.preventDefault();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Article cleanup activity log cleared.'});return}var selectAll=event.target.closest('[data-article-select-all]');if(selectAll){root.querySelectorAll('[data-article-select]').forEach(function(box){box.checked=selectAll.checked});return}var rowDelete=event.target.closest('[data-article-delete]');if(rowDelete){event.preventDefault();var id=rowDelete.getAttribute('data-post-id')||'';var msg='Permanently delete this post?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;deleteOne(id,rowDelete).catch(function(){}) ;return}var bulk=event.target.closest('[data-article-delete-selected]');if(bulk){event.preventDefault();var ids=Array.from(root.querySelectorAll('[data-article-select]:checked')).map(function(box){return box.value});if(!ids.length){addLog({level:'warning',message:'No articles selected for deletion.'});dynFail(bulk,'Select rows');return}var msg='Permanently delete '+ids.length+' selected post(s)?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;dynStart(bulk,'Deleting...');var chain=Promise.resolve();ids.forEach(function(id){chain=chain.then(function(){var b=root.querySelector('.hpc-cleanup-row[data-post-id="'+id+'"] [data-article-delete]')||bulk;return deleteOne(id,b).catch(function(){})})});chain.then(function(){dynOk(bulk,'Deleted')})}});
+            root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-article-scan]');if(scanButton){event.preventDefault();scan(scanButton);return}var clear=event.target.closest('[data-article-clear-log]');if(clear){event.preventDefault();event.stopPropagation();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Article cleanup activity log cleared.'});return}var selectAll=event.target.closest('[data-article-select-all]');if(selectAll){root.querySelectorAll('[data-article-select]').forEach(function(box){box.checked=selectAll.checked});return}var rowDelete=event.target.closest('[data-article-delete]');if(rowDelete){event.preventDefault();var id=rowDelete.getAttribute('data-post-id')||'';var msg='Permanently delete this post?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;deleteOne(id,rowDelete).catch(function(){}) ;return}var bulk=event.target.closest('[data-article-delete-selected]');if(bulk){event.preventDefault();var ids=Array.from(root.querySelectorAll('[data-article-select]:checked')).map(function(box){return box.value});if(!ids.length){addLog({level:'warning',message:'No articles selected for deletion.'});dynFail(bulk,'Select rows');return}var msg='Permanently delete '+ids.length+' selected post(s)?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;dynStart(bulk,'Deleting...');var chain=Promise.resolve();ids.forEach(function(id){chain=chain.then(function(){var b=root.querySelector('.hpc-cleanup-row[data-post-id="'+id+'"] [data-article-delete]')||bulk;return deleteOne(id,b).catch(function(){})})});chain.then(function(){dynOk(bulk,'Deleted')})}});
             if(form){form.addEventListener('submit',function(event){event.preventDefault();scan(root.querySelector('[data-article-scan]'))})}
             addLog({level:'info',message:'Article cleanup UI loaded. Auto-running article scan.'});scan(root.querySelector('[data-article-scan]'));
         })();

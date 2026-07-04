@@ -69,7 +69,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CoreContracts`: interfaces that host plugins and core modules must follow.
 - `CorePackageUpdates`: compares and updates the vendored Hexa WordPress Plugin Core package.
 - `CoreRuntime`: runtime value objects such as plugin context and core version metadata.
-- `ContentCleanup`: old content detection, backup file detection/deletion, article/media cleanup, guarded AJAX actions, AJAX table updates, and Hexa Core Log Type 1 cleanup activity UI.
+- `ContentCleanup`: old content detection, backup file detection/deletion, article/media cleanup, guarded AJAX actions, collapsible service cards, AJAX table updates, and collapsed Hexa Core Log Type 1 cleanup activity UI.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
@@ -193,7 +193,9 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Content Cleanup
 
-`Hexa\PluginCore\ContentCleanup` provides reusable cleanup structures for wp-admin. Host plugins pass their own action names, allowed post types, backup locations, and deletion limits; Core renders fixed reports, filters, result tables, edit links, row flags, destructive buttons, row loaders, and live dark activity logs.
+`Hexa\PluginCore\ContentCleanup` provides reusable cleanup structures for wp-admin. Host plugins pass their own action names, allowed post types, backup locations, and deletion limits; Core renders each cleanup service as a separate collapsible card, with fixed reports, filters, result tables, edit links, row flags, destructive buttons, row loaders, and closed-by-default dark activity logs.
+
+Version 0.19.12 keeps Core toggle inputs clipped to a 1px focusable control so hidden checkbox fields cannot create horizontal page overflow.
 
 ```php
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
