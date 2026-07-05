@@ -72,6 +72,9 @@ One place for favicon and logo assets:
 ## UI Cleanup Tab
 WordPress admin cleanup toggles: dashboard widgets, admin bar, menu items, footer text.
 
+## Cleanup Tab
+Hexa WP Core cleanup tools for stale page reports, backup file deletion, and article/media cleanup. Article cleanup supports preview scanning, selected-row deletion, "delete all matching posts", and "delete matching posts except the latest X"; destructive batch actions run through repeated AJAX requests and can delete associated featured/inline/gallery media when Media Cleanup is enabled.
+
 ---
 
 ## Shortcodes
@@ -138,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.79 (Current)
+### v10.18.80 (Current)
+- Updated vendored Hexa WP Core to 0.19.15 and added true article/media batch deletion in Cleanup. The UI now has explicit actions for deleting all matching posts or deleting all matching except the latest X posts; batch deletion ignores the preview limit, runs through AJAX batches, logs each batch, and supports associated media deletion when the toggle is enabled.
+
+### v10.18.79
 - Updated vendored Hexa WP Core to 0.19.14 so Cleanup tab descriptions, detection rules, and backup scan locations render as subtle collapsed secondary details instead of large focus cards.
 - Backup scans now show a loading row while scanning and log file patterns searched, folders inspected, directory entries looked at, matched files, and no-result state.
 

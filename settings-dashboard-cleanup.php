@@ -146,12 +146,13 @@ function hws_article_media_cleanup_config(): ArticleMediaCleanupConfig {
         [
             'root_id'             => 'hws-article-media-cleanup',
             'title'               => 'Article & Media Cleanup',
-            'description'         => 'Filter posts, keep the most recent X matches, select rows, and delete selected articles. Associated media deletion is off by default and must be explicitly enabled.',
+            'description'         => 'Filter posts, preview matches, and delete all matching posts in AJAX batches. Associated media deletion is off by default and must be explicitly enabled.',
             'capability'          => 'manage_options',
             'nonce_action'        => HWS_CONTENT_CLEANUP_NONCE_ACTION,
             'nonce_field'         => 'nonce',
             'scan_action'         => 'hws_article_media_cleanup_scan',
             'delete_action'       => 'hws_article_media_cleanup_delete',
+            'batch_delete_action' => 'hws_article_media_cleanup_batch_delete',
             'post_types'          => [ 'post' => 'Posts' ],
             'statuses'            => [
                 'publish' => 'Published',
@@ -165,6 +166,8 @@ function hws_article_media_cleanup_config(): ArticleMediaCleanupConfig {
             'default_keep_recent' => 25,
             'default_limit'       => 50,
             'max_limit'           => 250,
+            'default_batch_size'  => 50,
+            'max_batch_size'      => 100,
             'empty_message'       => 'No matching articles were found for the selected filters.',
         ]
     );

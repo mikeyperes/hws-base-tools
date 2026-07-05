@@ -109,6 +109,139 @@ final class ArticleMediaCleanupScanner {
         ];
     }
 
+    public function delete_batch( array $criteria, bool $delete_media, string $mode, int $batch_size = 0, array $exclude_ids = [] ): array|\WP_Error {
+        $criteria   = $this->normalize_criteria( $criteria );
+        $mode       = $this->clean_key( $mode );
+        $batch_size = min( $this->config->max_batch_size(), max( 1, $batch_size > 0 ? $batch_size : $this->config->default_batch_size() ) );
+
+        if ( ! in_array( $mode, [ 'all_matching', 'all_except_keep_recent' ], true ) ) {
+            return new \WP_Error( 'invalid_batch_delete_mode', 'Invalid article batch delete mode.' );
+        }
+
+        $exclude_ids  = $this->normalize_ids( $exclude_ids );
+        $preserve_ids = [];
+        $log          = [
+            $this->log(
+                'warning',
+                'Requested article batch deletion.',
+                [
+                    'mode'         => $mode,
+                    'criteria'     => $criteria,
+                    'batch_size'   => $batch_size,
+                    'delete_media' => $delete_media ? 'yes' : 'no',
+                    'exclude_ids'  => $exclude_ids,
+                ]
+            ),
+        ];
+
+        if ( 'all_matching' === $mode ) {
+            $criteria['keep_recent'] = 0;
+            $log[] = $this->log( 'info', 'Delete all matching mode ignores Keep Most Recent and Preview Limit.' );
+        } else {
+            $preserve_ids = $criteria['keep_recent'] > 0 ? $this->matching_ids( $criteria, $criteria['keep_recent'], [] ) : [];
+            $log[]        = $this->log(
+                'info',
+                'Newest matching posts protected from this batch.',
+                [
+                    'keep_recent'  => $criteria['keep_recent'],
+                    'preserve_ids' => $preserve_ids,
+                ]
+            );
+        }
+
+        $query_exclude_ids = array_values( array_unique( array_merge( $preserve_ids, $exclude_ids ) ) );
+        $candidate_ids     = $this->matching_ids( $criteria, $batch_size + 1, $query_exclude_ids );
+        $has_more          = count( $candidate_ids ) > $batch_size;
+        $candidate_ids     = array_slice( $candidate_ids, 0, $batch_size );
+
+        $log[] = $this->log(
+            'info',
+            'Loaded deletion batch IDs.',
+            [
+                'candidate_ids' => $candidate_ids,
+                'has_more'      => $has_more ? 'yes' : 'no',
+            ]
+        );
+
+        if ( [] === $candidate_ids ) {
+            $log[] = $this->log( 'success', 'No more matching posts remain for this batch request.' );
+
+            return [
+                'mode'                => $mode,
+                'criteria'            => $criteria,
+                'batch_size'          => $batch_size,
+                'deleted_ids'         => [],
+                'failed_ids'          => [],
+                'preserved_ids'       => $preserve_ids,
+                'exclude_ids'         => $exclude_ids,
+                'deleted_count'       => 0,
+                'failed_count'        => 0,
+                'deleted_media_count' => 0,
+                'has_more'            => false,
+                'log'                 => $log,
+            ];
+        }
+
+        $deleted_ids         = [];
+        $failed_ids          = [];
+        $deleted_media_count = 0;
+
+        foreach ( $candidate_ids as $post_id ) {
+            $result = $this->delete_post( (int) $post_id, $delete_media );
+            if ( $result instanceof \WP_Error ) {
+                $failed_ids[] = (int) $post_id;
+                $log[]        = $this->log(
+                    'error',
+                    'Batch article deletion failed.',
+                    [
+                        'post_id' => (int) $post_id,
+                        'error'   => $result->get_error_message(),
+                    ]
+                );
+                continue;
+            }
+
+            $deleted_ids[]         = (int) $post_id;
+            $deleted_media_count  += count( (array) ( $result['deleted_media'] ?? [] ) );
+            $log                   = array_merge( $log, (array) ( $result['log'] ?? [] ) );
+        }
+
+        if ( [] !== $failed_ids ) {
+            $exclude_ids = array_values( array_unique( array_merge( $exclude_ids, $failed_ids ) ) );
+            $log[]       = $this->log(
+                'warning',
+                'Failed post IDs will be excluded from follow-up batches to prevent a retry loop.',
+                [ 'failed_ids' => $failed_ids ]
+            );
+        }
+
+        $log[] = $this->log(
+            'success',
+            'Completed article deletion batch.',
+            [
+                'deleted_count'       => count( $deleted_ids ),
+                'failed_count'        => count( $failed_ids ),
+                'deleted_media_count' => $deleted_media_count,
+                'has_more'            => $has_more ? 'yes' : 'no',
+            ]
+        );
+
+        return [
+            'mode'                => $mode,
+            'criteria'            => $criteria,
+            'batch_size'          => $batch_size,
+            'deleted_ids'         => $deleted_ids,
+            'failed_ids'          => $failed_ids,
+            'preserved_ids'       => $preserve_ids,
+            'exclude_ids'         => $exclude_ids,
+            'deleted_count'       => count( $deleted_ids ),
+            'failed_count'        => count( $failed_ids ),
+            'deleted_media_count' => $deleted_media_count,
+            'has_more'            => $has_more,
+            'log'                 => $log,
+        ];
+    }
+
     public function normalize_criteria( array $criteria ): array {
         $defaults = $this->config->default_criteria();
         $criteria = array_merge( $defaults, $criteria );
@@ -204,6 +337,35 @@ final class ArticleMediaCleanupScanner {
         return $items;
     }
 
+    private function matching_ids( array $criteria, int $limit, array $exclude_ids ): array {
+        if ( $limit <= 0 || ! function_exists( 'get_posts' ) ) {
+            return [];
+        }
+
+        $args = [
+            'post_type'              => $criteria['post_type'],
+            'post_status'            => $this->query_statuses( $criteria['status'] ),
+            'posts_per_page'         => $limit,
+            'orderby'                => 'date',
+            'order'                  => 'DESC',
+            'fields'                 => 'ids',
+            'ignore_sticky_posts'    => true,
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ];
+
+        if ( [] !== $exclude_ids ) {
+            $args['post__not_in'] = $exclude_ids;
+        }
+
+        if ( '' !== $criteria['search'] ) {
+            $args['s'] = $criteria['search'];
+        }
+
+        return $this->normalize_ids( get_posts( $args ) );
+    }
+
     private function editable_post_or_error( int $post_id ): \WP_Post|\WP_Error {
         if ( $post_id <= 0 ) {
             return new \WP_Error( 'missing_post_id', 'Missing article ID.' );
@@ -252,6 +414,18 @@ final class ArticleMediaCleanupScanner {
 
     private function sanitize_text( string $value ): string {
         return function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+    }
+
+    private function normalize_ids( array $ids ): array {
+        $clean = [];
+        foreach ( $ids as $id ) {
+            $id = function_exists( 'absint' ) ? absint( $id ) : abs( (int) $id );
+            if ( $id > 0 ) {
+                $clean[] = $id;
+            }
+        }
+
+        return array_values( array_unique( $clean ) );
     }
 
     private function clean_key( string $value ): string {

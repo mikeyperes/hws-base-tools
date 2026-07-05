@@ -9,12 +9,13 @@ final class ArticleMediaCleanupConfig {
         $defaults = [
             'root_id'             => 'hpc-article-media-cleanup',
             'title'               => 'Article & Media Cleanup',
-            'description'         => 'Filter articles, keep the most recent posts, and delete selected posts with optional associated media cleanup.',
+            'description'         => 'Filter articles, preview matches, and run AJAX batch deletion against all matching posts with optional associated media cleanup.',
             'capability'          => 'manage_options',
             'nonce_action'        => 'hpc_article_media_cleanup',
             'nonce_field'         => 'nonce',
             'scan_action'         => 'hpc_article_media_cleanup_scan',
             'delete_action'       => 'hpc_article_media_cleanup_delete',
+            'batch_delete_action' => 'hpc_article_media_cleanup_batch_delete',
             'post_types'          => [ 'post' => 'Posts' ],
             'statuses'            => [
                 'publish' => 'Published',
@@ -28,6 +29,8 @@ final class ArticleMediaCleanupConfig {
             'default_keep_recent' => 0,
             'default_limit'       => 50,
             'max_limit'           => 250,
+            'default_batch_size'  => 50,
+            'max_batch_size'      => 100,
             'empty_message'       => 'No matching articles were detected for the selected filters.',
         ];
 
@@ -36,6 +39,7 @@ final class ArticleMediaCleanupConfig {
         $values['nonce_field']         = $this->clean_key( (string) $values['nonce_field'] );
         $values['scan_action']         = $this->clean_key( (string) $values['scan_action'] );
         $values['delete_action']       = $this->clean_key( (string) $values['delete_action'] );
+        $values['batch_delete_action'] = $this->clean_key( (string) $values['batch_delete_action'] );
         $values['post_types']          = $this->normalize_options( (array) $values['post_types'], [ 'post' => 'Posts' ] );
         $values['statuses']            = $this->normalize_options( (array) $values['statuses'], [ 'publish' => 'Published' ] );
         $values['default_post_type']   = $this->clean_key( (string) $values['default_post_type'] );
@@ -43,6 +47,8 @@ final class ArticleMediaCleanupConfig {
         $values['default_keep_recent'] = max( 0, (int) $values['default_keep_recent'] );
         $values['default_limit']       = max( 1, (int) $values['default_limit'] );
         $values['max_limit']           = max( 1, (int) $values['max_limit'] );
+        $values['default_batch_size']  = max( 1, (int) $values['default_batch_size'] );
+        $values['max_batch_size']      = max( 1, (int) $values['max_batch_size'] );
 
         if ( ! isset( $values['post_types'][ $values['default_post_type'] ] ) ) {
             $values['default_post_type'] = array_key_first( $values['post_types'] );
@@ -83,6 +89,10 @@ final class ArticleMediaCleanupConfig {
         return (string) $this->get( 'delete_action' );
     }
 
+    public function batch_delete_action(): string {
+        return (string) $this->get( 'batch_delete_action' );
+    }
+
     public function post_types(): array {
         return (array) $this->get( 'post_types', [] );
     }
@@ -103,6 +113,14 @@ final class ArticleMediaCleanupConfig {
 
     public function max_limit(): int {
         return (int) $this->get( 'max_limit', 250 );
+    }
+
+    public function default_batch_size(): int {
+        return (int) $this->get( 'default_batch_size', 50 );
+    }
+
+    public function max_batch_size(): int {
+        return (int) $this->get( 'max_batch_size', 100 );
     }
 
     private function normalize_options( array $options, array $fallback ): array {

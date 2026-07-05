@@ -31,6 +31,9 @@ final class ArticleMediaCleanupAjaxController implements ModuleInterface {
                 $this->config->delete_action() => [
                     'callback' => [ $this, 'delete' ],
                 ],
+                $this->config->batch_delete_action() => [
+                    'callback' => [ $this, 'batch_delete' ],
+                ],
             ]
         );
     }
@@ -51,6 +54,22 @@ final class ArticleMediaCleanupAjaxController implements ModuleInterface {
         return $this->scanner->delete_post(
             $request->int( 'post_id' ),
             $request->bool( 'delete_media' )
+        );
+    }
+
+    public function batch_delete( AjaxRequest $request ): array|\WP_Error {
+        return $this->scanner->delete_batch(
+            [
+                'post_type'   => $request->key( 'post_type' ),
+                'status'      => $request->key( 'status' ),
+                'keep_recent' => $request->int( 'keep_recent' ),
+                'search'      => $request->text( 'search' ),
+                'limit'       => $request->int( 'limit' ),
+            ],
+            $request->bool( 'delete_media' ),
+            $request->key( 'batch_mode' ),
+            $request->int( 'batch_size' ),
+            array_map( 'absint', $request->items( 'exclude_ids' ) )
         );
     }
 }

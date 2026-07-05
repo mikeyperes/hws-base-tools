@@ -103,7 +103,9 @@ Use `ContentCleanupConfig` for host-specific action names, nonce settings, allow
 
 Use `BackupCleanupConfig`, `BackupCleanupAjaxController`, and `BackupCleanupRenderer` when a plugin needs a reusable backup-file cleanup table. The host plugin supplies configured roots and allowed extensions; Core renders a collapsed description subcard, a visible scan-location subcard with configured paths/extensions/resolved directories, scans those locations, logs every configured location, returns row IDs, and deletes only files that still match the configured roots/extensions.
 
-Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` when a plugin needs reusable post cleanup. Core renders filters, "keep most recent X posts", select-all/row selection, row-by-row AJAX deletion, and optional associated media deletion. Media deletion is off by default and only runs when the visible checkbox is enabled. Associated media includes featured images plus inline/gallery attachment IDs detected from post content.
+Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` when a plugin needs reusable post cleanup. Core renders filters, "keep most recent X posts", select-all/row selection, row-by-row AJAX deletion, all-matching batch deletion, all-except-latest-X batch deletion, and optional associated media deletion. Media deletion is off by default and only runs when the visible checkbox is enabled. Associated media includes featured images plus inline/gallery attachment IDs detected from post content.
+
+Batch deletion is intentionally separate from the preview table. `limit` only controls the visible preview rows. The batch actions use `post_type`, `status`, `search`, and the selected mode across all matching posts. Use `batch_delete_action`, `default_batch_size`, and `max_batch_size` to configure the plugin-specific AJAX endpoint and per-request batch limits.
 
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
 
@@ -252,11 +254,14 @@ use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupRenderer;
 
 $article_config = new ArticleMediaCleanupConfig([
-    'root_id'       => 'example-article-cleanup',
-    'nonce_action'  => 'example_cleanup',
-    'scan_action'   => 'example_article_scan',
-    'delete_action' => 'example_article_delete',
-    'post_types'    => [ 'post' => 'Posts' ],
+    'root_id'             => 'example-article-cleanup',
+    'nonce_action'        => 'example_cleanup',
+    'scan_action'         => 'example_article_scan',
+    'delete_action'       => 'example_article_delete',
+    'batch_delete_action' => 'example_article_batch_delete',
+    'post_types'          => [ 'post' => 'Posts' ],
+    'default_batch_size'  => 50,
+    'max_batch_size'      => 100,
 ]);
 
 ( new ArticleMediaCleanupAjaxController( $article_config ) )->register();
