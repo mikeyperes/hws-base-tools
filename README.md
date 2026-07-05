@@ -61,6 +61,9 @@ Active theme verification, auto-update status, batch delete, warning for >2 them
 ## Features Tab
 Structured feature management with toggles, optional settings, use instructions, code examples, test reports, and activity logs.
 
+## Getting Started Checklist Tab
+Reusable Hexa WP Core startup process runner. HWS registers environment, plugin version, core version, site identity, and permalink checks; Hexa WP Core provides the checklist UI, guarded AJAX execution, sequential subtasks, spinner/check/X states, and technical activity log.
+
 ## Brand Assets Tab
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions

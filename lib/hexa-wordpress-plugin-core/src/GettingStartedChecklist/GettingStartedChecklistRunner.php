@@ -1,0 +1,242 @@
+<?php
+
+namespace Hexa\PluginCore\GettingStartedChecklist;
+
+use Throwable;
+
+final class GettingStartedChecklistRunner {
+    private GettingStartedChecklistConfig $config;
+
+    public function __construct( GettingStartedChecklistConfig|array $config ) {
+        $this->config = is_array( $config ) ? new GettingStartedChecklistConfig( $config ) : $config;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function run_item( string $step_id, string $subtask_id = '' ): array {
+        $step = $this->config->find_step( $step_id );
+        if ( ! $step instanceof GettingStartedChecklistStep ) {
+            return $this->failure_payload(
+                $step_id,
+                $subtask_id,
+                'Unknown checklist step.',
+                [
+                    $this->log_entry( 'error', 'Requested checklist step was not registered.', [ 'step_id' => $step_id ] ),
+                ]
+            );
+        }
+
+        $subtask = '' !== $subtask_id ? $step->find_subtask( $subtask_id ) : null;
+        if ( '' !== $subtask_id && ! $subtask instanceof GettingStartedChecklistSubtask ) {
+            return $this->failure_payload(
+                $step->id,
+                $subtask_id,
+                'Unknown checklist subtask.',
+                [
+                    $this->log_entry( 'error', 'Requested checklist subtask was not registered.', [ 'step_id' => $step->id, 'subtask_id' => $subtask_id ] ),
+                ]
+            );
+        }
+
+        $callback = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->callback : $step->callback;
+        $label    = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->label : $step->label;
+        $context  = $subtask instanceof GettingStartedChecklistSubtask ? array_merge( $step->context, $subtask->context ) : $step->context;
+        $logs     = [
+            $this->log_entry(
+                'info',
+                'Starting checklist item.',
+                [
+                    'step_id'    => $step->id,
+                    'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+                    'label'      => $label,
+                ]
+            ),
+        ];
+
+        if ( ! is_callable( $callback ) ) {
+            $message = 'No callback registered; item marked complete.';
+            $logs[]  = $this->log_entry( 'success', $message, [ 'label' => $label ] );
+
+            return $this->success_payload( $step, $subtask, $message, $logs );
+        }
+
+        try {
+            $result = call_user_func(
+                $callback,
+                [
+                    'step'       => $step->to_public_array(),
+                    'subtask'    => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->to_public_array() : null,
+                    'context'    => $context,
+                    'is_subtask' => $subtask instanceof GettingStartedChecklistSubtask,
+                    'item_id'    => $subtask instanceof GettingStartedChecklistSubtask ? $step->id . ':' . $subtask->id : $step->id,
+                ]
+            );
+        } catch ( Throwable $throwable ) {
+            $message = 'Checklist item failed: ' . $throwable->getMessage();
+            $logs[]  = $this->log_entry(
+                'error',
+                $message,
+                [
+                    'step_id'    => $step->id,
+                    'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+                    'exception'  => get_class( $throwable ),
+                ]
+            );
+
+            return $this->failure_payload( $step->id, $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '', $message, $logs );
+        }
+
+        $normalized = $this->normalize_result( $result, $label );
+        $logs       = array_merge( $logs, $normalized['logs'] );
+
+        if ( $normalized['success'] ) {
+            $logs[] = $this->log_entry( 'success', $normalized['message'], [ 'label' => $label ] );
+
+            return $this->success_payload( $step, $subtask, $normalized['message'], $logs, $normalized['data'] );
+        }
+
+        $logs[] = $this->log_entry( 'error', $normalized['message'], [ 'label' => $label ] );
+
+        return $this->failure_payload( $step->id, $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '', $normalized['message'], $logs, $normalized['data'] );
+    }
+
+    /**
+     * @param mixed $result
+     * @return array{success:bool,message:string,logs:array<int,array<string,mixed>>,data:array<string,mixed>}
+     */
+    private function normalize_result( mixed $result, string $label ): array {
+        if ( function_exists( 'is_wp_error' ) && is_wp_error( $result ) ) {
+            return [
+                'success' => false,
+                'message' => $result->get_error_message(),
+                'logs'    => [],
+                'data'    => [ 'code' => $result->get_error_code() ],
+            ];
+        }
+
+        if ( is_bool( $result ) ) {
+            return [
+                'success' => $result,
+                'message' => $result ? $label . ' completed.' : $label . ' failed.',
+                'logs'    => [],
+                'data'    => [],
+            ];
+        }
+
+        if ( is_string( $result ) ) {
+            return [
+                'success' => true,
+                'message' => '' !== trim( $result ) ? trim( $result ) : $label . ' completed.',
+                'logs'    => [],
+                'data'    => [],
+            ];
+        }
+
+        if ( is_array( $result ) ) {
+            $success = true;
+            if ( array_key_exists( 'success', $result ) ) {
+                $success = (bool) $result['success'];
+            } elseif ( isset( $result['status'] ) ) {
+                $status  = strtolower( (string) $result['status'] );
+                $success = ! in_array( $status, [ 'failed', 'fail', 'error', 'false' ], true );
+            }
+
+            $message = trim( (string) ( $result['message'] ?? '' ) );
+            if ( '' === $message ) {
+                $message = $success ? $label . ' completed.' : $label . ' failed.';
+            }
+
+            $logs = [];
+            foreach ( (array) ( $result['logs'] ?? $result['log'] ?? [] ) as $entry ) {
+                $logs[] = $this->normalize_log_entry( $entry );
+            }
+
+            $data = is_array( $result['data'] ?? null ) ? $result['data'] : [];
+
+            return [
+                'success' => $success,
+                'message' => $message,
+                'logs'    => $logs,
+                'data'    => $data,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => $label . ' completed.',
+            'logs'    => [],
+            'data'    => [],
+        ];
+    }
+
+    /**
+     * @param GettingStartedChecklistSubtask|null $subtask
+     * @param array<int,array<string,mixed>> $logs
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private function success_payload( GettingStartedChecklistStep $step, ?GettingStartedChecklistSubtask $subtask, string $message, array $logs, array $data = [] ): array {
+        return [
+            'success'    => true,
+            'status'     => 'success',
+            'step_id'    => $step->id,
+            'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+            'message'    => $message,
+            'logs'       => $logs,
+            'data'       => $data,
+        ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $logs
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private function failure_payload( string $step_id, string $subtask_id, string $message, array $logs = [], array $data = [] ): array {
+        return [
+            'success'    => false,
+            'status'     => 'failed',
+            'step_id'    => $step_id,
+            'subtask_id' => $subtask_id,
+            'message'    => $message,
+            'logs'       => $logs,
+            'data'       => $data,
+        ];
+    }
+
+    /**
+     * @param mixed $entry
+     * @return array<string,mixed>
+     */
+    private function normalize_log_entry( mixed $entry ): array {
+        if ( is_array( $entry ) ) {
+            return $this->log_entry(
+                (string) ( $entry['level'] ?? 'info' ),
+                (string) ( $entry['message'] ?? '' ),
+                is_array( $entry['context'] ?? null ) ? $entry['context'] : []
+            );
+        }
+
+        return $this->log_entry( 'info', is_scalar( $entry ) ? (string) $entry : 'Checklist reported an event.' );
+    }
+
+    /**
+     * @param array<string,mixed> $context
+     * @return array<string,mixed>
+     */
+    private function log_entry( string $level, string $message, array $context = [] ): array {
+        $allowed = [ 'info', 'success', 'warning', 'error' ];
+        $level   = strtolower( $level );
+        if ( ! in_array( $level, $allowed, true ) ) {
+            $level = 'info';
+        }
+
+        return [
+            'time'    => function_exists( 'current_time' ) ? current_time( 'H:i:s' ) : gmdate( 'H:i:s' ),
+            'level'   => $level,
+            'message' => $message,
+            'context' => $context,
+        ];
+    }
+}

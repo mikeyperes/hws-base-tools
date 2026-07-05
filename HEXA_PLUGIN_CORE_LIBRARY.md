@@ -29,6 +29,8 @@ src/ContentCleanup/     Hexa\PluginCore\ContentCleanup
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
 src/FaqSets/            Hexa\PluginCore\FaqSets
+src/GettingStartedChecklist/
+                        Hexa\PluginCore\GettingStartedChecklist
 src/LogFiles/           Hexa\PluginCore\LogFiles
 src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
@@ -110,6 +112,49 @@ Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `Artic
 Batch deletion is intentionally separate from the preview table. `limit` only controls the visible preview rows. The batch actions use `post_type`, `status`, `search`, and the selected mode across all matching posts. Use `batch_delete_action`, `default_batch_size`, and `max_batch_size` to configure the plugin-specific AJAX endpoint and per-request batch limits.
 
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
+
+## Getting Started Checklist
+
+Namespace:
+
+```text
+Hexa\PluginCore\GettingStartedChecklist
+```
+
+Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, and ordered steps. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with parent steps, nested subtasks, spinner/check/X states, sequential AJAX execution, and a dark technical activity log.
+
+Required rules:
+
+- Keep plugin-specific callbacks in the host plugin.
+- Keep checklist UI, AJAX execution, status icons, subtask sequencing, and log rendering in Hexa Core.
+- A parent step with subtasks must stay in the running state until each subtask has finished.
+- Callback returns may be `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
+
+Example:
+
+```php
+$config = new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig([
+    'root_id'      => 'my-plugin-getting-started',
+    'nonce_action' => 'my_plugin_getting_started',
+    'run_action'   => 'my_plugin_getting_started_run_item',
+    'steps'        => [
+        [
+            'id'          => 'environment',
+            'label'       => 'Verify Environment',
+            'subtasks'    => [
+                [
+                    'id'       => 'wordpress',
+                    'label'    => 'WordPress Runtime',
+                    'callback' => 'my_plugin_check_wordpress_runtime',
+                ],
+            ],
+        ],
+    ],
+]);
+
+( new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController($config) )->register();
+( new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer($config) )->render();
+```
 
 ## Plugin Checks And Plugin Inventory
 

@@ -35,6 +35,8 @@ hexa-wordpress-plugin-core/
     CredentialVault/    -> Hexa\PluginCore\CredentialVault
     FieldStructures/    -> Hexa\PluginCore\FieldStructures
     FaqSets/            -> Hexa\PluginCore\FaqSets
+    GettingStartedChecklist/
+                        -> Hexa\PluginCore\GettingStartedChecklist
     LogFiles/           -> Hexa\PluginCore\LogFiles
     PluginChecks/       -> Hexa\PluginCore\PluginChecks
     PluginProvisioning/ -> Hexa\PluginCore\PluginProvisioning
@@ -73,6 +75,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
+- `GettingStartedChecklist`: reusable plugin startup/onboarding checklist UI, step/subtask registration, guarded AJAX execution, sequential subtask processing, spinner/check/X states, callback result normalization, and dark technical activity logs.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
 - `PluginChecks`: shared required-plugin definitions, status checks, reusable collapsible plugin inventory tables, presence-based green/red Font Awesome SVG title indicators, Required/Optional badges, AJAX install/activate actions, update-cache refresh, and activity-log UI.
 - `PluginProvisioning`: shared plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
@@ -190,6 +193,41 @@ $core_config = CorePackageConfig::from_core_root(
 ```
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`. The host plugin updater and the vendored core updater both render as default-open persistent collapse cards. Each card reports the Git repo, Git URL, Git branch, Git version, current version, current-vs-Git comparison, green/red status flag, check-for-updates action, normalized ZIP download, and live update activity log.
+
+## Getting Started Checklist
+
+`Hexa\PluginCore\GettingStartedChecklist` provides the reusable setup checklist that every plugin can use for first-run checks, onboarding, or ordered setup tasks. Host plugins register the step list and callbacks; Core owns the UI, AJAX endpoint, sequential runner, nested subtask processing, spinner/check/X states, and technical activity log.
+
+```php
+use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
+use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
+use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
+
+$config = new GettingStartedChecklistConfig([
+    'root_id'      => 'my-plugin-getting-started',
+    'nonce_action' => 'my_plugin_getting_started',
+    'run_action'   => 'my_plugin_getting_started_run_item',
+    'steps'        => [
+        [
+            'id'          => 'environment',
+            'label'       => 'Verify Environment',
+            'description' => 'Checks WordPress and PHP values.',
+            'subtasks'    => [
+                [
+                    'id'       => 'wordpress',
+                    'label'    => 'WordPress Runtime',
+                    'callback' => 'my_plugin_check_wordpress_runtime',
+                ],
+            ],
+        ],
+    ],
+]);
+
+( new GettingStartedChecklistAjaxController( $config ) )->register();
+( new GettingStartedChecklistRenderer( $config ) )->render();
+```
+
+Callbacks receive a single payload array containing `step`, `subtask`, `context`, `is_subtask`, and `item_id`. Return `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
 
 ## Content Cleanup
 

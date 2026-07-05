@@ -116,6 +116,7 @@ include_once __DIR__ . '/safe-wrappers.php';
 include_once __DIR__ . '/settings-dashboard-site-profile.php';
 include_once __DIR__ . '/settings-dashboard-sitemaps.php';
 include_once __DIR__ . '/settings-dashboard-cleanup.php';
+include_once __DIR__ . '/settings-dashboard-getting-started.php';
 
 function hws_get_structured_plugin() {
     static $plugin = null;
@@ -328,6 +329,7 @@ function hws_load_dashboard_files(): void {
     include_once __DIR__ . "/settings-dashboard-pages.php";
     include_once __DIR__ . "/settings-dashboard-sitemaps.php";
     include_once __DIR__ . "/settings-dashboard-cleanup.php";
+    include_once __DIR__ . "/settings-dashboard-getting-started.php";
 
     $loaded = true;
 }
@@ -443,7 +445,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.82";
+$plugin_version = "10.18.83";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";

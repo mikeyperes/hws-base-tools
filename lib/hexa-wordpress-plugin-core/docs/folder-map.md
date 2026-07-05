@@ -37,6 +37,7 @@ The package version is stored in the root `VERSION` file.
 | `src/CredentialVault/` | `Hexa\PluginCore\CredentialVault` | Encrypted credential/API-key storage, masking, and credential field examples. |
 | `src/FieldStructures/` | `Hexa\PluginCore\FieldStructures` | Reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed field structures. |
 | `src/FaqSets/` | `Hexa\PluginCore\FaqSets` | FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output. |
+| `src/GettingStartedChecklist/` | `Hexa\PluginCore\GettingStartedChecklist` | Reusable getting-started checklist config, step/subtask definitions, guarded AJAX runner, sequential setup UI, and technical activity logs. |
 | `src/LogFiles/` | `Hexa\PluginCore\LogFiles` | Error-log sources, readers, classifiers, and reusable viewer panels. |
 | `src/PluginProvisioning/` | `Hexa\PluginCore\PluginProvisioning` | Plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation. |
 | `src/PluginUpdates/` | `Hexa\PluginCore\PluginUpdates` | Host plugin GitHub version checks, update transients, zip downloads, and updater panels. |
