@@ -14,6 +14,28 @@ final class BackupCleanupScanner {
             $this->log( 'info', 'Scanning configured backup locations.' ),
         ];
 
+        foreach ( $this->config->locations() as $location ) {
+            $dirs          = $this->directories_for_location( $location );
+            $readable_dirs = array_values(
+                array_filter(
+                    $dirs,
+                    static fn( string $dir ): bool => is_dir( $dir ) && is_readable( $dir )
+                )
+            );
+
+            $log[] = $this->log(
+                [] !== $readable_dirs ? 'info' : 'warning',
+                [] !== $readable_dirs ? 'Prepared backup scan location.' : 'Backup scan location has no readable directories.',
+                [
+                    'source'               => (string) ( $location['name'] ?? $location['id'] ?? 'Backup location' ),
+                    'configured_path'      => (string) ( $location['path'] ?? '' ),
+                    'allowed_extensions'   => array_values( (array) ( $location['extensions'] ?? [] ) ),
+                    'resolved_directories' => $dirs,
+                    'readable_directories' => $readable_dirs,
+                ]
+            );
+        }
+
         $rows = $this->rows();
         $log[] = $this->log( 'success', 'Detected ' . count( $rows ) . ' backup file(s).' );
 

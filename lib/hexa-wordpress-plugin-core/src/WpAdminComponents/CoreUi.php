@@ -25,6 +25,15 @@ final class CoreUi {
             .hpc-card h3,.hpc-subcard h4{font-size:15px;margin:0 0 8px}
             .hpc-card p,.hpc-subcard p{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 10px}
             .hpc-subcard{background:#fbfcfe}
+            .hpc-detail-card{background:#fbfcfe;border:1px solid var(--hpc-line);border-radius:8px;margin:0 0 14px;overflow:hidden}
+            .hpc-detail-card summary{align-items:center;cursor:pointer;display:flex;font-size:13px;font-weight:800;gap:10px;justify-content:space-between;list-style:none;padding:12px 14px}
+            .hpc-detail-card summary::-webkit-details-marker{display:none}
+            .hpc-detail-card-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .hpc-detail-card-side{align-items:center;display:inline-flex;flex:0 0 auto;gap:8px;margin-left:auto}
+            .hpc-detail-card-toggle{align-items:center;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;color:var(--hpc-blue);display:inline-flex;height:24px;justify-content:center;width:24px}
+            .hpc-detail-card-toggle svg{display:block;fill:currentColor;height:10px;transform:rotate(180deg);transition:transform .18s;width:10px}
+            .hpc-detail-card:not([open]) .hpc-detail-card-toggle svg{transform:rotate(0deg)}
+            .hpc-detail-card-body{border-top:1px solid var(--hpc-line);padding:14px}
             .hpc-pill{align-items:center;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;color:#2944ad;display:inline-flex;font-size:12px;font-weight:700;gap:6px;line-height:1;padding:7px 10px}
             .hpc-pill.success{background:#eaf8ef;border-color:#ccefd7;color:var(--hpc-green)}
             .hpc-pill.warning{background:#fff7e0;border-color:#f5df9c;color:var(--hpc-amber)}
@@ -201,6 +210,18 @@ final class CoreUi {
             . ( '' !== $title ? '<h4>' . esc_html( $title ) . '</h4>' : '' )
             . $body
             . '</article>';
+    }
+
+    public static function detail_card( array $args ): string {
+        $title       = isset( $args['title'] ) ? (string) $args['title'] : '';
+        $body        = isset( $args['body_html'] ) ? (string) $args['body_html'] : '';
+        $open        = ! empty( $args['open'] ) ? ' open' : '';
+        $meta        = isset( $args['meta_html'] ) ? (string) $args['meta_html'] : '';
+        $persist_key = isset( $args['persist_key'] ) ? (string) $args['persist_key'] : '';
+        $persist     = '' !== $persist_key ? ' data-hpc-persist-key="' . esc_attr( $persist_key ) . '"' : '';
+        $toggle      = '<span class="hpc-detail-card-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>';
+
+        return '<details class="hpc-detail-card"' . $open . $persist . '><summary><span class="hpc-detail-card-title">' . esc_html( $title ) . '</span><span class="hpc-detail-card-side">' . $meta . $toggle . '</span></summary><div class="hpc-detail-card-body">' . $body . '</div></details>';
     }
 
     public static function collapsible( array $args ): string {

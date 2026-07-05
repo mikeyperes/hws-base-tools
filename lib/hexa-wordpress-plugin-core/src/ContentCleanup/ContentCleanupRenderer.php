@@ -26,6 +26,14 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?>{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:#3f4d63;font-size:13px;line-height:1.6;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-list{display:grid;gap:10px;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item{background:#fff;border:1px solid #e1e7f0;border-radius:8px;padding:12px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head strong{font-size:13px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-body{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 8px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-meta{color:var(--hpc-muted);display:grid;font-size:12px;gap:4px;line-height:1.45;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-empty{color:var(--hpc-muted);font-size:13px;margin:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
@@ -72,7 +80,8 @@ final class ContentCleanupRenderer {
             </style>
 
             <?php ob_start(); ?>
-                <p class="hpc-cleanup-section-description"><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
+                <?php echo $this->description_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo $this->rules_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <?php if ( $show_filters ) : ?>
                     <?php
                     echo CoreUi::collapsible(
@@ -346,6 +355,98 @@ final class ContentCleanupRenderer {
         </form>
         <?php
         return (string) ob_get_clean();
+    }
+
+    private function description_card(): string {
+        $description = trim( (string) $this->config->get( 'description' ) );
+        if ( '' === $description ) {
+            $description = 'Review the generated cleanup report before using any destructive action.';
+        }
+
+        $body = '<p class="hpc-cleanup-description-text">' . esc_html( $description ) . '</p>';
+
+        return CoreUi::detail_card(
+            [
+                'title'       => 'Description',
+                'open'        => false,
+                'persist_key' => $this->config->root_id() . '-description',
+                'body_html'   => $body,
+            ]
+        );
+    }
+
+    private function rules_card(): string {
+        $rules = $this->config->detection_rules();
+
+        if ( [] === $rules ) {
+            $body = '<p class="hpc-cleanup-rule-empty">No fixed detection rules are configured. This scan uses the visible filters above to build the WordPress content query.</p>';
+        } else {
+            $items = '';
+            foreach ( $rules as $rule ) {
+                $items .= $this->rule_item_html( $rule );
+            }
+            $body = '<div class="hpc-cleanup-rule-list">' . $items . '</div>';
+        }
+
+        return CoreUi::detail_card(
+            [
+                'title'       => 'Detection Rules',
+                'open'        => true,
+                'persist_key' => $this->config->root_id() . '-rules',
+                'meta_html'   => CoreUi::pill( count( $rules ) . ' rule' . ( 1 === count( $rules ) ? '' : 's' ), 'dark' ),
+                'body_html'   => $body,
+            ]
+        );
+    }
+
+    private function rule_item_html( array $rule ): string {
+        $terms      = array_map( static fn( string $term ): string => '"' . $term . '"', (array) ( $rule['terms'] ?? [] ) );
+        $fields     = array_map( [ $this, 'field_label' ], (array) ( $rule['fields'] ?? [] ) );
+        $match      = 'contains' === (string) ( $rule['match'] ?? 'word' ) ? 'contains match' : 'whole-word match';
+        $tone       = (string) ( $rule['tone'] ?? 'warning' );
+        $tone_label = [
+            'warning' => 'Yellow flag',
+            'danger'  => 'Red flag',
+            'success' => 'Green flag',
+            'dark'    => 'Dark flag',
+            'info'    => 'Info flag',
+        ][ $tone ] ?? 'Flag';
+        $description = trim( (string) ( $rule['description'] ?? '' ) );
+        if ( '' === $description ) {
+            $description = 'Flags content when the configured terms match the selected fields.';
+        }
+
+        $exclude_parts = [];
+        if ( ! empty( $rule['exclude_option_ids'] ) ) {
+            $exclude_parts[] = 'WordPress option IDs: ' . implode( ', ', array_map( static fn( mixed $value ): string => (string) $value, (array) $rule['exclude_option_ids'] ) );
+        }
+        if ( ! empty( $rule['exclude_post_ids'] ) ) {
+            $exclude_parts[] = 'Post IDs: ' . implode( ', ', array_map( 'absint', (array) $rule['exclude_post_ids'] ) );
+        }
+
+        $meta = [
+            'Terms: ' . esc_html( implode( ', ', $terms ) ),
+            'Fields checked: ' . esc_html( implode( ', ', $fields ) ),
+            'Match type: ' . esc_html( $match ),
+        ];
+        if ( [] !== $exclude_parts ) {
+            $meta[] = 'Exclusions: ' . esc_html( implode( '; ', $exclude_parts ) );
+        }
+
+        return '<article class="hpc-cleanup-rule-item">'
+            . '<div class="hpc-cleanup-rule-head"><strong>' . esc_html( (string) ( $rule['label'] ?? 'Rule' ) ) . '</strong>' . CoreUi::pill( $tone_label, $tone ) . '</div>'
+            . '<p class="hpc-cleanup-rule-body">' . esc_html( $description ) . '</p>'
+            . '<div class="hpc-cleanup-rule-meta"><span>' . implode( '</span><span>', $meta ) . '</span></div>'
+            . '</article>';
+    }
+
+    private function field_label( string $field ): string {
+        return [
+            'title'   => 'Title',
+            'slug'    => 'Slug',
+            'content' => 'Content',
+            'excerpt' => 'Excerpt',
+        ][ $field ] ?? ucwords( str_replace( '_', ' ', $field ) );
     }
 
     private function select_html( string $name, array $options, string $selected ): string {

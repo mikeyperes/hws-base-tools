@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.76 (Current)
+### v10.18.77 (Current)
+- Updated vendored Hexa WP Core to 0.19.13 so Cleanup shows collapsed description subcards, visible detection rules, and a detailed Backup Files scan-location list with resolved directory status.
+
+### v10.18.76
 - Updated vendored Hexa WP Core to 0.19.12 so Core toggle inputs cannot create horizontal page overflow on the Cleanup tab.
 
 ### v10.18.75

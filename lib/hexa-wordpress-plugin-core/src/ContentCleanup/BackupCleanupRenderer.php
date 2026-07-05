@@ -22,7 +22,8 @@ final class BackupCleanupRenderer {
         <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-cleanup-module hpc-backup-cleanup" data-hpc-backup-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>">
             <?php $this->styles( $root_id ); ?>
             <?php ob_start(); ?>
-                <p class="hpc-cleanup-section-description"><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
+                <?php echo $this->description_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo $this->locations_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <div class="hpc-actions" style="margin:0 0 14px;">
                     <?php echo DynamicButton::render( [ 'label' => 'Scan Backup Files', 'working_label' => 'Scanning...', 'success_label' => 'Scanned', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-backup-scan' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
@@ -56,6 +57,16 @@ final class BackupCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?>{margin-top:14px;max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:#3f4d63;font-size:13px;line-height:1.6;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-list{display:grid;gap:10px;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location{background:#fff;border:1px solid #e1e7f0;border-radius:8px;padding:12px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head strong{font-size:13px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-meta{color:#3f4d63;display:grid;font-size:12px;gap:5px;line-height:1.5;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-path{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;overflow-wrap:anywhere}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs{margin:4px 0 0 18px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs li{margin:3px 0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-empty{color:var(--hpc-muted);font-size:13px;margin:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:980px;width:100%}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
@@ -104,6 +115,87 @@ final class BackupCleanupRenderer {
             <div class="hpc-cleanup-log-body" data-backup-log-body></div>
         </details>
         <?php
+    }
+
+    private function description_card(): string {
+        $description = trim( (string) $this->config->get( 'description' ) );
+        if ( '' === $description ) {
+            $description = 'Scan configured backup locations and delete selected files through guarded AJAX actions.';
+        }
+
+        return CoreUi::detail_card(
+            [
+                'title'       => 'Description',
+                'open'        => false,
+                'persist_key' => $this->config->root_id() . '-description',
+                'body_html'   => '<p class="hpc-cleanup-description-text">' . esc_html( $description ) . '</p>',
+            ]
+        );
+    }
+
+    private function locations_card(): string {
+        $locations = $this->config->locations();
+
+        if ( [] === $locations ) {
+            $body = '<p class="hpc-backup-location-empty">No backup locations are configured for this cleanup service.</p>';
+        } else {
+            $items = '';
+            foreach ( $locations as $location ) {
+                $items .= $this->location_item_html( $location );
+            }
+            $body = '<div class="hpc-backup-location-list">' . $items . '</div>';
+        }
+
+        return CoreUi::detail_card(
+            [
+                'title'       => 'Scan Locations',
+                'open'        => true,
+                'persist_key' => $this->config->root_id() . '-locations',
+                'meta_html'   => CoreUi::pill( count( $locations ) . ' configured', 'dark' ),
+                'body_html'   => $body,
+            ]
+        );
+    }
+
+    private function location_item_html( array $location ): string {
+        $path       = (string) ( $location['path'] ?? '' );
+        $extensions = array_values( array_map( static fn( mixed $extension ): string => (string) $extension, (array) ( $location['extensions'] ?? [] ) ) );
+        $resolved   = $this->resolved_directories( $path );
+        $exists     = [] !== array_filter( $resolved, 'is_dir' );
+        $readable   = [] !== array_filter( $resolved, 'is_readable' );
+        $state      = $readable ? CoreUi::pill( 'Readable', 'success' ) : ( $exists ? CoreUi::pill( 'Not readable', 'danger' ) : CoreUi::pill( 'No directory found', 'warning' ) );
+
+        $dirs_html = '<span class="hpc-backup-location-empty">No matching directories currently exist.</span>';
+        if ( [] !== $resolved ) {
+            $dirs = '';
+            foreach ( $resolved as $directory ) {
+                $label = is_dir( $directory ) ? ( is_readable( $directory ) ? 'readable' : 'not readable' ) : 'missing';
+                $dirs .= '<li><span class="hpc-backup-location-path">' . esc_html( $directory ) . '</span> <span class="hpc-cleanup-muted">(' . esc_html( $label ) . ')</span></li>';
+            }
+            $dirs_html = '<ul class="hpc-backup-location-dirs">' . $dirs . '</ul>';
+        }
+
+        return '<article class="hpc-backup-location">'
+            . '<div class="hpc-backup-location-head"><strong>' . esc_html( (string) ( $location['name'] ?? $location['id'] ?? 'Backup location' ) ) . '</strong>' . $state . '</div>'
+            . '<div class="hpc-backup-location-meta">'
+            . '<span><strong>Configured path:</strong> <span class="hpc-backup-location-path">' . esc_html( $path ) . '</span></span>'
+            . '<span><strong>Allowed extensions:</strong> ' . esc_html( implode( ', ', $extensions ) ) . '</span>'
+            . '<span><strong>Resolved directories scanned:</strong></span>' . $dirs_html
+            . '</div>'
+            . '</article>';
+    }
+
+    private function resolved_directories( string $path ): array {
+        if ( '' === $path ) {
+            return [];
+        }
+
+        if ( false !== strpos( $path, '*' ) ) {
+            $matches = glob( $path, GLOB_ONLYDIR );
+            return is_array( $matches ) ? array_values( $matches ) : [];
+        }
+
+        return [ $path ];
     }
 
     private function script( string $root_id ): void {
