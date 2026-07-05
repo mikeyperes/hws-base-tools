@@ -24,13 +24,17 @@ final class ArticleMediaCleanupRenderer {
             <?php $this->styles( $root_id ); ?>
             <?php ob_start(); ?>
                 <p class="hpc-cleanup-section-description"><?php echo esc_html( (string) $this->config->get( 'description' ) ); ?></p>
-                <?php echo CoreUi::collapsible( [ 'title' => 'Article Filters', 'open' => true, 'persist_key' => $root_id . '-filters', 'body_html' => $this->filters_html( $defaults ) ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <div class="hpc-cleanup-table-wrap">
-                    <table class="hpc-cleanup-table">
-                        <thead><tr><th><label><input type="checkbox" data-article-select-all> Select</label></th><th>Article</th><th>Status</th><th>Published</th><th>Author</th><th>Associated Media</th><th>Edit</th><th>Row Action</th></tr></thead>
-                        <tbody data-article-results><tr><td colspan="8" class="hpc-cleanup-muted">Press Scan Articles to preview matching posts.</td></tr></tbody>
-                    </table>
-                </div>
+                <?php echo $this->primary_batch_html( $defaults ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php
+                echo CoreUi::collapsible(
+                    [
+                        'title'       => 'Advanced Filters & Preview',
+                        'open'        => false,
+                        'persist_key' => $root_id . '-filters',
+                        'body_html'   => $this->filters_html( $defaults ) . $this->preview_table_html(),
+                    ]
+                ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                ?>
                 <?php $this->log_html(); ?>
             <?php
             $section_body = (string) ob_get_clean();
@@ -49,27 +53,65 @@ final class ArticleMediaCleanupRenderer {
         <?php
     }
 
+    private function primary_batch_html( array $defaults ): string {
+        $keep_recent = max( 1, (int) ( $defaults['keep_recent'] ?? 25 ) );
+
+        ob_start();
+        ?>
+        <section class="hpc-article-primary-batch" aria-label="Article batch deletion">
+            <article class="hpc-article-batch-card">
+                <div>
+                    <h4>Delete All Matching Posts</h4>
+                    <p>Deletes every post matched by the current advanced filters. Defaults to published posts with no search filter.</p>
+                </div>
+                <?php echo CoreUi::toggle( 'delete_media_all_matching', false, 'Delete associated media', [ 'tooltip' => 'Deletes detected featured images plus inline/gallery image attachments after each post is deleted.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo DynamicButton::render( [ 'label' => 'Delete All Matching Posts', 'working_label' => 'Deleting...', 'success_label' => 'Deleted', 'class' => 'hpc-button danger', 'attrs' => [ 'data-article-delete-batch' => true, 'data-batch-mode' => 'all_matching' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </article>
+            <article class="hpc-article-batch-card">
+                <div>
+                    <h4>Delete Matching Except Latest X</h4>
+                    <p>Preserves the newest matching posts, then deletes the rest.</p>
+                </div>
+                <label class="hpc-field hpc-article-keep-field">
+                    <span>Keep Latest Posts</span>
+                    <input type="number" min="1" max="5000" value="<?php echo esc_attr( (string) $keep_recent ); ?>" data-batch-keep-recent>
+                </label>
+                <?php echo CoreUi::toggle( 'delete_media_except_latest', false, 'Delete associated media', [ 'tooltip' => 'Deletes detected featured images plus inline/gallery image attachments after each deleted post.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo DynamicButton::render( [ 'label' => 'Delete Matching Except Latest X', 'working_label' => 'Deleting...', 'success_label' => 'Deleted', 'class' => 'hpc-button danger', 'attrs' => [ 'data-article-delete-batch' => true, 'data-batch-mode' => 'all_except_keep_recent' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </article>
+        </section>
+        <?php
+        return (string) ob_get_clean();
+    }
+
     private function filters_html( array $defaults ): string {
         ob_start();
         ?>
         <form class="hpc-article-filters" data-article-filters>
             <label class="hpc-field"><span>Content Type</span><?php echo $this->select_html( 'post_type', $this->config->post_types(), (string) $defaults['post_type'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
             <label class="hpc-field"><span>Status</span><?php echo $this->select_html( 'status', $this->config->statuses(), (string) $defaults['status'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label>
-            <label class="hpc-field"><span>Keep Most Recent</span><input type="number" min="0" max="5000" name="keep_recent" value="<?php echo esc_attr( (string) $defaults['keep_recent'] ); ?>"><div class="hpc-small">Used by the “except latest X” batch action.</div></label>
             <label class="hpc-field hpc-article-filter-wide"><span>Search Title / Content</span><input type="search" name="search" value="" placeholder="Optional keyword"></label>
             <label class="hpc-field"><span>Preview Limit</span><input type="number" min="1" max="<?php echo esc_attr( (string) $this->config->max_limit() ); ?>" name="limit" value="<?php echo esc_attr( (string) $defaults['limit'] ); ?>"><div class="hpc-small">Only affects the preview table.</div></label>
             <label class="hpc-field"><span>Batch Size</span><input type="number" min="1" max="<?php echo esc_attr( (string) $this->config->max_batch_size() ); ?>" name="batch_size" value="<?php echo esc_attr( (string) $this->config->default_batch_size() ); ?>"><div class="hpc-small">Posts deleted per AJAX request.</div></label>
-            <label class="hpc-field hpc-article-toggle"><span>Media Cleanup</span><?php echo CoreUi::toggle( 'delete_media', false, 'Delete associated media', [ 'tooltip' => 'When enabled, featured image plus inline/gallery image attachments detected in the post content are deleted after the post is deleted.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><div class="hpc-small">Off by default. Leave off to delete posts only.</div></label>
+            <label class="hpc-field hpc-article-toggle"><span>Filtered Row Media Cleanup</span><?php echo CoreUi::toggle( 'delete_media_filtered', false, 'Delete associated media', [ 'tooltip' => 'Applies only to Delete Selected and individual row deletes from the preview table.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><div class="hpc-small">Applies to selected rows and row deletes only.</div></label>
             <div class="hpc-actions hpc-article-actions">
                 <?php echo DynamicButton::render( [ 'label' => 'Scan Articles', 'working_label' => 'Scanning...', 'success_label' => 'Scanned', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-article-scan' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <?php echo DynamicButton::render( [ 'label' => 'Delete Selected', 'working_label' => 'Deleting...', 'success_label' => 'Deleted', 'class' => 'hpc-button danger', 'attrs' => [ 'data-article-delete-selected' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </div>
-            <div class="hpc-article-batch-actions">
-                <div class="hpc-article-batch-copy"><strong>Batch deletion ignores Preview Limit.</strong> It uses Content Type, Status, Search, and the selected batch mode across all matching posts.</div>
-                <?php echo DynamicButton::render( [ 'label' => 'Delete All Matching Posts', 'working_label' => 'Deleting...', 'success_label' => 'Deleted', 'class' => 'hpc-button danger', 'attrs' => [ 'data-article-delete-batch' => true, 'data-batch-mode' => 'all_matching' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <?php echo DynamicButton::render( [ 'label' => 'Delete Matching Except Latest X', 'working_label' => 'Deleting...', 'success_label' => 'Deleted', 'class' => 'hpc-button danger', 'attrs' => [ 'data-article-delete-batch' => true, 'data-batch-mode' => 'all_except_keep_recent' ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-            </div>
         </form>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private function preview_table_html(): string {
+        ob_start();
+        ?>
+        <div class="hpc-cleanup-table-wrap">
+            <table class="hpc-cleanup-table">
+                <thead><tr><th><label><input type="checkbox" data-article-select-all> Select</label></th><th>Article</th><th>Status</th><th>Published</th><th>Author</th><th>Associated Media</th><th>Edit</th><th>Row Action</th></tr></thead>
+                <tbody data-article-results><tr><td colspan="8" class="hpc-cleanup-muted">Open filters and press Scan Articles to preview matching posts.</td></tr></tbody>
+            </table>
+        </div>
         <?php
         return (string) ob_get_clean();
     }
@@ -90,12 +132,15 @@ final class ArticleMediaCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?>{margin-top:14px;max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-article-primary-batch{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 14px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-card{align-content:start;background:#fff;border:1px solid var(--hpc-line);border-radius:8px;display:grid;gap:12px;padding:16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-card h4{font-size:15px;margin:0 0 5px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-card p{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-article-keep-field{margin:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:4px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide{grid-column:span 2}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle{grid-column:span 2}
             #<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{align-self:end;grid-column:span 2}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-actions{align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;display:flex;flex-wrap:wrap;gap:10px;grid-column:1/-1;padding:10px 12px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-copy{color:#7c2d12;font-size:12px;line-height:1.4;margin-right:auto;max-width:620px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:1180px;width:100%}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
@@ -130,8 +175,8 @@ final class ArticleMediaCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-level.error{background:#4c1720;color:#ff9cac}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-message{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:650;margin-bottom:4px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-context{color:#9fb1c6;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;word-break:break-word}
-            @media(max-width:1100px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:span 2}}
-            @media(max-width:700px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:1fr}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:auto}#<?php echo esc_attr( $root_id ); ?> .hpc-article-batch-actions{align-items:stretch;flex-direction:column}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{grid-template-columns:1fr}}
+            @media(max-width:1100px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-primary-batch{grid-template-columns:1fr}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:span 2}}
+            @media(max-width:700px){#<?php echo esc_attr( $root_id ); ?> .hpc-article-filters{grid-template-columns:1fr}#<?php echo esc_attr( $root_id ); ?> .hpc-article-filter-wide,#<?php echo esc_attr( $root_id ); ?> .hpc-article-toggle,#<?php echo esc_attr( $root_id ); ?> .hpc-article-actions{grid-column:auto}#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-log-row{grid-template-columns:1fr}}
         </style>
         <?php
     }
@@ -162,9 +207,11 @@ final class ArticleMediaCleanupRenderer {
             function addLog(e){if(!logBody)return;e=e||{};var level=text(e.level||'info').toLowerCase(),ctx=e.context&&Object.keys(e.context).length?JSON.stringify(e.context,null,2):'',row=document.createElement('div');row.className='hpc-cleanup-log-row';row.innerHTML='<div class="hpc-cleanup-log-time">'+esc(e.time||now())+'</div><div><span class="hpc-cleanup-log-level '+esc(level)+'">'+esc(level)+'</span></div><div><div class="hpc-cleanup-log-message">'+esc(e.message||'')+'</div>'+(ctx?'<div class="hpc-cleanup-log-context">'+esc(ctx)+'</div>':'')+'</div>';logBody.appendChild(row);logBody.scrollTop=logBody.scrollHeight}
             function addLogs(logs){(logs||[]).forEach(addLog)} function setCount(n){if(countPill)countPill.textContent='Articles: '+n}
             function openLog(){var d=root.querySelector('.hpc-cleanup-log');if(d)d.open=true}
-            function criteria(){var data=new FormData(form);return{post_type:data.get('post_type')||'',status:data.get('status')||'',keep_recent:data.get('keep_recent')||'0',search:data.get('search')||'',limit:data.get('limit')||'50'}}
+            function criteria(){var data=new FormData(form);return{post_type:data.get('post_type')||'',status:data.get('status')||'',keep_recent:'0',search:data.get('search')||'',limit:data.get('limit')||'50'}}
             function batchSize(){var input=form?form.querySelector('input[name="batch_size"]'):null;var value=parseInt(input&&input.value?input.value:'50',10);return isNaN(value)||value<1?'50':String(value)}
-            function deleteMediaEnabled(){var input=form?form.querySelector('input[name="delete_media"]'):null;return !!(input&&input.checked)}
+            function deleteMediaEnabled(){var input=form?form.querySelector('input[name="delete_media_filtered"]'):null;return !!(input&&input.checked)}
+            function batchDeleteMediaEnabled(mode){var input=root.querySelector('input[name="'+(mode==='all_except_keep_recent'?'delete_media_except_latest':'delete_media_all_matching')+'"]');return !!(input&&input.checked)}
+            function batchKeepRecent(){var input=root.querySelector('[data-batch-keep-recent]');var value=parseInt(input&&input.value?input.value:'0',10);return isNaN(value)||value<1?1:value}
             function post(action,payload){var body=new URLSearchParams();body.set('action',action);body.set(root.dataset.nonceField||'nonce',root.dataset.nonce||'');Object.keys(payload||{}).forEach(function(k){var value=payload[k];if(Array.isArray(value)){value.forEach(function(item){body.append(k+'[]',item)})}else{body.set(k,value)}});return fetch(root.dataset.ajaxUrl||window.ajaxurl,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()}).then(function(r){return r.json()}).then(function(p){if(!p||!p.success){var m=p&&p.data&&(p.data.message||p.data.error)?(p.data.message||p.data.error):'AJAX request failed.';throw new Error(m)}return p.data||{}})}
             function mediaHtml(row){var media=row.media||[];if(!media.length)return '<span class="hpc-cleanup-muted">No associated media</span>';return '<div class="hpc-media-list">'+media.map(function(item){return '<div class="hpc-media-item"><strong>#'+esc(item.id)+'</strong> '+esc(item.title)+'<div class="hpc-cleanup-muted">'+esc(item.source)+'</div></div>'}).join('')+'</div>'}
             function rowHtml(row){var edit=row.edit_url?'<a class="hpc-button secondary hpc-external" href="'+esc(row.edit_url)+'" target="_blank" rel="noopener noreferrer">Edit</a>':'<span class="hpc-cleanup-muted">No edit link</span>';return '<tr class="hpc-cleanup-row" data-post-id="'+esc(row.id)+'"><td><input type="checkbox" data-article-select value="'+esc(row.id)+'"></td><td><div class="hpc-cleanup-title">'+esc(row.title)+'</div><div class="hpc-cleanup-slug">'+esc(row.slug)+'</div></td><td>'+esc(row.status)+'</td><td>'+esc(row.published_label)+'</td><td>'+esc(row.author)+'</td><td>'+mediaHtml(row)+'</td><td>'+edit+'</td><td><button type="button" class="hpc-button danger" data-article-delete data-post-id="'+esc(row.id)+'">Delete Post</button></td></tr>'}
@@ -174,7 +221,7 @@ final class ArticleMediaCleanupRenderer {
             function removeRow(postId){var row=root.querySelector('.hpc-cleanup-row[data-post-id="'+postId+'"]');if(row)row.remove();var remaining=root.querySelectorAll('.hpc-cleanup-row').length;setCount(remaining);if(!remaining&&tbody)tbody.innerHTML='<tr><td colspan="8" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No matching articles found.')+'</td></tr>'}
             function removeRows(ids){(ids||[]).forEach(removeRow)}
             function deleteOne(postId,button){var row=root.querySelector('.hpc-cleanup-row[data-post-id="'+postId+'"]');if(row)row.classList.add('is-working');dynStart(button,'Deleting...');addLog({level:'warning',message:'Sending article delete AJAX request.',context:{post_id:postId,delete_media:deleteMediaEnabled()?'yes':'no'}});return post(root.dataset.deleteAction||'',{post_id:postId,delete_media:deleteMediaEnabled()?'1':'0'}).then(function(data){addLogs(data.log);removeRow(postId);dynOk(button,'Deleted');return data}).catch(function(error){if(row)row.classList.remove('is-working');addLog({level:'error',message:error.message||'Delete failed.',context:{post_id:postId}});dynFail(button,'Failed');throw error})}
-            function deleteBatch(mode,button){var c=criteria(),keep=parseInt(c.keep_recent||'0',10)||0,label=mode==='all_except_keep_recent'?'Delete matching posts except the latest '+keep:'Delete all matching posts',promptText=label+' using the current Content Type, Status, and Search filters. Preview Limit will be ignored.';if(deleteMediaEnabled())promptText+=' Associated featured/inline media will also be deleted.';promptText+='\n\nType DELETE to confirm.';if(window.prompt(promptText)!=='DELETE'){addLog({level:'warning',message:'Batch delete cancelled before AJAX request.',context:{mode:mode}});return}openLog();dynStart(button,'Deleting...');renderWorking('Batch deletion running...');var totals={deleted:0,failed:0,media:0,batches:0},exclude=[];function step(){totals.batches++;var payload=Object.assign({},c,{batch_mode:mode,batch_size:batchSize(),delete_media:deleteMediaEnabled()?'1':'0',exclude_ids:exclude});addLog({level:'warning',message:'Sending article batch delete AJAX request.',context:{mode:mode,batch:totals.batches,batch_size:payload.batch_size,exclude_ids:exclude}});return post(root.dataset.batchDeleteAction||'',payload).then(function(data){addLogs(data.log);removeRows(data.deleted_ids||[]);exclude=data.exclude_ids||exclude;totals.deleted+=parseInt(data.deleted_count||0,10)||0;totals.failed+=parseInt(data.failed_count||0,10)||0;totals.media+=parseInt(data.deleted_media_count||0,10)||0;if(data.has_more){dynStart(button,'Deleting '+totals.deleted+'...');return step()}addLog({level:'success',message:'Article batch delete finished.',context:totals});dynOk(button,'Deleted');scan(root.querySelector('[data-article-scan]'));return data}).catch(function(error){addLog({level:'error',message:error.message||'Batch delete failed.',context:totals});dynFail(button,'Failed');scan(root.querySelector('[data-article-scan]'));throw error})}step().catch(function(){})}
+            function deleteBatch(mode,button){var c=criteria(),keep=mode==='all_except_keep_recent'?batchKeepRecent():0,media=batchDeleteMediaEnabled(mode),label=mode==='all_except_keep_recent'?'Delete matching posts except the latest '+keep:'Delete all matching posts',promptText=label+' using the current advanced filters. Preview Limit will be ignored.';c.keep_recent=String(keep);if(media)promptText+=' Associated featured/inline media will also be deleted.';promptText+='\n\nType DELETE to confirm.';if(window.prompt(promptText)!=='DELETE'){addLog({level:'warning',message:'Batch delete cancelled before AJAX request.',context:{mode:mode}});return}openLog();dynStart(button,'Deleting...');renderWorking('Batch deletion running...');var totals={deleted:0,failed:0,media:0,batches:0},exclude=[];function step(){totals.batches++;var payload=Object.assign({},c,{batch_mode:mode,batch_size:batchSize(),delete_media:media?'1':'0',exclude_ids:exclude});addLog({level:'warning',message:'Sending article batch delete AJAX request.',context:{mode:mode,batch:totals.batches,batch_size:payload.batch_size,delete_media:media?'yes':'no',keep_recent:keep,exclude_ids:exclude}});return post(root.dataset.batchDeleteAction||'',payload).then(function(data){addLogs(data.log);removeRows(data.deleted_ids||[]);exclude=data.exclude_ids||exclude;totals.deleted+=parseInt(data.deleted_count||0,10)||0;totals.failed+=parseInt(data.failed_count||0,10)||0;totals.media+=parseInt(data.deleted_media_count||0,10)||0;if(data.has_more){dynStart(button,'Deleting '+totals.deleted+'...');return step()}addLog({level:'success',message:'Article batch delete finished.',context:totals});dynOk(button,'Deleted');if(root.querySelector('.hpc-cleanup-row'))scan(root.querySelector('[data-article-scan]'));return data}).catch(function(error){addLog({level:'error',message:error.message||'Batch delete failed.',context:totals});dynFail(button,'Failed');if(root.querySelector('.hpc-cleanup-row'))scan(root.querySelector('[data-article-scan]'));throw error})}step().catch(function(){})}
             root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-article-scan]');if(scanButton){event.preventDefault();scan(scanButton);return}var clear=event.target.closest('[data-article-clear-log]');if(clear){event.preventDefault();event.stopPropagation();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Article cleanup activity log cleared.'});return}var selectAll=event.target.closest('[data-article-select-all]');if(selectAll){root.querySelectorAll('[data-article-select]').forEach(function(box){box.checked=selectAll.checked});return}var batch=event.target.closest('[data-article-delete-batch]');if(batch){event.preventDefault();deleteBatch(batch.getAttribute('data-batch-mode')||'all_matching',batch);return}var rowDelete=event.target.closest('[data-article-delete]');if(rowDelete){event.preventDefault();var id=rowDelete.getAttribute('data-post-id')||'';var msg='Permanently delete this post?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;deleteOne(id,rowDelete).catch(function(){}) ;return}var bulk=event.target.closest('[data-article-delete-selected]');if(bulk){event.preventDefault();var ids=Array.from(root.querySelectorAll('[data-article-select]:checked')).map(function(box){return box.value});if(!ids.length){addLog({level:'warning',message:'No articles selected for deletion.'});dynFail(bulk,'Select rows');return}var msg='Permanently delete '+ids.length+' selected post(s)?';if(deleteMediaEnabled())msg+=' Associated featured/inline media will also be deleted.';if(!window.confirm(msg))return;dynStart(bulk,'Deleting...');var chain=Promise.resolve();ids.forEach(function(id){chain=chain.then(function(){var b=root.querySelector('.hpc-cleanup-row[data-post-id="'+id+'"] [data-article-delete]')||bulk;return deleteOne(id,b).catch(function(){})})});chain.then(function(){dynOk(bulk,'Deleted')})}});
             if(form){form.addEventListener('submit',function(event){event.preventDefault();scan(root.querySelector('[data-article-scan]'))})}
             if(root.dataset.autoScan==='1'){addLog({level:'info',message:'Article cleanup UI loaded. Auto-running article scan.'});scan(root.querySelector('[data-article-scan]'))}else{addLog({level:'info',message:'Article cleanup UI loaded. Waiting for manual scan.'})}

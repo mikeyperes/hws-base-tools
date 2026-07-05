@@ -101,9 +101,13 @@ Hexa\PluginCore\ContentCleanup
 
 Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, fixed report mode, detection rules, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for a separate collapsible service card with a collapsed description subcard, visible detection-rule subcard, filters or no-filter report UI, detected rows table, row flags, edit-new-tab links, red destructive buttons, and a closed-by-default Hexa Core Log Type 1 live activity log.
 
+Cleanup services default to manual scan. Leave `auto_scan` unset or false when the page should open instantly. Set `auto_scan => true` only when a plugin intentionally wants the service to run its AJAX scan on page load.
+
 Use `BackupCleanupConfig`, `BackupCleanupAjaxController`, and `BackupCleanupRenderer` when a plugin needs a reusable backup-file cleanup table. The host plugin supplies configured roots and allowed extensions; Core renders a collapsed description subcard, a visible scan-location subcard with configured paths/extensions/resolved directories, scans those locations, logs every configured location, returns row IDs, and deletes only files that still match the configured roots/extensions.
 
-Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` when a plugin needs reusable post cleanup. Core renders filters, "keep most recent X posts", select-all/row selection, row-by-row AJAX deletion, and optional associated media deletion. Media deletion is off by default and only runs when the visible checkbox is enabled. Associated media includes featured images plus inline/gallery attachment IDs detected from post content.
+Use `ArticleMediaCleanupConfig`, `ArticleMediaCleanupAjaxController`, and `ArticleMediaCleanupRenderer` when a plugin needs reusable post cleanup. Core renders the primary batch actions first: delete all matching posts, or delete matching posts except the latest X posts. Each primary batch action has its own associated-media toggle. Advanced filters, preview rows, select-all/row selection, row-by-row AJAX deletion, and filtered selected-row deletion remain available in a collapsed Advanced Filters & Preview card. Media deletion is off by default and only runs when the visible checkbox for that action is enabled. Associated media includes featured images plus inline/gallery attachment IDs detected from post content.
+
+Batch deletion is intentionally separate from the preview table. `limit` only controls the visible preview rows. The batch actions use `post_type`, `status`, `search`, and the selected mode across all matching posts. Use `batch_delete_action`, `default_batch_size`, and `max_batch_size` to configure the plugin-specific AJAX endpoint and per-request batch limits.
 
 Core automatically protects the WordPress front page, posts page, and privacy policy page.
 
@@ -199,6 +203,7 @@ $config = new ContentCleanupConfig([
     'scan_action'            => 'example_cleanup_scan',
     'trash_action'           => 'example_cleanup_trash',
     'delete_action'          => 'example_cleanup_delete',
+    'auto_scan'              => false,
     'post_types'             => [ 'page' => 'Pages' ],
     'default_published_days' => 365,
     'show_filters'           => false,
@@ -231,6 +236,7 @@ $backup_config = new BackupCleanupConfig([
     'nonce_action'  => 'example_cleanup',
     'scan_action'   => 'example_backup_scan',
     'delete_action' => 'example_backup_delete',
+    'auto_scan'     => false,
     'locations'     => [
         'updraftplus' => [
             'name'       => 'UpdraftPlus',
@@ -252,11 +258,15 @@ use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupRenderer;
 
 $article_config = new ArticleMediaCleanupConfig([
-    'root_id'       => 'example-article-cleanup',
-    'nonce_action'  => 'example_cleanup',
-    'scan_action'   => 'example_article_scan',
-    'delete_action' => 'example_article_delete',
-    'post_types'    => [ 'post' => 'Posts' ],
+    'root_id'             => 'example-article-cleanup',
+    'nonce_action'        => 'example_cleanup',
+    'scan_action'         => 'example_article_scan',
+    'delete_action'       => 'example_article_delete',
+    'batch_delete_action' => 'example_article_batch_delete',
+    'auto_scan'           => false,
+    'post_types'          => [ 'post' => 'Posts' ],
+    'default_batch_size'  => 50,
+    'max_batch_size'      => 100,
 ]);
 
 ( new ArticleMediaCleanupAjaxController( $article_config ) )->register();
