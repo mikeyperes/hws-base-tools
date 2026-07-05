@@ -34,6 +34,12 @@ final class CoreUi {
             .hpc-detail-card-toggle svg{display:block;fill:currentColor;height:10px;transform:rotate(180deg);transition:transform .18s;width:10px}
             .hpc-detail-card:not([open]) .hpc-detail-card-toggle svg{transform:rotate(0deg)}
             .hpc-detail-card-body{border-top:1px solid var(--hpc-line);padding:14px}
+            .hpc-detail-card.subtle{background:transparent;border:0;border-top:1px solid #edf1f6;border-radius:0;margin:-2px 0 8px}
+            .hpc-detail-card.subtle summary{color:var(--hpc-muted);font-size:12px;font-weight:700;padding:7px 2px}
+            .hpc-detail-card.subtle .hpc-detail-card-body{border-top:0;color:var(--hpc-muted);padding:0 2px 8px 18px}
+            .hpc-detail-card.subtle .hpc-detail-card-toggle{background:transparent;border:0;color:#8a98aa;height:18px;width:18px}
+            .hpc-detail-card.subtle .hpc-detail-card-toggle svg{height:9px;width:9px}
+            .hpc-detail-card.subtle .hpc-pill{font-size:11px;padding:3px 7px}
             .hpc-pill{align-items:center;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;color:#2944ad;display:inline-flex;font-size:12px;font-weight:700;gap:6px;line-height:1;padding:7px 10px}
             .hpc-pill.success{background:#eaf8ef;border-color:#ccefd7;color:var(--hpc-green)}
             .hpc-pill.warning{background:#fff7e0;border-color:#f5df9c;color:var(--hpc-amber)}
@@ -219,9 +225,20 @@ final class CoreUi {
         $meta        = isset( $args['meta_html'] ) ? (string) $args['meta_html'] : '';
         $persist_key = isset( $args['persist_key'] ) ? (string) $args['persist_key'] : '';
         $persist     = '' !== $persist_key ? ' data-hpc-persist-key="' . esc_attr( $persist_key ) . '"' : '';
-        $toggle      = '<span class="hpc-detail-card-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>';
+        $classes     = [ 'hpc-detail-card' ];
 
-        return '<details class="hpc-detail-card"' . $open . $persist . '><summary><span class="hpc-detail-card-title">' . esc_html( $title ) . '</span><span class="hpc-detail-card-side">' . $meta . $toggle . '</span></summary><div class="hpc-detail-card-body">' . $body . '</div></details>';
+        foreach ( [ $args['variant'] ?? '', $args['class'] ?? '' ] as $class_string ) {
+            foreach ( preg_split( '/\s+/', (string) $class_string ) ?: [] as $class_name ) {
+                $class_name = sanitize_html_class( $class_name );
+                if ( '' !== $class_name ) {
+                    $classes[] = $class_name;
+                }
+            }
+        }
+
+        $toggle = '<span class="hpc-detail-card-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>';
+
+        return '<details class="' . esc_attr( implode( ' ', array_unique( $classes ) ) ) . '"' . $open . $persist . '><summary><span class="hpc-detail-card-title">' . esc_html( $title ) . '</span><span class="hpc-detail-card-side">' . $meta . $toggle . '</span></summary><div class="hpc-detail-card-body">' . $body . '</div></details>';
     }
 
     public static function collapsible( array $args ): string {

@@ -26,13 +26,14 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?>{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:#3f4d63;font-size:13px;line-height:1.6;margin:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-list{display:grid;gap:10px;margin:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item{background:#fff;border:1px solid #e1e7f0;border-radius:8px;padding:12px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head strong{font-size:13px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-body{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 8px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-meta{color:var(--hpc-muted);display:grid;font-size:12px;gap:4px;line-height:1.45;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-list{display:grid;gap:4px;margin:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item{background:transparent;border:0;border-top:1px solid #edf1f6;border-radius:0;padding:7px 0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item:first-child{border-top:0;padding-top:0}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head{align-items:center;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 3px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head strong{font-size:12px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-body{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0 0 4px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-meta{color:var(--hpc-muted);display:grid;font-size:11px;gap:2px;line-height:1.35;margin:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-empty{color:var(--hpc-muted);font-size:13px;margin:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}
@@ -369,6 +370,7 @@ final class ContentCleanupRenderer {
             [
                 'title'       => 'Description',
                 'open'        => false,
+                'variant'     => 'subtle',
                 'persist_key' => $this->config->root_id() . '-description',
                 'body_html'   => $body,
             ]
@@ -391,7 +393,8 @@ final class ContentCleanupRenderer {
         return CoreUi::detail_card(
             [
                 'title'       => 'Detection Rules',
-                'open'        => true,
+                'open'        => false,
+                'variant'     => 'subtle',
                 'persist_key' => $this->config->root_id() . '-rules',
                 'meta_html'   => CoreUi::pill( count( $rules ) . ' rule' . ( 1 === count( $rules ) ? '' : 's' ), 'dark' ),
                 'body_html'   => $body,

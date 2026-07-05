@@ -57,12 +57,13 @@ final class BackupCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?>{margin-top:14px;max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:#3f4d63;font-size:13px;line-height:1.6;margin:0}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-list{display:grid;gap:10px;margin:0}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location{background:#fff;border:1px solid #e1e7f0;border-radius:8px;padding:12px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head strong{font-size:13px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-meta{color:#3f4d63;display:grid;font-size:12px;gap:5px;line-height:1.5;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-list{display:grid;gap:4px;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location{background:transparent;border:0;border-top:1px solid #edf1f6;border-radius:0;padding:7px 0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location:first-child{border-top:0;padding-top:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head{align-items:center;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-head strong{font-size:12px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-meta{color:var(--hpc-muted);display:grid;font-size:11px;gap:3px;line-height:1.4;margin:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-path{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;overflow-wrap:anywhere}
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs{margin:4px 0 0 18px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs li{margin:3px 0}
@@ -71,6 +72,8 @@ final class BackupCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:980px;width:100%}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th{background:#f8fafc;color:#314056;font-size:12px;text-transform:uppercase}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-loading-row{align-items:center;color:var(--hpc-muted);display:flex;gap:8px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-loading-row .spinner{float:none;margin:0;visibility:visible}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-title{font-weight:800;line-height:1.35}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-slug{color:var(--hpc-muted);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px;margin-top:4px;word-break:break-all}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-muted{color:var(--hpc-muted);font-size:12px}
@@ -127,6 +130,7 @@ final class BackupCleanupRenderer {
             [
                 'title'       => 'Description',
                 'open'        => false,
+                'variant'     => 'subtle',
                 'persist_key' => $this->config->root_id() . '-description',
                 'body_html'   => '<p class="hpc-cleanup-description-text">' . esc_html( $description ) . '</p>',
             ]
@@ -149,7 +153,8 @@ final class BackupCleanupRenderer {
         return CoreUi::detail_card(
             [
                 'title'       => 'Scan Locations',
-                'open'        => true,
+                'open'        => false,
+                'variant'     => 'subtle',
                 'persist_key' => $this->config->root_id() . '-locations',
                 'meta_html'   => CoreUi::pill( count( $locations ) . ' configured', 'dark' ),
                 'body_html'   => $body,
@@ -210,10 +215,12 @@ final class BackupCleanupRenderer {
             function addLogs(logs){(logs||[]).forEach(addLog)} function setCount(n){if(countPill)countPill.textContent='Detected: '+n}
             function post(action,payload){var body=new URLSearchParams();body.set('action',action);body.set(root.dataset.nonceField||'nonce',root.dataset.nonce||'');Object.keys(payload||{}).forEach(function(k){body.set(k,payload[k])});return fetch(root.dataset.ajaxUrl||window.ajaxurl,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()}).then(function(r){return r.json()}).then(function(p){if(!p||!p.success){var m=p&&p.data&&(p.data.message||p.data.error)?(p.data.message||p.data.error):'AJAX request failed.';throw new Error(m)}return p.data||{}})}
             function rowHtml(row){var disabled=row.writable?'':' disabled title="File is not writable"';return '<tr class="hpc-cleanup-row" data-file-id="'+esc(row.id)+'"><td><div class="hpc-cleanup-title">'+esc(row.file)+'</div><div class="hpc-cleanup-slug">'+esc(row.path)+'</div></td><td>'+esc(row.source)+'</td><td>'+esc(row.size_label)+'</td><td>'+esc(row.modified_label)+'</td><td>'+esc(row.age_days===null?'Unknown':row.age_days+' days')+'</td><td>'+(row.writable?'<span class="hpc-pill success">Writable</span>':'<span class="hpc-pill danger">Locked</span>')+'</td><td><button type="button" class="hpc-button danger" data-backup-delete data-file-id="'+esc(row.id)+'"'+disabled+'>Delete</button></td></tr>'}
-            function renderRows(rows){rows=rows||[];setCount(rows.length);if(!tbody)return;if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No backup files detected.')+'</td></tr>';return}tbody.innerHTML=rows.map(rowHtml).join('')}
-            function scan(button){dynStart(button,'Scanning...');addLog({level:'info',message:'Starting backup file scan.'});post(root.dataset.scanAction||'',{}).then(function(data){addLogs(data.log);renderRows(data.rows||[]);dynOk(button,'Scanned')}).catch(function(error){addLog({level:'error',message:error.message||'Scan failed.'});dynFail(button,'Failed')})}
-            root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-backup-scan]');if(scanButton){event.preventDefault();scan(scanButton);return}var clearButton=event.target.closest('[data-backup-clear-log]');if(clearButton){event.preventDefault();event.stopPropagation();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Backup activity log cleared.'});return}var del=event.target.closest('[data-backup-delete]');if(del){event.preventDefault();var id=del.getAttribute('data-file-id')||'';if(!window.confirm('Delete this backup file? This cannot be undone.'))return;var row=root.querySelector('.hpc-cleanup-row[data-file-id="'+id+'"]');if(row)row.classList.add('is-working');dynStart(del,'Deleting...');addLog({level:'warning',message:'Sending backup delete AJAX request.',context:{file_id:id}});post(root.dataset.deleteAction||'',{file_id:id}).then(function(data){addLogs(data.log);if(row)row.remove();setCount(root.querySelectorAll('.hpc-cleanup-row').length);if(!root.querySelector('.hpc-cleanup-row')&&tbody)tbody.innerHTML='<tr><td colspan="7" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No backup files detected.')+'</td></tr>';dynOk(del,'Deleted')}).catch(function(error){if(row)row.classList.remove('is-working');addLog({level:'error',message:error.message||'Delete failed.',context:{file_id:id}});dynFail(del,'Failed')})}});
-            addLog({level:'info',message:'Backup cleanup UI loaded. Auto-running backup scan.'});scan(root.querySelector('[data-backup-scan]'));
+            function renderRows(rows){rows=rows||[];setCount(rows.length);if(!tbody)return;if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="hpc-cleanup-muted">No results found.</td></tr>';return}tbody.innerHTML=rows.map(rowHtml).join('')}
+            function renderScanning(){if(tbody)tbody.innerHTML='<tr><td colspan="7"><div class="hpc-cleanup-loading-row"><span class="spinner is-active"></span><span>Scanning backup folders and file patterns...</span></div></td></tr>'}
+            function openFreshManualLog(){if(!logBody)return;logBody.innerHTML='';var details=logBody.closest('details');if(details)details.open=true}
+            function scan(button,showLog){if(showLog)openFreshManualLog();dynStart(button,'Scanning...');renderScanning();addLog({level:'info',message:'Starting backup file scan.'});post(root.dataset.scanAction||'',{}).then(function(data){addLogs(data.log);renderRows(data.rows||[]);if(!(data.rows||[]).length)addLog({level:'warning',message:'No results found after scanning configured backup locations.'});dynOk(button,'Scanned')}).catch(function(error){addLog({level:'error',message:error.message||'Scan failed.'});dynFail(button,'Failed')})}
+            root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-backup-scan]');if(scanButton){event.preventDefault();scan(scanButton,true);return}var clearButton=event.target.closest('[data-backup-clear-log]');if(clearButton){event.preventDefault();event.stopPropagation();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Backup activity log cleared.'});return}var del=event.target.closest('[data-backup-delete]');if(del){event.preventDefault();var id=del.getAttribute('data-file-id')||'';if(!window.confirm('Delete this backup file? This cannot be undone.'))return;var row=root.querySelector('.hpc-cleanup-row[data-file-id="'+id+'"]');if(row)row.classList.add('is-working');dynStart(del,'Deleting...');addLog({level:'warning',message:'Sending backup delete AJAX request.',context:{file_id:id}});post(root.dataset.deleteAction||'',{file_id:id}).then(function(data){addLogs(data.log);if(row)row.remove();setCount(root.querySelectorAll('.hpc-cleanup-row').length);if(!root.querySelector('.hpc-cleanup-row')&&tbody)tbody.innerHTML='<tr><td colspan="7" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No backup files detected.')+'</td></tr>';dynOk(del,'Deleted')}).catch(function(error){if(row)row.classList.remove('is-working');addLog({level:'error',message:error.message||'Delete failed.',context:{file_id:id}});dynFail(del,'Failed')})}});
+            addLog({level:'info',message:'Backup cleanup UI loaded. Auto-running backup scan.'});scan(root.querySelector('[data-backup-scan]'),false);
         })();
         </script>
         <?php

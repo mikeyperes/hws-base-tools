@@ -138,7 +138,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.78 (Current)
+### v10.18.79 (Current)
+- Updated vendored Hexa WP Core to 0.19.14 so Cleanup tab descriptions, detection rules, and backup scan locations render as subtle collapsed secondary details instead of large focus cards.
+- Backup scans now show a loading row while scanning and log file patterns searched, folders inspected, directory entries looked at, matched files, and no-result state.
+
+### v10.18.78
 - Replaced the HWS dashboard legacy tab shell with the Hexa WP Core HostTabsRenderer, removed old tab button/panel CSS and JavaScript, and normalized tab labels to plain Core-style names.
 
 ### v10.18.77

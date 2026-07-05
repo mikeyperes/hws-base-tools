@@ -14,30 +14,12 @@ final class BackupCleanupScanner {
             $this->log( 'info', 'Scanning configured backup locations.' ),
         ];
 
-        foreach ( $this->config->locations() as $location ) {
-            $dirs          = $this->directories_for_location( $location );
-            $readable_dirs = array_values(
-                array_filter(
-                    $dirs,
-                    static fn( string $dir ): bool => is_dir( $dir ) && is_readable( $dir )
-                )
-            );
-
-            $log[] = $this->log(
-                [] !== $readable_dirs ? 'info' : 'warning',
-                [] !== $readable_dirs ? 'Prepared backup scan location.' : 'Backup scan location has no readable directories.',
-                [
-                    'source'               => (string) ( $location['name'] ?? $location['id'] ?? 'Backup location' ),
-                    'configured_path'      => (string) ( $location['path'] ?? '' ),
-                    'allowed_extensions'   => array_values( (array) ( $location['extensions'] ?? [] ) ),
-                    'resolved_directories' => $dirs,
-                    'readable_directories' => $readable_dirs,
-                ]
-            );
-        }
-
-        $rows = $this->rows();
-        $log[] = $this->log( 'success', 'Detected ' . count( $rows ) . ' backup file(s).' );
+        $rows = $this->rows( $log );
+        $log[] = $this->log(
+            [] === $rows ? 'warning' : 'success',
+            [] === $rows ? 'No results found.' : 'Detected ' . count( $rows ) . ' backup file(s).',
+            [ 'detected_count' => count( $rows ) ]
+        );
 
         return [
             'rows'  => $rows,
@@ -94,38 +76,68 @@ final class BackupCleanupScanner {
         ];
     }
 
-    private function rows(): array {
+    private function rows( ?array &$log = null ): array {
         $rows = [];
 
         foreach ( $this->config->locations() as $location ) {
-            $dirs = $this->directories_for_location( $location );
+            $dirs       = $this->directories_for_location( $location );
+            $extensions = array_values( (array) ( $location['extensions'] ?? [] ) );
+
+            $this->append_log(
+                $log,
+                [] !== $dirs ? 'info' : 'warning',
+                [] !== $dirs ? 'Looking for backup files.' : 'No folders resolved for backup location.',
+                [
+                    'source'            => (string) ( $location['name'] ?? $location['id'] ?? 'Backup location' ),
+                    'configured_folder' => (string) ( $location['path'] ?? '' ),
+                    'folders_looked_at' => $dirs,
+                    'files_looked_for'  => $this->file_patterns_for_location( $location, $dirs ),
+                    'allowed_extensions'=> $extensions,
+                ]
+            );
+
             foreach ( $dirs as $dir ) {
-                if ( ! is_dir( $dir ) || ! is_readable( $dir ) ) {
+                $exists   = is_dir( $dir );
+                $readable = $exists && is_readable( $dir );
+
+                $this->append_log(
+                    $log,
+                    $readable ? 'info' : 'warning',
+                    $readable ? 'Checking backup folder.' : 'Skipping unreadable or missing backup folder.',
+                    [
+                        'folder'   => $dir,
+                        'exists'   => $exists,
+                        'readable' => $readable,
+                    ]
+                );
+
+                if ( ! $readable ) {
                     continue;
                 }
 
                 $files = @scandir( $dir );
                 if ( ! is_array( $files ) ) {
+                    $this->append_log( $log, 'warning', 'Could not read backup folder entries.', [ 'folder' => $dir ] );
                     continue;
                 }
 
-                foreach ( $files as $file ) {
-                    if ( '.' === $file || '..' === $file ) {
-                        continue;
-                    }
+                $entries = array_values( array_filter( $files, static fn( string $file ): bool => '.' !== $file && '..' !== $file ) );
+                $matched = [];
 
+                foreach ( $entries as $file ) {
                     $path = rtrim( $dir, '/\\' ) . DIRECTORY_SEPARATOR . $file;
                     if ( ! is_file( $path ) ) {
                         continue;
                     }
 
                     $extension = strtolower( (string) pathinfo( $file, PATHINFO_EXTENSION ) );
-                    if ( ! in_array( $extension, (array) $location['extensions'], true ) ) {
+                    if ( ! in_array( $extension, $extensions, true ) ) {
                         continue;
                     }
 
                     $modified = @filemtime( $path ) ?: 0;
                     $size     = @filesize( $path ) ?: 0;
+                    $matched[] = $path;
 
                     $rows[] = [
                         'id'             => md5( $path ),
@@ -143,6 +155,17 @@ final class BackupCleanupScanner {
                         'writable'       => is_writable( $path ) && is_writable( dirname( $path ) ),
                     ];
                 }
+
+                $this->append_log(
+                    $log,
+                    [] === $matched ? 'info' : 'success',
+                    [] === $matched ? 'Inspected folder entries; no backup files matched.' : 'Matched backup file candidate(s).',
+                    [
+                        'folder'        => $dir,
+                        'files_looked_at'=> $entries,
+                        'matched_files' => $matched,
+                    ]
+                );
             }
         }
 
@@ -166,6 +189,28 @@ final class BackupCleanupScanner {
         }
 
         return [ $path ];
+    }
+
+    private function file_patterns_for_location( array $location, array $dirs ): array {
+        $extensions = array_values( (array) ( $location['extensions'] ?? [] ) );
+        $bases      = [] !== $dirs ? $dirs : [ (string) ( $location['path'] ?? '' ) ];
+        $patterns   = [];
+
+        foreach ( $bases as $base ) {
+            foreach ( $extensions as $extension ) {
+                $patterns[] = rtrim( (string) $base, '/\\' ) . DIRECTORY_SEPARATOR . '*.' . $extension;
+            }
+        }
+
+        return $patterns;
+    }
+
+    private function append_log( ?array &$log, string $level, string $message, array $context = [] ): void {
+        if ( null === $log ) {
+            return;
+        }
+
+        $log[] = $this->log( $level, $message, $context );
     }
 
     private function log( string $level, string $message, array $context = [] ): array {
