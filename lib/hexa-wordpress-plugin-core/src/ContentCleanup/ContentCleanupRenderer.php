@@ -27,24 +27,16 @@ final class ContentCleanupRenderer {
                 #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-section-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-description-text{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-list{display:grid;gap:4px;margin:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item{background:transparent;border:0;border-top:1px solid #edf1f6;border-radius:0;padding:7px 0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-item:first-child{border-top:0;padding-top:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head{align-items:center;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 3px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-head strong{font-size:12px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-body{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0 0 4px}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-meta{color:var(--hpc-muted);display:grid;font-size:11px;gap:2px;line-height:1.35;margin:0}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-rule-empty{color:var(--hpc-muted);font-size:13px;margin:0}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filters{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:14px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-filter-wide{grid-column:span 2}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:980px;width:100%}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow:hidden}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;table-layout:fixed;width:100%}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);overflow-wrap:anywhere;padding:12px;text-align:left;vertical-align:middle;word-break:normal}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th{background:#f8fafc;color:#314056;font-size:12px;text-transform:uppercase}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-title{font-weight:800;line-height:1.35}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-slug{color:var(--hpc-muted);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px;margin-top:4px;word-break:break-all}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-row.is-working{opacity:.58}
-                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-actions{align-items:center;display:flex;flex-wrap:wrap;gap:8px}
+                #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-actions{align-items:flex-start;display:flex;flex-direction:column;gap:8px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-actions .hpc-button{padding:8px 10px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-muted{color:var(--hpc-muted);font-size:12px}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-count{align-items:center;display:flex;gap:8px}
@@ -82,7 +74,6 @@ final class ContentCleanupRenderer {
 
             <?php ob_start(); ?>
                 <?php echo $this->description_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <?php echo $this->rules_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <?php if ( $show_filters ) : ?>
                     <?php
                     echo CoreUi::collapsible(
@@ -370,7 +361,7 @@ final class ContentCleanupRenderer {
 
         $body = '<p class="hpc-cleanup-description-text">' . esc_html( $description ) . '</p>';
 
-        return CoreUi::detail_card(
+        return $this->detail_card(
             [
                 'title'       => 'Description',
                 'open'        => false,
@@ -394,7 +385,7 @@ final class ContentCleanupRenderer {
             $body = '<div class="hpc-cleanup-rule-list">' . $items . '</div>';
         }
 
-        return CoreUi::detail_card(
+        return $this->detail_card(
             [
                 'title'       => 'Detection Rules',
                 'open'        => false,
@@ -464,5 +455,21 @@ final class ContentCleanupRenderer {
         $html .= '</select>';
 
         return $html;
+    }
+
+    private function detail_card( array $args ): string {
+        if ( method_exists( CoreUi::class, 'detail_card' ) ) {
+            return CoreUi::detail_card( $args );
+        }
+
+        return CoreUi::collapsible(
+            [
+                'title'       => (string) ( $args['title'] ?? '' ),
+                'open'        => ! empty( $args['open'] ),
+                'persist_key' => (string) ( $args['persist_key'] ?? '' ),
+                'meta_html'   => (string) ( $args['meta_html'] ?? '' ),
+                'body_html'   => (string) ( $args['body_html'] ?? '' ),
+            ]
+        );
     }
 }

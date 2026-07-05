@@ -14,7 +14,7 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
     return new GettingStartedChecklistConfig(
         [
             'root_id'       => 'hws-getting-started-checklist',
-            'title'         => 'Getting Started Checklist',
+            'title'         => 'Quick Start',
             'description'   => 'Runs HWS Base Tools startup checks through the reusable Hexa WP Core checklist structure. HWS registers the steps; Hexa WP Core owns the UI, AJAX runner, status states, and activity log.',
             'capability'    => 'manage_options',
             'nonce_action'  => HWS_GETTING_STARTED_CHECKLIST_NONCE_ACTION,
@@ -126,13 +126,13 @@ add_filter(
         foreach ( $tabs as $key => $label ) {
             $updated[ $key ] = $label;
             if ( 'overview' === $key ) {
-                $updated['getting-started-checklist'] = 'Getting Started Checklist';
+                $updated['getting-started-checklist'] = 'Quick Start';
                 $inserted = true;
             }
         }
 
         if ( ! $inserted ) {
-            $updated['getting-started-checklist'] = 'Getting Started Checklist';
+            $updated['getting-started-checklist'] = 'Quick Start';
         }
 
         return $updated;

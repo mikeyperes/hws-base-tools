@@ -101,7 +101,7 @@ Namespace:
 Hexa\PluginCore\ContentCleanup
 ```
 
-Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, fixed report mode, detection rules, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for a separate collapsible service card with a collapsed description subcard, visible detection-rule subcard, filters or no-filter report UI, detected rows table, row flags, edit-new-tab links, red destructive buttons, and a closed-by-default Hexa Core Log Type 1 live activity log.
+Use `ContentCleanupConfig` for host-specific action names, nonce settings, allowed post types, statuses, default age filters, fixed report mode, detection rules, limits, and protected IDs. Use `ContentCleanupAjaxController` to register scan/trash/delete actions. Use `ContentCleanupRenderer` for a separate collapsible service card with a collapsed description subcard, backend-only detection rules, filters or no-filter report UI, detected rows table, row flags, edit-new-tab links, red destructive buttons, and a closed-by-default Hexa Core Log Type 1 live activity log. Cleanup renderers must tolerate older already-loaded `CoreUi` classes because multiple plugins can vendor the core on the same site.
 
 Cleanup services default to manual scan. Leave `auto_scan` unset or false when the page should open instantly. Set `auto_scan => true` only when a plugin intentionally wants the service to run its AJAX scan on page load.
 

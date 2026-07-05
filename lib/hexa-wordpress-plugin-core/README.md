@@ -235,6 +235,10 @@ Callbacks receive a single payload array containing `step`, `subtask`, `context`
 
 `Hexa\PluginCore\ContentCleanup` provides reusable cleanup structures for wp-admin. Host plugins pass their own action names, allowed post types, backup locations, and deletion limits; Core renders each cleanup service as a separate collapsible card, with fixed reports, filters, result tables, edit links, row flags, destructive buttons, row loaders, and closed-by-default dark activity logs.
 
+Version 0.19.22 keeps cleanup renderers compatible with sites where another plugin has already loaded an older `Hexa\PluginCore\WpAdminComponents\CoreUi` class before the current plugin renders.
+
+Version 0.19.21 keeps cleanup detection criteria backend-only in the operator UI and removes fixed minimum table widths so cleanup reports stay contained inside their collapsible cards.
+
 Version 0.19.20 changes Getting Started Checklist parent rows into visible collapsible sections and keeps the technical activity log collapsed by default so checklist pages do not read like a debug log dump.
 
 Version 0.19.16 changes cleanup services to manual scan by default. Content Cleanup, Backup Cleanup, and Article/Media Cleanup render immediately with a clear "Press Scan" empty state and only start AJAX work when the user clicks a scan button. Host plugins can opt back into load-time scanning with `auto_scan => true`.

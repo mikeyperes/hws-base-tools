@@ -141,7 +141,14 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.86 (Current)
+### v10.18.88 (Current)
+- Updated vendored Hexa WP Core to 0.19.22 so Cleanup remains compatible when another plugin has already loaded an older Hexa Core `CoreUi` class.
+
+### v10.18.87
+- Restored the visible startup tab label to Quick Start while keeping the existing tab slug for compatibility.
+- Updated vendored Hexa WP Core to 0.19.21 so Cleanup hides backend detection criteria from the operator view and keeps wide reports contained inside Core collapsible sections.
+
+### v10.18.86
 - Updated vendored Hexa WP Core to 0.19.20 so the Getting Started Checklist renders top-level steps as collapsible Core sections and keeps the technical activity log collapsed by default.
 
 ### v10.18.82

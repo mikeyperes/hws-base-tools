@@ -68,9 +68,9 @@ final class BackupCleanupRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs{margin:4px 0 0 18px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-dirs li{margin:3px 0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-backup-location-empty{color:var(--hpc-muted);font-size:13px;margin:0}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow-x:auto}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;min-width:980px;width:100%}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);padding:12px;text-align:left;vertical-align:middle}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table-wrap{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;max-width:100%;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table{border-collapse:collapse;table-layout:fixed;width:100%}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table td{border-bottom:1px solid var(--hpc-line);overflow-wrap:anywhere;padding:12px;text-align:left;vertical-align:middle;word-break:normal}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-table th{background:#f8fafc;color:#314056;font-size:12px;text-transform:uppercase}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-loading-row{align-items:center;color:var(--hpc-muted);display:flex;gap:8px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-cleanup-loading-row .spinner{float:none;margin:0;visibility:visible}
@@ -126,7 +126,7 @@ final class BackupCleanupRenderer {
             $description = 'Scan configured backup locations and delete selected files through guarded AJAX actions.';
         }
 
-        return CoreUi::detail_card(
+        return $this->detail_card(
             [
                 'title'       => 'Description',
                 'open'        => false,
@@ -150,7 +150,7 @@ final class BackupCleanupRenderer {
             $body = '<div class="hpc-backup-location-list">' . $items . '</div>';
         }
 
-        return CoreUi::detail_card(
+        return $this->detail_card(
             [
                 'title'       => 'Scan Locations',
                 'open'        => false,
@@ -224,5 +224,21 @@ final class BackupCleanupRenderer {
         })();
         </script>
         <?php
+    }
+
+    private function detail_card( array $args ): string {
+        if ( method_exists( CoreUi::class, 'detail_card' ) ) {
+            return CoreUi::detail_card( $args );
+        }
+
+        return CoreUi::collapsible(
+            [
+                'title'       => (string) ( $args['title'] ?? '' ),
+                'open'        => ! empty( $args['open'] ),
+                'persist_key' => (string) ( $args['persist_key'] ?? '' ),
+                'meta_html'   => (string) ( $args['meta_html'] ?? '' ),
+                'body_html'   => (string) ( $args['body_html'] ?? '' ),
+            ]
+        );
     }
 }
