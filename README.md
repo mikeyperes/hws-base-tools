@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.82 (Current)
+### v10.18.86 (Current)
+- Updated vendored Hexa WP Core to 0.19.20 so the Getting Started Checklist renders top-level steps as collapsible Core sections and keeps the technical activity log collapsed by default.
+
+### v10.18.82
 - Updated vendored Hexa WP Core to 0.19.17 so Article & Media Cleanup shows the two primary batch deletion actions first, each with its own associated-media toggle, while advanced filters and preview rows are collapsed by default.
 
 ### v10.18.81

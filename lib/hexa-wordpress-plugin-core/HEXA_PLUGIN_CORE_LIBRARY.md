@@ -121,7 +121,7 @@ Namespace:
 Hexa\PluginCore\GettingStartedChecklist
 ```
 
-Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, and a dark technical activity log.
+Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with collapsible parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, and a collapsed dark technical activity log.
 
 Required rules:
 
