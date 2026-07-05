@@ -138,7 +138,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.77 (Current)
+### v10.18.78 (Current)
+- Replaced the HWS dashboard legacy tab shell with the Hexa WP Core HostTabsRenderer, removed old tab button/panel CSS and JavaScript, and normalized tab labels to plain Core-style names.
+
+### v10.18.77
 - Updated vendored Hexa WP Core to 0.19.13 so Cleanup shows collapsed description subcards, visible detection rules, and a detailed Backup Files scan-location list with resolved directory status.
 
 ### v10.18.76

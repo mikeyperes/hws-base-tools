@@ -521,34 +521,46 @@ function hws_test_site_basics_state(): array {
  */
 function hws_get_dashboard_tabs(): array {
     $tabs = [
-        'overview'      => '📊 Overview',
-        'system-checks' => '🔍 System Checks',
-        'plugins'       => '🔌 Plugins',
-        'features'      => '✨ Features',
-        'snippets'      => '✂️ Snippets (Deprecated)',
-        'brand-assets'  => '🖼️ Brand Assets',
-        'pages'         => '📄 Pages',
-        'sitemaps'      => '🗺️ Sitemaps',
-        'cleanup'       => '🧽 Cleanup',
-        'menu-tools'    => '🧭 Menu Tools',
+        'overview'      => 'Overview',
+        'system-checks' => 'System Checks',
+        'plugins'       => 'Plugins',
+        'features'      => 'Features',
+        'snippets'      => 'Snippets (Deprecated)',
+        'brand-assets'  => 'Brand Assets',
+        'pages'         => 'Pages',
+        'sitemaps'      => 'Sitemaps',
+        'cleanup'       => 'Cleanup',
+        'menu-tools'    => 'Menu Tools',
     ];
 
     if ( function_exists( __NAMESPACE__ . '\\hws_is_footer_text_module_enabled' ) && hws_is_footer_text_module_enabled() ) {
-        $tabs['footer-text'] = '🦶 Footer Text';
+        $tabs['footer-text'] = 'Footer Text';
     }
 
     $tabs += [
-        'website-types' => '🌐 Website Types',
-        'ui-cleanup'    => '🧹 UI Cleanup',
-        'config'        => '⚙️ Configuration',
-        'backups'       => '💾 Backups',
-        'advanced'      => '🔧 Advanced',
-        'comments'      => '💬 Comments',
-        'update-center' => '🔄 Update Center',
-        'masked-login'  => '🔐 Masked Login',
+        'website-types' => 'Website Types',
+        'ui-cleanup'    => 'UI Cleanup',
+        'config'        => 'Configuration',
+        'backups'       => 'Backups',
+        'advanced'      => 'Advanced',
+        'comments'      => 'Comments',
+        'update-center' => 'Update Center',
+        'masked-login'  => 'Masked Login',
     ];
 
     return apply_filters( 'hws_base_tools_dashboard_tabs', $tabs );
+}
+
+function hws_get_dashboard_tab_label( $tab ): string {
+    if ( is_array( $tab ) && isset( $tab['label'] ) ) {
+        return (string) $tab['label'];
+    }
+
+    if ( is_object( $tab ) && isset( $tab->label ) ) {
+        return (string) $tab->label;
+    }
+
+    return (string) $tab;
 }
 
 function hws_normalize_dashboard_tab_id( string $tab_id ): string {
@@ -575,9 +587,12 @@ function ajax_load_dashboard_tab() {
     hws_render_dashboard_tab( $tab_id );
     $html = ob_get_clean();
 
+    $tabs = hws_get_dashboard_tabs();
+
     wp_send_json_success( [
-        'tab'  => $tab_id,
-        'html' => $html,
+        'tab'   => $tab_id,
+        'label' => wp_strip_all_tags( hws_get_dashboard_tab_label( $tabs[ $tab_id ] ?? $tab_id ) ),
+        'html'  => $html,
     ] );
 }
 
@@ -682,54 +697,6 @@ function display_wp_admin_settings_page() {
         /* === GLOBAL STYLES === */
         #hws-base-tools { max-width: 1400px; }
         #hws-base-tools * { box-sizing: border-box; }
-        
-        /* Tabs - No Refresh */
-        .hws-tabs-nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-            border-bottom: 2px solid #c3c4c7;
-            margin-bottom: 0;
-            background: #f0f0f1;
-            padding: 10px 10px 0;
-        }
-        .hws-tab-btn {
-            padding: 12px 20px;
-            text-decoration: none;
-            color: #50575e;
-            font-weight: 500;
-            font-size: 14px;
-            border: 1px solid transparent;
-            border-bottom: none;
-            background: transparent;
-            margin-bottom: -2px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .hws-tab-btn:hover { color: #2271b1; background: #fff; }
-        .hws-tab-btn.hws-tab-deprecated { color: #996800; }
-        .hws-tab-btn.active {
-            color: #1d2327;
-            background: #fff;
-            border-color: #c3c4c7;
-            border-bottom-color: #fff;
-            border-radius: 4px 4px 0 0;
-        }
-        .hws-tab-content {
-            display: none;
-            background: #fff;
-            border: 1px solid #c3c4c7;
-            border-top: none;
-            padding: 20px;
-        }
-        .hws-tab-content.active { display: block; }
-        .hws-tab-content.hws-tab-loading { min-height: 160px; }
-        .hws-tab-loading-message {
-            padding: 28px;
-            text-align: center;
-            color: #646970;
-            font-size: 14px;
-        }
         
         /* Panels */
         .hws-panel {
@@ -981,19 +948,21 @@ function display_wp_admin_settings_page() {
         $active_tab = isset( $_GET['tab'] ) ? hws_normalize_dashboard_tab_id( (string) wp_unslash( $_GET['tab'] ) ) : hws_normalize_dashboard_tab_id( '' );
         ?>
         
-        <!-- Tab Navigation -->
-        <nav class="hws-tabs-nav">
-            <?php foreach ( $tabs as $tab_id => $label ) : ?>
-                <button type="button" class="hws-tab-btn <?php echo $tab_id === $active_tab ? 'active' : ''; ?> <?php echo 'snippets' === $tab_id ? 'hws-tab-deprecated' : ''; ?>" data-tab="<?php echo esc_attr( $tab_id ); ?>">
-                    <?php echo $label; ?>
-                </button>
-            <?php endforeach; ?>
-        </nav>
-        
-        <!-- Only render the selected tab. Loading every tab eagerly makes this page slow on larger sites. -->
-        <div id="tab-<?php echo esc_attr( $active_tab ); ?>" class="hws-tab-content active">
-            <?php hws_render_dashboard_tab( $active_tab ); ?>
-        </div>
+        <?php
+        ( new \Hexa\PluginCore\WpAdminTabs\HostTabsRenderer() )->render( [
+            'tabs'            => $tabs,
+            'active'          => $active_tab,
+            'page_url'        => admin_url( 'options-general.php?page=hws-core-tools' ),
+            'ajax_url'        => admin_url( 'admin-ajax.php' ),
+            'ajax_action'     => 'hws_load_dashboard_tab',
+            'nonce'           => wp_create_nonce( HWS_AJAX_NONCE ),
+            'nonce_field'     => 'nonce',
+            'root_id'         => 'hws-core-tools-tabs',
+            'panel_id'        => 'hws-core-tools-tab-panel',
+            'label'           => 'HWS Base Tools sections',
+            'render_callback' => __NAMESPACE__ . '\\hws_render_dashboard_tab',
+        ] );
+        ?>
     </div>
 
     <script>
@@ -1069,87 +1038,6 @@ function display_wp_admin_settings_page() {
     
     jQuery(document).ready(function($) {
         
-        function hwsBuildTabUrl(tabId) {
-            var url = new URL(window.location.href);
-            url.searchParams.set('tab', tabId);
-            return url;
-        }
-
-        function hwsApplyTabHtml($content, html) {
-            var $wrapper = $('<div>');
-            var scripts = [];
-
-            $wrapper.append($.parseHTML(html || '', document, true));
-            $wrapper.find('script').each(function() {
-                scripts.push(this.text || this.textContent || this.innerHTML || '');
-                $(this).remove();
-            });
-
-            $content.html($wrapper.contents());
-            scripts.forEach(function(scriptText) {
-                if (scriptText.trim()) {
-                    $.globalEval(scriptText);
-                }
-            });
-        }
-
-        function hwsLoadDashboardTab(tabId, pushState) {
-            var $button = $('.hws-tab-btn[data-tab="' + tabId + '"]');
-            var $content = $('.hws-tab-content.active').first();
-            var originalHtml = $content.html();
-
-            if (!$button.length || $button.hasClass('active')) {
-                return;
-            }
-
-            $('.hws-tab-btn').prop('disabled', true);
-            $content.addClass('hws-tab-loading').html('<div class="hws-tab-loading-message">Loading...</div>');
-
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    action: 'hws_load_dashboard_tab',
-                    tab: tabId,
-                    nonce: hwsNonce
-                }
-            }).done(function(response) {
-                if (!response || !response.success || !response.data || !response.data.html) {
-                    $content.html(originalHtml);
-                    alert(getAjaxErrorMessage(response, 'Could not load tab.'));
-                    return;
-                }
-
-                tabId = response.data.tab || tabId;
-                $('.hws-tab-btn').removeClass('active');
-                $('.hws-tab-btn[data-tab="' + tabId + '"]').addClass('active');
-                $content.attr('id', 'tab-' + tabId).removeClass('hws-tab-loading');
-                hwsApplyTabHtml($content, response.data.html);
-                hwsDashboardConfig.activeTab = tabId;
-
-                if (pushState) {
-                    window.history.pushState({ hwsTab: tabId }, '', hwsBuildTabUrl(tabId).toString());
-                }
-            }).fail(function() {
-                window.location.assign(hwsBuildTabUrl(tabId).toString());
-            }).always(function() {
-                $('.hws-tab-btn').prop('disabled', false);
-                $content.removeClass('hws-tab-loading');
-            });
-        }
-
-        $('.hws-tab-btn').on('click', function() {
-            var tabId = $(this).data('tab');
-            hwsLoadDashboardTab(tabId, true);
-        });
-
-        window.addEventListener('popstate', function() {
-            var url = new URL(window.location.href);
-            var tabId = url.searchParams.get('tab') || 'overview';
-            hwsLoadDashboardTab(tabId, false);
-        });
-
         function getAjaxErrorMessage(response, fallback) {
             if (response && response.data) {
                 if (typeof response.data === 'string') {
