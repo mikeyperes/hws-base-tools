@@ -9,10 +9,19 @@ final class GettingStartedChecklistSubtask {
 
     public string $description;
 
+    public string $type;
+
     /**
      * @var callable|null
      */
     public mixed $callback;
+
+    public string $action_label;
+
+    /**
+     * @var array<string,mixed>
+     */
+    public array $request;
 
     /**
      * @var array<string,mixed>
@@ -26,7 +35,10 @@ final class GettingStartedChecklistSubtask {
         $this->id          = self::clean_key( (string) ( $definition['id'] ?? $definition['key'] ?? $definition['label'] ?? '' ) );
         $this->label       = trim( (string) ( $definition['label'] ?? $this->id ) );
         $this->description = trim( (string) ( $definition['description'] ?? '' ) );
+        $this->type        = GettingStartedChecklistStep::normalize_type( (string) ( $definition['type'] ?? $definition['kind'] ?? $definition['mode'] ?? GettingStartedChecklistStep::TYPE_CALLBACK ) );
         $this->callback    = isset( $definition['callback'] ) && is_callable( $definition['callback'] ) ? $definition['callback'] : null;
+        $this->action_label = trim( (string) ( $definition['action_label'] ?? GettingStartedChecklistStep::default_action_label( $this->type ) ) );
+        $this->request     = is_array( $definition['request'] ?? null ) ? $definition['request'] : [];
         $this->context     = is_array( $definition['context'] ?? null ) ? $definition['context'] : [];
 
         if ( '' === $this->id ) {
@@ -35,6 +47,10 @@ final class GettingStartedChecklistSubtask {
 
         if ( '' === $this->label ) {
             $this->label = $this->id;
+        }
+
+        if ( '' === $this->action_label ) {
+            $this->action_label = GettingStartedChecklistStep::default_action_label( $this->type );
         }
     }
 
@@ -57,12 +73,47 @@ final class GettingStartedChecklistSubtask {
             'id'           => $this->id,
             'label'        => $this->label,
             'description'  => $this->description,
+            'type'         => $this->type,
+            'action_label' => $this->action_label,
+            'request'      => $this->public_request(),
             'has_callback' => $this->has_callback(),
             'context'      => $this->context,
         ];
     }
 
+    /**
+     * @return array<string,mixed>
+     */
+    public function to_callback_array(): array {
+        $payload            = $this->to_public_array();
+        $payload['request'] = $this->request;
+
+        return $payload;
+    }
+
     private static function clean_key( string $value ): string {
         return function_exists( 'sanitize_key' ) ? sanitize_key( $value ) : ( preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $value ) ) ?: '' );
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function public_request(): array {
+        if ( [] === $this->request ) {
+            return [];
+        }
+
+        $public = [];
+        foreach ( $this->request as $key => $value ) {
+            $key_string = is_string( $key ) ? $key : (string) $key;
+            if ( preg_match( '/(secret|password|token|key|nonce)/i', $key_string ) ) {
+                $public[ $key_string ] = '[redacted]';
+                continue;
+            }
+
+            $public[ $key_string ] = is_scalar( $value ) || null === $value ? $value : '[' . gettype( $value ) . ']';
+        }
+
+        return $public;
     }
 }

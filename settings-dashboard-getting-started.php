@@ -25,23 +25,27 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                 [
                     'id'          => 'quick_setup',
                     'label'       => 'Run Quick Setup',
+                    'type'        => 'setup_action',
                     'description' => 'Runs the existing HWS Quick Setup process: disables debug settings, sets WP_MEMORY_LIMIT, enables auto-updates, cleans logs and backups, disables comments and pingbacks, enables snippets, installs/activates essential plugins, and checks Redis, LiteSpeed, and Wordfence.',
                     'callback'    => __NAMESPACE__ . '\\hws_getting_started_run_quick_setup',
                 ],
                 [
                     'id'          => 'system_environment',
                     'label'       => 'Verify System Environment',
+                    'type'        => 'status_check',
                     'description' => 'Checks the WordPress and PHP runtime values needed before plugin setup work starts.',
                     'subtasks'    => [
                         [
                             'id'          => 'wordpress_runtime',
                             'label'       => 'WordPress Runtime',
+                            'type'        => 'status_check',
                             'description' => 'Reports WordPress version, home URL, site URL, and admin AJAX availability.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_wordpress_runtime',
                         ],
                         [
                             'id'          => 'php_runtime',
                             'label'       => 'PHP Runtime',
+                            'type'        => 'status_check',
                             'description' => 'Reports PHP version and memory limit.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_php_runtime',
                         ],
@@ -50,17 +54,20 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                 [
                     'id'          => 'plugin_versions',
                     'label'       => 'Verify Plugin Versions',
+                    'type'        => 'status_check',
                     'description' => 'Checks the active HWS Base Tools version and the vendored Hexa WP Core version.',
                     'subtasks'    => [
                         [
                             'id'          => 'hws_base_tools_version',
                             'label'       => 'HWS Base Tools Version',
+                            'type'        => 'status_check',
                             'description' => 'Reads the active plugin header/runtime version.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_hws_version',
                         ],
                         [
                             'id'          => 'hexa_wp_core_version',
                             'label'       => 'Hexa WP Core Version',
+                            'type'        => 'status_check',
                             'description' => 'Reads the vendored Hexa WP Core VERSION file.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_core_version',
                         ],
@@ -69,17 +76,20 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                 [
                     'id'          => 'site_basics',
                     'label'       => 'Verify Site Basics',
+                    'type'        => 'status_check',
                     'description' => 'Checks site identity and permalink readiness without changing site content.',
                     'subtasks'    => [
                         [
                             'id'          => 'site_identity',
                             'label'       => 'Site Identity',
+                            'type'        => 'status_check',
                             'description' => 'Reports the website title and front-end URL values.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_site_identity',
                         ],
                         [
                             'id'          => 'permalink_structure',
                             'label'       => 'Permalink Structure',
+                            'type'        => 'status_check',
                             'description' => 'Confirms WordPress permalink settings are readable.',
                             'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_permalink_structure',
                         ],

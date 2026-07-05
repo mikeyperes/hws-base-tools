@@ -41,6 +41,8 @@ final class GettingStartedChecklistRunner {
 
         $callback = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->callback : $step->callback;
         $label    = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->label : $step->label;
+        $type     = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->type : $step->type;
+        $request  = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->request : $step->request;
         $context  = $subtask instanceof GettingStartedChecklistSubtask ? array_merge( $step->context, $subtask->context ) : $step->context;
         $logs     = [
             $this->log_entry(
@@ -50,13 +52,21 @@ final class GettingStartedChecklistRunner {
                     'step_id'    => $step->id,
                     'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
                     'label'      => $label,
+                    'type'       => $type,
                 ]
             ),
         ];
 
         if ( ! is_callable( $callback ) ) {
+            if ( $this->requires_callback( $type, $request ) ) {
+                $message = 'No callback registered for this checklist item type.';
+                $logs[]  = $this->log_entry( 'error', $message, [ 'label' => $label, 'type' => $type ] );
+
+                return $this->failure_payload( $step->id, $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '', $message, $logs );
+            }
+
             $message = 'No callback registered; item marked complete.';
-            $logs[]  = $this->log_entry( 'success', $message, [ 'label' => $label ] );
+            $logs[]  = $this->log_entry( 'success', $message, [ 'label' => $label, 'type' => $type ] );
 
             return $this->success_payload( $step, $subtask, $message, $logs );
         }
@@ -65,11 +75,13 @@ final class GettingStartedChecklistRunner {
             $result = call_user_func(
                 $callback,
                 [
-                    'step'       => $step->to_public_array(),
-                    'subtask'    => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->to_public_array() : null,
-                    'context'    => $context,
-                    'is_subtask' => $subtask instanceof GettingStartedChecklistSubtask,
-                    'item_id'    => $subtask instanceof GettingStartedChecklistSubtask ? $step->id . ':' . $subtask->id : $step->id,
+                    'step'         => $step->to_callback_array(),
+                    'subtask'      => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->to_callback_array() : null,
+                    'context'      => $context,
+                    'request'      => $request,
+                    'request_type' => $type,
+                    'is_subtask'   => $subtask instanceof GettingStartedChecklistSubtask,
+                    'item_id'      => $subtask instanceof GettingStartedChecklistSubtask ? $step->id . ':' . $subtask->id : $step->id,
                 ]
             );
         } catch ( Throwable $throwable ) {
@@ -91,12 +103,12 @@ final class GettingStartedChecklistRunner {
         $logs       = array_merge( $logs, $normalized['logs'] );
 
         if ( $normalized['success'] ) {
-            $logs[] = $this->log_entry( 'success', $normalized['message'], [ 'label' => $label ] );
+            $logs[] = $this->log_entry( 'success', $normalized['message'], [ 'label' => $label, 'type' => $type ] );
 
             return $this->success_payload( $step, $subtask, $normalized['message'], $logs, $normalized['data'] );
         }
 
-        $logs[] = $this->log_entry( 'error', $normalized['message'], [ 'label' => $label ] );
+        $logs[] = $this->log_entry( 'error', $normalized['message'], [ 'label' => $label, 'type' => $type ] );
 
         return $this->failure_payload( $step->id, $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '', $normalized['message'], $logs, $normalized['data'] );
     }
@@ -168,6 +180,26 @@ final class GettingStartedChecklistRunner {
             'logs'    => [],
             'data'    => [],
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $request
+     */
+    private function requires_callback( string $type, array $request ): bool {
+        if ( [] !== $request ) {
+            return true;
+        }
+
+        return in_array(
+            $type,
+            [
+                GettingStartedChecklistStep::TYPE_SETUP_ACTION,
+                GettingStartedChecklistStep::TYPE_FEATURE_TOGGLE,
+                GettingStartedChecklistStep::TYPE_CONFIG_MUTATION,
+                GettingStartedChecklistStep::TYPE_AJAX_REQUEST,
+            ],
+            true
+        );
     }
 
     /**

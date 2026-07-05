@@ -75,7 +75,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `FieldStructures`: reusable displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
-- `GettingStartedChecklist`: reusable plugin startup/onboarding checklist UI, step/subtask registration, guarded AJAX execution, sequential subtask processing, spinner/check/X states, callback result normalization, and dark technical activity logs.
+- `GettingStartedChecklist`: reusable plugin startup/onboarding checklist UI, typed step/subtask registration, guarded AJAX execution, sequential subtask processing, request metadata payloads, spinner/check/X states, callback result normalization, and dark technical activity logs.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
 - `PluginChecks`: shared required-plugin definitions, status checks, reusable collapsible plugin inventory tables, presence-based green/red Font Awesome SVG title indicators, Required/Optional badges, AJAX install/activate actions, update-cache refresh, and activity-log UI.
 - `PluginProvisioning`: shared plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation.
@@ -196,7 +196,7 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Getting Started Checklist
 
-`Hexa\PluginCore\GettingStartedChecklist` provides the reusable setup checklist that every plugin can use for first-run checks, onboarding, or ordered setup tasks. Host plugins register the step list and callbacks; Core owns the UI, AJAX endpoint, sequential runner, nested subtask processing, spinner/check/X states, and technical activity log.
+`Hexa\PluginCore\GettingStartedChecklist` provides the reusable setup checklist that every plugin can use for first-run checks, onboarding, or ordered setup tasks. Host plugins register the typed step list and callbacks; Core owns the UI, AJAX endpoint, sequential runner, nested subtask processing, type badges, spinner/check/X states, and technical activity log.
 
 ```php
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
@@ -211,11 +211,13 @@ $config = new GettingStartedChecklistConfig([
         [
             'id'          => 'environment',
             'label'       => 'Verify Environment',
+            'type'        => 'status_check',
             'description' => 'Checks WordPress and PHP values.',
             'subtasks'    => [
                 [
                     'id'       => 'wordpress',
                     'label'    => 'WordPress Runtime',
+                    'type'     => 'status_check',
                     'callback' => 'my_plugin_check_wordpress_runtime',
                 ],
             ],
@@ -227,7 +229,7 @@ $config = new GettingStartedChecklistConfig([
 ( new GettingStartedChecklistRenderer( $config ) )->render();
 ```
 
-Callbacks receive a single payload array containing `step`, `subtask`, `context`, `is_subtask`, and `item_id`. Return `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
+Callbacks receive a single payload array containing `step`, `subtask`, `context`, `request`, `request_type`, `is_subtask`, and `item_id`. Use `type` values of `callback`, `status_check`, `setup_action`, `feature_toggle`, `config_mutation`, `ajax_request`, or `custom`. Return `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
 
 ## Content Cleanup
 

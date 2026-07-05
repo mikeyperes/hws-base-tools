@@ -79,11 +79,12 @@ final class GettingStartedChecklistRenderer {
         ob_start();
         ?>
         <article class="hpc-gsc-step" data-gsc-step-card data-step-id="<?php echo esc_attr( $step->id ); ?>">
-            <div class="hpc-gsc-row hpc-gsc-step-row" data-gsc-item data-gsc-step-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="" data-has-action="<?php echo $step->has_callback() ? '1' : '0'; ?>" data-has-subtasks="<?php echo [] !== $subtasks ? '1' : '0'; ?>" data-status="pending">
+            <div class="hpc-gsc-row hpc-gsc-step-row" data-gsc-item data-gsc-step-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="" data-request-type="<?php echo esc_attr( $step->type ); ?>" data-has-action="<?php echo $step->has_callback() ? '1' : '0'; ?>" data-has-subtasks="<?php echo [] !== $subtasks ? '1' : '0'; ?>" data-status="pending">
                 <?php echo $this->status_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 <div class="hpc-gsc-main">
                     <div class="hpc-gsc-title-line">
                         <strong><?php echo esc_html( $step->label ); ?></strong>
+                        <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $step->type ) ); ?></span>
                         <span class="hpc-gsc-state" data-gsc-state>Pending</span>
                     </div>
                     <?php if ( '' !== $step->description ) : ?>
@@ -91,18 +92,19 @@ final class GettingStartedChecklistRenderer {
                     <?php endif; ?>
                 </div>
                 <div class="hpc-gsc-row-action">
-                    <?php echo DynamicButton::render( [ 'label' => [] !== $subtasks ? 'Run Step' : 'Run', 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-step' => true, 'data-step-id' => $step->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php echo DynamicButton::render( [ 'label' => [] !== $subtasks ? $step->action_label . ' Step' : $step->action_label, 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-step' => true, 'data-step-id' => $step->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                 </div>
             </div>
 
             <?php if ( [] !== $subtasks ) : ?>
                 <div class="hpc-gsc-subtasks" data-gsc-subtasks="<?php echo esc_attr( $step->id ); ?>">
                     <?php foreach ( $subtasks as $subtask ) : ?>
-                        <div class="hpc-gsc-row hpc-gsc-subtask-row" data-gsc-item data-gsc-subtask-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="<?php echo esc_attr( $subtask->id ); ?>" data-has-action="<?php echo $subtask->has_callback() ? '1' : '0'; ?>" data-status="pending">
+                        <div class="hpc-gsc-row hpc-gsc-subtask-row" data-gsc-item data-gsc-subtask-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="<?php echo esc_attr( $subtask->id ); ?>" data-request-type="<?php echo esc_attr( $subtask->type ); ?>" data-has-action="<?php echo $subtask->has_callback() ? '1' : '0'; ?>" data-status="pending">
                             <?php echo $this->status_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             <div class="hpc-gsc-main">
                                 <div class="hpc-gsc-title-line">
                                     <strong><?php echo esc_html( $subtask->label ); ?></strong>
+                                    <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $subtask->type ) ); ?></span>
                                     <span class="hpc-gsc-state" data-gsc-state>Pending</span>
                                 </div>
                                 <?php if ( '' !== $subtask->description ) : ?>
@@ -110,7 +112,7 @@ final class GettingStartedChecklistRenderer {
                                 <?php endif; ?>
                             </div>
                             <div class="hpc-gsc-row-action">
-                                <?php echo DynamicButton::render( [ 'label' => 'Run', 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-item' => true, 'data-step-id' => $step->id, 'data-subtask-id' => $subtask->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                <?php echo DynamicButton::render( [ 'label' => $subtask->action_label, 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-item' => true, 'data-step-id' => $step->id, 'data-subtask-id' => $subtask->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -140,6 +142,7 @@ final class GettingStartedChecklistRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-title-line strong{font-size:14px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-main p{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-state{background:#eef2f7;border:1px solid #d7e0ea;border-radius:999px;color:#475569;font-size:11px;font-weight:800;line-height:1;padding:5px 8px;text-transform:uppercase}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-type{background:#fff;border:1px solid #d8e1ec;border-radius:5px;color:#536173;font-size:11px;font-weight:800;line-height:1;padding:5px 7px;text-transform:uppercase}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row[data-status="running"] .hpc-gsc-state{background:#eef2ff;border-color:#c7d4ff;color:var(--hpc-blue)}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row[data-status="success"] .hpc-gsc-state{background:#eaf8ef;border-color:#ccefd7;color:var(--hpc-green)}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row[data-status="failed"] .hpc-gsc-state{background:#fff0f2;border-color:#ffd0d8;color:var(--hpc-red)}
@@ -358,6 +361,18 @@ final class GettingStartedChecklistRenderer {
             . '<span class="hpc-gsc-icon-check"><svg viewBox="0 0 512 512" focusable="false"><path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.2 0z"></path></svg></span>'
             . '<span class="hpc-gsc-icon-x"><svg viewBox="0 0 384 512" focusable="false"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"></path></svg></span>'
             . '</span>';
+    }
+
+    private function type_label( string $type ): string {
+        return match ( $type ) {
+            GettingStartedChecklistStep::TYPE_STATUS_CHECK => 'Status Check',
+            GettingStartedChecklistStep::TYPE_SETUP_ACTION => 'Setup Action',
+            GettingStartedChecklistStep::TYPE_FEATURE_TOGGLE => 'Feature Toggle',
+            GettingStartedChecklistStep::TYPE_CONFIG_MUTATION => 'Config Mutation',
+            GettingStartedChecklistStep::TYPE_AJAX_REQUEST => 'AJAX Request',
+            GettingStartedChecklistStep::TYPE_CUSTOM => 'Custom',
+            default => 'Callback',
+        };
     }
 
     /**

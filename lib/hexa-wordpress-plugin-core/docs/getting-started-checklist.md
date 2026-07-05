@@ -19,7 +19,26 @@ Use this module when a plugin needs a reusable setup or onboarding process that 
 
 ## Host Plugin Rule
 
-The host plugin owns only the process definition and callback functions. The UI, AJAX contract, sequential execution, status rendering, and log rendering belong in Hexa WP Core.
+The host plugin owns only the process definition and callback functions. The UI, AJAX contract, sequential execution, status rendering, request type display, and log rendering belong in Hexa WP Core.
+
+## Step Types
+
+Every step and subtask may declare a `type`. The type is shown in the UI and is passed to callbacks as `request_type`.
+
+Allowed types:
+
+- `callback`: generic PHP callback.
+- `status_check`: reads/report status without changing configuration.
+- `setup_action`: runs a setup or repair command.
+- `feature_toggle`: enables or disables a plugin feature.
+- `config_mutation`: writes configuration such as options, constants, or settings.
+- `ajax_request`: represents a host-owned AJAX request step. Register the actual callback in the host plugin.
+- `custom`: anything plugin-specific that does not fit the other types.
+
+Each step may also define:
+
+- `action_label`: button label for that item. If omitted, Core chooses one from the type.
+- `request`: structured request metadata. Core passes the raw request array to the callback and redacts secret/token/password/nonce/key values in public output.
 
 ## Basic Setup
 
@@ -40,11 +59,13 @@ $config = new GettingStartedChecklistConfig([
         [
             'id'          => 'environment',
             'label'       => 'Verify Environment',
+            'type'        => 'status_check',
             'description' => 'Checks WordPress and PHP values.',
             'subtasks'    => [
                 [
                     'id'       => 'wordpress',
                     'label'    => 'WordPress Runtime',
+                    'type'     => 'status_check',
                     'callback' => 'my_plugin_check_wordpress_runtime',
                 ],
             ],
@@ -70,6 +91,8 @@ Callbacks receive one array:
     'step'       => [...],
     'subtask'    => [...]|null,
     'context'    => [...],
+    'request'    => [...],
+    'request_type' => 'status_check',
     'is_subtask' => true|false,
     'item_id'    => 'step-id' or 'step-id:subtask-id',
 ]

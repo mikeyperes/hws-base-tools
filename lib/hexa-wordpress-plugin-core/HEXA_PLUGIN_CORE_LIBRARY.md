@@ -121,7 +121,7 @@ Namespace:
 Hexa\PluginCore\GettingStartedChecklist
 ```
 
-Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, and ordered steps. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with parent steps, nested subtasks, spinner/check/X states, sequential AJAX execution, and a dark technical activity log.
+Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, and a dark technical activity log.
 
 Required rules:
 
@@ -129,6 +129,8 @@ Required rules:
 - Keep checklist UI, AJAX execution, status icons, subtask sequencing, and log rendering in Hexa Core.
 - A parent step with subtasks must stay in the running state until each subtask has finished.
 - Callback returns may be `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
+- Step and subtask `type` values should be one of `callback`, `status_check`, `setup_action`, `feature_toggle`, `config_mutation`, `ajax_request`, or `custom`.
+- Use `request` for structured request metadata. Core passes raw request metadata to callbacks and redacts secret/token/password/nonce/key values in public output.
 
 Example:
 
@@ -141,10 +143,12 @@ $config = new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistCo
         [
             'id'          => 'environment',
             'label'       => 'Verify Environment',
+            'type'        => 'status_check',
             'subtasks'    => [
                 [
                     'id'       => 'wordpress',
                     'label'    => 'WordPress Runtime',
+                    'type'     => 'status_check',
                     'callback' => 'my_plugin_check_wordpress_runtime',
                 ],
             ],
