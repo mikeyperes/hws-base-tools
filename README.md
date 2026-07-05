@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.80 (Current)
+### v10.18.81 (Current)
+- Updated vendored Hexa WP Core to 0.19.16 so the Cleanup tab opens without launching page, backup, and article scans automatically. Each cleanup section now shows a clear manual scan empty state and only starts AJAX work when its scan button is clicked.
+
+### v10.18.80
 - Updated vendored Hexa WP Core to 0.19.15 and added true article/media batch deletion in Cleanup. The UI now has explicit actions for deleting all matching posts or deleting all matching except the latest X posts; batch deletion ignores the preview limit, runs through AJAX batches, logs each batch, and supports associated media deletion when the toggle is enabled.
 
 ### v10.18.79

@@ -195,6 +195,8 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 `Hexa\PluginCore\ContentCleanup` provides reusable cleanup structures for wp-admin. Host plugins pass their own action names, allowed post types, backup locations, and deletion limits; Core renders each cleanup service as a separate collapsible card, with fixed reports, filters, result tables, edit links, row flags, destructive buttons, row loaders, and closed-by-default dark activity logs.
 
+Version 0.19.16 changes cleanup services to manual scan by default. Content Cleanup, Backup Cleanup, and Article/Media Cleanup render immediately with a clear "Press Scan" empty state and only start AJAX work when the user clicks a scan button. Host plugins can opt back into load-time scanning with `auto_scan => true`.
+
 Version 0.19.15 adds reusable article/media batch deletion for "delete all matching posts" and "delete all matching except the latest X posts." Batch deletion ignores the preview limit, runs through repeated AJAX requests, logs every batch, and can delete associated featured/inline/gallery media when the visible media cleanup toggle is enabled.
 
 Version 0.19.14 adds a subtle Core detail-card variant and uses it for cleanup descriptions, detection rules, and scan-location details so secondary context stays collapsed and visually quiet. Backup scans now show an active loading row and log the file patterns searched, folders inspected, directory entries looked at, matched files, and no-result state.

@@ -15,6 +15,7 @@ final class BackupCleanupConfig {
             'nonce_field'   => 'nonce',
             'scan_action'   => 'hpc_backup_cleanup_scan',
             'delete_action' => 'hpc_backup_cleanup_delete',
+            'auto_scan'     => false,
             'locations'     => [],
             'empty_message' => 'No backup files were detected.',
         ];
@@ -59,6 +60,10 @@ final class BackupCleanupConfig {
 
     public function locations(): array {
         return (array) $this->get( 'locations', [] );
+    }
+
+    public function auto_scan(): bool {
+        return (bool) $this->get( 'auto_scan', false );
     }
 
     private function normalize_locations( array $locations ): array {

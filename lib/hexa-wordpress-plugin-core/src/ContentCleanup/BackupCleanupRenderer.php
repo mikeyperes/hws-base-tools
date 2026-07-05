@@ -19,7 +19,7 @@ final class BackupCleanupRenderer {
         $root_id = $this->config->root_id();
         $nonce   = function_exists( 'wp_create_nonce' ) ? wp_create_nonce( $this->config->nonce_action() ) : '';
         ?>
-        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-cleanup-module hpc-backup-cleanup" data-hpc-backup-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>">
+        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-cleanup-module hpc-backup-cleanup" data-hpc-backup-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>" data-auto-scan="<?php echo esc_attr( $this->config->auto_scan() ? '1' : '0' ); ?>">
             <?php $this->styles( $root_id ); ?>
             <?php ob_start(); ?>
                 <?php echo $this->description_card(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -30,7 +30,7 @@ final class BackupCleanupRenderer {
                 <div class="hpc-cleanup-table-wrap">
                     <table class="hpc-cleanup-table">
                         <thead><tr><th>Backup File</th><th>Source</th><th>Size</th><th>Modified</th><th>Age</th><th>Writable</th><th>Action</th></tr></thead>
-                        <tbody data-backup-results><tr><td colspan="7" class="hpc-cleanup-muted">Loading backup files...</td></tr></tbody>
+                        <tbody data-backup-results><tr><td colspan="7" class="hpc-cleanup-muted">Press Scan Backup Files to inspect configured locations.</td></tr></tbody>
                     </table>
                 </div>
                 <?php $this->log_html(); ?>
@@ -220,7 +220,7 @@ final class BackupCleanupRenderer {
             function openFreshManualLog(){if(!logBody)return;logBody.innerHTML='';var details=logBody.closest('details');if(details)details.open=true}
             function scan(button,showLog){if(showLog)openFreshManualLog();dynStart(button,'Scanning...');renderScanning();addLog({level:'info',message:'Starting backup file scan.'});post(root.dataset.scanAction||'',{}).then(function(data){addLogs(data.log);renderRows(data.rows||[]);if(!(data.rows||[]).length)addLog({level:'warning',message:'No results found after scanning configured backup locations.'});dynOk(button,'Scanned')}).catch(function(error){addLog({level:'error',message:error.message||'Scan failed.'});dynFail(button,'Failed')})}
             root.addEventListener('click',function(event){var scanButton=event.target.closest('[data-backup-scan]');if(scanButton){event.preventDefault();scan(scanButton,true);return}var clearButton=event.target.closest('[data-backup-clear-log]');if(clearButton){event.preventDefault();event.stopPropagation();if(logBody)logBody.innerHTML='';addLog({level:'info',message:'Backup activity log cleared.'});return}var del=event.target.closest('[data-backup-delete]');if(del){event.preventDefault();var id=del.getAttribute('data-file-id')||'';if(!window.confirm('Delete this backup file? This cannot be undone.'))return;var row=root.querySelector('.hpc-cleanup-row[data-file-id="'+id+'"]');if(row)row.classList.add('is-working');dynStart(del,'Deleting...');addLog({level:'warning',message:'Sending backup delete AJAX request.',context:{file_id:id}});post(root.dataset.deleteAction||'',{file_id:id}).then(function(data){addLogs(data.log);if(row)row.remove();setCount(root.querySelectorAll('.hpc-cleanup-row').length);if(!root.querySelector('.hpc-cleanup-row')&&tbody)tbody.innerHTML='<tr><td colspan="7" class="hpc-cleanup-muted">'+esc(root.dataset.emptyMessage||'No backup files detected.')+'</td></tr>';dynOk(del,'Deleted')}).catch(function(error){if(row)row.classList.remove('is-working');addLog({level:'error',message:error.message||'Delete failed.',context:{file_id:id}});dynFail(del,'Failed')})}});
-            addLog({level:'info',message:'Backup cleanup UI loaded. Auto-running backup scan.'});scan(root.querySelector('[data-backup-scan]'),false);
+            if(root.dataset.autoScan==='1'){addLog({level:'info',message:'Backup cleanup UI loaded. Auto-running backup scan.'});scan(root.querySelector('[data-backup-scan]'),false)}else{addLog({level:'info',message:'Backup cleanup UI loaded. Waiting for manual scan.'})}
         })();
         </script>
         <?php

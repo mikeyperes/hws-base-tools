@@ -21,7 +21,7 @@ final class ContentCleanupRenderer {
         $nonce    = function_exists( 'wp_create_nonce' ) ? wp_create_nonce( $this->config->nonce_action() ) : '';
         $show_filters = $this->config->show_filters();
         ?>
-        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-content-cleanup" data-hpc-content-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-trash-action="<?php echo esc_attr( $this->config->trash_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>" data-default-criteria="<?php echo esc_attr( wp_json_encode( $defaults ) ); ?>" data-count-label="<?php echo esc_attr( $this->config->count_label() ); ?>">
+        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-content-cleanup" data-hpc-content-cleanup data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-scan-action="<?php echo esc_attr( $this->config->scan_action() ); ?>" data-trash-action="<?php echo esc_attr( $this->config->trash_action() ); ?>" data-delete-action="<?php echo esc_attr( $this->config->delete_action() ); ?>" data-empty-message="<?php echo esc_attr( (string) $this->config->get( 'empty_message' ) ); ?>" data-default-criteria="<?php echo esc_attr( wp_json_encode( $defaults ) ); ?>" data-count-label="<?php echo esc_attr( $this->config->count_label() ); ?>" data-auto-scan="<?php echo esc_attr( $this->config->auto_scan() ? '1' : '0' ); ?>">
             <style>
                 #<?php echo esc_attr( $root_id ); ?>{max-width:100%;overflow:hidden}
                 #<?php echo esc_attr( $root_id ); ?> .hpc-section,#<?php echo esc_attr( $root_id ); ?> .hpc-section-body{max-width:100%;overflow:hidden}
@@ -114,7 +114,7 @@ final class ContentCleanupRenderer {
                             </tr>
                         </thead>
                         <tbody data-cleanup-results>
-                            <tr><td colspan="7" class="hpc-cleanup-muted">Loading cleanup report...</td></tr>
+                            <tr><td colspan="7" class="hpc-cleanup-muted">Press Scan Pages to run the cleanup report.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -312,8 +312,12 @@ final class ContentCleanupRenderer {
                         scan(root.querySelector('[data-cleanup-scan]'));
                     });
                 }
-                addLog({level:'info', message:'Cleanup UI loaded. Auto-running the content cleanup report.'});
-                scan(root.querySelector('[data-cleanup-scan]'));
+                if (root.dataset.autoScan === '1') {
+                    addLog({level:'info', message:'Cleanup UI loaded. Auto-running the content cleanup report.'});
+                    scan(root.querySelector('[data-cleanup-scan]'));
+                } else {
+                    addLog({level:'info', message:'Cleanup UI loaded. Waiting for manual scan.'});
+                }
             })();
             </script>
         </div>

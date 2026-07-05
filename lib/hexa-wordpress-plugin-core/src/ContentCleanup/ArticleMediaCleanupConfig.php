@@ -16,6 +16,7 @@ final class ArticleMediaCleanupConfig {
             'scan_action'         => 'hpc_article_media_cleanup_scan',
             'delete_action'       => 'hpc_article_media_cleanup_delete',
             'batch_delete_action' => 'hpc_article_media_cleanup_batch_delete',
+            'auto_scan'           => false,
             'post_types'          => [ 'post' => 'Posts' ],
             'statuses'            => [
                 'publish' => 'Published',
@@ -121,6 +122,10 @@ final class ArticleMediaCleanupConfig {
 
     public function max_batch_size(): int {
         return (int) $this->get( 'max_batch_size', 100 );
+    }
+
+    public function auto_scan(): bool {
+        return (bool) $this->get( 'auto_scan', false );
     }
 
     private function normalize_options( array $options, array $fallback ): array {

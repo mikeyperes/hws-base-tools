@@ -32,6 +32,7 @@ final class ContentCleanupConfig {
             'default_limit'          => 50,
             'max_limit'              => 250,
             'show_filters'           => true,
+            'auto_scan'              => false,
             'count_label'            => 'Detected',
             'detection_rules'        => [],
             'exclude_protected'      => false,
@@ -126,6 +127,10 @@ final class ContentCleanupConfig {
 
     public function show_filters(): bool {
         return (bool) $this->get( 'show_filters', true );
+    }
+
+    public function auto_scan(): bool {
+        return (bool) $this->get( 'auto_scan', false );
     }
 
     public function count_label(): string {

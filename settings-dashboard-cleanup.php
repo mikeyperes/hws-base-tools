@@ -28,6 +28,7 @@ function hws_content_cleanup_config(): ContentCleanupConfig {
             'scan_action'            => 'hws_content_cleanup_scan',
             'trash_action'           => 'hws_content_cleanup_trash',
             'delete_action'          => 'hws_content_cleanup_delete',
+            'auto_scan'              => false,
             'post_types'             => [ 'page' => 'Pages' ],
             'statuses'               => [
                 'publish' => 'Published',
@@ -95,6 +96,7 @@ function hws_backup_file_cleanup_config(): BackupCleanupConfig {
             'nonce_field'   => 'nonce',
             'scan_action'   => 'hws_backup_file_cleanup_scan',
             'delete_action' => 'hws_backup_file_cleanup_delete',
+            'auto_scan'     => false,
             'locations'     => hws_content_cleanup_backup_locations(),
             'empty_message' => 'No backup files were detected in the configured backup locations.',
         ]
@@ -153,6 +155,7 @@ function hws_article_media_cleanup_config(): ArticleMediaCleanupConfig {
             'scan_action'         => 'hws_article_media_cleanup_scan',
             'delete_action'       => 'hws_article_media_cleanup_delete',
             'batch_delete_action' => 'hws_article_media_cleanup_batch_delete',
+            'auto_scan'           => false,
             'post_types'          => [ 'post' => 'Posts' ],
             'statuses'            => [
                 'publish' => 'Published',
