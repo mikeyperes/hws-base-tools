@@ -29,9 +29,6 @@ Three-column deployment readiness checker:
 - **Plugins** — Essential plugins installed & active (Elementor, Wordfence, WP Mail SMTP, Rank Math, LiteSpeed, etc.)
 - **Settings & Server** — 25+ checks: WP_MEMORY_LIMIT, comments/pingbacks off, SMTP authenticated, WP_DEBUG off, display_errors off, Wordfence alerts, log file sizes (debug.log, error_log, wp-admin/error_log), WP_CRON disabled, Cloudflare active, PHP SAPI LiteSpeed, PHP ≥ 8.1, Imagick, no MyISAM tables, Redis active, post_max_size/upload_max ≥ 128MB, Brotli, max 2 themes, all updated, no Twenty* themes
 
-### ⚡ Quick Setup
-One-click production configuration: disable debug, set memory 4GB, enable auto-updates, delete logs/backups/comments, enable recommended snippets, install & activate essential free plugins, enable Redis/LiteSpeed/Wordfence.
-
 ### ⚡ LiteSpeed Cache Panel
 Four-column status: Page Cache (on/off, private, browser, mobile, REST, TTL) · CSS/JS (minify, combine, async, defer) · Redis (connection, driver, version, memory, hit rate, uptime, keys) · Brotli & General (compression, PHP, SAPI, server)
 
@@ -62,7 +59,7 @@ Active theme verification, auto-update status, batch delete, warning for >2 them
 Structured feature management with toggles, optional settings, use instructions, code examples, test reports, and activity logs.
 
 ## Getting Started Checklist Tab
-Reusable Hexa WP Core startup process runner. HWS registers environment, plugin version, core version, site identity, and permalink checks; Hexa WP Core provides the checklist UI, guarded AJAX execution, sequential subtasks, spinner/check/X states, and technical activity log.
+Reusable Hexa WP Core startup process runner. HWS registers the former Quick Setup process, environment checks, plugin version checks, core version checks, site identity checks, and permalink checks; Hexa WP Core provides the checklist UI, guarded AJAX execution, sequential subtasks, spinner/check/X states, and technical activity log.
 
 ## Brand Assets Tab
 One place for favicon and logo assets:

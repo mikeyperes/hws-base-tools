@@ -885,20 +885,6 @@ function display_wp_admin_settings_page() {
             border: 1px solid #ddd;
         }
         
-        /* Quick Setup */
-        .hws-quick-setup-log {
-            width: 100%;
-            height: 200px;
-            font-family: monospace;
-            font-size: 12px;
-            background: #1d2327;
-            color: #50c878;
-            padding: 15px;
-            border-radius: 6px;
-            border: none;
-            resize: none;
-        }
-        
         /* Red Flag Alert */
         .hws-red-flag {
             background: #fcf0f1;
@@ -1273,34 +1259,6 @@ function display_wp_admin_settings_page() {
                 }
             });
         }
-        
-        // Quick Setup
-        $(document).on('click', '#hws-run-quick-setup', function() {
-            var $btn = $(this);
-            var $log = $('#hws-quick-setup-log');
-            $btn.prop('disabled', true).text('Running...');
-            $log.val('Starting Quick Setup...\n');
-            
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: { action: 'hws_quick_setup', nonce: hwsNonce },
-                success: function(response) {
-                    $btn.prop('disabled', false).text('▶️ Run Quick Setup');
-                    if (response.success) {
-                        $log.val($log.val() + response.data.log);
-                        $log.val($log.val() + '\n✅ Quick Setup Complete!\n');
-                        refreshOverviewState();
-                    } else {
-                        $log.val($log.val() + '\n❌ Error: ' + response.data + '\n');
-                    }
-                },
-                error: function() {
-                    $btn.prop('disabled', false).text('▶️ Run Quick Setup');
-                    $log.val($log.val() + '\n❌ AJAX Error\n');
-                }
-            });
-        });
         
         // Toggle Secret URLs
         $(document).on('change', '#hws-toggle-secret-urls', function() {
@@ -1833,64 +1791,6 @@ function hws_wp_memory_limit_is_healthy( $value ): bool {
     return $bytes > ( 511 * 1024 * 1024 );
 }
 
-function render_quick_setup_panel( bool $secret_setup_enabled, bool $secret_permalinks_enabled, string $setup_url, string $permalinks_url ): void {
-    ?>
-    <!-- Quick Setup -->
-    <div class="hws-panel">
-        <div class="hws-panel-header">⚡ Quick Setup</div>
-        <div class="hws-panel-body">
-            <p>Run this to quickly configure the site with optimal settings:</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 15px;">
-                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
-                    <li>Disable all debug settings</li>
-                    <li>Set WP_MEMORY_LIMIT to 4GB</li>
-                    <li>Enable WP core auto-updates</li>
-                    <li>Enable ALL plugin auto-updates</li>
-                    <li>Enable ALL theme auto-updates</li>
-                    <li>Delete log files &amp; backup files</li>
-                    <li>Delete all comments &amp; pingbacks</li>
-                </ul>
-                <ul style="margin: 0; padding-left: 20px; list-style-type: disc;">
-                    <li><strong>Enable all recommended snippets</strong></li>
-                    <li><strong>Install &amp; activate essential plugins</strong> <em>(skips pro)</em></li>
-                    <li>Enable Redis object cache <em>(if available)</em></li>
-                    <li>Activate LiteSpeed Cache <em>(if installed)</em></li>
-                    <li>Activate Wordfence <em>(if installed)</em></li>
-                </ul>
-            </div>
-            <button type="button" id="hws-run-quick-setup" class="hws-btn">▶️ Run Quick Setup</button>
-            <textarea id="hws-quick-setup-log" class="hws-quick-setup-log" readonly placeholder="Setup log will appear here..."></textarea>
-
-            <!-- Secret Quick Setup URL -->
-            <div class="hws-secret-url-box" id="hws-secret-setup-box" style="margin-top: 15px;">
-                <label>
-                    <input type="checkbox" id="hws-toggle-secret-setup" <?php checked( $secret_setup_enabled ); ?>>
-                    <strong>Enable Public Quick Setup URL</strong> (runs setup without admin login)
-                </label>
-                <div id="hws-secret-setup-details" style="<?php echo $secret_setup_enabled ? '' : 'display:none;'; ?>">
-                    <p style="margin: 10px 0 5px;"><strong>Quick Setup URL:</strong></p>
-                    <code id="hws-secret-setup-url"><?php echo esc_html( $setup_url ); ?></code>
-                    <p style="color: #d63638; font-size: 12px; margin-top: 5px;">⚠️ Anyone with this URL can run Quick Setup. Disable when not needed.</p>
-                </div>
-            </div>
-
-            <!-- Secret Permalinks Purge URL -->
-            <div class="hws-secret-url-box" id="hws-secret-permalinks-box" style="margin-top: 15px;">
-                <label>
-                    <input type="checkbox" id="hws-toggle-secret-permalinks" <?php checked( $secret_permalinks_enabled ); ?>>
-                    <strong>Enable Public Permalink Purge URL</strong> (flushes permalinks without admin login)
-                </label>
-                <div id="hws-secret-permalinks-details" style="<?php echo $secret_permalinks_enabled ? '' : 'display:none;'; ?>">
-                    <p style="margin: 10px 0 5px;"><strong>Purge Permalinks URL:</strong></p>
-                    <code id="hws-secret-permalinks-url"><?php echo esc_html( $permalinks_url ); ?></code>
-                    <p style="color: #666; font-size: 12px; margin-top: 5px;">ℹ️ Use this URL to flush rewrite rules remotely (useful for terminal/scripts).</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php
-}
-
 function render_tab_overview() {
     // Get debug states
     $wp_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
@@ -1928,8 +1828,6 @@ function render_tab_overview() {
          @since 10.9.0
     ═══════════════════════════════════════════════════════════════════ -->
     <?php render_going_live_checklist(); ?>
-
-    <?php render_quick_setup_panel( $secret_setup_enabled, $secret_permalinks_enabled, $setup_url, $permalinks_url ); ?>
 
     <?php render_system_basics_panel(); ?>
 
@@ -3522,7 +3420,7 @@ function render_wordfence_status_panel() {
                     <?php echo hws_render_instructions(
                         'Wordfence Setup Instructions',
                         [
-                            'Install and activate Wordfence from the Plugins tab or Quick Setup.',
+                            'Install and activate Wordfence from the Plugins tab or the Getting Started Checklist.',
                             'During initial setup wizard, <strong>select the Free version</strong>.',
                             'Send your free license key to <code>contact+wordfence@michaelperes.com</code>',
                             'When prompted <em>"Would you like WordPress security and vulnerability alerts sent to you via email?"</em> — select <strong>Yes</strong>.',
@@ -5292,7 +5190,7 @@ function render_going_live_checklist() {
             <?php if ( $all_good ) : ?>
                 <p style="color:#00a32a;font-weight:600;font-size:14px;margin:0 0 12px;">✅ All checks passed — site is ready to go live!</p>
             <?php else : ?>
-                <p style="color:#dba617;font-size:13px;margin:0 0 12px;">⚠️ <?php echo ( $total_checks - $total_ok ); ?> items need attention. Run <strong>Quick Setup</strong> below to fix what can be automated.</p>
+                <p style="color:#dba617;font-size:13px;margin:0 0 12px;">⚠️ <?php echo ( $total_checks - $total_ok ); ?> items need attention. Use the <strong>Getting Started Checklist</strong> tab to run the automated setup process.</p>
             <?php endif; ?>
 
             <!-- ─── THREE-COLUMN GRID ─── -->

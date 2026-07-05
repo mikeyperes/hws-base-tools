@@ -23,6 +23,12 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
             'empty_message' => 'No HWS getting started checks are registered.',
             'steps'         => [
                 [
+                    'id'          => 'quick_setup',
+                    'label'       => 'Run Quick Setup',
+                    'description' => 'Runs the existing HWS Quick Setup process: disables debug settings, sets WP_MEMORY_LIMIT, enables auto-updates, cleans logs and backups, disables comments and pingbacks, enables snippets, installs/activates essential plugins, and checks Redis, LiteSpeed, and Wordfence.',
+                    'callback'    => __NAMESPACE__ . '\\hws_getting_started_run_quick_setup',
+                ],
+                [
                     'id'          => 'system_environment',
                     'label'       => 'Verify System Environment',
                     'description' => 'Checks the WordPress and PHP runtime values needed before plugin setup work starts.',
@@ -142,6 +148,64 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @param array<string,mixed> $payload
+ * @return array<string,mixed>
+ */
+function hws_getting_started_run_quick_setup( array $payload ): array {
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_execute_quick_setup' ) ) {
+        return [
+            'success' => false,
+            'message' => 'HWS Quick Setup function is not loaded.',
+            'logs'    => [
+                [
+                    'level'   => 'error',
+                    'message' => 'The checklist could not find hws_execute_quick_setup().',
+                    'context' => [ 'function' => __NAMESPACE__ . '\\hws_execute_quick_setup' ],
+                ],
+            ],
+        ];
+    }
+
+    $raw_log = hws_execute_quick_setup();
+    $lines   = preg_split( '/\r\n|\r|\n/', trim( wp_strip_all_tags( (string) $raw_log ) ) ) ?: [];
+    $logs    = [
+        [
+            'level'   => 'info',
+            'message' => 'Existing HWS Quick Setup process started from the Hexa Core checklist.',
+            'context' => [ 'source_function' => __NAMESPACE__ . '\\hws_execute_quick_setup' ],
+        ],
+    ];
+
+    foreach ( $lines as $line ) {
+        $line = trim( (string) $line );
+        if ( '' === $line ) {
+            continue;
+        }
+
+        $level = 'info';
+        if ( str_contains( strtolower( $line ), 'error' ) || str_contains( $line, '❌' ) ) {
+            $level = 'error';
+        } elseif ( str_contains( strtolower( $line ), 'warning' ) || str_contains( $line, '⚠' ) ) {
+            $level = 'warning';
+        } elseif ( str_contains( $line, '✓' ) || str_contains( $line, '✅' ) || str_contains( strtolower( $line ), 'complete' ) ) {
+            $level = 'success';
+        }
+
+        $logs[] = [
+            'level'   => $level,
+            'message' => $line,
+            'context' => [],
+        ];
+    }
+
+    return [
+        'success' => true,
+        'message' => 'HWS Quick Setup completed.',
+        'logs'    => $logs,
+    ];
 }
 
 /**
