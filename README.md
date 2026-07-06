@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.96 (Current)
+### v10.18.97 (Current)
+- Updated vendored Hexa WP Core to 0.19.27 and added a Quick Start destructive-delete sample that requires typed confirmation, creates/deletes temporary sample posts with media, and renders reusable Hexa WP Core deleted-post/deleted-file reports.
+
+### v10.18.96
 - Updated vendored Hexa WP Core to 0.19.26 and registered Quick Start templates: Default and Diamond Website.
 
 ### v10.18.95

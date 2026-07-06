@@ -44,7 +44,7 @@ Each step may also define:
 
 Use `required_inputs` when a checklist item cannot run until an operator types a value. `inputs` is accepted as an alias for the same structure. Core owns the UI fields, client-side validation, AJAX payload, server-side validation, sanitization, and callback payload. The host plugin owns only the callback that consumes the typed value.
 
-Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, and `search`. Required fields block item, step, and full-checklist execution until valid values are entered.
+Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, `search`, and `confirmation`. Required fields block item, step, and full-checklist execution until valid values are entered.
 
 ```php
 [
@@ -66,6 +66,37 @@ Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, a
 ```
 
 Do not hardcode site-specific values in Core or in host checklist definitions. For SMTP, alert emails, API keys, confirmation text, or destructive approval text, collect the value through `required_inputs` and feed `$payload["inputs"]` into the existing host implementation.
+
+## Destructive Confirmation Sample
+
+Use `DestructiveSampleRunner` when a plugin needs a visible example of a destructive task that cannot run until the operator types an exact confirmation phrase. The runner creates temporary draft posts and temporary featured media, deletes only the records it created, and returns reusable Core reports for:
+
+- Deleted posts: title, ID, permalink, and deleted media URLs.
+- Deleted files: file name, absolute location, and size.
+
+```php
+use Hexa\PluginCore\GettingStartedChecklist\DestructiveSampleRunner;
+
+[
+    'id'          => 'sample_delete_posts_with_media',
+    'label'       => 'Sample Delete Posts With Media',
+    'type'        => 'setup_action',
+    'description' => 'Creates temporary sample posts/media and deletes only those after typed confirmation.',
+    'callback'    => 'my_plugin_run_quick_start_task',
+    'required_inputs' => [
+        DestructiveSampleRunner::confirmation_input(),
+    ],
+]
+
+function my_plugin_run_quick_start_task(array $payload): array {
+    return DestructiveSampleRunner::run([
+        'title_prefix' => 'My Plugin Delete Sample',
+        'post_count'   => 3,
+    ]);
+}
+```
+
+Do not use this runner to delete production posts. It is a reusable UI/proof sample for typed destructive confirmation and report rendering.
 
 ## Basic Setup
 

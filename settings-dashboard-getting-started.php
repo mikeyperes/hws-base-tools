@@ -3,6 +3,7 @@
 namespace hws_base_tools;
 
 use Hexa\PluginCore\GettingStartedChecklist\ChecklistReportBuilder;
+use Hexa\PluginCore\GettingStartedChecklist\DestructiveSampleRunner;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
@@ -214,6 +215,20 @@ function hws_getting_started_quick_setup_subtasks(): array {
         hws_getting_started_quick_setup_task_definition( 'clean_backup_files', 'Clean Backup Files', 'setup_action', 'Uses the existing HWS backup scanner and removes writable backup files it reports.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'close_comments', 'Close Comments', 'config_mutation', 'Closes future comments and existing open post comments.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'delete_comments', 'Delete Comments', 'setup_action', 'Deletes existing comments and comment meta.', $callback ),
+        hws_getting_started_quick_setup_task_definition(
+            'sample_delete_posts_with_media',
+            'Sample Delete Posts With Media',
+            'setup_action',
+            'Creates temporary HWS sample posts with temporary featured media, then permanently deletes only those sample records after typed confirmation. Demonstrates the reusable Hexa WP Core destructive confirmation and deleted-post reporting.',
+            $callback,
+            [
+                DestructiveSampleRunner::confirmation_input(
+                    [
+                        'description' => 'Type exactly: I APPROVE DELETING SAMPLE POSTS. This sample creates and deletes only temporary HWS sample posts and temporary media generated during this task.',
+                    ]
+                ),
+            ]
+        ),
         hws_getting_started_quick_setup_task_definition( 'close_pingbacks', 'Close Pingbacks', 'config_mutation', 'Closes future pingbacks and existing open post pingbacks.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Check Redis Object Cache', 'status_check', 'Checks Redis availability and enables the existing LiteSpeed object cache constant when Redis connects.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
@@ -532,6 +547,9 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             $deleted_comments = $wpdb->query( "DELETE FROM {$wpdb->comments}" );
             $wpdb->query( "DELETE FROM {$wpdb->commentmeta}" );
             return hws_getting_started_quick_setup_result( true, 'Existing comments deleted.', 'success', [ 'deleted_comments' => (int) $deleted_comments ] );
+
+        case 'sample_delete_posts_with_media':
+            return DestructiveSampleRunner::run( [ 'title_prefix' => 'HWS Core Delete Sample' ] );
 
         case 'close_pingbacks':
             global $wpdb;
