@@ -28,6 +28,24 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                     'type'        => 'setup_action',
                     'description' => 'Runs the existing HWS Quick Setup process: disables debug settings, sets WP_MEMORY_LIMIT, enables auto-updates, cleans logs and backups, disables comments and pingbacks, enables snippets, installs/activates essential plugins, and checks Redis, LiteSpeed, and Wordfence.',
                     'callback'    => __NAMESPACE__ . '\\hws_getting_started_run_quick_setup',
+                    'required_inputs' => [
+                        [
+                            'id'          => 'wordfence_alert_email',
+                            'label'       => 'Wordfence alert email',
+                            'type'        => 'email',
+                            'required'    => true,
+                            'placeholder' => '',
+                            'description' => 'Quick Setup feeds this typed value into Wordfence alertEmails.',
+                        ],
+                        [
+                            'id'          => 'smtp_from_email',
+                            'label'       => 'SMTP from email',
+                            'type'        => 'email',
+                            'required'    => true,
+                            'placeholder' => '',
+                            'description' => 'Quick Setup feeds this typed value into the existing WP Mail SMTP option structure. Authentication still requires the selected mailer credentials.',
+                        ],
+                    ],
                 ],
                 [
                     'id'          => 'required_launch_settings',
@@ -228,7 +246,8 @@ function hws_getting_started_run_quick_setup( array $payload ): array {
         ];
     }
 
-    $raw_log = hws_execute_quick_setup();
+    $inputs  = is_array( $payload['inputs'] ?? null ) ? $payload['inputs'] : [];
+    $raw_log = hws_execute_quick_setup( $inputs );
     $lines   = preg_split( '/\r\n|\r|\n/', trim( wp_strip_all_tags( (string) $raw_log ) ) ) ?: [];
     $logs    = [
         [

@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.91 (Current)
+### v10.18.92 (Current)
+- Added Hexa Core required-input fields to Quick Setup for Wordfence alert email and WP Mail SMTP from email.
+
+### v10.18.91
 - Removed non-requested Quick Start status sections so the checklist focuses on Quick Setup and required launch settings.
 
 ### v10.18.90

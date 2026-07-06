@@ -24,6 +24,11 @@ final class GettingStartedChecklistSubtask {
     public array $request;
 
     /**
+     * @var array<int,array<string,mixed>>
+     */
+    public array $required_inputs;
+
+    /**
      * @var array<string,mixed>
      */
     public array $context;
@@ -39,6 +44,7 @@ final class GettingStartedChecklistSubtask {
         $this->callback    = isset( $definition['callback'] ) && is_callable( $definition['callback'] ) ? $definition['callback'] : null;
         $this->action_label = trim( (string) ( $definition['action_label'] ?? GettingStartedChecklistStep::default_action_label( $this->type ) ) );
         $this->request     = is_array( $definition['request'] ?? null ) ? $definition['request'] : [];
+        $this->required_inputs = GettingStartedChecklistStep::normalize_required_inputs( (array) ( $definition['required_inputs'] ?? $definition['inputs'] ?? [] ) );
         $this->context     = is_array( $definition['context'] ?? null ) ? $definition['context'] : [];
 
         if ( '' === $this->id ) {
@@ -76,6 +82,7 @@ final class GettingStartedChecklistSubtask {
             'type'         => $this->type,
             'action_label' => $this->action_label,
             'request'      => $this->public_request(),
+            'required_inputs' => $this->required_inputs,
             'has_callback' => $this->has_callback(),
             'context'      => $this->context,
         ];

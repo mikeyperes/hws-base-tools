@@ -2592,11 +2592,14 @@ function render_summary_section() {
 /**
  * Execute Quick Setup (shared function for AJAX and public URL)
  * 
+ * @param array<string,mixed> $inputs
  * @return string Log output
  */
-function hws_execute_quick_setup() {
+function hws_execute_quick_setup( array $inputs = [] ) {
     $log = '';
     $step = 1;
+    $wordfence_alert_email = isset( $inputs['wordfence_alert_email'] ) ? sanitize_email( (string) $inputs['wordfence_alert_email'] ) : '';
+    $smtp_from_email       = isset( $inputs['smtp_from_email'] ) ? sanitize_email( (string) $inputs['smtp_from_email'] ) : '';
     
     // 1. Disable debug settings
     $log .= "<span class='success'>[Step {$step}]</span> Disabling debug settings...\n";
@@ -2790,7 +2793,7 @@ function hws_execute_quick_setup() {
     // 13. Install & activate essential plugins (skip pro plugins)
     $log .= "<span class='success'>[Step {$step}]</span> Installing essential plugins...\n";
     $step++;
-    if ( function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugins' ) ) {
+	    if ( function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugins' ) ) {
         $monitored = hws_get_monitored_plugins();
         // — Need WordPress plugin installer functions
         include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
@@ -2843,13 +2846,149 @@ function hws_execute_quick_setup() {
             } else {
                 $log .= "  <span class='warning'>⚠ Failed to install {$info['name']}</span>\n";
             }
+	        }
+	    }
+
+    // 14. Apply required operator-provided email settings
+    $log .= "<span class='success'>[Step {$step}]</span> Applying required email settings...\n";
+    $step++;
+
+    if ( '' !== $wordfence_alert_email && is_email( $wordfence_alert_email ) ) {
+        $wordfence_plugin = 'wordfence/wordfence.php';
+        if ( is_plugin_active( $wordfence_plugin ) ) {
+            global $wpdb;
+            $wf_table     = $wpdb->prefix . 'wfconfig';
+            $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wf_table ) );
+
+            if ( $table_exists === $wf_table ) {
+                $wordfence_result = hws_quick_setup_apply_wordfence_alert_email( $wordfence_alert_email );
+                $log .= '  ' . $wordfence_result['message'] . "\n";
+            } else {
+                $log .= "  <span class='warning'>⚠ Wordfence config table not found</span>\n";
+            }
+        } else {
+            $log .= "  <span class='warning'>⚠ Wordfence is not active; alert email not applied</span>\n";
         }
+    } else {
+        $log .= "  <span class='warning'>⚠ Wordfence alert email input missing or invalid</span>\n";
     }
-    
+
+    if ( '' !== $smtp_from_email && is_email( $smtp_from_email ) ) {
+        $smtp_result = hws_quick_setup_apply_wp_mail_smtp_from_email( $smtp_from_email );
+        $log .= '  ' . $smtp_result['message'] . "\n";
+    } else {
+        $log .= "  <span class='warning'>⚠ SMTP from email input missing or invalid</span>\n";
+    }
+	    
     $log .= "\n<span class='success'>═══════════════════════════════════════</span>\n";
     $log .= "<span class='success'>✅ Quick Setup Complete!</span>\n";
     
     return $log;
+}
+
+/**
+ * Feed a typed from email into the same WP Mail SMTP options that HWS already reads.
+ *
+ * @return array{success:bool,message:string}
+ */
+function hws_quick_setup_apply_wp_mail_smtp_from_email( string $from_email ): array {
+    $from_email = sanitize_email( $from_email );
+    if ( '' === $from_email || ! is_email( $from_email ) ) {
+        return [
+            'success' => false,
+            'message' => "<span class='warning'>⚠ WP Mail SMTP from email is missing or invalid</span>",
+        ];
+    }
+
+    $smtp_plugin = 'wp-mail-smtp/wp_mail_smtp.php';
+    if ( ! is_plugin_active( $smtp_plugin ) ) {
+        return [
+            'success' => false,
+            'message' => "<span class='warning'>⚠ WP Mail SMTP is not active; from email not applied</span>",
+        ];
+    }
+
+    $smtp_options = get_option( 'wp_mail_smtp', [] );
+    if ( ! is_array( $smtp_options ) ) {
+        $smtp_options = [];
+    }
+
+    $smtp_options['mail'] = is_array( $smtp_options['mail'] ?? null ) ? $smtp_options['mail'] : [];
+    $smtp_options['mail']['from_email'] = $from_email;
+    if ( empty( $smtp_options['mail']['from_name'] ) ) {
+        $smtp_options['mail']['from_name'] = get_bloginfo( 'name' );
+    }
+
+    update_option( 'wp_mail_smtp', $smtp_options );
+
+    $smtp_status = function_exists( __NAMESPACE__ . '\\check_smtp_auth_status_and_mailer' )
+        ? check_smtp_auth_status_and_mailer()
+        : [ 'status' => false, 'raw_value' => 'SMTP status checker unavailable' ];
+
+    if ( ! empty( $smtp_status['status'] ) ) {
+        return [
+            'success' => true,
+            'message' => "✓ WP Mail SMTP from email set from typed input; authenticated mailer confirmed",
+        ];
+    }
+
+    $smtp_detail = $smtp_status['raw_value'] ?? 'Mailer credentials still required';
+    return [
+        'success' => false,
+        'message' => "<span class='warning'>⚠ WP Mail SMTP from email set from typed input; authentication still needs credentials (" . esc_html( (string) $smtp_detail ) . ")</span>",
+    ];
+}
+
+/**
+ * Feed a typed alert email into the Wordfence alertEmails config value.
+ *
+ * @return array{success:bool,message:string}
+ */
+function hws_quick_setup_apply_wordfence_alert_email( string $alert_email ): array {
+    $alert_email = sanitize_email( $alert_email );
+    if ( '' === $alert_email || ! is_email( $alert_email ) ) {
+        return [
+            'success' => false,
+            'message' => "<span class='warning'>⚠ Wordfence alert email is missing or invalid</span>",
+        ];
+    }
+
+    global $wpdb;
+
+    $wf_table = $wpdb->prefix . 'wfconfig';
+    $stored_alert_emails = maybe_serialize( [ $alert_email ] );
+    $existing = $wpdb->get_var( $wpdb->prepare( "SELECT `name` FROM `{$wf_table}` WHERE `name` = %s", 'alertEmails' ) );
+
+    if ( $existing ) {
+        $result = $wpdb->update(
+            $wf_table,
+            [ 'val' => $stored_alert_emails ],
+            [ 'name' => 'alertEmails' ],
+            [ '%s' ],
+            [ '%s' ]
+        );
+    } else {
+        $result = $wpdb->insert(
+            $wf_table,
+            [
+                'name' => 'alertEmails',
+                'val'  => $stored_alert_emails,
+            ],
+            [ '%s', '%s' ]
+        );
+    }
+
+    if ( false === $result ) {
+        return [
+            'success' => false,
+            'message' => "<span class='warning'>⚠ Could not update Wordfence alert email</span>",
+        ];
+    }
+
+    return [
+        'success' => true,
+        'message' => '✓ Wordfence alert email set from typed input',
+    ];
 }
 
 
@@ -2862,9 +3001,14 @@ function ajax_quick_setup() {
     }
 
     hws_require_ajax_nonce_or_error();
-    
-    $log = hws_execute_quick_setup();
-    
+
+    $inputs = [];
+    if ( isset( $_POST["inputs"] ) && is_array( $_POST["inputs"] ) ) {
+        $inputs = wp_unslash( $_POST["inputs"] );
+    }
+
+    $log = hws_execute_quick_setup( $inputs );
+
     // Strip HTML tags for AJAX response (will be shown in textarea)
     $log = strip_tags( $log );
     
@@ -3432,7 +3576,7 @@ function render_wordfence_status_panel() {
                             'During initial setup wizard, <strong>select the Free version</strong>.',
                             'Send your free license key to <code>contact+wordfence@michaelperes.com</code>',
                             'When prompted <em>"Would you like WordPress security and vulnerability alerts sent to you via email?"</em> — select <strong>Yes</strong>.',
-                            'Set the alert email to <code>contact@michaelperes.com</code>',
+                            'Set the alert email to the address you entered in Quick Setup.',
                             'Verify the email address when the confirmation email arrives.',
                             'Confirm the Firewall is enabled under <strong>Wordfence → Firewall</strong>.',
                         ],

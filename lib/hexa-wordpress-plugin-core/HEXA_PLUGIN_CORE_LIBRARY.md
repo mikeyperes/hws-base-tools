@@ -131,6 +131,9 @@ Required rules:
 - Callback returns may be `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
 - Step and subtask `type` values should be one of `callback`, `status_check`, `setup_action`, `feature_toggle`, `config_mutation`, `ajax_request`, or `custom`.
 - Use `request` for structured request metadata. Core passes raw request metadata to callbacks and redacts secret/token/password/nonce/key values in public output.
+- Use `required_inputs` or `inputs` for operator-supplied values that must be typed before a checklist item can run. Core renders the fields, validates them in the browser, sends them through AJAX as `inputs[field_id]`, validates/sanitizes them server-side, and passes them to callbacks as `$payload["inputs"]`.
+- Supported input types are `text`, `email`, `url`, `password`, `number`, `tel`, and `search`.
+- Do not hardcode site-specific SMTP sender emails, alert emails, API keys, or approval text in reusable Core code. Define the required input and feed the typed value into the existing host callback.
 
 Example:
 
@@ -150,6 +153,22 @@ $config = new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistCo
                     'label'    => 'WordPress Runtime',
                     'type'     => 'status_check',
                     'callback' => 'my_plugin_check_wordpress_runtime',
+                ],
+            ],
+        ],
+        [
+            'id'          => 'smtp_setup',
+            'label'       => 'Apply SMTP Settings',
+            'type'        => 'config_mutation',
+            'callback'    => 'my_plugin_apply_smtp_settings',
+            'required_inputs' => [
+                [
+                    'id'          => 'from_email',
+                    'label'       => 'From email',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'placeholder' => '',
+                    'description' => 'Passed to the callback as $payload["inputs"]["from_email"].',
                 ],
             ],
         ],

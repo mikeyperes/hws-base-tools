@@ -40,6 +40,33 @@ Each step may also define:
 - `action_label`: button label for that item. If omitted, Core chooses one from the type.
 - `request`: structured request metadata. Core passes the raw request array to the callback and redacts secret/token/password/nonce/key values in public output.
 
+## Required Inputs
+
+Use `required_inputs` when a checklist item cannot run until an operator types a value. `inputs` is accepted as an alias for the same structure. Core owns the UI fields, client-side validation, AJAX payload, server-side validation, sanitization, and callback payload. The host plugin owns only the callback that consumes the typed value.
+
+Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, and `search`. Required fields block item, step, and full-checklist execution until valid values are entered.
+
+```php
+[
+    'id'          => 'smtp_setup',
+    'label'       => 'Apply SMTP Settings',
+    'type'        => 'config_mutation',
+    'callback'    => 'my_plugin_apply_smtp_settings',
+    'required_inputs' => [
+        [
+            'id'          => 'from_email',
+            'label'       => 'From email',
+            'type'        => 'email',
+            'required'    => true,
+            'placeholder' => '',
+            'description' => 'Passed to the callback as $payload["inputs"]["from_email"].',
+        ],
+    ],
+]
+```
+
+Do not hardcode site-specific values in Core or in host checklist definitions. For SMTP, alert emails, API keys, confirmation text, or destructive approval text, collect the value through `required_inputs` and feed `$payload["inputs"]` into the existing host implementation.
+
 ## Basic Setup
 
 ```php
@@ -95,6 +122,7 @@ Callbacks receive one array:
     'request_type' => 'status_check',
     'is_subtask' => true|false,
     'item_id'    => 'step-id' or 'step-id:subtask-id',
+    'inputs'     => ["from_email" => "typed@example.com"],
 ]
 ```
 

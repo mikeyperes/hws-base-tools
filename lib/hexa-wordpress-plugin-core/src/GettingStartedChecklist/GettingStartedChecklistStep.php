@@ -32,6 +32,11 @@ final class GettingStartedChecklistStep {
     public array $request;
 
     /**
+     * @var array<int,array<string,mixed>>
+     */
+    public array $required_inputs;
+
+    /**
      * @var array<int,GettingStartedChecklistSubtask>
      */
     public array $subtasks;
@@ -52,6 +57,7 @@ final class GettingStartedChecklistStep {
         $this->callback    = isset( $definition['callback'] ) && is_callable( $definition['callback'] ) ? $definition['callback'] : null;
         $this->action_label = trim( (string) ( $definition['action_label'] ?? self::default_action_label( $this->type ) ) );
         $this->request     = is_array( $definition['request'] ?? null ) ? $definition['request'] : [];
+        $this->required_inputs = self::normalize_required_inputs( (array) ( $definition['required_inputs'] ?? $definition['inputs'] ?? [] ) );
         $this->context     = is_array( $definition['context'] ?? null ) ? $definition['context'] : [];
         $this->subtasks    = $this->normalize_subtasks( (array) ( $definition['subtasks'] ?? [] ) );
 
@@ -104,6 +110,7 @@ final class GettingStartedChecklistStep {
             'type'         => $this->type,
             'action_label' => $this->action_label,
             'request'      => $this->public_request(),
+            'required_inputs' => $this->required_inputs,
             'has_callback' => $this->has_callback(),
             'subtasks'     => array_map(
                 static fn( GettingStartedChecklistSubtask $subtask ): array => $subtask->to_public_array(),
@@ -204,6 +211,54 @@ final class GettingStartedChecklistStep {
             self::TYPE_AJAX_REQUEST => 'Run Request',
             default => 'Run',
         };
+    }
+
+    /**
+     * @param array<int|string,mixed> $inputs
+     * @return array<int,array<string,mixed>>
+     */
+    public static function normalize_required_inputs( array $inputs ): array {
+        $normalized = [];
+        $seen       = [];
+
+        foreach ( $inputs as $key => $definition ) {
+            if ( is_string( $definition ) ) {
+                $definition = [ 'id' => $definition ];
+            }
+
+            if ( ! is_array( $definition ) ) {
+                continue;
+            }
+
+            if ( is_string( $key ) && ! isset( $definition['id'] ) && ! isset( $definition['name'] ) ) {
+                $definition['id'] = $key;
+            }
+
+            $id = self::clean_key( (string) ( $definition['id'] ?? $definition['name'] ?? '' ) );
+            if ( '' === $id || isset( $seen[ $id ] ) ) {
+                continue;
+            }
+
+            $type = self::clean_key( (string) ( $definition['type'] ?? 'text' ) );
+            if ( ! in_array( $type, [ 'text', 'email', 'url', 'password', 'number', 'tel', 'search' ], true ) ) {
+                $type = 'text';
+            }
+
+            $normalized[] = [
+                'id'          => $id,
+                'label'       => trim( (string) ( $definition['label'] ?? ucwords( str_replace( [ '-', '_' ], ' ', $id ) ) ) ),
+                'type'        => $type,
+                'required'    => (bool) ( $definition['required'] ?? true ),
+                'placeholder' => trim( (string) ( $definition['placeholder'] ?? '' ) ),
+                'description' => trim( (string) ( $definition['description'] ?? $definition['help'] ?? '' ) ),
+                'value'       => is_scalar( $definition['value'] ?? null ) ? (string) $definition['value'] : '',
+                'pattern'     => trim( (string) ( $definition['pattern'] ?? '' ) ),
+                'autocomplete'=> trim( (string) ( $definition['autocomplete'] ?? ( 'email' === $type ? 'email' : '' ) ) ),
+            ];
+            $seen[ $id ] = true;
+        }
+
+        return $normalized;
     }
 
     /**

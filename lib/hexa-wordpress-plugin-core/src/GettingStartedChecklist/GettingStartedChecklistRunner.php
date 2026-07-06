@@ -14,7 +14,7 @@ final class GettingStartedChecklistRunner {
     /**
      * @return array<string,mixed>
      */
-    public function run_item( string $step_id, string $subtask_id = '' ): array {
+    public function run_item( string $step_id, string $subtask_id = '', array $inputs = [] ): array {
         $step = $this->config->find_step( $step_id );
         if ( ! $step instanceof GettingStartedChecklistStep ) {
             return $this->failure_payload(
@@ -44,6 +44,7 @@ final class GettingStartedChecklistRunner {
         $type     = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->type : $step->type;
         $request  = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->request : $step->request;
         $context  = $subtask instanceof GettingStartedChecklistSubtask ? array_merge( $step->context, $subtask->context ) : $step->context;
+        $required_inputs = $subtask instanceof GettingStartedChecklistSubtask ? $subtask->required_inputs : $step->required_inputs;
         $logs     = [
             $this->log_entry(
                 'info',
@@ -56,6 +57,22 @@ final class GettingStartedChecklistRunner {
                 ]
             ),
         ];
+
+        $input_validation = $this->validate_required_inputs( $required_inputs, $inputs );
+        if ( ! $input_validation['success'] ) {
+            $logs[] = $this->log_entry( 'error', $input_validation['message'], [ 'label' => $label, 'missing_inputs' => $input_validation['missing'] ] );
+
+            return $this->failure_payload(
+                $step->id,
+                $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+                $input_validation['message'],
+                $logs,
+                [
+                    'missing_inputs' => $input_validation['missing'],
+                    'inputs'         => $input_validation['values'],
+                ]
+            );
+        }
 
         if ( ! is_callable( $callback ) ) {
             if ( $this->requires_callback( $type, $request ) ) {
@@ -79,6 +96,7 @@ final class GettingStartedChecklistRunner {
                     'subtask'      => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->to_callback_array() : null,
                     'context'      => $context,
                     'request'      => $request,
+                    'inputs'       => $input_validation['values'],
                     'request_type' => $type,
                     'is_subtask'   => $subtask instanceof GettingStartedChecklistSubtask,
                     'item_id'      => $subtask instanceof GettingStartedChecklistSubtask ? $step->id . ':' . $subtask->id : $step->id,
@@ -200,6 +218,70 @@ final class GettingStartedChecklistRunner {
             ],
             true
         );
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $definitions
+     * @param array<string,mixed> $inputs
+     * @return array{success:bool,message:string,values:array<string,string>,missing:array<int,string>}
+     */
+    private function validate_required_inputs( array $definitions, array $inputs ): array {
+        $values  = [];
+        $missing = [];
+
+        foreach ( $definitions as $definition ) {
+            if ( ! is_array( $definition ) ) {
+                continue;
+            }
+
+            $id = (string) ( $definition['id'] ?? '' );
+            if ( '' === $id ) {
+                continue;
+            }
+
+            $raw   = $inputs[ $id ] ?? '';
+            $value = is_scalar( $raw ) ? trim( (string) $raw ) : '';
+            $type  = (string) ( $definition['type'] ?? 'text' );
+
+            if ( 'email' === $type && '' !== $value ) {
+                $value = function_exists( 'sanitize_email' ) ? sanitize_email( $value ) : filter_var( $value, FILTER_SANITIZE_EMAIL );
+            } elseif ( 'url' === $type && '' !== $value ) {
+                $value = function_exists( 'esc_url_raw' ) ? esc_url_raw( $value ) : filter_var( $value, FILTER_SANITIZE_URL );
+            } else {
+                $value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+            }
+
+            $values[ $id ] = $value;
+
+            if ( ! (bool) ( $definition['required'] ?? true ) && '' === $value ) {
+                continue;
+            }
+
+            if ( '' === $value ) {
+                $missing[] = (string) ( $definition['label'] ?? $id );
+                continue;
+            }
+
+            if ( 'email' === $type && function_exists( 'is_email' ) && ! is_email( $value ) ) {
+                $missing[] = (string) ( $definition['label'] ?? $id );
+            }
+        }
+
+        if ( [] !== $missing ) {
+            return [
+                'success' => false,
+                'message' => 'Required input missing or invalid: ' . implode( ', ', $missing ),
+                'values'  => $values,
+                'missing' => $missing,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => '',
+            'values'  => $values,
+            'missing' => [],
+        ];
     }
 
     /**
