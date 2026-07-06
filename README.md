@@ -141,7 +141,11 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.98 (Current)
+### v10.18.99 (Current)
+- Added the News Outlets Initial Setup Quick Start profile with guarded post-only cleanup that keeps the newest 10 posts and a Core plugin-check task for HWS Base Tools, SMP Publication Integration, and Verified Profiles.
+- Removed the temporary sample delete task from the active Quick Setup list.
+
+### v10.18.98
 - Updated vendored Hexa WP Core to 0.19.28 so plugin inventory rows include subtle secondary Deactivate and Delete controls for installed plugins.
 
 ### v10.18.97

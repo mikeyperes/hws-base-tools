@@ -2,16 +2,19 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupScanner;
 use Hexa\PluginCore\GettingStartedChecklist\ChecklistReportBuilder;
-use Hexa\PluginCore\GettingStartedChecklist\DestructiveSampleRunner;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
+use Hexa\PluginCore\PluginChecks\PluginCheckDefinition;
+use Hexa\PluginCore\PluginChecks\PluginCheckService;
 use Hexa\PluginCore\WpAdminUiCleanup\CleanupChecklistAdapter;
 
 defined( 'ABSPATH' ) || exit;
 
 const HWS_GETTING_STARTED_CHECKLIST_NONCE_ACTION = 'hws_base_tools_getting_started_checklist';
+const HWS_GETTING_STARTED_NEWS_OUTLET_DELETE_CONFIRMATION = 'DELETE OLD POSTS';
 
 function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
     return new GettingStartedChecklistConfig(
@@ -110,6 +113,11 @@ function hws_getting_started_checklist_templates(): array {
             'description' => 'A named preset template that currently starts from the standard HWS launch checklist and can be expanded with Diamond-specific steps.',
             'steps'       => $default_steps,
         ],
+        'news_outlets_initial_setup' => [
+            'label'       => 'News Outlets Initial Setup',
+            'description' => 'A news publication startup profile with SMP plugin readiness and guarded article cleanup actions.',
+            'steps'       => hws_getting_started_news_outlet_template_steps( $default_steps ),
+        ],
     ];
 }
 
@@ -141,6 +149,23 @@ function hws_getting_started_default_template_steps(): array {
             'subtasks'     => hws_getting_started_ui_cleanup_subtasks(),
         ],
     ];
+}
+
+/**
+ * @param array<int,array<string,mixed>> $default_steps
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_news_outlet_template_steps( array $default_steps ): array {
+    $steps   = $default_steps;
+    $steps[] = [
+        'id'          => 'news_outlet_initial_setup',
+        'label'       => 'Getting Started for News Outlets',
+        'type'        => 'setup_action',
+        'description' => 'Runs SMP-specific startup actions for news publications. The destructive cleanup action is restricted to WordPress posts and preserves the newest 10.',
+        'subtasks'    => hws_getting_started_news_outlet_setup_subtasks(),
+    ];
+
+    return $steps;
 }
 
 /**
@@ -215,20 +240,6 @@ function hws_getting_started_quick_setup_subtasks(): array {
         hws_getting_started_quick_setup_task_definition( 'clean_backup_files', 'Clean Backup Files', 'setup_action', 'Uses the existing HWS backup scanner and removes writable backup files it reports.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'close_comments', 'Close Comments', 'config_mutation', 'Closes future comments and existing open post comments.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'delete_comments', 'Delete Comments', 'setup_action', 'Deletes existing comments and comment meta.', $callback ),
-        hws_getting_started_quick_setup_task_definition(
-            'sample_delete_posts_with_media',
-            'Sample Delete Posts With Media',
-            'setup_action',
-            'Creates temporary HWS sample posts with temporary featured media, then permanently deletes only those sample records after typed confirmation. Demonstrates the reusable Hexa WP Core destructive confirmation and deleted-post reporting.',
-            $callback,
-            [
-                DestructiveSampleRunner::confirmation_input(
-                    [
-                        'description' => 'Type exactly: I APPROVE DELETING SAMPLE POSTS. This sample creates and deletes only temporary HWS sample posts and temporary media generated during this task.',
-                    ]
-                ),
-            ]
-        ),
         hws_getting_started_quick_setup_task_definition( 'close_pingbacks', 'Close Pingbacks', 'config_mutation', 'Closes future pingbacks and existing open post pingbacks.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Check Redis Object Cache', 'status_check', 'Checks Redis availability and enables the existing LiteSpeed object cache constant when Redis connects.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
@@ -268,6 +279,40 @@ function hws_getting_started_quick_setup_subtasks(): array {
                     'description' => 'This value is sent only to the WP Mail SMTP from email task. Authentication still requires the selected mailer credentials.',
                 ],
             ]
+        ),
+    ];
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_news_outlet_setup_subtasks(): array {
+    $callback = __NAMESPACE__ . '\\hws_getting_started_run_quick_setup_task';
+
+    return [
+        hws_getting_started_quick_setup_task_definition(
+            'delete_old_posts_keep_latest_10',
+            'Delete Old Posts, Keep Latest 10',
+            'setup_action',
+            'Uses the existing Article & Media Cleanup scanner to permanently delete only WordPress posts older than the most recent 10 matching posts, including associated featured, inline, and gallery media.',
+            $callback,
+            [
+                ChecklistReportBuilder::confirmation_input(
+                    'delete_old_posts_confirmation',
+                    HWS_GETTING_STARTED_NEWS_OUTLET_DELETE_CONFIRMATION,
+                    'Delete old posts confirmation',
+                    [
+                        'description' => 'Type exactly: ' . HWS_GETTING_STARTED_NEWS_OUTLET_DELETE_CONFIRMATION . '. This deletes only post type post, preserves the newest 10 posts, and deletes associated media detected by the existing Article & Media Cleanup scanner.',
+                    ]
+                ),
+            ]
+        ),
+        hws_getting_started_quick_setup_task_definition(
+            'ensure_smp_hexa_plugins',
+            'Ensure SMP and HEXA Plugins',
+            'setup_action',
+            'Uses the existing Hexa WP Core plugin check service to install missing GitHub plugins and activate HWS Base Tools, SMP Publication Integration, and Verified Profiles.',
+            $callback
         ),
     ];
 }
@@ -548,8 +593,11 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             $wpdb->query( "DELETE FROM {$wpdb->commentmeta}" );
             return hws_getting_started_quick_setup_result( true, 'Existing comments deleted.', 'success', [ 'deleted_comments' => (int) $deleted_comments ] );
 
-        case 'sample_delete_posts_with_media':
-            return DestructiveSampleRunner::run( [ 'title_prefix' => 'HWS Core Delete Sample' ] );
+        case 'delete_old_posts_keep_latest_10':
+            return hws_getting_started_delete_old_posts_keep_latest_10_task( $payload );
+
+        case 'ensure_smp_hexa_plugins':
+            return hws_getting_started_ensure_smp_hexa_plugins_task();
 
         case 'close_pingbacks':
             global $wpdb;
@@ -757,6 +805,300 @@ function hws_getting_started_install_essential_plugins_task(): array {
             'failed'    => $failed,
         ]
     );
+}
+
+/**
+ * @param array<string,mixed> $payload
+ * @return array<string,mixed>
+ */
+function hws_getting_started_delete_old_posts_keep_latest_10_task( array $payload ): array {
+    $inputs       = is_array( $payload['inputs'] ?? null ) ? $payload['inputs'] : [];
+    $confirmation = isset( $inputs['delete_old_posts_confirmation'] ) ? trim( (string) $inputs['delete_old_posts_confirmation'] ) : '';
+
+    if ( ! hash_equals( HWS_GETTING_STARTED_NEWS_OUTLET_DELETE_CONFIRMATION, $confirmation ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Delete old posts confirmation is invalid.', 'error' );
+    }
+
+    if ( function_exists( 'current_user_can' ) && ! current_user_can( 'delete_posts' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Current user cannot delete posts.', 'error' );
+    }
+
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_article_media_cleanup_config' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Article & Media Cleanup configuration is not available.', 'error' );
+    }
+
+    $config   = hws_article_media_cleanup_config();
+    $scanner  = new ArticleMediaCleanupScanner( $config );
+    $criteria = [
+        'post_type'   => 'post',
+        'status'      => 'any',
+        'keep_recent' => 10,
+        'search'      => '',
+        'limit'       => $config->max_limit(),
+    ];
+
+    $batch_size          = $config->max_batch_size();
+    $exclude_ids         = [];
+    $batches             = [];
+    $deleted_total       = 0;
+    $failed_total        = 0;
+    $deleted_media_total = 0;
+    $preserved_ids       = [];
+    $last_has_more       = false;
+
+    for ( $batch = 1; $batch <= 200; $batch++ ) {
+        $result = $scanner->delete_batch( $criteria, true, 'all_except_keep_recent', $batch_size, $exclude_ids );
+        if ( is_wp_error( $result ) ) {
+            return hws_getting_started_quick_setup_result(
+                false,
+                'Article cleanup failed: ' . $result->get_error_message(),
+                'error',
+                [
+                    'post_type'   => 'post',
+                    'keep_recent' => 10,
+                    'batch'       => $batch,
+                ]
+            );
+        }
+
+        $deleted_count       = (int) ( $result['deleted_count'] ?? 0 );
+        $failed_count        = (int) ( $result['failed_count'] ?? 0 );
+        $deleted_media_count = (int) ( $result['deleted_media_count'] ?? 0 );
+        $preserved_ids       = array_values( array_unique( array_merge( $preserved_ids, (array) ( $result['preserved_ids'] ?? [] ) ) ) );
+        $exclude_ids         = array_values( array_unique( (array) ( $result['exclude_ids'] ?? $exclude_ids ) ) );
+        $last_has_more       = ! empty( $result['has_more'] );
+
+        $deleted_total       += $deleted_count;
+        $failed_total        += $failed_count;
+        $deleted_media_total += $deleted_media_count;
+
+        $batches[] = [
+            'batch'         => $batch,
+            'post_type'     => 'post',
+            'deleted_posts' => $deleted_count,
+            'failed_posts'  => $failed_count,
+            'deleted_media' => $deleted_media_count,
+            'preserved_ids' => implode( ', ', array_map( 'strval', (array) ( $result['preserved_ids'] ?? [] ) ) ),
+            'failed_ids'    => implode( ', ', array_map( 'strval', (array) ( $result['failed_ids'] ?? [] ) ) ),
+        ];
+
+        if ( ! $last_has_more ) {
+            break;
+        }
+    }
+
+    $success = ! $last_has_more && 0 === $failed_total;
+    $message = $deleted_total > 0
+        ? sprintf( 'Deleted %d old posts and %d associated media item(s); preserved the newest 10 posts.', $deleted_total, $deleted_media_total )
+        : 'No old posts needed deletion; the newest 10 posts remain protected.';
+
+    if ( $last_has_more ) {
+        $message = 'Article cleanup stopped before all batches completed. Re-run the task to continue.';
+    } elseif ( $failed_total > 0 ) {
+        $message = sprintf( 'Article cleanup completed with %d failed post deletion(s).', $failed_total );
+    }
+
+    return hws_getting_started_quick_setup_result(
+        $success,
+        $message,
+        $success ? 'success' : 'warning',
+        [
+            'post_type'           => 'post',
+            'status'              => 'any',
+            'keep_recent'         => 10,
+            'deleted_posts'       => $deleted_total,
+            'failed_posts'        => $failed_total,
+            'deleted_media'       => $deleted_media_total,
+            'preserved_ids'       => $preserved_ids,
+            'batch_limit_reached' => $last_has_more,
+        ],
+        [
+            ChecklistReportBuilder::table(
+                'news_outlet_article_cleanup',
+                'News Outlet Article Cleanup',
+                $batches,
+                [
+                    'batch'         => 'Batch',
+                    'post_type'     => 'Post Type',
+                    'deleted_posts' => 'Deleted Posts',
+                    'failed_posts'  => 'Failed Posts',
+                    'deleted_media' => 'Deleted Media',
+                    'preserved_ids' => 'Preserved IDs',
+                    'failed_ids'    => 'Failed IDs',
+                ],
+                [
+                    'summary' => 'Post type post only. The newest 10 matching posts were preserved; older matching posts were deleted with associated media through the existing cleanup scanner.',
+                ]
+            ),
+        ]
+    );
+}
+
+/**
+ * @return array<string,mixed>
+ */
+function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
+    if ( function_exists( 'current_user_can' ) && ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Current user cannot install and activate plugins.', 'error' );
+    }
+
+    $definitions = hws_getting_started_smp_hexa_plugin_definitions();
+    $rows        = [];
+    $failed      = [];
+    $installed   = 0;
+    $activated   = 0;
+    $already     = 0;
+
+    foreach ( $definitions as $definition_config ) {
+        $definition = PluginCheckDefinition::from_array( $definition_config );
+        $before     = PluginCheckService::status( $definition );
+
+        $result = PluginCheckService::install_and_activate( $definition );
+        if ( is_wp_error( $result ) ) {
+            $after     = PluginCheckService::status( $definition );
+            $failed[]  = $definition->name . ': ' . $result->get_error_message();
+            $rows[]    = hws_getting_started_plugin_setup_report_row( $definition->name, $before, $after, 'Failed: ' . $result->get_error_message() );
+            continue;
+        }
+
+        $after = is_array( $result['status'] ?? null ) ? $result['status'] : PluginCheckService::status( $definition );
+
+        if ( empty( $before['installed'] ) && ! empty( $after['installed'] ) ) {
+            $installed++;
+        } elseif ( empty( $before['active'] ) && ! empty( $after['active'] ) ) {
+            $activated++;
+        } else {
+            $already++;
+        }
+
+        if ( empty( $after['installed'] ) || empty( $after['active'] ) ) {
+            $failed[] = $definition->name . ': not installed and active after setup.';
+        }
+
+        $rows[] = hws_getting_started_plugin_setup_report_row( $definition->name, $before, $after, (string) ( $result['message'] ?? 'Processed.' ) );
+    }
+
+    $success = [] === $failed;
+
+    return hws_getting_started_quick_setup_result(
+        $success,
+        $success ? 'SMP and HEXA plugin setup completed.' : 'SMP and HEXA plugin setup completed with failures.',
+        $success ? 'success' : 'warning',
+        [
+            'installed' => $installed,
+            'activated' => $activated,
+            'already'   => $already,
+            'failed'    => $failed,
+        ],
+        [
+            ChecklistReportBuilder::table(
+                'news_outlet_plugin_setup',
+                'SMP and HEXA Plugin Setup',
+                $rows,
+                [
+                    'plugin'        => 'Plugin',
+                    'before'        => 'Before',
+                    'after'         => 'After',
+                    'version'       => 'Version',
+                    'plugin_file'   => 'Plugin File',
+                    'action_result' => 'Action Result',
+                ],
+                [
+                    'summary' => 'Required news outlet plugins are installed and active through Hexa WP Core plugin checks.',
+                ]
+            ),
+        ]
+    );
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_smp_hexa_plugin_definitions(): array {
+    return [
+        [
+            'id'            => 'hws-base-tools',
+            'name'          => 'HWS Base Tools',
+            'plugin_file'   => 'hws-base-tools/hws-base-tools.php',
+            'slug'          => 'hws-base-tools',
+            'source'        => 'github',
+            'github_repo'   => 'mikeyperes/hws-base-tools',
+            'github_branch' => 'main',
+            'required'      => true,
+            'recommended'   => true,
+            'checks'        => [
+                'installed'  => true,
+                'active'     => true,
+                'up_to_date' => false,
+            ],
+            'notes'         => 'Hexa admin foundation plugin.',
+        ],
+        [
+            'id'            => 'smp-publication-integration',
+            'name'          => 'SMP Publication Integration',
+            'plugin_file'   => 'smp-publication-integration/smp-publication-integration.php',
+            'slug'          => 'smp-publication-integration',
+            'source'        => 'github',
+            'github_repo'   => 'mikeyperes/smp-publication-integration',
+            'github_branch' => 'main',
+            'required'      => true,
+            'recommended'   => true,
+            'checks'        => [
+                'installed'  => true,
+                'active'     => true,
+                'up_to_date' => false,
+            ],
+            'notes'         => 'SMP publication workflow plugin.',
+        ],
+        [
+            'id'            => 'smp-verified-profiles',
+            'name'          => 'Verified Profiles',
+            'plugin_file'   => 'smp-verified-profiles/smp-verified-profiles.php',
+            'slug'          => 'smp-verified-profiles',
+            'source'        => 'github',
+            'github_repo'   => 'mikeyperes/smp-verified-profiles',
+            'github_branch' => 'main',
+            'required'      => true,
+            'recommended'   => true,
+            'checks'        => [
+                'installed'  => true,
+                'active'     => true,
+                'up_to_date' => false,
+            ],
+            'notes'         => 'Verified profile management for SMP publications.',
+        ],
+    ];
+}
+
+/**
+ * @param array<string,mixed> $before
+ * @param array<string,mixed> $after
+ * @return array<string,string>
+ */
+function hws_getting_started_plugin_setup_report_row( string $name, array $before, array $after, string $action_result ): array {
+    return [
+        'plugin'        => $name,
+        'before'        => hws_getting_started_plugin_status_label( $before ),
+        'after'         => hws_getting_started_plugin_status_label( $after ),
+        'version'       => (string) ( $after['version'] ?? '' ),
+        'plugin_file'   => (string) ( $after['plugin_file'] ?? $after['configured_file'] ?? '' ),
+        'action_result' => $action_result,
+    ];
+}
+
+/**
+ * @param array<string,mixed> $status
+ */
+function hws_getting_started_plugin_status_label( array $status ): string {
+    if ( empty( $status['installed'] ) ) {
+        return 'Missing';
+    }
+
+    if ( empty( $status['active'] ) ) {
+        return 'Installed, inactive';
+    }
+
+    return 'Active';
 }
 
 
