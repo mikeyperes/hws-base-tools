@@ -141,7 +141,7 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.95 (Current)
+### v10.18.96 (Current)
 - Updated vendored Hexa WP Core to 0.19.25 and added the UI Cleanup option registry as a generated Quick Start parent checklist section with reusable Core reports for file deletion and wp-config mutations.
 
 ### v10.18.94

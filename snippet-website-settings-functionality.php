@@ -662,6 +662,110 @@ function hws_website_settings_color_coding_css() {
 	<?php
 }
 add_action( 'admin_head', __NAMESPACE__ . '\\hws_website_settings_color_coding_css' );
+
+/**
+ * Get the Website Settings branding group.
+ */
+function hws_get_website_branding_settings(): array {
+	if ( ! function_exists( 'get_field' ) ) {
+		return [];
+	}
+
+	$branding = get_field( 'branding', 'option' );
+
+	return is_array( $branding ) ? $branding : [];
+}
+
+/**
+ * Resolve the configured branding favicon attachment ID.
+ */
+function hws_get_website_branding_favicon_id(): int {
+	$branding = hws_get_website_branding_settings();
+	$favicon  = $branding['favicon'] ?? 0;
+
+	if ( is_array( $favicon ) && ! empty( $favicon['ID'] ) ) {
+		return (int) $favicon['ID'];
+	}
+
+	if ( is_numeric( $favicon ) ) {
+		return (int) $favicon;
+	}
+
+	return 0;
+}
+
+/**
+ * Keep the Website Settings favicon aligned with WordPress' native site_icon.
+ */
+function hws_sync_branding_favicon_to_site_icon( $post_id ): void {
+	if ( ! in_array( (string) $post_id, [ 'option', 'options' ], true ) ) {
+		return;
+	}
+
+	$favicon_id = hws_get_website_branding_favicon_id();
+	if ( $favicon_id > 0 ) {
+		update_option( 'site_icon', $favicon_id );
+	}
+}
+add_action( 'acf/save_post', __NAMESPACE__ . '\\hws_sync_branding_favicon_to_site_icon', 20 );
+
+/**
+ * Render fallback favicon tags from Website Settings when WP has no site icon.
+ */
+function hws_output_branding_favicon_tags(): void {
+	if ( is_admin() || has_site_icon() ) {
+		return;
+	}
+
+	$favicon_id = hws_get_website_branding_favicon_id();
+	if ( $favicon_id <= 0 ) {
+		return;
+	}
+
+	$favicon_url = wp_get_attachment_image_url( $favicon_id, 'full' );
+	if ( ! $favicon_url ) {
+		return;
+	}
+
+	printf( "\n<link rel=\"icon\" href=\"%s\">\n", esc_url( $favicon_url ) );
+	printf( "<link rel=\"apple-touch-icon\" href=\"%s\">\n", esc_url( $favicon_url ) );
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\hws_output_branding_favicon_tags', 5 );
+
+/**
+ * Render selected-text highlight colors configured in Website Settings.
+ */
+function hws_output_branding_highlight_css(): void {
+	if ( is_admin() ) {
+		return;
+	}
+
+	$branding         = hws_get_website_branding_settings();
+	$text_color       = isset( $branding['highlight_text_color'] ) ? sanitize_hex_color( $branding['highlight_text_color'] ) : '';
+	$background_color = isset( $branding['highlight_background_color'] ) ? sanitize_hex_color( $branding['highlight_background_color'] ) : '';
+
+	$rules = [];
+	if ( $text_color ) {
+		$rules[] = 'color: ' . $text_color;
+	}
+	if ( $background_color ) {
+		$rules[] = 'background: ' . $background_color;
+	}
+
+	if ( empty( $rules ) ) {
+		return;
+	}
+
+	$declarations = implode( '; ', $rules ) . ';';
+	?>
+	<style id="hws-branding-highlight-css">
+	::selection { <?php echo esc_html( $declarations ); ?> }
+	::-moz-selection { <?php echo esc_html( $declarations ); ?> }
+	</style>
+	<?php
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\hws_output_branding_highlight_css', 99 );
+
 /**
  * Render avatar, basic info, buttons, *and* ACF “urls” sub-fields as clickable links.
  *

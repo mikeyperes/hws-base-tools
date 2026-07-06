@@ -138,6 +138,90 @@ function register_acf_website_settings()
                 ),
             ),
 
+            // Branding
+            array(
+                'key'               => 'field_hws_branding_settings',
+                'label'             => 'Branding',
+                'name'              => 'branding',
+                'type'              => 'group',
+                'instructions'      => 'Site-level branding controls used by HWS Base Tools.',
+                'required'          => 0,
+                'conditional_logic' => 0,
+                'wrapper'           => array(
+                    'width' => '',
+                    'class' => '',
+                    'id'    => '',
+                ),
+                'layout'            => 'block',
+                'sub_fields'        => array(
+
+                    // Favicon
+                    array(
+                        'key'               => 'field_hws_branding_favicon',
+                        'label'             => 'Favicon',
+                        'name'              => 'favicon',
+                        'type'              => 'image',
+                        'instructions'      => 'Site icon/favicon image. Use a square image, 512x512px or larger.',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '33',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'return_format'     => 'id',
+                        'preview_size'      => 'thumbnail',
+                        'library'           => 'all',
+                        'min_width'         => 0,
+                        'min_height'        => 0,
+                        'min_size'          => 0,
+                        'max_width'         => 0,
+                        'max_height'        => 0,
+                        'max_size'          => 0,
+                        'mime_types'        => 'jpg,jpeg,png,gif,webp,ico',
+                    ),
+
+                    // Highlight Text Color
+                    array(
+                        'key'               => 'field_hws_branding_highlight_text_color',
+                        'label'             => 'Highlighted Text Color',
+                        'name'              => 'highlight_text_color',
+                        'type'              => 'color_picker',
+                        'instructions'      => 'Text color used when visitors highlight/select text on the site.',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '33',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'default_value'     => '#ffffff',
+                        'enable_opacity'    => 0,
+                        'return_format'     => 'string',
+                    ),
+
+                    // Highlight Background Color
+                    array(
+                        'key'               => 'field_hws_branding_highlight_background_color',
+                        'label'             => 'Highlight Background Color',
+                        'name'              => 'highlight_background_color',
+                        'type'              => 'color_picker',
+                        'instructions'      => 'Background color used when visitors highlight/select text on the site.',
+                        'required'          => 0,
+                        'conditional_logic' => 0,
+                        'wrapper'           => array(
+                            'width' => '33',
+                            'class' => '',
+                            'id'    => '',
+                        ),
+                        'default_value'     => '#2271b1',
+                        'enable_opacity'    => 0,
+                        'return_format'     => 'string',
+                    ),
+
+                ),
+            ),
+
             // Website Information
             array(
                 'key'               => 'field_68420a023f1c8',
