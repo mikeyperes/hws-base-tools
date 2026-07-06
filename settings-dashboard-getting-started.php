@@ -30,70 +30,11 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                     'callback'    => __NAMESPACE__ . '\\hws_getting_started_run_quick_setup',
                 ],
                 [
-                    'id'          => 'system_environment',
-                    'label'       => 'Verify System Environment',
+                    'id'          => 'required_launch_settings',
+                    'label'       => 'Verify Required Launch Settings',
                     'type'        => 'status_check',
-                    'description' => 'Checks the WordPress and PHP runtime values needed before plugin setup work starts.',
-                    'subtasks'    => [
-                        [
-                            'id'          => 'wordpress_runtime',
-                            'label'       => 'WordPress Runtime',
-                            'type'        => 'status_check',
-                            'description' => 'Reports WordPress version, home URL, site URL, and admin AJAX availability.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_wordpress_runtime',
-                        ],
-                        [
-                            'id'          => 'php_runtime',
-                            'label'       => 'PHP Runtime',
-                            'type'        => 'status_check',
-                            'description' => 'Reports PHP version and memory limit.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_php_runtime',
-                        ],
-                    ],
-                ],
-                [
-                    'id'          => 'plugin_versions',
-                    'label'       => 'Verify Plugin Versions',
-                    'type'        => 'status_check',
-                    'description' => 'Checks the active HWS Base Tools version and the vendored Hexa WP Core version.',
-                    'subtasks'    => [
-                        [
-                            'id'          => 'hws_base_tools_version',
-                            'label'       => 'HWS Base Tools Version',
-                            'type'        => 'status_check',
-                            'description' => 'Reads the active plugin header/runtime version.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_hws_version',
-                        ],
-                        [
-                            'id'          => 'hexa_wp_core_version',
-                            'label'       => 'Hexa WP Core Version',
-                            'type'        => 'status_check',
-                            'description' => 'Reads the vendored Hexa WP Core VERSION file.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_core_version',
-                        ],
-                    ],
-                ],
-                [
-                    'id'          => 'site_basics',
-                    'label'       => 'Verify Site Basics',
-                    'type'        => 'status_check',
-                    'description' => 'Checks site identity and permalink readiness without changing site content.',
-                    'subtasks'    => [
-                        [
-                            'id'          => 'site_identity',
-                            'label'       => 'Site Identity',
-                            'type'        => 'status_check',
-                            'description' => 'Reports the website title and front-end URL values.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_site_identity',
-                        ],
-                        [
-                            'id'          => 'permalink_structure',
-                            'label'       => 'Permalink Structure',
-                            'type'        => 'status_check',
-                            'description' => 'Confirms WordPress permalink settings are readable.',
-                            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_permalink_structure',
-                        ],
-                    ],
+                    'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
+                    'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
                 ],
             ],
         ]
@@ -158,6 +99,114 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @return array<int,string>
+ */
+function hws_getting_started_required_launch_setting_labels(): array {
+    return [
+        'WP Memory Limit > 512MB',
+        'Comments Disabled',
+        'Pingbacks Disabled',
+        'Email / SMTP Authenticated',
+        'WP_DEBUG Off',
+        'WP_DEBUG_DISPLAY Off',
+        'WP_DEBUG_LOG Off',
+        'Wordfence Alert Email Set',
+    ];
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_required_launch_setting_subtasks(): array {
+    $subtasks = [];
+
+    foreach ( hws_getting_started_required_launch_setting_labels() as $label ) {
+        $subtasks[] = [
+            'id'          => sanitize_key( str_replace( [ ' / ', ' > ', ' ', '/' ], '_', strtolower( $label ) ) ),
+            'label'       => $label,
+            'type'        => 'status_check',
+            'description' => 'Uses the existing HWS Going Live Checklist setting check source.',
+            'callback'    => __NAMESPACE__ . '\\hws_getting_started_check_required_launch_setting',
+            'context'     => [
+                'glc_label'       => $label,
+                'source_function' => __NAMESPACE__ . '\\hws_get_glc_settings_checks',
+            ],
+        ];
+    }
+
+    return $subtasks;
+}
+
+/**
+ * @param array<string,mixed> $payload
+ * @return array<string,mixed>
+ */
+function hws_getting_started_check_required_launch_setting( array $payload ): array {
+    $context = is_array( $payload['context'] ?? null ) ? $payload['context'] : [];
+    $label   = (string) ( $context['glc_label'] ?? '' );
+
+    if ( '' === $label || ! function_exists( __NAMESPACE__ . '\\hws_get_glc_settings_checks' ) ) {
+        return [
+            'success' => false,
+            'message' => 'Required launch setting check is not available.',
+            'logs'    => [
+                [
+                    'level'   => 'error',
+                    'message' => 'The checklist could not find the required Going Live Checklist source.',
+                    'context' => [
+                        'label'           => $label,
+                        'source_function' => __NAMESPACE__ . '\\hws_get_glc_settings_checks',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    foreach ( hws_get_glc_settings_checks() as $check ) {
+        if ( (string) ( $check['label'] ?? '' ) !== $label ) {
+            continue;
+        }
+
+        $passed = (bool) ( $check['pass'] ?? false );
+        $value  = (string) ( $check['value'] ?? '' );
+
+        return [
+            'success' => $passed,
+            'message' => $passed ? $label . ' passed.' : $label . ' needs attention.',
+            'logs'    => [
+                [
+                    'level'   => $passed ? 'success' : 'error',
+                    'message' => $label . ': ' . ( $passed ? 'PASS' : 'FAIL' ),
+                    'context' => [
+                        'value'           => $value,
+                        'source_function' => __NAMESPACE__ . '\\hws_get_glc_settings_checks',
+                    ],
+                ],
+            ],
+            'data'    => [
+                'label' => $label,
+                'pass'  => $passed,
+                'value' => $value,
+            ],
+        ];
+    }
+
+    return [
+        'success' => false,
+        'message' => $label . ' is missing from the Going Live Checklist source.',
+        'logs'    => [
+            [
+                'level'   => 'error',
+                'message' => 'Required launch setting label was not found in hws_get_glc_settings_checks().',
+                'context' => [
+                    'label' => $label,
+                ],
+            ],
+        ],
+    ];
 }
 
 /**

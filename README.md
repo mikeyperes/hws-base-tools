@@ -141,7 +141,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.89 (Current)
+### v10.18.91 (Current)
+- Removed non-requested Quick Start status sections so the checklist focuses on Quick Setup and required launch settings.
+
+### v10.18.90
+- Added required launch setting checks to Quick Start using the existing Going Live Checklist status source.
+
+### v10.18.89
 - Changed the Quick Start navigation slug to `quick-start` and kept `getting-started-checklist` as a compatibility alias.
 
 ### v10.18.88
