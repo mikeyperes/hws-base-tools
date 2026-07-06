@@ -16,11 +16,13 @@ final class GettingStartedChecklistRenderer {
         CoreUi::render_assets();
         DynamicButton::render_assets();
 
-        $root_id = $this->config->root_id();
-        $steps   = $this->config->steps();
-        $nonce   = function_exists( 'wp_create_nonce' ) ? wp_create_nonce( $this->config->nonce_action() ) : '';
+        $root_id             = $this->config->root_id();
+        $default_template_id = $this->config->default_template_id();
+        $templates           = $this->config->templates();
+        $steps               = $this->config->template_steps( $default_template_id );
+        $nonce               = function_exists( 'wp_create_nonce' ) ? wp_create_nonce( $this->config->nonce_action() ) : '';
         ?>
-        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-gsc" data-hpc-getting-started-checklist data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-run-action="<?php echo esc_attr( $this->config->run_action() ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+        <div id="<?php echo esc_attr( $root_id ); ?>" class="hpc-ui hpc-gsc" data-hpc-getting-started-checklist data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-run-action="<?php echo esc_attr( $this->config->run_action() ); ?>" data-nonce-field="<?php echo esc_attr( $this->config->nonce_field() ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-default-template-id="<?php echo esc_attr( $default_template_id ); ?>" data-current-template-id="<?php echo esc_attr( $default_template_id ); ?>">
             <?php echo $this->assets( $root_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <?php
             ob_start();
@@ -28,6 +30,8 @@ final class GettingStartedChecklistRenderer {
                 <?php if ( '' !== $this->config->description() ) : ?>
                     <p class="hpc-gsc-description"><?php echo esc_html( $this->config->description() ); ?></p>
                 <?php endif; ?>
+
+                <?php echo $this->template_picker_html( $templates, $default_template_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
                 <div class="hpc-gsc-actions">
                     <?php echo DynamicButton::render( [ 'label' => 'Run Checklist', 'working_label' => 'Running...', 'success_label' => 'Checklist Finished', 'error_label' => 'Checklist Failed', 'class' => 'hpc-button', 'attrs' => [ 'data-gsc-run-all' => true ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -43,6 +47,8 @@ final class GettingStartedChecklistRenderer {
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+
+                <?php echo $this->template_store_html( $templates ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
                 <details class="hpc-gsc-log">
                     <summary class="hpc-gsc-log-head">
@@ -67,13 +73,68 @@ final class GettingStartedChecklistRenderer {
                     'title'       => $this->config->title(),
                     'open'        => true,
                     'persist_key' => $root_id . '-panel',
-                    'meta_html'   => CoreUi::pill( count( $steps ) . ' steps', 'dark' ),
+                    'meta_html'   => CoreUi::pill( count( $steps ) . ' steps', 'dark' ) . ( count( $templates ) > 1 ? CoreUi::pill( count( $templates ) . ' templates', 'blue' ) : '' ),
                     'body_html'   => $body,
                 ]
             ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             ?>
         </div>
         <?php
+    }
+
+    /**
+     * @param array<string,GettingStartedChecklistTemplate> $templates
+     */
+    private function template_picker_html( array $templates, string $default_template_id ): string {
+        if ( ! $this->config->show_template_picker() || [] === $templates ) {
+            return '';
+        }
+
+        $current = $templates[ $default_template_id ] ?? reset( $templates );
+        ob_start();
+        ?>
+        <div class="hpc-gsc-template-picker" data-gsc-template-picker>
+            <label for="<?php echo esc_attr( $this->config->root_id() . '-template' ); ?>">
+                <span><?php echo esc_html( $this->config->template_label() ); ?></span>
+                <select id="<?php echo esc_attr( $this->config->root_id() . '-template' ); ?>" data-gsc-template-select>
+                    <?php foreach ( $templates as $template ) : ?>
+                        <option value="<?php echo esc_attr( $template->id ); ?>" <?php selected( $template->id, $default_template_id ); ?> data-step-count="<?php echo esc_attr( (string) count( $template->steps ) ); ?>" data-description="<?php echo esc_attr( $template->description ); ?>"><?php echo esc_html( $template->label ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <button type="button" class="hpc-button secondary" data-gsc-load-template><?php echo esc_html( $this->config->template_load_label() ); ?></button>
+            <span class="hpc-gsc-template-status" data-gsc-template-status><?php echo esc_html( $current instanceof GettingStartedChecklistTemplate ? $current->label . ' loaded' : 'Template ready' ); ?></span>
+            <?php if ( $current instanceof GettingStartedChecklistTemplate && '' !== $current->description ) : ?>
+                <small data-gsc-template-description><?php echo esc_html( $current->description ); ?></small>
+            <?php else : ?>
+                <small data-gsc-template-description></small>
+            <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * @param array<string,GettingStartedChecklistTemplate> $templates
+     */
+    private function template_store_html( array $templates ): string {
+        if ( [] === $templates ) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div hidden data-gsc-template-store>
+            <?php foreach ( $templates as $template ) : ?>
+                <template data-gsc-template-source="<?php echo esc_attr( $template->id ); ?>" data-template-label="<?php echo esc_attr( $template->label ); ?>" data-template-description="<?php echo esc_attr( $template->description ); ?>" data-step-count="<?php echo esc_attr( (string) count( $template->steps ) ); ?>">
+                    <?php foreach ( $template->steps as $step ) : ?>
+                        <?php echo $this->step_html( $step ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php endforeach; ?>
+                </template>
+            <?php endforeach; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
     }
 
     private function step_html( GettingStartedChecklistStep $step ): string {
@@ -198,6 +259,12 @@ final class GettingStartedChecklistRenderer {
             #<?php echo esc_attr( $root_id ); ?>{max-width:100%;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-description{color:#3f4d63;font-size:13px;line-height:1.55;margin:0 0 14px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions{align-items:center;display:flex;flex-wrap:wrap;gap:10px;margin:0 0 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker{align-items:flex-end;background:#f8fbff;border:1px solid #dce7f4;border-radius:8px;display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px;padding:12px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker label{display:grid;gap:5px;min-width:min(280px,100%)}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker label span{color:#243044;font-size:12px;font-weight:900;text-transform:uppercase}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker select{background:#fff;border:1px solid #cbd6e2;border-radius:6px;box-shadow:none;color:#111827;font-size:13px;min-height:34px;padding:5px 30px 5px 10px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-status{background:#eaf8ef;border:1px solid #ccefd7;border-radius:999px;color:var(--hpc-green);font-size:11px;font-weight:900;line-height:1;padding:7px 9px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker small{color:var(--hpc-muted);display:block;flex-basis:100%;font-size:11px;line-height:1.35}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-list{display:grid;gap:12px;margin:0 0 16px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step summary{cursor:pointer;list-style:none}
@@ -395,6 +462,32 @@ final class GettingStartedChecklistRenderer {
                 root.querySelectorAll('[data-hpc-dynamic-button]').forEach(dynamicReset);
                 refreshInputState();
             }
+            function templateSelect(){ return root.querySelector('[data-gsc-template-select]'); }
+            function templateList(){ return root.querySelector('[data-gsc-list]'); }
+            function templateSource(templateId){ return root.querySelector('template[data-gsc-template-source="' + css(templateId) + '"]'); }
+            function currentTemplateId(){ return root.dataset.currentTemplateId || root.dataset.defaultTemplateId || 'default'; }
+            function updateTemplateStatus(){
+                var select = templateSelect();
+                var status = root.querySelector('[data-gsc-template-status]');
+                var description = root.querySelector('[data-gsc-template-description]');
+                var option = select ? select.options[select.selectedIndex] : null;
+                if (status && option) status.textContent = option.textContent + ' loaded';
+                if (description && option) description.textContent = option.dataset.description || '';
+            }
+            function loadTemplate(templateId){
+                var source = templateSource(templateId), list = templateList();
+                if (!source || !list) {
+                    addLog({level:'error', message:'Checklist template could not be loaded.', context:{template_id:templateId}});
+                    return false;
+                }
+                list.innerHTML = source.innerHTML;
+                root.dataset.currentTemplateId = templateId;
+                resetRows();
+                clearLog();
+                updateTemplateStatus();
+                addLog({level:'info', message:'Checklist template loaded.', context:{template_id:templateId, step_count:list.querySelectorAll('[data-gsc-step-row]').length}});
+                return true;
+            }
             function rowInputs(row){
                 return row ? Array.prototype.slice.call(row.querySelectorAll('[data-gsc-input]')) : [];
             }
@@ -486,6 +579,7 @@ final class GettingStartedChecklistRenderer {
                 body.set(root.dataset.nonceField || 'nonce', root.dataset.nonce || '');
                 body.set('step_id', stepId || '');
                 body.set('subtask_id', subtaskId || '');
+                body.set('template_id', currentTemplateId());
                 Object.keys(inputs || {}).forEach(function(key){
                     body.set('inputs[' + key + ']', inputs[key]);
                 });
@@ -606,6 +700,13 @@ final class GettingStartedChecklistRenderer {
                     clearLog();
                     return;
                 }
+                var loadTemplateButton = event.target.closest('[data-gsc-load-template]');
+                if (loadTemplateButton) {
+                    event.preventDefault();
+                    var select = templateSelect();
+                    loadTemplate(select ? select.value : root.dataset.defaultTemplateId || 'default');
+                    return;
+                }
                 var runAllButton = event.target.closest('[data-gsc-run-all]');
                 if (runAllButton) {
                     event.preventDefault();
@@ -649,15 +750,19 @@ final class GettingStartedChecklistRenderer {
                 if (!event.target.closest('[data-gsc-input]')) return;
                 refreshInputState();
             });
+            root.addEventListener('change', function(event){
+                if (!event.target.closest('[data-gsc-template-select]')) return;
+                updateTemplateStatus();
+            });
             root.addEventListener('click', function(event){
                 if (event.target.closest('[data-gsc-input]')) {
                     event.stopPropagation();
                 }
             }, true);
             if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", refreshInputState, {once:true});
+                document.addEventListener("DOMContentLoaded", function(){ updateTemplateStatus(); refreshInputState(); }, {once:true});
             } else {
-                window.setTimeout(refreshInputState, 0);
+                window.setTimeout(function(){ updateTemplateStatus(); refreshInputState(); }, 0);
             }
         })();
         </script>

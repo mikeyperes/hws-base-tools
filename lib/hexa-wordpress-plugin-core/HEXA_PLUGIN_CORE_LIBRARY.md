@@ -187,7 +187,7 @@ Namespace:
 Hexa\PluginCore\PluginChecks
 ```
 
-Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheckService` for installed/active/update/auto-update status. Use `PluginInventoryRenderer` when a plugin needs a reusable table UI for plugin status or a plugin library. Use `PluginInventoryAjaxController` for no-refresh refresh, install-and-activate, and activate actions.
+Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheckService` for installed/active/update/auto-update status. Use `PluginInventoryRenderer` when a plugin needs a reusable table UI for plugin status or a plugin library. Use `PluginInventoryAjaxController` for no-refresh refresh, install-and-activate, activate, deactivate, and delete actions.
 
 Required rules:
 
@@ -201,6 +201,7 @@ Required rules:
 - Use `source => must_use` or `dropin` for MU plugins and WordPress drop-ins; Core treats installed/present as active and skips update/auto-update checks.
 - Do not render a separate Installed column. Show installed/missing state as a Font Awesome SVG green check or red X beside the plugin title, with hover text explaining the state.
 - The Status column prints the icon plus `Active` or `Inactive`.
+- Keep Deactivate and Delete as subtle secondary row controls. They are available for installed normal plugins, require confirmation where destructive, and remain blocked for must-use plugins and drop-ins.
 - Do not use emoji indicators in plugin inventory UIs.
 
 Example:

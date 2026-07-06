@@ -141,7 +141,16 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.96 (Current)
+### v10.18.98 (Current)
+- Updated vendored Hexa WP Core to 0.19.28 so plugin inventory rows include subtle secondary Deactivate and Delete controls for installed plugins.
+
+### v10.18.97
+- Updated vendored Hexa WP Core to 0.19.27 and added a Quick Start destructive-delete sample that requires typed confirmation, creates/deletes temporary sample posts with media, and renders reusable Hexa WP Core deleted-post/deleted-file reports.
+
+### v10.18.96
+- Updated vendored Hexa WP Core to 0.19.26 and registered Quick Start templates: Default and Diamond Website.
+
+### v10.18.95
 - Updated vendored Hexa WP Core to 0.19.25 and added the UI Cleanup option registry as a generated Quick Start parent checklist section with reusable Core reports for file deletion and wp-config mutations.
 
 ### v10.18.94

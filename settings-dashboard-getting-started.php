@@ -3,6 +3,7 @@
 namespace hws_base_tools;
 
 use Hexa\PluginCore\GettingStartedChecklist\ChecklistReportBuilder;
+use Hexa\PluginCore\GettingStartedChecklist\DestructiveSampleRunner;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
@@ -22,31 +23,12 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
             'nonce_action'  => HWS_GETTING_STARTED_CHECKLIST_NONCE_ACTION,
             'nonce_field'   => 'nonce',
             'run_action'    => 'hws_getting_started_checklist_run_item',
-            'empty_message' => 'No HWS getting started checks are registered.',
-            'steps'         => [
-                [
-                    'id'          => 'quick_setup',
-                    'label'       => 'Run Quick Setup',
-                    'type'        => 'setup_action',
-                    'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
-                    'subtasks'    => hws_getting_started_quick_setup_subtasks(),
-                ],
-                [
-                    'id'          => 'required_launch_settings',
-                    'label'       => 'Verify Required Launch Settings',
-                    'type'        => 'status_check',
-                    'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
-                    'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
-                ],
-                [
-                    'id'          => 'ui_cleanup',
-                    'label'       => 'UI',
-                    'type'        => 'status_check',
-                    'action_label'=> 'Check UI',
-                    'description' => 'Lists every registered UI Cleanup option from the UI Cleanup tab as a checklist subtask. The attributes are generated from the source option definitions, not hand-coded into the checklist.',
-                    'subtasks'    => hws_getting_started_ui_cleanup_subtasks(),
-                ],
-            ],
+            'empty_message'        => 'No HWS getting started checks are registered.',
+            'template_id'          => 'default',
+            'template_label'       => 'Quick Start Template',
+            'template_load_label'  => 'Load Template',
+            'show_template_picker' => true,
+            'templates'            => hws_getting_started_checklist_templates(),
         ]
     );
 }
@@ -109,6 +91,56 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @return array<string,array<string,mixed>>
+ */
+function hws_getting_started_checklist_templates(): array {
+    $default_steps = hws_getting_started_default_template_steps();
+
+    return [
+        'default'         => [
+            'label'       => 'Default',
+            'description' => 'The standard HWS Base Tools launch checklist for normal site setup.',
+            'steps'       => $default_steps,
+        ],
+        'diamond_website' => [
+            'label'       => 'Diamond Website',
+            'description' => 'A named preset template that currently starts from the standard HWS launch checklist and can be expanded with Diamond-specific steps.',
+            'steps'       => $default_steps,
+        ],
+    ];
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_default_template_steps(): array {
+    return [
+        [
+            'id'          => 'quick_setup',
+            'label'       => 'Run Quick Setup',
+            'type'        => 'setup_action',
+            'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
+            'subtasks'    => hws_getting_started_quick_setup_subtasks(),
+        ],
+        [
+            'id'          => 'required_launch_settings',
+            'label'       => 'Verify Required Launch Settings',
+            'type'        => 'status_check',
+            'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
+            'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
+        ],
+        [
+            'id'           => 'ui_cleanup',
+            'label'        => 'UI',
+            'type'         => 'status_check',
+            'action_label' => 'Check UI',
+            'description'  => 'Lists every registered UI Cleanup option from the UI Cleanup tab as a checklist subtask. The attributes are generated from the source option definitions, not hand-coded into the checklist.',
+            'subtasks'     => hws_getting_started_ui_cleanup_subtasks(),
+        ],
+    ];
 }
 
 /**
@@ -183,6 +215,20 @@ function hws_getting_started_quick_setup_subtasks(): array {
         hws_getting_started_quick_setup_task_definition( 'clean_backup_files', 'Clean Backup Files', 'setup_action', 'Uses the existing HWS backup scanner and removes writable backup files it reports.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'close_comments', 'Close Comments', 'config_mutation', 'Closes future comments and existing open post comments.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'delete_comments', 'Delete Comments', 'setup_action', 'Deletes existing comments and comment meta.', $callback ),
+        hws_getting_started_quick_setup_task_definition(
+            'sample_delete_posts_with_media',
+            'Sample Delete Posts With Media',
+            'setup_action',
+            'Creates temporary HWS sample posts with temporary featured media, then permanently deletes only those sample records after typed confirmation. Demonstrates the reusable Hexa WP Core destructive confirmation and deleted-post reporting.',
+            $callback,
+            [
+                DestructiveSampleRunner::confirmation_input(
+                    [
+                        'description' => 'Type exactly: I APPROVE DELETING SAMPLE POSTS. This sample creates and deletes only temporary HWS sample posts and temporary media generated during this task.',
+                    ]
+                ),
+            ]
+        ),
         hws_getting_started_quick_setup_task_definition( 'close_pingbacks', 'Close Pingbacks', 'config_mutation', 'Closes future pingbacks and existing open post pingbacks.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Check Redis Object Cache', 'status_check', 'Checks Redis availability and enables the existing LiteSpeed object cache constant when Redis connects.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
@@ -501,6 +547,9 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             $deleted_comments = $wpdb->query( "DELETE FROM {$wpdb->comments}" );
             $wpdb->query( "DELETE FROM {$wpdb->commentmeta}" );
             return hws_getting_started_quick_setup_result( true, 'Existing comments deleted.', 'success', [ 'deleted_comments' => (int) $deleted_comments ] );
+
+        case 'sample_delete_posts_with_media':
+            return DestructiveSampleRunner::run( [ 'title_prefix' => 'HWS Core Delete Sample' ] );
 
         case 'close_pingbacks':
             global $wpdb;

@@ -41,7 +41,8 @@ final class GettingStartedChecklistAjaxController implements ModuleInterface {
         return $this->runner->run_item(
             $request->key( 'step_id', '', 'post' ),
             $request->key( 'subtask_id', '', 'post' ),
-            is_array( $inputs ) ? $inputs : []
+            is_array( $inputs ) ? $inputs : [],
+            $request->key( 'template_id', '', 'post' )
         );
     }
 }

@@ -14,19 +14,31 @@ final class GettingStartedChecklistConfig {
     private array $steps;
 
     /**
+     * @var array<string,GettingStartedChecklistTemplate>
+     */
+    private array $templates;
+
+    private string $default_template_id;
+
+    /**
      * @param array<string,mixed> $values
      */
     public function __construct( array $values = [] ) {
         $defaults = [
-            'root_id'       => 'hpc-getting-started-checklist',
-            'title'         => 'Getting Started Checklist',
-            'description'   => 'Run plugin setup checks and startup actions one step at a time through guarded AJAX requests.',
-            'capability'    => 'manage_options',
-            'nonce_action'  => 'hpc_getting_started_checklist',
-            'nonce_field'   => 'nonce',
-            'run_action'    => 'hpc_getting_started_checklist_run_item',
-            'empty_message' => 'No getting started steps have been registered.',
-            'steps'         => [],
+            'root_id'              => 'hpc-getting-started-checklist',
+            'title'                => 'Getting Started Checklist',
+            'description'          => 'Run plugin setup checks and startup actions one step at a time through guarded AJAX requests.',
+            'capability'           => 'manage_options',
+            'nonce_action'         => 'hpc_getting_started_checklist',
+            'nonce_field'          => 'nonce',
+            'run_action'           => 'hpc_getting_started_checklist_run_item',
+            'empty_message'        => 'No getting started steps have been registered.',
+            'template_id'          => 'default',
+            'template_label'       => 'Checklist Template',
+            'template_load_label'  => 'Load Template',
+            'show_template_picker' => false,
+            'templates'            => [],
+            'steps'                => [],
         ];
 
         $values                 = array_merge( $defaults, $values );
@@ -35,8 +47,13 @@ final class GettingStartedChecklistConfig {
         $values['run_action']   = $this->clean_key( (string) $values['run_action'] );
         $values['capability']   = trim( (string) $values['capability'] );
         $values['nonce_action'] = trim( (string) $values['nonce_action'] );
-        $this->steps            = $this->normalize_steps( (array) $values['steps'] );
-        unset( $values['steps'] );
+        $values['template_id']  = $this->clean_key( (string) $values['template_id'] ) ?: 'default';
+
+        $this->templates           = $this->normalize_templates( (array) $values['templates'], (array) $values['steps'], $values['template_id'] );
+        $this->default_template_id = $this->resolve_template_id( $values['template_id'] );
+        $this->steps               = $this->template_steps( $this->default_template_id );
+
+        unset( $values['steps'], $values['templates'] );
 
         $this->values = $values;
     }
@@ -77,6 +94,43 @@ final class GettingStartedChecklistConfig {
         return (string) $this->get( 'empty_message' );
     }
 
+    public function template_label(): string {
+        return (string) $this->get( 'template_label', 'Checklist Template' );
+    }
+
+    public function template_load_label(): string {
+        return (string) $this->get( 'template_load_label', 'Load Template' );
+    }
+
+    public function show_template_picker(): bool {
+        return (bool) $this->get( 'show_template_picker', false ) || count( $this->templates ) > 1;
+    }
+
+    public function default_template_id(): string {
+        return $this->default_template_id;
+    }
+
+    public function resolve_template_id( string $template_id ): string {
+        $template_id = $this->clean_key( $template_id );
+        if ( '' !== $template_id && isset( $this->templates[ $template_id ] ) ) {
+            return $template_id;
+        }
+
+        if ( isset( $this->templates['default'] ) ) {
+            return 'default';
+        }
+
+        $first = array_key_first( $this->templates );
+        return is_string( $first ) && '' !== $first ? $first : 'default';
+    }
+
+    /**
+     * @return array<string,GettingStartedChecklistTemplate>
+     */
+    public function templates(): array {
+        return $this->templates;
+    }
+
     /**
      * @return array<int,GettingStartedChecklistStep>
      */
@@ -84,11 +138,32 @@ final class GettingStartedChecklistConfig {
         return $this->steps;
     }
 
-    public function find_step( string $step_id ): ?GettingStartedChecklistStep {
-        $step_id = $this->clean_key( $step_id );
+    /**
+     * @return array<int,GettingStartedChecklistStep>
+     */
+    public function template_steps( string $template_id = '' ): array {
+        $template_id = $this->resolve_template_id( $template_id ?: $this->default_template_id );
+        return isset( $this->templates[ $template_id ] ) ? $this->templates[ $template_id ]->steps : [];
+    }
 
-        foreach ( $this->steps as $step ) {
-            if ( $step->id === $step_id ) {
+    public function find_step( string $step_id, string $template_id = '' ): ?GettingStartedChecklistStep {
+        $step_id = $this->clean_key( $step_id );
+        $template_id = $this->resolve_template_id( $template_id );
+
+        if ( isset( $this->templates[ $template_id ] ) ) {
+            $step = $this->templates[ $template_id ]->find_step( $step_id );
+            if ( $step instanceof GettingStartedChecklistStep ) {
+                return $step;
+            }
+        }
+
+        foreach ( $this->templates as $template ) {
+            if ( $template->id === $template_id ) {
+                continue;
+            }
+
+            $step = $template->find_step( $step_id );
+            if ( $step instanceof GettingStartedChecklistStep ) {
                 return $step;
             }
         }
@@ -107,15 +182,26 @@ final class GettingStartedChecklistConfig {
     }
 
     /**
-     * @param array<int|string,mixed> $steps
-     * @return array<int,GettingStartedChecklistStep>
+     * @return array<int,array<string,mixed>>
      */
-    private function normalize_steps( array $steps ): array {
+    public function public_templates(): array {
+        return array_map(
+            static fn( GettingStartedChecklistTemplate $template ): array => $template->to_public_array(),
+            array_values( $this->templates )
+        );
+    }
+
+    /**
+     * @param array<int|string,mixed> $templates
+     * @param array<int|string,mixed> $fallback_steps
+     * @return array<string,GettingStartedChecklistTemplate>
+     */
+    private function normalize_templates( array $templates, array $fallback_steps, string $default_template_id ): array {
         $normalized = [];
         $seen       = [];
 
-        foreach ( $steps as $key => $definition ) {
-            if ( ! is_array( $definition ) && ! $definition instanceof GettingStartedChecklistStep ) {
+        foreach ( $templates as $key => $definition ) {
+            if ( ! is_array( $definition ) && ! $definition instanceof GettingStartedChecklistTemplate ) {
                 continue;
             }
 
@@ -123,13 +209,25 @@ final class GettingStartedChecklistConfig {
                 $definition['id'] = $key;
             }
 
-            $step = GettingStartedChecklistStep::from( $definition );
-            if ( isset( $seen[ $step->id ] ) ) {
+            $template = GettingStartedChecklistTemplate::from( $definition );
+            if ( '' === $template->id || isset( $seen[ $template->id ] ) ) {
                 continue;
             }
 
-            $normalized[]     = $step;
-            $seen[ $step->id ] = true;
+            $normalized[ $template->id ] = $template;
+            $seen[ $template->id ] = true;
+        }
+
+        if ( [] === $normalized && [] !== $fallback_steps ) {
+            $template_id = $this->clean_key( $default_template_id ) ?: 'default';
+            $normalized[ $template_id ] = new GettingStartedChecklistTemplate(
+                [
+                    'id'          => $template_id,
+                    'label'       => 'Default',
+                    'description' => 'Default checklist template.',
+                    'steps'       => $fallback_steps,
+                ]
+            );
         }
 
         return $normalized;

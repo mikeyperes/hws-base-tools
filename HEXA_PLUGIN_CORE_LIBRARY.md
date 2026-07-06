@@ -131,6 +131,9 @@ Required rules:
 - Callback returns may be `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
 - Step and subtask `type` values should be one of `callback`, `status_check`, `setup_action`, `feature_toggle`, `config_mutation`, `ajax_request`, or `custom`.
 - Use `request` for structured request metadata. Core passes raw request metadata to callbacks and redacts secret/token/password/nonce/key values in public output.
+- Use `required_inputs` or `inputs` for operator-supplied values that must be typed before a checklist item can run. Core renders the fields, validates them in the browser, sends them through AJAX as `inputs[field_id]`, validates/sanitizes them server-side, and passes them to callbacks as `$payload["inputs"]`.
+- Supported input types are `text`, `email`, `url`, `password`, `number`, `tel`, and `search`.
+- Do not hardcode site-specific SMTP sender emails, alert emails, API keys, or approval text in reusable Core code. Define the required input and feed the typed value into the existing host callback.
 
 Example:
 
@@ -153,6 +156,22 @@ $config = new \Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistCo
                 ],
             ],
         ],
+        [
+            'id'          => 'smtp_setup',
+            'label'       => 'Apply SMTP Settings',
+            'type'        => 'config_mutation',
+            'callback'    => 'my_plugin_apply_smtp_settings',
+            'required_inputs' => [
+                [
+                    'id'          => 'from_email',
+                    'label'       => 'From email',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'placeholder' => '',
+                    'description' => 'Passed to the callback as $payload["inputs"]["from_email"].',
+                ],
+            ],
+        ],
     ],
 ]);
 
@@ -168,7 +187,7 @@ Namespace:
 Hexa\PluginCore\PluginChecks
 ```
 
-Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheckService` for installed/active/update/auto-update status. Use `PluginInventoryRenderer` when a plugin needs a reusable table UI for plugin status or a plugin library. Use `PluginInventoryAjaxController` for no-refresh refresh, install-and-activate, and activate actions.
+Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheckService` for installed/active/update/auto-update status. Use `PluginInventoryRenderer` when a plugin needs a reusable table UI for plugin status or a plugin library. Use `PluginInventoryAjaxController` for no-refresh refresh, install-and-activate, activate, deactivate, and delete actions.
 
 Required rules:
 
@@ -182,6 +201,7 @@ Required rules:
 - Use `source => must_use` or `dropin` for MU plugins and WordPress drop-ins; Core treats installed/present as active and skips update/auto-update checks.
 - Do not render a separate Installed column. Show installed/missing state as a Font Awesome SVG green check or red X beside the plugin title, with hover text explaining the state.
 - The Status column prints the icon plus `Active` or `Inactive`.
+- Keep Deactivate and Delete as subtle secondary row controls. They are available for installed normal plugins, require confirmation where destructive, and remain blocked for must-use plugins and drop-ins.
 - Do not use emoji indicators in plugin inventory UIs.
 
 Example:

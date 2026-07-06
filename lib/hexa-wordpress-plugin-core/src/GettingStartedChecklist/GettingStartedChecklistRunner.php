@@ -14,15 +14,16 @@ final class GettingStartedChecklistRunner {
     /**
      * @return array<string,mixed>
      */
-    public function run_item( string $step_id, string $subtask_id = '', array $inputs = [] ): array {
-        $step = $this->config->find_step( $step_id );
+    public function run_item( string $step_id, string $subtask_id = '', array $inputs = [], string $template_id = '' ): array {
+        $template_id = $this->config->resolve_template_id( $template_id );
+        $step        = $this->config->find_step( $step_id, $template_id );
         if ( ! $step instanceof GettingStartedChecklistStep ) {
             return $this->failure_payload(
                 $step_id,
                 $subtask_id,
                 'Unknown checklist step.',
                 [
-                    $this->log_entry( 'error', 'Requested checklist step was not registered.', [ 'step_id' => $step_id ] ),
+                    $this->log_entry( 'error', 'Requested checklist step was not registered.', [ 'template_id' => $template_id, 'step_id' => $step_id ] ),
                 ]
             );
         }
@@ -34,7 +35,7 @@ final class GettingStartedChecklistRunner {
                 $subtask_id,
                 'Unknown checklist subtask.',
                 [
-                    $this->log_entry( 'error', 'Requested checklist subtask was not registered.', [ 'step_id' => $step->id, 'subtask_id' => $subtask_id ] ),
+                    $this->log_entry( 'error', 'Requested checklist subtask was not registered.', [ 'template_id' => $template_id, 'step_id' => $step->id, 'subtask_id' => $subtask_id ] ),
                 ]
             );
         }
@@ -50,9 +51,10 @@ final class GettingStartedChecklistRunner {
                 'info',
                 'Starting checklist item.',
                 [
-                    'step_id'    => $step->id,
-                    'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
-                    'label'      => $label,
+                    'template_id' => $template_id,
+                    'step_id'     => $step->id,
+                    'subtask_id'  => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+                    'label'       => $label,
                     'type'       => $type,
                 ]
             ),
@@ -92,9 +94,10 @@ final class GettingStartedChecklistRunner {
             $result = call_user_func(
                 $callback,
                 [
+                    'template_id'  => $template_id,
                     'step'         => $step->to_callback_array(),
                     'subtask'      => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->to_callback_array() : null,
-                    'context'      => $context,
+                    'context'      => array_merge( [ 'template_id' => $template_id ], $context ),
                     'request'      => $request,
                     'inputs'       => $input_validation['values'],
                     'request_type' => $type,
@@ -108,9 +111,10 @@ final class GettingStartedChecklistRunner {
                 'error',
                 $message,
                 [
-                    'step_id'    => $step->id,
-                    'subtask_id' => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
-                    'exception'  => get_class( $throwable ),
+                    'template_id' => $template_id,
+                    'step_id'     => $step->id,
+                    'subtask_id'  => $subtask instanceof GettingStartedChecklistSubtask ? $subtask->id : '',
+                    'exception'   => get_class( $throwable ),
                 ]
             );
 
