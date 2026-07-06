@@ -26,26 +26,8 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                     'id'          => 'quick_setup',
                     'label'       => 'Run Quick Setup',
                     'type'        => 'setup_action',
-                    'description' => 'Runs the existing HWS Quick Setup process: disables debug settings, sets WP_MEMORY_LIMIT, enables auto-updates, cleans logs and backups, disables comments and pingbacks, enables snippets, installs/activates essential plugins, and checks Redis, LiteSpeed, and Wordfence.',
-                    'callback'    => __NAMESPACE__ . '\\hws_getting_started_run_quick_setup',
-                    'required_inputs' => [
-                        [
-                            'id'          => 'wordfence_alert_email',
-                            'label'       => 'Wordfence alert email',
-                            'type'        => 'email',
-                            'required'    => true,
-                            'placeholder' => '',
-                            'description' => 'Quick Setup feeds this typed value into Wordfence alertEmails.',
-                        ],
-                        [
-                            'id'          => 'smtp_from_email',
-                            'label'       => 'SMTP from email',
-                            'type'        => 'email',
-                            'required'    => true,
-                            'placeholder' => '',
-                            'description' => 'Quick Setup feeds this typed value into the existing WP Mail SMTP option structure. Authentication still requires the selected mailer credentials.',
-                        ],
-                    ],
+                    'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
+                    'subtasks'    => hws_getting_started_quick_setup_subtasks(),
                 ],
                 [
                     'id'          => 'required_launch_settings',
@@ -117,6 +99,88 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_quick_setup_subtasks(): array {
+    $callback = __NAMESPACE__ . '\\hws_getting_started_run_quick_setup_task';
+
+    return [
+        hws_getting_started_quick_setup_task_definition( 'disable_debug_settings', 'Disable Debug Settings', 'config_mutation', 'Sets WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG to false through the existing wp-config writer.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'set_memory_limit', 'Set WP Memory Limit', 'config_mutation', 'Sets WP_MEMORY_LIMIT to 4096M through the existing wp-config writer.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'enable_core_auto_updates', 'Enable WordPress Core Auto Updates', 'config_mutation', 'Enables WP_AUTO_UPDATE_CORE through the existing wp-config writer.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'enable_plugin_auto_updates', 'Enable Plugin Auto Updates', 'config_mutation', 'Enables auto-updates for installed plugins through WordPress options.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'enable_theme_auto_updates', 'Enable Theme Auto Updates', 'config_mutation', 'Enables auto-updates for installed themes through WordPress options.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'clean_log_files', 'Clean Log Files', 'setup_action', 'Deletes writable debug.log and root error_log files.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'clean_backup_files', 'Clean Backup Files', 'setup_action', 'Uses the existing HWS backup scanner and removes writable backup files it reports.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'close_comments', 'Close Comments', 'config_mutation', 'Closes future comments and existing open post comments.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'delete_comments', 'Delete Comments', 'setup_action', 'Deletes existing comments and comment meta.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'close_pingbacks', 'Close Pingbacks', 'config_mutation', 'Closes future pingbacks and existing open post pingbacks.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Check Redis Object Cache', 'status_check', 'Checks Redis availability and enables the existing LiteSpeed object cache constant when Redis connects.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'activate_wordfence', 'Activate Wordfence', 'setup_action', 'Activates Wordfence when installed.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'enable_recommended_snippets', 'Enable Recommended Snippets', 'feature_toggle', 'Uses the existing Going Live Checklist snippet list and enables each recommended snippet option.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'install_essential_plugins', 'Install Essential Plugins', 'setup_action', 'Uses the existing monitored plugin list and installs or activates essential plugins when possible.', $callback ),
+        hws_getting_started_quick_setup_task_definition(
+            'apply_wordfence_alert_email',
+            'Set Wordfence Alert Email',
+            'config_mutation',
+            'Feeds this task-level typed email into the existing Wordfence alertEmails updater.',
+            $callback,
+            [
+                [
+                    'id'          => 'wordfence_alert_email',
+                    'label'       => 'Wordfence alert email',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'placeholder' => '',
+                    'description' => 'This value is sent only to the Wordfence alert email task.',
+                ],
+            ]
+        ),
+        hws_getting_started_quick_setup_task_definition(
+            'apply_smtp_from_email',
+            'Set WP Mail SMTP From Email',
+            'config_mutation',
+            'Feeds this task-level typed email into the existing WP Mail SMTP option structure.',
+            $callback,
+            [
+                [
+                    'id'          => 'smtp_from_email',
+                    'label'       => 'SMTP from email',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'placeholder' => '',
+                    'description' => 'This value is sent only to the WP Mail SMTP from email task. Authentication still requires the selected mailer credentials.',
+                ],
+            ]
+        ),
+    ];
+}
+
+/**
+ * @param array<int,array<string,mixed>> $required_inputs
+ * @return array<string,mixed>
+ */
+function hws_getting_started_quick_setup_task_definition( string $id, string $label, string $type, string $description, string $callback, array $required_inputs = [] ): array {
+    $definition = [
+        'id'          => $id,
+        'label'       => $label,
+        'type'        => $type,
+        'description' => $description,
+        'callback'    => $callback,
+        'context'     => [
+            'quick_setup_task' => $id,
+        ],
+    ];
+
+    if ( [] !== $required_inputs ) {
+        $definition['required_inputs'] = $required_inputs;
+    }
+
+    return $definition;
 }
 
 /**
@@ -231,60 +295,297 @@ function hws_getting_started_check_required_launch_setting( array $payload ): ar
  * @param array<string,mixed> $payload
  * @return array<string,mixed>
  */
-function hws_getting_started_run_quick_setup( array $payload ): array {
-    if ( ! function_exists( __NAMESPACE__ . '\\hws_execute_quick_setup' ) ) {
-        return [
-            'success' => false,
-            'message' => 'HWS Quick Setup function is not loaded.',
-            'logs'    => [
-                [
-                    'level'   => 'error',
-                    'message' => 'The checklist could not find hws_execute_quick_setup().',
-                    'context' => [ 'function' => __NAMESPACE__ . '\\hws_execute_quick_setup' ],
-                ],
-            ],
-        ];
+function hws_getting_started_run_quick_setup_task( array $payload ): array {
+    $context = is_array( $payload['context'] ?? null ) ? $payload['context'] : [];
+    $task    = sanitize_key( (string) ( $context['quick_setup_task'] ?? '' ) );
+    $inputs  = is_array( $payload['inputs'] ?? null ) ? $payload['inputs'] : [];
+
+    switch ( $task ) {
+        case 'disable_debug_settings':
+            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
+                modify_wp_config_constants(
+                    [
+                        'WP_DEBUG'         => 'false',
+                        'WP_DEBUG_DISPLAY' => 'false',
+                        'WP_DEBUG_LOG'     => 'false',
+                    ]
+                );
+            }
+            @ini_set( 'display_errors', '0' );
+            return hws_getting_started_quick_setup_result( true, 'Debug settings disabled.', 'success', [ 'constants' => [ 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG' ] ] );
+
+        case 'set_memory_limit':
+            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
+                modify_wp_config_constants( [ 'WP_MEMORY_LIMIT' => '4096M' ] );
+            }
+            return hws_getting_started_quick_setup_result( true, 'WP_MEMORY_LIMIT set to 4096M.', 'success', [ 'constant' => 'WP_MEMORY_LIMIT', 'value' => '4096M' ] );
+
+        case 'enable_core_auto_updates':
+            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
+                modify_wp_config_constants( [ 'WP_AUTO_UPDATE_CORE' => 'true' ] );
+            }
+            return hws_getting_started_quick_setup_result( true, 'WordPress core auto-updates enabled.', 'success', [ 'constant' => 'WP_AUTO_UPDATE_CORE', 'value' => 'true' ] );
+
+        case 'enable_plugin_auto_updates':
+            if ( ! function_exists( 'get_plugins' ) && defined( 'ABSPATH' ) ) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+            $all_plugins = function_exists( 'get_plugins' ) ? array_keys( get_plugins() ) : [];
+            update_option( 'auto_update_plugins', $all_plugins );
+            update_option( 'enable_auto_update_plugins', true );
+            return hws_getting_started_quick_setup_result( true, 'Plugin auto-updates enabled.', 'success', [ 'count' => count( $all_plugins ) ] );
+
+        case 'enable_theme_auto_updates':
+            $all_themes = array_keys( wp_get_themes() );
+            update_option( 'auto_update_themes', $all_themes );
+            update_option( 'enable_auto_update_themes', true );
+            return hws_getting_started_quick_setup_result( true, 'Theme auto-updates enabled.', 'success', [ 'count' => count( $all_themes ) ] );
+
+        case 'clean_log_files':
+            $deleted = [];
+            $skipped = [];
+            foreach ( [ WP_CONTENT_DIR . '/debug.log', ABSPATH . 'error_log' ] as $log_file ) {
+                if ( file_exists( $log_file ) && is_writable( $log_file ) ) {
+                    $deleted[] = [ 'path' => $log_file, 'size' => size_format( filesize( $log_file ) ) ];
+                    @unlink( $log_file );
+                } else {
+                    $skipped[] = $log_file;
+                }
+            }
+            return hws_getting_started_quick_setup_result( true, 'Log file cleanup completed.', 'success', [ 'deleted' => $deleted, 'skipped' => $skipped ] );
+
+        case 'clean_backup_files':
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_scan_backups' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'Backup scanner is not available.', 'error' );
+            }
+            $deleted_count = 0;
+            foreach ( hws_scan_backups() as $backup ) {
+                $backup_path = (string) ( $backup['path'] ?? '' );
+                if ( '' !== $backup_path && file_exists( $backup_path ) && is_writable( $backup_path ) ) {
+                    @unlink( $backup_path );
+                    $deleted_count++;
+                }
+            }
+            return hws_getting_started_quick_setup_result( true, 'Backup cleanup completed.', 'success', [ 'deleted_count' => $deleted_count ] );
+
+        case 'close_comments':
+            global $wpdb;
+            update_option( 'default_comment_status', 'closed' );
+            update_option( 'default_ping_status', 'closed' );
+            $updated_comments = $wpdb->query( "UPDATE {$wpdb->posts} SET comment_status = 'closed' WHERE comment_status = 'open'" );
+            return hws_getting_started_quick_setup_result( true, 'Comments closed.', 'success', [ 'updated_posts' => (int) $updated_comments ] );
+
+        case 'delete_comments':
+            global $wpdb;
+            $deleted_comments = $wpdb->query( "DELETE FROM {$wpdb->comments}" );
+            $wpdb->query( "DELETE FROM {$wpdb->commentmeta}" );
+            return hws_getting_started_quick_setup_result( true, 'Existing comments deleted.', 'success', [ 'deleted_comments' => (int) $deleted_comments ] );
+
+        case 'close_pingbacks':
+            global $wpdb;
+            update_option( 'default_ping_status', 'closed' );
+            $updated_pings = $wpdb->query( "UPDATE {$wpdb->posts} SET ping_status = 'closed' WHERE ping_status = 'open'" );
+            return hws_getting_started_quick_setup_result( true, 'Pingbacks closed.', 'success', [ 'updated_posts' => (int) $updated_pings ] );
+
+        case 'check_redis_object_cache':
+            if ( ! class_exists( 'Redis' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'Redis PHP extension is not installed.', 'warning' );
+            }
+            try {
+                $redis = new \Redis();
+                if ( @$redis->connect( '127.0.0.1', 6379, 2 ) ) {
+                    if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
+                        modify_wp_config_constants( [ 'LSCWP_OBJECT_CACHE' => 'true' ] );
+                    }
+                    $redis->close();
+                    return hws_getting_started_quick_setup_result( true, 'Redis connected and LiteSpeed object cache constant enabled.', 'success' );
+                }
+            } catch ( \Exception $exception ) {
+                return hws_getting_started_quick_setup_result( false, 'Redis check failed: ' . $exception->getMessage(), 'warning' );
+            }
+            return hws_getting_started_quick_setup_result( false, 'Redis service is not running.', 'warning' );
+
+        case 'activate_litespeed_cache':
+            return hws_getting_started_activate_plugin_task( 'litespeed-cache/litespeed-cache.php', 'LiteSpeed Cache' );
+
+        case 'activate_wordfence':
+            return hws_getting_started_activate_plugin_task( 'wordfence/wordfence.php', 'Wordfence' );
+
+        case 'enable_recommended_snippets':
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_get_going_live_snippets' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'Going Live snippet list is not available.', 'error' );
+            }
+            $enabled_count = 0;
+            $already_count = 0;
+            foreach ( hws_get_going_live_snippets() as $snippet_id ) {
+                if ( get_option( $snippet_id, false ) ) {
+                    $already_count++;
+                } else {
+                    update_option( $snippet_id, true );
+                    $enabled_count++;
+                }
+            }
+            return hws_getting_started_quick_setup_result( true, 'Recommended snippets enabled.', 'success', [ 'enabled_count' => $enabled_count, 'already_count' => $already_count ] );
+
+        case 'install_essential_plugins':
+            return hws_getting_started_install_essential_plugins_task();
+
+        case 'apply_wordfence_alert_email':
+            $alert_email = isset( $inputs['wordfence_alert_email'] ) ? sanitize_email( (string) $inputs['wordfence_alert_email'] ) : '';
+            if ( '' === $alert_email || ! is_email( $alert_email ) ) {
+                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email input is missing or invalid.', 'error' );
+            }
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wordfence_alert_email' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email updater is not available.', 'error' );
+            }
+            $wordfence_result = hws_quick_setup_apply_wordfence_alert_email( $alert_email );
+            return hws_getting_started_quick_setup_result( (bool) ( $wordfence_result['success'] ?? false ), wp_strip_all_tags( (string) ( $wordfence_result['message'] ?? '' ) ), ! empty( $wordfence_result['success'] ) ? 'success' : 'error', [ 'input' => 'wordfence_alert_email' ] );
+
+        case 'apply_smtp_from_email':
+            $from_email = isset( $inputs['smtp_from_email'] ) ? sanitize_email( (string) $inputs['smtp_from_email'] ) : '';
+            if ( '' === $from_email || ! is_email( $from_email ) ) {
+                return hws_getting_started_quick_setup_result( false, 'SMTP from email input is missing or invalid.', 'error' );
+            }
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wp_mail_smtp_from_email' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'WP Mail SMTP from email updater is not available.', 'error' );
+            }
+            $smtp_result = hws_quick_setup_apply_wp_mail_smtp_from_email( $from_email );
+            return hws_getting_started_quick_setup_result( (bool) ( $smtp_result['success'] ?? false ), wp_strip_all_tags( (string) ( $smtp_result['message'] ?? '' ) ), ! empty( $smtp_result['success'] ) ? 'success' : 'warning', [ 'input' => 'smtp_from_email' ] );
     }
 
-    $inputs  = is_array( $payload['inputs'] ?? null ) ? $payload['inputs'] : [];
-    $raw_log = hws_execute_quick_setup( $inputs );
-    $lines   = preg_split( '/\r\n|\r|\n/', trim( wp_strip_all_tags( (string) $raw_log ) ) ) ?: [];
-    $logs    = [
-        [
-            'level'   => 'info',
-            'message' => 'Existing HWS Quick Setup process started from the Hexa Core checklist.',
-            'context' => [ 'source_function' => __NAMESPACE__ . '\\hws_execute_quick_setup' ],
-        ],
-    ];
+    return hws_getting_started_quick_setup_result( false, 'Unknown Quick Setup task.', 'error', [ 'task' => $task ] );
+}
 
-    foreach ( $lines as $line ) {
-        $line = trim( (string) $line );
-        if ( '' === $line ) {
+/**
+ * @param array<string,mixed> $context
+ * @return array<string,mixed>
+ */
+function hws_getting_started_quick_setup_result( bool $success, string $message, string $level = 'success', array $context = [] ): array {
+    return [
+        'success' => $success,
+        'message' => '' !== $message ? $message : ( $success ? 'Task completed.' : 'Task failed.' ),
+        'logs'    => [
+            [
+                'level'   => $level,
+                'message' => '' !== $message ? $message : ( $success ? 'Task completed.' : 'Task failed.' ),
+                'context' => $context,
+            ],
+        ],
+        'data'    => $context,
+    ];
+}
+
+/**
+ * @return array<string,mixed>
+ */
+function hws_getting_started_activate_plugin_task( string $plugin_path, string $label ): array {
+    if ( ! function_exists( 'is_plugin_active' ) && defined( 'ABSPATH' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    if ( ! file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
+        return hws_getting_started_quick_setup_result( false, $label . ' is not installed.', 'warning', [ 'plugin' => $plugin_path ] );
+    }
+
+    if ( is_plugin_active( $plugin_path ) ) {
+        return hws_getting_started_quick_setup_result( true, $label . ' is already active.', 'success', [ 'plugin' => $plugin_path ] );
+    }
+
+    $result = activate_plugin( $plugin_path );
+    if ( is_wp_error( $result ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Could not activate ' . $label . ': ' . $result->get_error_message(), 'error', [ 'plugin' => $plugin_path ] );
+    }
+
+    return hws_getting_started_quick_setup_result( true, $label . ' activated.', 'success', [ 'plugin' => $plugin_path ] );
+}
+
+/**
+ * @return array<string,mixed>
+ */
+function hws_getting_started_install_essential_plugins_task(): array {
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugins' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Monitored plugin list is not available.', 'error' );
+    }
+
+    if ( ! function_exists( 'is_plugin_active' ) && defined( 'ABSPATH' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+    require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+    require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
+
+    $activated = 0;
+    $installed = 0;
+    $skipped   = 0;
+    $failed    = [];
+
+    foreach ( hws_get_monitored_plugins() as $plugin_path => $info ) {
+        if ( ( $info['category'] ?? '' ) !== 'essential' ) {
             continue;
         }
 
-        $level = 'info';
-        if ( str_contains( strtolower( $line ), 'error' ) || str_contains( $line, '❌' ) ) {
-            $level = 'error';
-        } elseif ( str_contains( strtolower( $line ), 'warning' ) || str_contains( $line, '⚠' ) ) {
-            $level = 'warning';
-        } elseif ( str_contains( $line, '✓' ) || str_contains( $line, '✅' ) || str_contains( strtolower( $line ), 'complete' ) ) {
-            $level = 'success';
+        $name = (string) ( $info['name'] ?? $plugin_path );
+        if ( ! empty( $info['pro'] ) ) {
+            $skipped++;
+            continue;
         }
 
-        $logs[] = [
-            'level'   => $level,
-            'message' => $line,
-            'context' => [],
-        ];
+        if ( is_plugin_active( $plugin_path ) ) {
+            $skipped++;
+            continue;
+        }
+
+        if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
+            $result = activate_plugin( $plugin_path );
+            if ( is_wp_error( $result ) ) {
+                $failed[] = $name . ': ' . $result->get_error_message();
+            } else {
+                $activated++;
+            }
+            continue;
+        }
+
+        if ( ( $info['download'] ?? 'manual' ) === 'manual' ) {
+            $skipped++;
+            continue;
+        }
+
+        $slug = basename( dirname( $plugin_path ) );
+        $api  = plugins_api( 'plugin_information', [ 'slug' => $slug, 'fields' => [ 'sections' => false ] ] );
+        if ( is_wp_error( $api ) ) {
+            $failed[] = $name . ': repository lookup failed';
+            continue;
+        }
+
+        $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
+        $result   = $upgrader->install( $api->download_link );
+        if ( ! $result || is_wp_error( $result ) ) {
+            $failed[] = $name . ': install failed';
+            continue;
+        }
+
+        $activate_result = activate_plugin( $plugin_path );
+        if ( is_wp_error( $activate_result ) ) {
+            $failed[] = $name . ': activation failed after install';
+        } else {
+            $installed++;
+        }
     }
 
-    return [
-        'success' => true,
-        'message' => 'HWS Quick Setup completed.',
-        'logs'    => $logs,
-    ];
+    $success = [] === $failed;
+    return hws_getting_started_quick_setup_result(
+        $success,
+        $success ? 'Essential plugin setup completed.' : 'Essential plugin setup completed with failures.',
+        $success ? 'success' : 'warning',
+        [
+            'installed' => $installed,
+            'activated' => $activated,
+            'skipped'   => $skipped,
+            'failed'    => $failed,
+        ]
+    );
 }
+
 
 /**
  * @param array<string,mixed> $payload

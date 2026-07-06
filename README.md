@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.92 (Current)
+### v10.18.93 (Current)
+- Moved Quick Start required inputs onto isolated task-level subtasks so SMTP and Wordfence values are rendered and processed only by the tasks that consume them.
+
+### v10.18.92
 - Added Hexa Core required-input fields to Quick Setup for Wordfence alert email and WP Mail SMTP from email.
 
 ### v10.18.91
