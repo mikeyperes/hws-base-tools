@@ -567,6 +567,14 @@ function hws_normalize_dashboard_tab_id( string $tab_id ): string {
     $tabs   = hws_get_dashboard_tabs();
     $tab_id = sanitize_key( $tab_id );
 
+    $aliases = [
+        'getting-started-checklist' => 'quick-start',
+    ];
+
+    if ( isset( $aliases[ $tab_id ] ) ) {
+        $tab_id = $aliases[ $tab_id ];
+    }
+
     if ( ! array_key_exists( $tab_id, $tabs ) ) {
         $tab_id = array_key_first( $tabs );
     }

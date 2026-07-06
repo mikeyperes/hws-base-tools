@@ -116,7 +116,7 @@ add_action( 'init', __NAMESPACE__ . '\\hws_register_getting_started_checklist_aj
 add_filter(
     'hws_base_tools_dashboard_tabs',
     function( array $tabs ): array {
-        if ( isset( $tabs['getting-started-checklist'] ) ) {
+        if ( isset( $tabs['quick-start'] ) ) {
             return $tabs;
         }
 
@@ -126,13 +126,13 @@ add_filter(
         foreach ( $tabs as $key => $label ) {
             $updated[ $key ] = $label;
             if ( 'overview' === $key ) {
-                $updated['getting-started-checklist'] = 'Quick Start';
+                $updated['quick-start'] = 'Quick Start';
                 $inserted = true;
             }
         }
 
         if ( ! $inserted ) {
-            $updated['getting-started-checklist'] = 'Quick Start';
+            $updated['quick-start'] = 'Quick Start';
         }
 
         return $updated;
@@ -142,7 +142,7 @@ add_filter(
 add_filter(
     'hws_base_tools_render_dashboard_tab',
     function( bool $handled, string $tab_id ): bool {
-        if ( $handled || 'getting-started-checklist' !== $tab_id ) {
+        if ( $handled || 'quick-start' !== $tab_id ) {
             return $handled;
         }
 

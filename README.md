@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.88 (Current)
+### v10.18.89 (Current)
+- Changed the Quick Start navigation slug to `quick-start` and kept `getting-started-checklist` as a compatibility alias.
+
+### v10.18.88
 - Updated vendored Hexa WP Core to 0.19.22 so Cleanup remains compatible when another plugin has already loaded an older Hexa Core `CoreUi` class.
 
 ### v10.18.87
