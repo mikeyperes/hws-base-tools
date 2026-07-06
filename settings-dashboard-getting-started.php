@@ -2,9 +2,11 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\GettingStartedChecklist\ChecklistReportBuilder;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistAjaxController;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
+use Hexa\PluginCore\WpAdminUiCleanup\CleanupChecklistAdapter;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,6 +37,14 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
                     'type'        => 'status_check',
                     'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
                     'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
+                ],
+                [
+                    'id'          => 'ui_cleanup',
+                    'label'       => 'UI',
+                    'type'        => 'status_check',
+                    'action_label'=> 'Check UI',
+                    'description' => 'Lists every registered UI Cleanup option from the UI Cleanup tab as a checklist subtask. The attributes are generated from the source option definitions, not hand-coded into the checklist.',
+                    'subtasks'    => hws_getting_started_ui_cleanup_subtasks(),
                 ],
             ],
         ]
@@ -99,6 +109,62 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_ui_cleanup_subtasks(): array {
+    if ( ! function_exists( __NAMESPACE__ . '\\get_ui_cleanup_options' ) || ! class_exists( CleanupChecklistAdapter::class ) ) {
+        return [];
+    }
+
+    return CleanupChecklistAdapter::subtasks_from_options(
+        get_ui_cleanup_options(),
+        __NAMESPACE__ . '\\hws_getting_started_check_ui_cleanup_attribute',
+        [
+            'type'                => 'status_check',
+            'action_label'        => 'Check',
+            'include_attributes'  => true,
+            'default_admin_pages' => [ 'profile.php', 'user-edit.php', 'post.php', 'post-new.php' ],
+        ]
+    );
+}
+
+/**
+ * @param array<string,mixed> $payload
+ * @return array<string,mixed>
+ */
+function hws_getting_started_check_ui_cleanup_attribute( array $payload ): array {
+    $context = is_array( $payload['context'] ?? null ) ? $payload['context'] : [];
+    $key     = sanitize_key( (string) ( $context['ui_cleanup_key'] ?? '' ) );
+
+    if ( '' === $key || ! function_exists( __NAMESPACE__ . '\\get_ui_cleanup_options' ) || ! function_exists( __NAMESPACE__ . '\\get_ui_cleanup_option' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'UI Cleanup option source is not available.', 'error' );
+    }
+
+    $options = get_ui_cleanup_options();
+    if ( ! isset( $options[ $key ] ) ) {
+        return hws_getting_started_quick_setup_result( false, 'UI Cleanup option is not registered: ' . $key, 'error', [ 'ui_cleanup_key' => $key ] );
+    }
+
+    $enabled    = get_ui_cleanup_option( $key );
+    $attributes = is_array( $context['ui_cleanup_attribute'] ?? null ) ? $context['ui_cleanup_attribute'] : CleanupChecklistAdapter::attributes( $options[ $key ], $key );
+    $mode       = (string) ( $attributes['mode'] ?? '' );
+    $state      = $enabled ? (string) ( $attributes['on_label'] ?? ( 'postbox_collapse' === $mode ? 'Collapsed' : 'Hidden' ) ) : (string) ( $attributes['off_label'] ?? ( 'postbox_collapse' === $mode ? 'Expanded' : 'Visible' ) );
+    $label      = (string) ( $attributes['label'] ?? $key );
+
+    return hws_getting_started_quick_setup_result(
+        true,
+        $label . ' is currently ' . $state . '.',
+        'success',
+        [
+            'ui_cleanup_key'   => $key,
+            'current_state'    => $state,
+            'source_attribute' => $attributes,
+        ],
+        [ CleanupChecklistAdapter::status_report_from_payload( [ 'context' => [ 'ui_cleanup_attribute' => $attributes ] ], $enabled ) ]
+    );
 }
 
 /**
@@ -292,6 +358,65 @@ function hws_getting_started_check_required_launch_setting( array $payload ): ar
 }
 
 /**
+ * @param array<string,mixed> $constants
+ * @return array{result:array<string,mixed>,report:array<string,mixed>}
+ */
+function hws_getting_started_apply_wp_config_constants( array $constants ): array {
+    $changes = [];
+    $file    = defined( 'ABSPATH' ) ? ABSPATH . 'wp-config.php' : 'wp-config.php';
+
+    foreach ( $constants as $constant => $value ) {
+        $constant = (string) $constant;
+        $changes[ $constant ] = [
+            'setting'   => $constant,
+            'old_value' => hws_getting_started_read_wp_config_constant( $constant ),
+            'new_value' => hws_getting_started_format_wp_config_value( $value ),
+            'file'      => $file,
+        ];
+    }
+
+    $result = function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' )
+        ? modify_wp_config_constants( $constants )
+        : [ 'status' => false, 'message' => 'wp-config writer is not available.' ];
+
+    foreach ( array_keys( $changes ) as $constant ) {
+        $changes[ $constant ]['actual_value'] = hws_getting_started_read_wp_config_constant( $constant );
+    }
+
+    return [
+        'result' => $result,
+        'report' => ChecklistReportBuilder::wp_config_changes( array_values( $changes ) ),
+    ];
+}
+
+function hws_getting_started_read_wp_config_constant( string $constant ): string {
+    if ( function_exists( __NAMESPACE__ . '\\check_wp_config_constant_status' ) ) {
+        $value = check_wp_config_constant_status( $constant );
+        return is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+    }
+
+    if ( defined( $constant ) ) {
+        $value = constant( $constant );
+        if ( is_bool( $value ) ) {
+            return $value ? 'true' : 'false';
+        }
+        return is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+    }
+
+    return 'undefined';
+}
+
+function hws_getting_started_format_wp_config_value( mixed $value ): string {
+    if ( is_array( $value ) ) {
+        return wp_json_encode( $value );
+    }
+    if ( is_bool( $value ) ) {
+        return $value ? 'true' : 'false';
+    }
+    return is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
+}
+
+/**
  * @param array<string,mixed> $payload
  * @return array<string,mixed>
  */
@@ -302,29 +427,23 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
 
     switch ( $task ) {
         case 'disable_debug_settings':
-            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
-                modify_wp_config_constants(
-                    [
-                        'WP_DEBUG'         => 'false',
-                        'WP_DEBUG_DISPLAY' => 'false',
-                        'WP_DEBUG_LOG'     => 'false',
-                    ]
-                );
-            }
+            $config_change = hws_getting_started_apply_wp_config_constants(
+                [
+                    'WP_DEBUG'         => 'false',
+                    'WP_DEBUG_DISPLAY' => 'false',
+                    'WP_DEBUG_LOG'     => 'false',
+                ]
+            );
             @ini_set( 'display_errors', '0' );
-            return hws_getting_started_quick_setup_result( true, 'Debug settings disabled.', 'success', [ 'constants' => [ 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG' ] ] );
+            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'Debug settings disabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constants' => [ 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG' ], 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'set_memory_limit':
-            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
-                modify_wp_config_constants( [ 'WP_MEMORY_LIMIT' => '4096M' ] );
-            }
-            return hws_getting_started_quick_setup_result( true, 'WP_MEMORY_LIMIT set to 4096M.', 'success', [ 'constant' => 'WP_MEMORY_LIMIT', 'value' => '4096M' ] );
+            $config_change = hws_getting_started_apply_wp_config_constants( [ 'WP_MEMORY_LIMIT' => '4096M' ] );
+            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'WP_MEMORY_LIMIT set to 4096M.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constant' => 'WP_MEMORY_LIMIT', 'value' => '4096M', 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'enable_core_auto_updates':
-            if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
-                modify_wp_config_constants( [ 'WP_AUTO_UPDATE_CORE' => 'true' ] );
-            }
-            return hws_getting_started_quick_setup_result( true, 'WordPress core auto-updates enabled.', 'success', [ 'constant' => 'WP_AUTO_UPDATE_CORE', 'value' => 'true' ] );
+            $config_change = hws_getting_started_apply_wp_config_constants( [ 'WP_AUTO_UPDATE_CORE' => 'true' ] );
+            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'WordPress core auto-updates enabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constant' => 'WP_AUTO_UPDATE_CORE', 'value' => 'true', 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'enable_plugin_auto_updates':
             if ( ! function_exists( 'get_plugins' ) && defined( 'ABSPATH' ) ) {
@@ -346,27 +465,29 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             $skipped = [];
             foreach ( [ WP_CONTENT_DIR . '/debug.log', ABSPATH . 'error_log' ] as $log_file ) {
                 if ( file_exists( $log_file ) && is_writable( $log_file ) ) {
-                    $deleted[] = [ 'path' => $log_file, 'size' => size_format( filesize( $log_file ) ) ];
+                    $size_bytes = (int) filesize( $log_file );
+                    $deleted[]  = [ 'path' => $log_file, 'size_bytes' => $size_bytes, 'size' => size_format( $size_bytes ) ];
                     @unlink( $log_file );
                 } else {
                     $skipped[] = $log_file;
                 }
             }
-            return hws_getting_started_quick_setup_result( true, 'Log file cleanup completed.', 'success', [ 'deleted' => $deleted, 'skipped' => $skipped ] );
+            return hws_getting_started_quick_setup_result( true, 'Log file cleanup completed.', 'success', [ 'deleted' => $deleted, 'skipped' => $skipped ], [ ChecklistReportBuilder::deleted_files( $deleted, [ 'title' => 'Log Files Deleted' ] ) ] );
 
         case 'clean_backup_files':
             if ( ! function_exists( __NAMESPACE__ . '\\hws_scan_backups' ) ) {
                 return hws_getting_started_quick_setup_result( false, 'Backup scanner is not available.', 'error' );
             }
-            $deleted_count = 0;
+            $deleted = [];
             foreach ( hws_scan_backups() as $backup ) {
                 $backup_path = (string) ( $backup['path'] ?? '' );
                 if ( '' !== $backup_path && file_exists( $backup_path ) && is_writable( $backup_path ) ) {
+                    $size_bytes = (int) filesize( $backup_path );
+                    $deleted[]  = [ 'path' => $backup_path, 'size_bytes' => $size_bytes, 'size' => size_format( $size_bytes ) ];
                     @unlink( $backup_path );
-                    $deleted_count++;
                 }
             }
-            return hws_getting_started_quick_setup_result( true, 'Backup cleanup completed.', 'success', [ 'deleted_count' => $deleted_count ] );
+            return hws_getting_started_quick_setup_result( true, 'Backup cleanup completed.', 'success', [ 'deleted_count' => count( $deleted ), 'deleted' => $deleted ], [ ChecklistReportBuilder::deleted_files( $deleted, [ 'title' => 'Backup Files Deleted' ] ) ] );
 
         case 'close_comments':
             global $wpdb;
@@ -394,11 +515,9 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             try {
                 $redis = new \Redis();
                 if ( @$redis->connect( '127.0.0.1', 6379, 2 ) ) {
-                    if ( function_exists( __NAMESPACE__ . '\\modify_wp_config_constants' ) ) {
-                        modify_wp_config_constants( [ 'LSCWP_OBJECT_CACHE' => 'true' ] );
-                    }
+                    $config_change = hws_getting_started_apply_wp_config_constants( [ 'LSCWP_OBJECT_CACHE' => 'true' ] );
                     $redis->close();
-                    return hws_getting_started_quick_setup_result( true, 'Redis connected and LiteSpeed object cache constant enabled.', 'success' );
+                    return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'Redis connected and LiteSpeed object cache constant enabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
                 }
             } catch ( \Exception $exception ) {
                 return hws_getting_started_quick_setup_result( false, 'Redis check failed: ' . $exception->getMessage(), 'warning' );
@@ -460,7 +579,12 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
  * @param array<string,mixed> $context
  * @return array<string,mixed>
  */
-function hws_getting_started_quick_setup_result( bool $success, string $message, string $level = 'success', array $context = [] ): array {
+function hws_getting_started_quick_setup_result( bool $success, string $message, string $level = 'success', array $context = [], array $reports = [] ): array {
+    $data = $context;
+    if ( [] !== $reports ) {
+        $data['reports'] = array_values( array_filter( $reports ) );
+    }
+
     return [
         'success' => $success,
         'message' => '' !== $message ? $message : ( $success ? 'Task completed.' : 'Task failed.' ),
@@ -471,7 +595,7 @@ function hws_getting_started_quick_setup_result( bool $success, string $message,
                 'context' => $context,
             ],
         ],
-        'data'    => $context,
+        'data'    => $data,
     ];
 }
 

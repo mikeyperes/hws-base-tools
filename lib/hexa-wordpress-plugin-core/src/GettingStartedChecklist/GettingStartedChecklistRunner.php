@@ -264,6 +264,18 @@ final class GettingStartedChecklistRunner {
 
             if ( 'email' === $type && function_exists( 'is_email' ) && ! is_email( $value ) ) {
                 $missing[] = (string) ( $definition['label'] ?? $id );
+                continue;
+            }
+
+            if ( 'confirmation' === $type ) {
+                $expected = (string) ( $definition['confirm_text'] ?? $definition['expected_value'] ?? $definition['expected'] ?? '' );
+                if ( '' !== $expected ) {
+                    $case_sensitive = (bool) ( $definition['case_sensitive'] ?? true );
+                    $matches        = $case_sensitive ? hash_equals( $expected, $value ) : 0 === strcasecmp( $expected, $value );
+                    if ( ! $matches ) {
+                        $missing[] = (string) ( $definition['label'] ?? $id );
+                    }
+                }
             }
         }
 

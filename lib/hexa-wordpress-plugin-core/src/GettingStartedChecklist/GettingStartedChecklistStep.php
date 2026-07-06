@@ -240,20 +240,28 @@ final class GettingStartedChecklistStep {
             }
 
             $type = self::clean_key( (string) ( $definition['type'] ?? 'text' ) );
-            if ( ! in_array( $type, [ 'text', 'email', 'url', 'password', 'number', 'tel', 'search' ], true ) ) {
+            if ( ! in_array( $type, [ 'text', 'email', 'url', 'password', 'number', 'tel', 'search', 'confirmation' ], true ) ) {
                 $type = 'text';
             }
 
+            $confirm_text = trim( (string) ( $definition['confirm_text'] ?? $definition['expected_value'] ?? $definition['expected'] ?? '' ) );
+            $placeholder  = trim( (string) ( $definition['placeholder'] ?? '' ) );
+            if ( 'confirmation' === $type && '' === $placeholder && '' !== $confirm_text ) {
+                $placeholder = $confirm_text;
+            }
+
             $normalized[] = [
-                'id'          => $id,
-                'label'       => trim( (string) ( $definition['label'] ?? ucwords( str_replace( [ '-', '_' ], ' ', $id ) ) ) ),
-                'type'        => $type,
-                'required'    => (bool) ( $definition['required'] ?? true ),
-                'placeholder' => trim( (string) ( $definition['placeholder'] ?? '' ) ),
-                'description' => trim( (string) ( $definition['description'] ?? $definition['help'] ?? '' ) ),
-                'value'       => is_scalar( $definition['value'] ?? null ) ? (string) $definition['value'] : '',
-                'pattern'     => trim( (string) ( $definition['pattern'] ?? '' ) ),
-                'autocomplete'=> trim( (string) ( $definition['autocomplete'] ?? ( 'email' === $type ? 'email' : '' ) ) ),
+                'id'             => $id,
+                'label'          => trim( (string) ( $definition['label'] ?? ucwords( str_replace( [ '-', '_' ], ' ', $id ) ) ) ),
+                'type'           => $type,
+                'required'       => (bool) ( $definition['required'] ?? true ),
+                'placeholder'    => $placeholder,
+                'description'    => trim( (string) ( $definition['description'] ?? $definition['help'] ?? '' ) ),
+                'value'          => is_scalar( $definition['value'] ?? null ) ? (string) $definition['value'] : '',
+                'pattern'        => trim( (string) ( $definition['pattern'] ?? '' ) ),
+                'autocomplete'   => trim( (string) ( $definition['autocomplete'] ?? ( 'email' === $type ? 'email' : '' ) ) ),
+                'confirm_text'   => $confirm_text,
+                'case_sensitive' => (bool) ( $definition['case_sensitive'] ?? true ),
             ];
             $seen[ $id ] = true;
         }

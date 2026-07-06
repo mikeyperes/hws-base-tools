@@ -141,7 +141,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.93 (Current)
+### v10.18.95 (Current)
+- Updated vendored Hexa WP Core to 0.19.25 and added the UI Cleanup option registry as a generated Quick Start parent checklist section with reusable Core reports for file deletion and wp-config mutations.
+
+### v10.18.94
+- Updated vendored Hexa WP Core to 0.19.24 so blocked Quick Start action buttons show the exact unmet required-input reason on hover.
+
+### v10.18.93
 - Moved Quick Start required inputs onto isolated task-level subtasks so SMTP and Wordfence values are rendered and processed only by the tasks that consume them.
 
 ### v10.18.92

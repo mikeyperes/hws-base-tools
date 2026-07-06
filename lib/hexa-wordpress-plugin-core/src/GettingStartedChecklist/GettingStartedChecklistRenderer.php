@@ -94,6 +94,7 @@ final class GettingStartedChecklistRenderer {
                         <p><?php echo esc_html( $step->description ); ?></p>
                     <?php endif; ?>
                     <?php echo $this->required_inputs_html( $step->required_inputs, $step->id, '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <div class="hpc-gsc-report" data-gsc-report hidden></div>
                 </div>
                 <div class="hpc-gsc-row-action">
                     <span class="hpc-gsc-section-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>
@@ -116,6 +117,7 @@ final class GettingStartedChecklistRenderer {
                                     <p><?php echo esc_html( $subtask->description ); ?></p>
                                 <?php endif; ?>
                                 <?php echo $this->required_inputs_html( $subtask->required_inputs, $step->id, $subtask->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                <div class="hpc-gsc-report" data-gsc-report hidden></div>
                             </div>
                             <div class="hpc-gsc-row-action">
                                 <?php echo DynamicButton::render( [ 'label' => $subtask->action_label, 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-item' => true, 'data-step-id' => $step->id, 'data-subtask-id' => $subtask->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -144,10 +146,13 @@ final class GettingStartedChecklistRenderer {
                 <?php
                 $id          = (string) ( $input['id'] ?? '' );
                 $label       = (string) ( $input['label'] ?? $id );
-                $type        = (string) ( $input['type'] ?? 'text' );
-                $required    = (bool) ( $input['required'] ?? true );
-                $description = (string) ( $input['description'] ?? '' );
-                $field_id    = 'hpc-gsc-input-' . $step_id . ( '' !== $subtask_id ? '-' . $subtask_id : '' ) . '-' . $id;
+                $type           = (string) ( $input['type'] ?? 'text' );
+                $field_type     = 'confirmation' === $type ? 'text' : $type;
+                $required       = (bool) ( $input['required'] ?? true );
+                $description    = (string) ( $input['description'] ?? '' );
+                $confirm_text   = (string) ( $input['confirm_text'] ?? '' );
+                $case_sensitive = (bool) ( $input['case_sensitive'] ?? true );
+                $field_id       = 'hpc-gsc-input-' . $step_id . ( '' !== $subtask_id ? '-' . $subtask_id : '' ) . '-' . $id;
 
                 if ( '' === $id ) {
                     continue;
@@ -162,7 +167,7 @@ final class GettingStartedChecklistRenderer {
                     </span>
                     <input
                         id="<?php echo esc_attr( $field_id ); ?>"
-                        type="<?php echo esc_attr( $type ); ?>"
+                        type="<?php echo esc_attr( $field_type ); ?>"
                         value="<?php echo esc_attr( (string) ( $input['value'] ?? '' ) ); ?>"
                         placeholder="<?php echo esc_attr( (string) ( $input['placeholder'] ?? '' ) ); ?>"
                         <?php echo $required ? 'required' : ''; ?>
@@ -172,6 +177,8 @@ final class GettingStartedChecklistRenderer {
                         data-input-id="<?php echo esc_attr( $id ); ?>"
                         data-input-type="<?php echo esc_attr( $type ); ?>"
                         data-input-label="<?php echo esc_attr( $label ); ?>"
+                        data-confirm-text="<?php echo esc_attr( $confirm_text ); ?>"
+                        data-case-sensitive="<?php echo $case_sensitive ? '1' : '0'; ?>"
                     >
                     <?php if ( '' !== $description ) : ?>
                         <small><?php echo esc_html( $description ); ?></small>
@@ -201,6 +208,9 @@ final class GettingStartedChecklistRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-subtask-row{border-top:1px solid #edf1f6;margin-left:34px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-subtask-row:first-child{border-top:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action{align-items:center;display:flex;gap:10px;justify-content:flex-end}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions{position:relative}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action[data-disabled-reason]:hover::after,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action[data-disabled-reason]:focus-within::after,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions[data-disabled-reason]:hover::after,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions[data-disabled-reason]:focus-within::after{background:#111827;border:1px solid #263241;border-radius:6px;box-shadow:0 10px 24px rgba(15,23,42,.24);color:#f8fafc;content:attr(data-disabled-reason);font-size:12px;font-weight:700;line-height:1.35;max-width:min(360px,calc(100vw - 40px));padding:8px 10px;pointer-events:none;position:absolute;right:0;text-align:left;top:calc(100% + 8px);white-space:normal;width:max-content;z-index:50}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action[data-disabled-reason]:hover::before,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row-action[data-disabled-reason]:focus-within::before,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions[data-disabled-reason]:hover::before,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-actions[data-disabled-reason]:focus-within::before{border:7px solid transparent;border-bottom-color:#111827;content:"";pointer-events:none;position:absolute;right:20px;top:calc(100% - 5px);z-index:51}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-section-toggle{align-items:center;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;color:var(--hpc-blue);display:inline-flex;height:28px;justify-content:center;transition:background .18s,border-color .18s,color .18s;width:28px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-section-toggle svg{display:block;fill:currentColor;height:12px;transform:rotate(180deg);transition:transform .18s;width:12px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step:not([open]) .hpc-gsc-section-toggle svg{transform:rotate(0deg)}
@@ -210,6 +220,19 @@ final class GettingStartedChecklistRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-title-line{align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 5px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-title-line strong{font-size:14px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-main p{color:var(--hpc-muted);font-size:12px;line-height:1.45;margin:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report{display:grid;gap:8px;margin-top:10px;max-width:100%;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report[hidden]{display:none}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-card{background:#f8fafc;border:1px solid #dce5ef;border-radius:7px;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-head{border-bottom:1px solid #dce5ef;padding:9px 11px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-head strong{display:block;font-size:12px;margin:0 0 3px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-head span{color:var(--hpc-muted);display:block;font-size:11px;line-height:1.35}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-scroll{max-width:100%;overflow:auto}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table{border-collapse:collapse;font-size:11px;min-width:100%;table-layout:auto;width:100%}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table th,#<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table td{border-bottom:1px solid #e7eef6;padding:7px 9px;text-align:left;vertical-align:top}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table th{background:#eef4fb;color:#334155;font-size:10px;font-weight:900;text-transform:uppercase}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table td{color:#243044;overflow-wrap:anywhere;word-break:break-word}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table tr:last-child td{border-bottom:0}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-report-table a{color:var(--hpc-blue);font-weight:800;text-decoration:none}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-inputs{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:10px;max-width:760px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-input-field{display:grid;gap:5px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-input-field span{align-items:center;color:#243044;display:flex;font-size:12px;font-weight:800;gap:7px;line-height:1.2}
@@ -275,10 +298,33 @@ final class GettingStartedChecklistRenderer {
                 }
                 return logBody;
             }
-            function dynamicStart(button, label){ if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.start(button, label); else if (button) button.disabled = true; }
-            function dynamicSuccess(button, label){ if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.success(button, label || 'Done'); else if (button) button.disabled = false; }
-            function dynamicError(button, label){ if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.error(button, label || 'Failed'); else if (button) button.disabled = false; }
-            function dynamicReset(button){ if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.reset(button); else if (button) button.disabled = false; }
+            function actionContainer(button){ return button ? (button.closest('.hpc-gsc-row-action') || button.closest('.hpc-gsc-actions')) : null; }
+            function setDisabledReason(button, reason){
+                if (!button) return;
+                reason = text(reason).trim();
+                var container = actionContainer(button);
+                if (reason) {
+                    button.setAttribute('title', reason);
+                    button.setAttribute('aria-disabled', 'true');
+                    button.dataset.disabledReason = reason;
+                    if (container) {
+                        container.dataset.disabledReason = reason;
+                        container.setAttribute('title', reason);
+                    }
+                } else {
+                    button.removeAttribute('title');
+                    button.removeAttribute('aria-disabled');
+                    delete button.dataset.disabledReason;
+                    if (container) {
+                        delete container.dataset.disabledReason;
+                        container.removeAttribute('title');
+                    }
+                }
+            }
+            function dynamicStart(button, label){ setDisabledReason(button, ''); if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.start(button, label); else if (button) button.disabled = true; }
+            function dynamicSuccess(button, label){ setDisabledReason(button, ''); if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.success(button, label || 'Done'); else if (button) button.disabled = false; }
+            function dynamicError(button, label){ setDisabledReason(button, ''); if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.error(button, label || 'Failed'); else if (button) button.disabled = false; }
+            function dynamicReset(button){ setDisabledReason(button, ''); if (window.HexaWpCoreDynamicButton) window.HexaWpCoreDynamicButton.reset(button); else if (button) button.disabled = false; }
             function logRow(entry){
                 entry = entry || {};
                 var context = entry.context && Object.keys(entry.context).length ? JSON.stringify(entry.context, null, 2) : '';
@@ -296,6 +342,48 @@ final class GettingStartedChecklistRenderer {
                 if (!target) return;
                 target.innerHTML = logRow({time:'Ready', level:'info', message:'Checklist runner is ready.', context:{}});
             }
+            function reportTarget(row){ return row ? row.querySelector('[data-gsc-report]') : null; }
+            function clearReport(row){ var target = reportTarget(row); if (!target) return; target.hidden = true; target.innerHTML = ''; }
+            function normalizeReports(payload){
+                payload = payload || {};
+                var reports = [];
+                if (Array.isArray(payload.reports)) reports = payload.reports;
+                else if (payload.report) reports = Array.isArray(payload.report) ? payload.report : [payload.report];
+                return reports.filter(function(report){ return report && typeof report === 'object'; });
+            }
+            function reportColumns(report){
+                if (Array.isArray(report.columns) && report.columns.length) return report.columns.map(function(col){ return typeof col === 'string' ? {key:col,label:col} : col; }).filter(function(col){ return col && col.key; });
+                if (report.type === 'deleted_files') return [{key:'file',label:'File'},{key:'location',label:'Location'},{key:'size',label:'Size'}];
+                if (report.type === 'wp_config_changes') return [{key:'setting',label:'Setting'},{key:'before',label:'Before'},{key:'after',label:'Requested After'},{key:'actual',label:'Current After'},{key:'file',label:'File'}];
+                if (report.type === 'deleted_posts') return [{key:'title',label:'Title'},{key:'id',label:'ID'},{key:'permalink',label:'Permalink'},{key:'media',label:'Deleted Media'}];
+                var first = Array.isArray(report.items) && report.items.length ? report.items[0] : {};
+                return Object.keys(first).map(function(key){ return {key:key,label:key.replace(/_/g,' ')}; });
+            }
+            function valueHtml(value, key){
+                if (Array.isArray(value)) return value.map(function(item){ return valueHtml(item, key); }).join('<br>');
+                if (value && typeof value === 'object') return '<code>' + esc(JSON.stringify(value)) + '</code>';
+                value = text(value);
+                if ((/url|link|permalink/i.test(key || '') || /^https?:\/\//i.test(value)) && /^https?:\/\//i.test(value)) return '<a href="' + esc(value).replace(/"/g,'&quot;') + '" target="_blank" rel="noopener noreferrer">' + esc(value) + '</a>';
+                return esc(value);
+            }
+            function reportHtml(report){
+                var columns = reportColumns(report), items = Array.isArray(report.items) ? report.items : [];
+                var html = '<div class="hpc-gsc-report-card"><div class="hpc-gsc-report-head"><strong>' + esc(report.title || 'Checklist Report') + '</strong>' + (report.summary ? '<span>' + esc(report.summary) + '</span>' : '') + '</div>';
+                if (items.length && columns.length) {
+                    html += '<div class="hpc-gsc-report-scroll"><table class="hpc-gsc-report-table"><thead><tr>' + columns.map(function(col){ return '<th>' + esc(col.label || col.key) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                    html += items.map(function(item){ return '<tr>' + columns.map(function(col){ return '<td>' + valueHtml(item[col.key], col.key) + '</td>'; }).join('') + '</tr>'; }).join('');
+                    html += '</tbody></table></div>';
+                }
+                html += '</div>';
+                return html;
+            }
+            function renderReports(row, payload){
+                var target = reportTarget(row), reports = normalizeReports(payload);
+                if (!target) return;
+                if (!reports.length) { clearReport(row); return; }
+                target.innerHTML = reports.map(reportHtml).join('');
+                target.hidden = false;
+            }
             function setRowState(row, state, message){
                 if (!row) return;
                 row.dataset.status = state || 'pending';
@@ -303,15 +391,15 @@ final class GettingStartedChecklistRenderer {
                 if (label) label.textContent = message || ({pending:'Pending', running:'Running', success:'Complete', failed:'Failed'}[state] || 'Pending');
             }
             function resetRows(){
-                root.querySelectorAll('[data-gsc-item]').forEach(function(row){ setRowState(row, 'pending', 'Pending'); });
+                root.querySelectorAll('[data-gsc-item]').forEach(function(row){ setRowState(row, 'pending', 'Pending'); clearReport(row); });
                 root.querySelectorAll('[data-hpc-dynamic-button]').forEach(dynamicReset);
                 refreshInputState();
             }
             function rowInputs(row){
                 return row ? Array.prototype.slice.call(row.querySelectorAll('[data-gsc-input]')) : [];
             }
-            function validateRowInputs(row, showErrors){
-                var valid = true;
+            function rowInputMessages(row, showErrors){
+                var messages = [];
                 rowInputs(row).forEach(function(input){
                     var value = text(input.value).trim();
                     var type = input.dataset.inputType || input.type || 'text';
@@ -322,6 +410,11 @@ final class GettingStartedChecklistRenderer {
                         message = label + ' is required.';
                     } else if (value && type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                         message = label + ' must be a valid email address.';
+                    } else if (type === 'confirmation' && input.dataset.confirmText) {
+                        var expected = text(input.dataset.confirmText);
+                        var actual = value;
+                        var matches = input.dataset.caseSensitive === '0' ? actual.toLowerCase() === expected.toLowerCase() : actual === expected;
+                        if (!matches) message = label + ' must match the required confirmation text.';
                     } else if (value && input.pattern) {
                         try {
                             var pattern = new RegExp('^(?:' + input.pattern + ')$');
@@ -331,9 +424,32 @@ final class GettingStartedChecklistRenderer {
                     input.setAttribute('aria-invalid', message ? 'true' : 'false');
                     var errorNode = input.closest('.hpc-gsc-input-field')?.querySelector('[data-gsc-input-error]');
                     if (errorNode) errorNode.textContent = showErrors ? message : '';
-                    if (message) valid = false;
+                    if (message) messages.push(message);
                 });
-                return valid;
+                return messages;
+            }
+            function validateRowInputs(row, showErrors){
+                return rowInputMessages(row, showErrors).length === 0;
+            }
+            function rowAndChildrenInputMessages(stepRow, showErrors){
+                var messages = rowInputMessages(stepRow, showErrors);
+                var card = stepRow ? root.querySelector('[data-gsc-step-card][data-step-id="' + css(stepRow.dataset.stepId || '') + '"]') : null;
+                var childRows = card ? Array.prototype.slice.call(card.querySelectorAll('[data-gsc-subtask-row]')) : [];
+                childRows.forEach(function(childRow){
+                    messages = messages.concat(rowInputMessages(childRow, showErrors));
+                });
+                return messages;
+            }
+            function disabledReason(messages){
+                messages = (messages || []).filter(Boolean);
+                if (!messages.length) return '';
+                return 'Can not run yet: ' + messages.join(' ');
+            }
+            function setButtonBlocked(button, messages){
+                if (!button) return;
+                var reason = disabledReason(messages);
+                button.disabled = !!reason;
+                setDisabledReason(button, reason);
             }
             function collectRowInputs(row){
                 var values = {};
@@ -343,32 +459,25 @@ final class GettingStartedChecklistRenderer {
                 return values;
             }
             function rowAndChildrenInputsValid(stepRow, showErrors){
-                if (!validateRowInputs(stepRow, showErrors)) return false;
-                var card = stepRow ? root.querySelector('[data-gsc-step-card][data-step-id="' + css(stepRow.dataset.stepId || '') + '"]') : null;
-                var childRows = card ? Array.prototype.slice.call(card.querySelectorAll('[data-gsc-subtask-row]')) : [];
-                var valid = true;
-                childRows.forEach(function(childRow){
-                    if (!validateRowInputs(childRow, showErrors)) valid = false;
-                });
-                return valid;
+                return rowAndChildrenInputMessages(stepRow, showErrors).length === 0;
             }
             function refreshInputState(){
                 root.querySelectorAll('[data-gsc-item]').forEach(function(row){
-                    validateRowInputs(row, false);
+                    var rowMessages = rowInputMessages(row, false);
                     var rowButton = row.querySelector('[data-gsc-run-item]');
-                    if (rowButton) rowButton.disabled = !validateRowInputs(row, false);
+                    setButtonBlocked(rowButton, rowMessages);
                 });
                 root.querySelectorAll('[data-gsc-step-row]').forEach(function(stepRow){
                     var stepButton = stepRow.querySelector('[data-gsc-run-step]');
-                    if (stepButton) stepButton.disabled = !rowAndChildrenInputsValid(stepRow, false);
+                    setButtonBlocked(stepButton, rowAndChildrenInputMessages(stepRow, false));
                 });
                 var runAllButton = root.querySelector('[data-gsc-run-all]');
                 if (runAllButton) {
-                    var allValid = true;
+                    var allMessages = [];
                     root.querySelectorAll('[data-gsc-step-row]').forEach(function(stepRow){
-                        if (!rowAndChildrenInputsValid(stepRow, false)) allValid = false;
+                        allMessages = allMessages.concat(rowAndChildrenInputMessages(stepRow, false));
                     });
-                    runAllButton.disabled = !allValid;
+                    setButtonBlocked(runAllButton, allMessages);
                 }
             }
             function postItem(stepId, subtaskId, inputs){
@@ -403,8 +512,10 @@ final class GettingStartedChecklistRenderer {
                     return Promise.resolve(false);
                 }
                 setRowState(row, 'running', 'Running');
+                clearReport(row);
                 return postItem(stepId, subtaskId, collectRowInputs(row)).then(function(data){
                     addLogs(data.logs);
+                    renderReports(row, data.data || data);
                     if (data.success) {
                         setRowState(row, 'success', data.message || 'Complete');
                         return true;
