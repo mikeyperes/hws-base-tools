@@ -22,31 +22,12 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
             'nonce_action'  => HWS_GETTING_STARTED_CHECKLIST_NONCE_ACTION,
             'nonce_field'   => 'nonce',
             'run_action'    => 'hws_getting_started_checklist_run_item',
-            'empty_message' => 'No HWS getting started checks are registered.',
-            'steps'         => [
-                [
-                    'id'          => 'quick_setup',
-                    'label'       => 'Run Quick Setup',
-                    'type'        => 'setup_action',
-                    'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
-                    'subtasks'    => hws_getting_started_quick_setup_subtasks(),
-                ],
-                [
-                    'id'          => 'required_launch_settings',
-                    'label'       => 'Verify Required Launch Settings',
-                    'type'        => 'status_check',
-                    'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
-                    'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
-                ],
-                [
-                    'id'          => 'ui_cleanup',
-                    'label'       => 'UI',
-                    'type'        => 'status_check',
-                    'action_label'=> 'Check UI',
-                    'description' => 'Lists every registered UI Cleanup option from the UI Cleanup tab as a checklist subtask. The attributes are generated from the source option definitions, not hand-coded into the checklist.',
-                    'subtasks'    => hws_getting_started_ui_cleanup_subtasks(),
-                ],
-            ],
+            'empty_message'        => 'No HWS getting started checks are registered.',
+            'template_id'          => 'default',
+            'template_label'       => 'Quick Start Template',
+            'template_load_label'  => 'Load Template',
+            'show_template_picker' => true,
+            'templates'            => hws_getting_started_checklist_templates(),
         ]
     );
 }
@@ -109,6 +90,56 @@ function display_settings_getting_started_checklist(): void {
     hws_register_getting_started_checklist_ajax();
 
     ( new GettingStartedChecklistRenderer( hws_getting_started_checklist_config() ) )->render();
+}
+
+/**
+ * @return array<string,array<string,mixed>>
+ */
+function hws_getting_started_checklist_templates(): array {
+    $default_steps = hws_getting_started_default_template_steps();
+
+    return [
+        'default'         => [
+            'label'       => 'Default',
+            'description' => 'The standard HWS Base Tools launch checklist for normal site setup.',
+            'steps'       => $default_steps,
+        ],
+        'diamond_website' => [
+            'label'       => 'Diamond Website',
+            'description' => 'A named preset template that currently starts from the standard HWS launch checklist and can be expanded with Diamond-specific steps.',
+            'steps'       => $default_steps,
+        ],
+    ];
+}
+
+/**
+ * @return array<int,array<string,mixed>>
+ */
+function hws_getting_started_default_template_steps(): array {
+    return [
+        [
+            'id'          => 'quick_setup',
+            'label'       => 'Run Quick Setup',
+            'type'        => 'setup_action',
+            'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
+            'subtasks'    => hws_getting_started_quick_setup_subtasks(),
+        ],
+        [
+            'id'          => 'required_launch_settings',
+            'label'       => 'Verify Required Launch Settings',
+            'type'        => 'status_check',
+            'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
+            'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
+        ],
+        [
+            'id'           => 'ui_cleanup',
+            'label'        => 'UI',
+            'type'         => 'status_check',
+            'action_label' => 'Check UI',
+            'description'  => 'Lists every registered UI Cleanup option from the UI Cleanup tab as a checklist subtask. The attributes are generated from the source option definitions, not hand-coded into the checklist.',
+            'subtasks'     => hws_getting_started_ui_cleanup_subtasks(),
+        ],
+    ];
 }
 
 /**
