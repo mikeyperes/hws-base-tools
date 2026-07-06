@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.99 (Current)
+### v10.18.100 (Current)
+- Expanded the News Outlets Initial Setup plugin task to enforce the Mash Viral news outlet plugin stack, including Elementor, Rank Math, Site Kit, SMP TTS, and installed-inactive Visibility Logic.
+
+### v10.18.99
 - Added the News Outlets Initial Setup Quick Start profile with guarded post-only cleanup that keeps the newest 10 posts and a Core plugin-check task for HWS Base Tools, SMP Publication Integration, and Verified Profiles.
 - Removed the temporary sample delete task from the active Quick Setup list.
 

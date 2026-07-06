@@ -9,6 +9,7 @@ use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistConfig;
 use Hexa\PluginCore\GettingStartedChecklist\GettingStartedChecklistRenderer;
 use Hexa\PluginCore\PluginChecks\PluginCheckDefinition;
 use Hexa\PluginCore\PluginChecks\PluginCheckService;
+use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
 use Hexa\PluginCore\WpAdminUiCleanup\CleanupChecklistAdapter;
 
 defined( 'ABSPATH' ) || exit;
@@ -311,7 +312,7 @@ function hws_getting_started_news_outlet_setup_subtasks(): array {
             'ensure_smp_hexa_plugins',
             'Ensure SMP and HEXA Plugins',
             'setup_action',
-            'Uses the existing Hexa WP Core plugin check service to install missing GitHub plugins and activate HWS Base Tools, SMP Publication Integration, and Verified Profiles.',
+            'Uses the existing Hexa WP Core plugin check service to install missing plugins and enforce the news outlet plugin stack. Visibility Logic is expected to remain installed but inactive.',
             $callback
         ),
     ];
@@ -953,7 +954,7 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
         $definition = PluginCheckDefinition::from_array( $definition_config );
         $before     = PluginCheckService::status( $definition );
 
-        $result = PluginCheckService::install_and_activate( $definition );
+        $result = hws_getting_started_ensure_plugin_state( $definition );
         if ( is_wp_error( $result ) ) {
             $after     = PluginCheckService::status( $definition );
             $failed[]  = $definition->name . ': ' . $result->get_error_message();
@@ -971,8 +972,8 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
             $already++;
         }
 
-        if ( empty( $after['installed'] ) || empty( $after['active'] ) ) {
-            $failed[] = $definition->name . ': not installed and active after setup.';
+        if ( empty( $after['ok'] ) ) {
+            $failed[] = $definition->name . ': required plugin state was not reached.';
         }
 
         $rows[] = hws_getting_started_plugin_setup_report_row( $definition->name, $before, $after, (string) ( $result['message'] ?? 'Processed.' ) );
@@ -993,7 +994,7 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
         [
             ChecklistReportBuilder::table(
                 'news_outlet_plugin_setup',
-                'SMP and HEXA Plugin Setup',
+                'News Outlet Plugin Setup',
                 $rows,
                 [
                     'plugin'        => 'Plugin',
@@ -1004,7 +1005,7 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
                     'action_result' => 'Action Result',
                 ],
                 [
-                    'summary' => 'Required news outlet plugins are installed and active through Hexa WP Core plugin checks.',
+                    'summary' => 'Required news outlet plugins are checked through Hexa WP Core plugin checks. Most are expected active; Visibility Logic for Elementor is expected installed but inactive.',
                 ]
             ),
         ]
@@ -1012,61 +1013,107 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
 }
 
 /**
+ * @return array<string,mixed>|\WP_Error
+ */
+function hws_getting_started_ensure_plugin_state( PluginCheckDefinition $definition ): array|\WP_Error {
+    $status          = PluginCheckService::status( $definition );
+    $requires_active = ! empty( $definition->checks['active'] );
+
+    if ( ! empty( $status['installed'] ) ) {
+        if ( $requires_active ) {
+            return PluginCheckService::activate( $definition );
+        }
+
+        if ( ! empty( $status['active'] ) ) {
+            return PluginCheckService::deactivate( $definition );
+        }
+
+        return [
+            'message' => 'Plugin is installed and intentionally inactive.',
+            'status'  => $status,
+        ];
+    }
+
+    if ( 'wordpress_org' === $definition->source ) {
+        $installed = PluginProvisioner::install_wordpress_org_plugin( $definition->wp_org_slug, $requires_active );
+        if ( is_wp_error( $installed ) ) {
+            return $installed;
+        }
+
+        return [
+            'message' => (string) ( $installed['message'] ?? 'Plugin installed.' ),
+            'status'  => PluginCheckService::status( $definition ),
+        ];
+    }
+
+    if ( 'github' === $definition->source ) {
+        if ( $requires_active ) {
+            return PluginCheckService::install_and_activate( $definition );
+        }
+
+        $installed = PluginProvisioner::install_github_plugin(
+            $definition->slug,
+            $definition->github_repo,
+            [ 'branch' => $definition->github_branch ]
+        );
+        if ( is_wp_error( $installed ) ) {
+            return $installed;
+        }
+
+        return [
+            'message' => 'Plugin installed and intentionally left inactive.',
+            'status'  => PluginCheckService::status( $definition ),
+        ];
+    }
+
+    return new \WP_Error( 'hws_getting_started_plugin_manual_install_required', $definition->name . ' requires a manual or pro plugin install.' );
+}
+
+/**
  * @return array<int,array<string,mixed>>
  */
 function hws_getting_started_smp_hexa_plugin_definitions(): array {
     return [
-        [
-            'id'            => 'hws-base-tools',
-            'name'          => 'HWS Base Tools',
-            'plugin_file'   => 'hws-base-tools/hws-base-tools.php',
-            'slug'          => 'hws-base-tools',
-            'source'        => 'github',
-            'github_repo'   => 'mikeyperes/hws-base-tools',
-            'github_branch' => 'main',
-            'required'      => true,
-            'recommended'   => true,
-            'checks'        => [
-                'installed'  => true,
-                'active'     => true,
-                'up_to_date' => false,
-            ],
-            'notes'         => 'Hexa admin foundation plugin.',
+        hws_getting_started_news_outlet_plugin_definition( 'hws-base-tools/hws-base-tools.php', 'HWS Base Tools', 'github', [ 'github_repo' => 'mikeyperes/hws-base-tools', 'notes' => 'Hexa admin foundation plugin.' ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'elementor/elementor.php', 'Elementor', 'wordpress_org', [ 'wp_org_slug' => 'elementor', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'elementor-pro/elementor-pro.php', 'Elementor Pro', 'pro', [ 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'media-cleaner-pro/media-cleaner-pro.php', 'Media Cleaner Pro', 'pro', [ 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'seo-by-rank-math/rank-math.php', 'Rank Math SEO', 'wordpress_org', [ 'wp_org_slug' => 'seo-by-rank-math', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'seo-by-rank-math-pro/rank-math-pro.php', 'Rank Math SEO PRO', 'pro', [ 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'simple-local-avatars/simple-local-avatars.php', 'Simple Local Avatars', 'wordpress_org', [ 'wp_org_slug' => 'simple-local-avatars' ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'google-site-kit/google-site-kit.php', 'Site Kit by Google', 'wordpress_org', [ 'wp_org_slug' => 'google-site-kit', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'smp-publication-integration/smp-publication-integration.php', 'SMP Publication Integration', 'github', [ 'github_repo' => 'mikeyperes/smp-publication-integration', 'notes' => 'SMP publication workflow plugin.' ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'smp-wp-text-to-speech/smp-wp-text-to-speech.php', 'SMP WP Text To Speech', 'manual' ),
+        hws_getting_started_news_outlet_plugin_definition( 'visibility-logic-elementor/conditional.php', 'Visibility Logic for Elementor', 'wordpress_org', [ 'wp_org_slug' => 'visibility-logic-elementor', 'active' => false, 'notes' => 'Expected to be installed for Elementor visibility controls but intentionally inactive in the Mash Viral baseline.' ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'smp-verified-profiles/smp-verified-profiles.php', 'Verified Profiles', 'github', [ 'github_repo' => 'mikeyperes/smp-verified-profiles', 'notes' => 'Verified profile management for SMP publications.' ] ),
+    ];
+}
+
+/**
+ * @param array<string,mixed> $args
+ * @return array<string,mixed>
+ */
+function hws_getting_started_news_outlet_plugin_definition( string $plugin_file, string $name, string $source, array $args = [] ): array {
+    $active_check = array_key_exists( 'active', $args ) ? (bool) $args['active'] : true;
+
+    return [
+        'id'                   => str_replace( [ '/', '.' ], '-', $plugin_file ),
+        'name'                 => $name,
+        'plugin_file'          => $plugin_file,
+        'slug'                 => (string) ( $args['slug'] ?? dirname( $plugin_file ) ),
+        'source'               => $source,
+        'wp_org_slug'          => (string) ( $args['wp_org_slug'] ?? '' ),
+        'github_repo'          => (string) ( $args['github_repo'] ?? '' ),
+        'github_branch'        => (string) ( $args['github_branch'] ?? 'main' ),
+        'required'             => true,
+        'recommended'          => true,
+        'auto_update_expected' => (bool) ( $args['auto_update'] ?? false ),
+        'checks'               => [
+            'installed'  => true,
+            'active'     => $active_check,
+            'up_to_date' => false,
         ],
-        [
-            'id'            => 'smp-publication-integration',
-            'name'          => 'SMP Publication Integration',
-            'plugin_file'   => 'smp-publication-integration/smp-publication-integration.php',
-            'slug'          => 'smp-publication-integration',
-            'source'        => 'github',
-            'github_repo'   => 'mikeyperes/smp-publication-integration',
-            'github_branch' => 'main',
-            'required'      => true,
-            'recommended'   => true,
-            'checks'        => [
-                'installed'  => true,
-                'active'     => true,
-                'up_to_date' => false,
-            ],
-            'notes'         => 'SMP publication workflow plugin.',
-        ],
-        [
-            'id'            => 'smp-verified-profiles',
-            'name'          => 'Verified Profiles',
-            'plugin_file'   => 'smp-verified-profiles/smp-verified-profiles.php',
-            'slug'          => 'smp-verified-profiles',
-            'source'        => 'github',
-            'github_repo'   => 'mikeyperes/smp-verified-profiles',
-            'github_branch' => 'main',
-            'required'      => true,
-            'recommended'   => true,
-            'checks'        => [
-                'installed'  => true,
-                'active'     => true,
-                'up_to_date' => false,
-            ],
-            'notes'         => 'Verified profile management for SMP publications.',
-        ],
+        'notes'                => (string) ( $args['notes'] ?? 'Required news outlet plugin stack.' ),
     ];
 }
 
