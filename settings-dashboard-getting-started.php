@@ -310,9 +310,9 @@ function hws_getting_started_news_outlet_setup_subtasks(): array {
         ),
         hws_getting_started_quick_setup_task_definition(
             'ensure_smp_hexa_plugins',
-            'Ensure SMP and HEXA Plugins',
+            'Install and Activate News Outlet Plugins',
             'setup_action',
-            'Uses the existing Hexa WP Core plugin check service to install missing plugins and enforce the news outlet plugin stack. Visibility Logic is expected to remain installed but inactive.',
+            'Installs and activates: Classic Editor, Elementor, LiteSpeed Cache, Rank Math SEO, Site Kit by Google, Wordfence Security, WP-Optimize, WP-Sweep, WP Mail SMTP, HWS Base Tools, SMP Publication Integration, and Verified Profiles. Pro/manual plugins are intentionally excluded.',
             $callback
         ),
     ];
@@ -983,7 +983,7 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
 
     return hws_getting_started_quick_setup_result(
         $success,
-        $success ? 'SMP and HEXA plugin setup completed.' : 'SMP and HEXA plugin setup completed with failures.',
+        $success ? 'News outlet plugin setup completed.' : 'News outlet plugin setup completed with failures.',
         $success ? 'success' : 'warning',
         [
             'installed' => $installed,
@@ -1005,7 +1005,7 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
                     'action_result' => 'Action Result',
                 ],
                 [
-                    'summary' => 'Required news outlet plugins are checked through Hexa WP Core plugin checks. Most are expected active; Visibility Logic for Elementor is expected installed but inactive.',
+                    'summary' => 'Required public WordPress.org plugins and HWS/SMP GitHub plugins are installed and activated through Hexa WP Core plugin checks. Pro/manual plugins are excluded from this automatic task.',
                 ]
             ),
         ]
@@ -1075,16 +1075,16 @@ function hws_getting_started_ensure_plugin_state( PluginCheckDefinition $definit
 function hws_getting_started_smp_hexa_plugin_definitions(): array {
     return [
         hws_getting_started_news_outlet_plugin_definition( 'hws-base-tools/hws-base-tools.php', 'HWS Base Tools', 'github', [ 'github_repo' => 'mikeyperes/hws-base-tools', 'notes' => 'Hexa admin foundation plugin.' ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'classic-editor/classic-editor.php', 'Classic Editor', 'wordpress_org', [ 'wp_org_slug' => 'classic-editor', 'auto_update' => true ] ),
         hws_getting_started_news_outlet_plugin_definition( 'elementor/elementor.php', 'Elementor', 'wordpress_org', [ 'wp_org_slug' => 'elementor', 'auto_update' => true ] ),
-        hws_getting_started_news_outlet_plugin_definition( 'elementor-pro/elementor-pro.php', 'Elementor Pro', 'pro', [ 'auto_update' => true ] ),
-        hws_getting_started_news_outlet_plugin_definition( 'media-cleaner-pro/media-cleaner-pro.php', 'Media Cleaner Pro', 'pro', [ 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'litespeed-cache/litespeed-cache.php', 'LiteSpeed Cache', 'wordpress_org', [ 'wp_org_slug' => 'litespeed-cache', 'auto_update' => true ] ),
         hws_getting_started_news_outlet_plugin_definition( 'seo-by-rank-math/rank-math.php', 'Rank Math SEO', 'wordpress_org', [ 'wp_org_slug' => 'seo-by-rank-math', 'auto_update' => true ] ),
-        hws_getting_started_news_outlet_plugin_definition( 'seo-by-rank-math-pro/rank-math-pro.php', 'Rank Math SEO PRO', 'pro', [ 'auto_update' => true ] ),
-        hws_getting_started_news_outlet_plugin_definition( 'simple-local-avatars/simple-local-avatars.php', 'Simple Local Avatars', 'wordpress_org', [ 'wp_org_slug' => 'simple-local-avatars' ] ),
         hws_getting_started_news_outlet_plugin_definition( 'google-site-kit/google-site-kit.php', 'Site Kit by Google', 'wordpress_org', [ 'wp_org_slug' => 'google-site-kit', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'wordfence/wordfence.php', 'Wordfence Security', 'wordpress_org', [ 'wp_org_slug' => 'wordfence', 'auto_update' => false ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'wp-optimize/wp-optimize.php', 'WP-Optimize', 'wordpress_org', [ 'wp_org_slug' => 'wp-optimize', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'wp-sweep/wp-sweep.php', 'WP-Sweep', 'wordpress_org', [ 'wp_org_slug' => 'wp-sweep', 'auto_update' => true ] ),
+        hws_getting_started_news_outlet_plugin_definition( 'wp-mail-smtp/wp_mail_smtp.php', 'WP Mail SMTP', 'wordpress_org', [ 'wp_org_slug' => 'wp-mail-smtp', 'auto_update' => true ] ),
         hws_getting_started_news_outlet_plugin_definition( 'smp-publication-integration/smp-publication-integration.php', 'SMP Publication Integration', 'github', [ 'github_repo' => 'mikeyperes/smp-publication-integration', 'notes' => 'SMP publication workflow plugin.' ] ),
-        hws_getting_started_news_outlet_plugin_definition( 'smp-wp-text-to-speech/smp-wp-text-to-speech.php', 'SMP WP Text To Speech', 'manual' ),
-        hws_getting_started_news_outlet_plugin_definition( 'visibility-logic-elementor/conditional.php', 'Visibility Logic for Elementor', 'wordpress_org', [ 'wp_org_slug' => 'visibility-logic-elementor', 'active' => false, 'notes' => 'Expected to be installed for Elementor visibility controls but intentionally inactive in the Mash Viral baseline.' ] ),
         hws_getting_started_news_outlet_plugin_definition( 'smp-verified-profiles/smp-verified-profiles.php', 'Verified Profiles', 'github', [ 'github_repo' => 'mikeyperes/smp-verified-profiles', 'notes' => 'Verified profile management for SMP publications.' ] ),
     ];
 }

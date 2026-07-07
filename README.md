@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.100 (Current)
+### v10.18.101 (Current)
+- Updated the News Outlets Initial Setup Quick Start plugin task to exclude Pro/manual plugins and automatically install/activate the public WordPress.org stack requested for MashViral: Classic Editor, Elementor, LiteSpeed Cache, Rank Math SEO, Site Kit by Google, Wordfence Security, WP-Optimize, WP-Sweep, and WP Mail SMTP.
+
+### v10.18.100
 - Expanded the News Outlets Initial Setup plugin task to enforce the Mash Viral news outlet plugin stack, including Elementor, Rank Math, Site Kit, SMP TTS, and installed-inactive Visibility Logic.
 
 ### v10.18.99
