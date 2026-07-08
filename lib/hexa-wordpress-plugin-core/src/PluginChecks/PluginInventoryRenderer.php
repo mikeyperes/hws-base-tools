@@ -417,46 +417,8 @@ final class PluginInventoryRenderer {
             $primary = '<span class="hpc-plugin-inventory-ready">' . $this->icon( true, 'Ready' ) . ' Ready</span>';
         }
 
-        $secondary = [];
-        $can_mutate = ! in_array( $definition->source, [ 'must_use', 'dropin' ], true );
-
-        if ( $can_mutate && ! empty( $status['active'] ) ) {
-            $secondary[] = DynamicButton::render(
-                [
-                    'label'         => 'Deactivate',
-                    'working_label' => 'Deactivating...',
-                    'success_label' => 'Deactivated',
-                    'error_label'   => 'Failed',
-                    'class'         => 'hpc-button hpc-plugin-inventory-subtle-action',
-                    'attrs'         => [
-                        'data-plugin-inventory-action'  => 'deactivate',
-                        'data-plugin-inventory-confirm' => 'Deactivate ' . $definition->name . '?',
-                        'data-plugin-id'                => $definition->id,
-                    ],
-                ]
-            );
-        }
-
-        if ( $can_mutate ) {
-            $secondary[] = DynamicButton::render(
-                [
-                    'label'         => 'Delete',
-                    'working_label' => 'Deleting...',
-                    'success_label' => 'Deleted',
-                    'error_label'   => 'Failed',
-                    'class'         => 'hpc-button hpc-plugin-inventory-subtle-action is-danger',
-                    'attrs'         => [
-                        'data-plugin-inventory-action'  => 'delete',
-                        'data-plugin-inventory-confirm' => 'Delete ' . $definition->name . '? This will remove the plugin files from WordPress.',
-                        'data-plugin-id'                => $definition->id,
-                    ],
-                ]
-            );
-        }
-
         return '<div class="hpc-plugin-inventory-action-stack">'
             . '<div class="hpc-plugin-inventory-primary-action">' . $primary . '</div>'
-            . ( $secondary ? '<div class="hpc-plugin-inventory-secondary-actions">' . implode( ' ', $secondary ) . '</div>' : '' )
             . '</div>';
     }
 
@@ -673,6 +635,8 @@ final class PluginInventoryRenderer {
 .hpc-plugin-inventory-table tr.is-missing td{background:#f8fafc;color:#546179}
 .hpc-plugin-inventory-table tr.is-required-missing td:first-child{box-shadow:inset 4px 0 0 var(--hpc-red)}
 .hpc-plugin-inventory-table tr.is-required-missing .hpc-plugin-inventory-title strong{color:#3f4d63}
+.hpc-plugin-inventory-table tr.is-unwanted-installed td{background:#fff7f8;border-bottom-color:#f4cfd6}
+.hpc-plugin-inventory-table tr.is-unwanted-installed td:first-child{box-shadow:inset 4px 0 0 #d63638}
 .hpc-plugin-inventory-plugin-cell{min-width:280px}
 .hpc-plugin-inventory-title{align-items:center;display:flex;gap:8px;margin:0 0 7px}
 .hpc-plugin-inventory-title strong{font-size:14px}

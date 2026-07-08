@@ -113,6 +113,9 @@ if ( is_admin() && ! class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\CoreU
 }
 
 include_once __DIR__ . '/safe-wrappers.php';
+if ( is_admin() ) {
+    include_once __DIR__ . '/settings-dashboard-check-plugins.php';
+}
 include_once __DIR__ . '/settings-dashboard-site-profile.php';
 include_once __DIR__ . '/settings-dashboard-sitemaps.php';
 include_once __DIR__ . '/settings-dashboard-cleanup.php';
@@ -445,7 +448,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.101";
+$plugin_version = "10.18.103";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";

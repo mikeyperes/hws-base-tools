@@ -2,6 +2,7 @@
 
 use Hexa\PluginCore\PluginChecks\PluginInventoryAjaxController;
 use Hexa\PluginCore\PluginChecks\PluginInventoryRenderer;
+use Hexa\PluginCore\PluginChecks\PluginRecommendationRegistry;
 use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
 
 /**
@@ -23,6 +24,7 @@ function hws_require_plugin_inventory_core(): void {
         'Hexa\\PluginCore\\PluginChecks\\PluginCheckService'           => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginCheckService.php',
         'Hexa\\PluginCore\\PluginChecks\\PluginInventoryRenderer'      => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginInventoryRenderer.php',
         'Hexa\\PluginCore\\PluginChecks\\PluginInventoryAjaxController'=> __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginInventoryAjaxController.php',
+        'Hexa\\PluginCore\\PluginChecks\\PluginRecommendationRegistry' => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginChecks/PluginRecommendationRegistry.php',
         'Hexa\\PluginCore\\PluginProvisioning\\PluginProvisioner'      => __DIR__ . '/lib/hexa-wordpress-plugin-core/src/PluginProvisioning/PluginProvisioner.php',
     ];
 
@@ -44,39 +46,61 @@ add_action( 'wp_ajax_hws_activate_plugin', __NAMESPACE__ . '\\ajax_activate_plug
 // Register AJAX handler for installing HWS-owned plugins from GitHub ZIPs.
 add_action( 'wp_ajax_hws_install_hws_github_plugin', __NAMESPACE__ . '\\ajax_install_hws_github_plugin' );
 
-function hws_get_additional_hws_plugins(): array {
+function hws_get_hexa_plugin_catalog(): array {
     return [
+        'hws-base-tools' => [
+            'name'        => 'Hexa Web Systems - Website Base Tool',
+            'plugin_file' => 'hws-base-tools/hws-base-tools.php',
+            'repo'        => 'mikeyperes/hws-base-tools',
+            'description' => 'Base Hexa WordPress tools and shared Core admin structures.',
+        ],
         'hexa-pr-wire-distributor' => [
             'name'        => 'Hexa PR Wire Distributor',
+            'plugin_file' => 'hexa-pr-wire-distributor/hexa-pr-wire-distributor.php',
             'repo'        => 'mikeyperes/hexa-pr-wire-distributor',
             'description' => 'PR wire distribution workflow plugin.',
         ],
         'smp-publication-integration' => [
             'name'        => 'SMP Publication Integration',
+            'plugin_file' => 'smp-publication-integration/smp-publication-integration.php',
             'repo'        => 'mikeyperes/smp-publication-integration',
             'description' => 'Publication integration tools for SMP sites.',
         ],
+        'smp-wp-text-to-speech' => [
+            'name'        => 'SMP WP Text To Speech',
+            'plugin_file' => 'smp-wp-text-to-speech/smp-wp-text-to-speech.php',
+            'repo'        => 'mikeyperes/smp-wp-text-to-speech',
+            'description' => 'Text-to-speech tooling for SMP publications.',
+        ],
         'smp-core-podcast-integration' => [
             'name'        => 'SMP Core Podcast Integration',
+            'plugin_file' => 'smp-core-podcast-integration/smp-core-podcast-integration.php',
             'repo'        => 'mikeyperes/smp-core-podcast-integration',
             'description' => 'Podcast integration tools for SMP core workflows.',
         ],
         'smp-verified-profiles' => [
             'name'        => 'SMP Verified Profiles',
+            'plugin_file' => 'smp-verified-profiles/smp-verified-profiles.php',
             'repo'        => 'mikeyperes/smp-verified-profiles',
             'description' => 'Verified profile management for SMP sites.',
         ],
         'smp-contributor-network' => [
             'name'        => 'SMP Contributor Network',
+            'plugin_file' => 'smp-contributor-network/smp-contributor-network.php',
             'repo'        => 'mikeyperes/smp-contributor-network',
             'description' => 'Contributor network tooling for SMP publications.',
         ],
         'sfpf-person-profile-integration' => [
             'name'        => 'SFPF Person Profile Integration',
+            'plugin_file' => 'sfpf-person-profile-integration/sfpf-person-profile-integration.php',
             'repo'        => 'mikeyperes/sfpf-person-profile-integration',
             'description' => 'Person profile integration for SFPF sites.',
         ],
     ];
+}
+
+function hws_get_additional_hws_plugins(): array {
+    return hws_get_hexa_plugin_catalog();
 }
 
 function hws_get_additional_hws_plugin( string $slug ): ?array {
@@ -483,6 +507,7 @@ function hws_get_hws_plugin_library_definitions(): array {
         $definitions[] = [
             'id'            => $slug,
             'name'          => (string) ( $plugin['name'] ?? $slug ),
+            'plugin_file'   => (string) ( $plugin['plugin_file'] ?? '' ),
             'slug'          => $slug,
             'source'        => 'github',
             'github_repo'   => (string) ( $plugin['repo'] ?? '' ),
@@ -504,6 +529,69 @@ function hws_get_hws_plugin_library_definitions(): array {
     return $definitions;
 }
 
+function hws_get_all_recommended_plugin_definitions(): array {
+    return array_values(
+        array_merge(
+            hws_get_hws_plugin_library_definitions(),
+            hws_get_monitored_plugin_definitions()
+        )
+    );
+}
+
+function hws_register_hexa_plugin_recommendation_providers(): void {
+    static $registered = false;
+
+    if ( $registered || ! class_exists( PluginRecommendationRegistry::class ) ) {
+        return;
+    }
+
+    $registered = true;
+
+    foreach ( hws_get_hexa_plugin_catalog() as $slug => $plugin ) {
+        PluginRecommendationRegistry::register_hexa_plugin(
+            [
+                'id'          => (string) $slug,
+                'name'        => (string) ( $plugin['name'] ?? $slug ),
+                'plugin_file' => (string) ( $plugin['plugin_file'] ?? '' ),
+                'repo'        => (string) ( $plugin['repo'] ?? '' ),
+                'notes'       => (string) ( $plugin['description'] ?? '' ),
+            ]
+        );
+    }
+
+    PluginRecommendationRegistry::register_hexa_plugin(
+        [
+            'id'          => 'hws-base-tools',
+            'name'        => 'Hexa Web Systems - Website Base Tool',
+            'plugin_file' => 'hws-base-tools/hws-base-tools.php',
+            'repo'        => 'mikeyperes/hws-base-tools',
+            'callback'    => __NAMESPACE__ . '\\hws_get_all_recommended_plugin_definitions',
+        ]
+    );
+
+    if ( class_exists( 'smp_publication_integration\\Support\\PluginInventory' ) ) {
+        PluginRecommendationRegistry::register_hexa_plugin(
+            [
+                'id'          => 'smp-publication-integration',
+                'name'        => 'SMP Publication Integration',
+                'plugin_file' => 'smp-publication-integration/smp-publication-integration.php',
+                'repo'        => 'mikeyperes/smp-publication-integration',
+                'callback'    => [ 'smp_publication_integration\\Support\\PluginInventory', 'recommended_definitions' ],
+            ]
+        );
+    }
+}
+
+add_action( 'admin_init', __NAMESPACE__ . '\\hws_register_hexa_plugin_recommendation_providers', 1 );
+
+function hws_get_unrecommended_plugin_definitions(): array {
+    hws_register_hexa_plugin_recommendation_providers();
+
+    return class_exists( PluginRecommendationRegistry::class )
+        ? PluginRecommendationRegistry::get_installed_not_recommended_definitions( false )
+        : [];
+}
+
 function hws_register_plugin_inventory_ajax(): void {
     static $registered = false;
 
@@ -512,11 +600,11 @@ function hws_register_plugin_inventory_ajax(): void {
     }
 
     $registered = true;
+    hws_register_hexa_plugin_recommendation_providers();
 
     ( new PluginInventoryAjaxController(
         hws_get_hws_plugin_library_definitions(),
         [
-            'capability'    => 'install_plugins',
             'nonce_action'  => HWS_AJAX_NONCE,
             'nonce_field'   => 'nonce',
             'action_prefix' => 'hws_plugin_library',
@@ -527,11 +615,20 @@ function hws_register_plugin_inventory_ajax(): void {
     ( new PluginInventoryAjaxController(
         hws_get_monitored_plugin_definitions(),
         [
-            'capability'    => 'install_plugins',
             'nonce_action'  => HWS_AJAX_NONCE,
             'nonce_field'   => 'nonce',
             'action_prefix' => 'hws_plugin_status',
             'renderer_args' => hws_get_monitored_plugin_renderer_args(),
+        ]
+    ) )->register();
+
+    ( new PluginInventoryAjaxController(
+        hws_get_unrecommended_plugin_definitions(),
+        [
+            'nonce_action'  => HWS_AJAX_NONCE,
+            'nonce_field'   => 'nonce',
+            'action_prefix' => 'hws_unrecommended_plugins',
+            'renderer_args' => hws_get_unrecommended_plugin_renderer_args(),
         ]
     ) )->register();
 
@@ -575,10 +672,38 @@ function hws_get_monitored_plugin_renderer_args(): array {
     ];
 }
 
+function hws_get_unrecommended_plugin_renderer_args(): array {
+    return [
+        'title'            => 'Installed Plugins Not Recommended by Hexa',
+        'description'      => 'Installed plugins that are not recommended by any registered Hexa plugin. These rows are Core-generated and expose AJAX Deactivate and Delete actions.',
+        'action_prefix'    => 'hws_unrecommended_plugins',
+        'nonce'            => wp_create_nonce( HWS_AJAX_NONCE ),
+        'nonce_field'      => 'nonce',
+        'persist_key'      => 'hws-unrecommended-plugins',
+        'open'             => true,
+        'empty_text'       => 'Every installed plugin is recommended by at least one registered Hexa plugin.',
+        'show_install_all' => false,
+        'hide_compliant_forbidden' => true,
+        'show_unwanted'    => true,
+        'columns'          => [
+            'auto_update' => true,
+            'version'     => true,
+            'source'      => true,
+        ],
+    ];
+}
+
 function hws_render_monitored_plugins_panel(): void {
     echo ( new PluginInventoryRenderer() )->render(
         hws_get_monitored_plugin_definitions(),
         hws_get_monitored_plugin_renderer_args()
+    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+function hws_render_unrecommended_plugins_panel(): void {
+    echo ( new PluginInventoryRenderer() )->render(
+        hws_get_unrecommended_plugin_definitions(),
+        hws_get_unrecommended_plugin_renderer_args()
     ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
@@ -659,6 +784,7 @@ function render_tab_plugins() {
     <?php
     hws_render_additional_hws_plugins_panel();
     hws_render_monitored_plugins_panel();
+    hws_render_unrecommended_plugins_panel();
 
     if ( function_exists( __NAMESPACE__ . '\\display_settings_theme_checks' ) ) {
         display_settings_theme_checks();

@@ -107,7 +107,7 @@ final class PluginCheckService {
             'update_available'  => $update_available,
             'new_version'       => $new_version,
             'installable'       => $definition->supports_ajax_install(),
-            'removable'         => $installed && ! in_array( $definition->source, [ 'must_use', 'dropin' ], true ),
+            'removable'         => $should_not_contain && $installed && ! in_array( $definition->source, [ 'must_use', 'dropin' ], true ),
             'download_url'      => self::download_url( $definition ),
             'download_label'    => $definition->download_label,
             'notes'             => $definition->notes,
@@ -236,6 +236,10 @@ final class PluginCheckService {
      * @return array<string,mixed>|\WP_Error
      */
     public static function deactivate( PluginCheckDefinition $definition ): array|\WP_Error {
+        if ( ! $definition->should_not_contain() ) {
+            return new \WP_Error( 'hexa_plugin_check_deactivate_not_allowed', 'Deactivate is only available for plugins that should not be installed.' );
+        }
+
         if ( in_array( $definition->source, [ 'must_use', 'dropin' ], true ) ) {
             return new \WP_Error( 'hexa_plugin_check_deactivate_unsupported', 'Must-use plugins and drop-ins cannot be deactivated from this inventory action.' );
         }
@@ -273,6 +277,10 @@ final class PluginCheckService {
      * @return array<string,mixed>|\WP_Error
      */
     public static function delete( PluginCheckDefinition $definition ): array|\WP_Error {
+        if ( ! $definition->should_not_contain() ) {
+            return new \WP_Error( 'hexa_plugin_check_delete_not_allowed', 'Delete is only available for plugins that should not be installed.' );
+        }
+
         $status = self::status( $definition );
         if ( empty( $status['installed'] ) || empty( $status['plugin_file'] ) ) {
             return [
