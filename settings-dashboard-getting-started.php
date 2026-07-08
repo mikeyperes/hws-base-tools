@@ -650,7 +650,55 @@ function hws_getting_started_file_state( string $path ): array {
         'size_bytes' => $size_bytes,
         'size'       => $size,
         'before'     => $before,
-    ];
+	    ];
+}
+
+function hws_getting_started_read_wp_mail_smtp_from_email(): string {
+    $smtp_options = get_option( 'wp_mail_smtp', [] );
+    if ( ! is_array( $smtp_options ) ) {
+        return '';
+    }
+
+    $mail = is_array( $smtp_options['mail'] ?? null ) ? $smtp_options['mail'] : [];
+    return sanitize_email( (string) ( $mail['from_email'] ?? '' ) );
+}
+
+function hws_getting_started_read_wordfence_alert_email(): string {
+    global $wpdb;
+
+    if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+        return '';
+    }
+
+    $wf_table = $wpdb->prefix . 'wfconfig';
+    $exists   = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wf_table ) );
+    if ( $exists !== $wf_table ) {
+        return '';
+    }
+
+    $raw = $wpdb->get_var( $wpdb->prepare( "SELECT `val` FROM `{$wf_table}` WHERE `name` = %s", 'alertEmails' ) );
+    if ( null === $raw ) {
+        return '';
+    }
+
+    $value = maybe_unserialize( $raw );
+    if ( is_array( $value ) ) {
+        return implode( ', ', array_filter( array_map( 'sanitize_email', array_map( 'strval', $value ) ) ) );
+    }
+
+    return sanitize_text_field( (string) $value );
+}
+
+/**
+ * @return array<int,string>
+ */
+function hws_getting_started_email_list_from_value( string $value ): array {
+    $emails = preg_split( '/[\s,;]+/', $value );
+    if ( ! is_array( $emails ) ) {
+        return [];
+    }
+
+    return array_values( array_filter( array_map( 'sanitize_email', $emails ) ) );
 }
 
 /**
@@ -1198,46 +1246,138 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
         case 'activate_wordfence':
             return hws_getting_started_activate_plugin_task( 'wordfence/wordfence.php', 'Wordfence' );
 
-        case 'enable_recommended_snippets':
-            if ( ! function_exists( __NAMESPACE__ . '\\hws_get_going_live_snippets' ) ) {
-                return hws_getting_started_quick_setup_result( false, 'Going Live snippet list is not available.', 'error' );
-            }
-            $enabled_count = 0;
-            $already_count = 0;
-            foreach ( hws_get_going_live_snippets() as $snippet_id ) {
-                if ( get_option( $snippet_id, false ) ) {
-                    $already_count++;
-                } else {
-                    update_option( $snippet_id, true );
-                    $enabled_count++;
-                }
-            }
-            return hws_getting_started_quick_setup_result( true, 'Recommended snippets enabled.', 'success', [ 'enabled_count' => $enabled_count, 'already_count' => $already_count ] );
+	        case 'enable_recommended_snippets':
+	            if ( ! function_exists( __NAMESPACE__ . '\\hws_get_going_live_snippets' ) ) {
+	                return hws_getting_started_quick_setup_result( false, 'Going Live snippet list is not available.', 'error' );
+	            }
+	            $enabled_count = 0;
+	            $already_count = 0;
+	            $rows          = [];
+	            foreach ( hws_get_going_live_snippets() as $snippet_id ) {
+	                $before_enabled = (bool) get_option( $snippet_id, false );
+	                if ( $before_enabled ) {
+	                    $already_count++;
+	                    $action = 'No change needed; snippet was already enabled.';
+	                } else {
+	                    update_option( $snippet_id, true );
+	                    $enabled_count++;
+	                    $action = 'Set the snippet option to enabled.';
+	                }
+	                $after_enabled = (bool) get_option( $snippet_id, false );
+	                $rows[] = [
+	                    'item'    => (string) $snippet_id,
+	                    'before'  => hws_getting_started_bool_label( $before_enabled ),
+	                    'action'  => $action,
+	                    'after'   => hws_getting_started_bool_label( $after_enabled ),
+	                    'meaning' => $after_enabled ? 'Recommended snippet is active for Going Live checks.' : 'Snippet did not verify enabled.',
+	                ];
+	            }
+	            return hws_getting_started_quick_setup_result(
+	                true,
+	                'Recommended snippets enabled.',
+	                'success',
+	                [ 'enabled_count' => $enabled_count, 'already_count' => $already_count ],
+	                [
+	                    hws_getting_started_before_after_report(
+	                        'recommended_snippet_enablement',
+	                        'Recommended Snippet Enablement',
+	                        $rows,
+	                        count( $rows ) . ' recommended snippet option' . ( 1 === count( $rows ) ? '' : 's' ) . ' checked and enabled where needed.',
+	                        'This report reads each Going Live recommended snippet option before the action, enables missing ones, then reads the option again to verify the final state.',
+	                        [
+	                            [ 'label' => 'Before', 'value' => $already_count . ' snippet option' . ( 1 === $already_count ? '' : 's' ) . ' already enabled.' ],
+	                            [ 'label' => 'Action Taken', 'value' => $enabled_count . ' snippet option' . ( 1 === $enabled_count ? '' : 's' ) . ' changed to enabled.' ],
+	                            [ 'label' => 'Verified After', 'value' => count( array_filter( $rows, static fn( array $row ): bool => 'Enabled' === ( $row['after'] ?? '' ) ) ) . ' snippet option' . ( 1 === count( $rows ) ? '' : 's' ) . ' verified enabled.' ],
+	                        ]
+	                    ),
+	                ]
+	            );
 
         case 'install_essential_plugins':
             return hws_getting_started_install_essential_plugins_task();
 
-        case 'apply_wordfence_alert_email':
-            $alert_email = isset( $inputs['wordfence_alert_email'] ) ? sanitize_email( (string) $inputs['wordfence_alert_email'] ) : '';
-            if ( '' === $alert_email || ! is_email( $alert_email ) ) {
-                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email input is missing or invalid.', 'error' );
-            }
-            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wordfence_alert_email' ) ) {
-                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email updater is not available.', 'error' );
-            }
-            $wordfence_result = hws_quick_setup_apply_wordfence_alert_email( $alert_email );
-            return hws_getting_started_quick_setup_result( (bool) ( $wordfence_result['success'] ?? false ), wp_strip_all_tags( (string) ( $wordfence_result['message'] ?? '' ) ), ! empty( $wordfence_result['success'] ) ? 'success' : 'error', [ 'input' => 'wordfence_alert_email' ] );
+	        case 'apply_wordfence_alert_email':
+	            $alert_email = isset( $inputs['wordfence_alert_email'] ) ? sanitize_email( (string) $inputs['wordfence_alert_email'] ) : '';
+	            if ( '' === $alert_email || ! is_email( $alert_email ) ) {
+	                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email input is missing or invalid.', 'error' );
+	            }
+	            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wordfence_alert_email' ) ) {
+	                return hws_getting_started_quick_setup_result( false, 'Wordfence alert email updater is not available.', 'error' );
+	            }
+	            $before_wordfence_email = hws_getting_started_read_wordfence_alert_email();
+	            $wordfence_result = hws_quick_setup_apply_wordfence_alert_email( $alert_email );
+	            $after_wordfence_email  = hws_getting_started_read_wordfence_alert_email();
+	            $wordfence_verified     = in_array( $alert_email, hws_getting_started_email_list_from_value( $after_wordfence_email ), true );
+	            $wordfence_success      = ! empty( $wordfence_result['success'] ) && $wordfence_verified;
+	            return hws_getting_started_quick_setup_result(
+	                $wordfence_success,
+	                $wordfence_success ? 'Wordfence alert email saved and verified.' : wp_strip_all_tags( (string) ( $wordfence_result['message'] ?? 'Wordfence alert email did not verify.' ) ),
+	                $wordfence_success ? 'success' : 'error',
+	                [ 'input' => 'wordfence_alert_email', 'requested_email' => $alert_email, 'verified_value' => $after_wordfence_email ],
+	                [
+	                    hws_getting_started_before_after_report(
+	                        'wordfence_alert_email_update',
+	                        'Wordfence Alert Email Update',
+	                        [
+	                            [
+	                                'item'    => 'Wordfence alertEmails',
+	                                'before'  => '' !== $before_wordfence_email ? $before_wordfence_email : 'No value found before action.',
+	                                'action'  => 'Saved typed email ' . $alert_email . ' into the Wordfence alertEmails config value.',
+	                                'after'   => '' !== $after_wordfence_email ? $after_wordfence_email : 'No value found after action.',
+	                                'meaning' => $wordfence_verified ? 'The requested alert email is now present in Wordfence config.' : 'The requested alert email was not verified in Wordfence config.',
+	                            ],
+	                        ],
+	                        'Wordfence alert email was read, updated, and read again.',
+	                        'This report reads the Wordfence wfconfig alertEmails value before the action, writes the typed email through the existing updater, then verifies the requested email afterward.',
+	                        [
+	                            [ 'label' => 'Before', 'value' => '' !== $before_wordfence_email ? $before_wordfence_email : 'No alert email value was readable.' ],
+	                            [ 'label' => 'Action Taken', 'value' => 'Requested alert email: ' . $alert_email . '.' ],
+	                            [ 'label' => 'Verified After', 'value' => $wordfence_verified ? 'Requested email found in Wordfence config.' : 'Requested email not found in Wordfence config.' ],
+	                        ]
+	                    ),
+	                ]
+	            );
 
-        case 'apply_smtp_from_email':
-            $from_email = isset( $inputs['smtp_from_email'] ) ? sanitize_email( (string) $inputs['smtp_from_email'] ) : '';
-            if ( '' === $from_email || ! is_email( $from_email ) ) {
-                return hws_getting_started_quick_setup_result( false, 'SMTP from email input is missing or invalid.', 'error' );
-            }
-            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wp_mail_smtp_from_email' ) ) {
-                return hws_getting_started_quick_setup_result( false, 'WP Mail SMTP from email updater is not available.', 'error' );
-            }
-            $smtp_result = hws_quick_setup_apply_wp_mail_smtp_from_email( $from_email );
-            return hws_getting_started_quick_setup_result( (bool) ( $smtp_result['success'] ?? false ), wp_strip_all_tags( (string) ( $smtp_result['message'] ?? '' ) ), ! empty( $smtp_result['success'] ) ? 'success' : 'warning', [ 'input' => 'smtp_from_email' ] );
+	        case 'apply_smtp_from_email':
+	            $from_email = isset( $inputs['smtp_from_email'] ) ? sanitize_email( (string) $inputs['smtp_from_email'] ) : '';
+	            if ( '' === $from_email || ! is_email( $from_email ) ) {
+	                return hws_getting_started_quick_setup_result( false, 'SMTP from email input is missing or invalid.', 'error' );
+	            }
+	            if ( ! function_exists( __NAMESPACE__ . '\\hws_quick_setup_apply_wp_mail_smtp_from_email' ) ) {
+	                return hws_getting_started_quick_setup_result( false, 'WP Mail SMTP from email updater is not available.', 'error' );
+	            }
+	            $before_smtp_email = hws_getting_started_read_wp_mail_smtp_from_email();
+	            $smtp_result = hws_quick_setup_apply_wp_mail_smtp_from_email( $from_email );
+	            $after_smtp_email  = hws_getting_started_read_wp_mail_smtp_from_email();
+	            $smtp_verified     = strtolower( $after_smtp_email ) === strtolower( $from_email );
+	            return hws_getting_started_quick_setup_result(
+	                ! empty( $smtp_result['success'] ) && $smtp_verified,
+	                ( ! empty( $smtp_result['success'] ) && $smtp_verified ) ? 'WP Mail SMTP from email saved and verified.' : wp_strip_all_tags( (string) ( $smtp_result['message'] ?? 'WP Mail SMTP from email did not fully verify.' ) ),
+	                ( ! empty( $smtp_result['success'] ) && $smtp_verified ) ? 'success' : 'warning',
+	                [ 'input' => 'smtp_from_email', 'requested_email' => $from_email, 'verified_value' => $after_smtp_email ],
+	                [
+	                    hws_getting_started_before_after_report(
+	                        'wp_mail_smtp_from_email_update',
+	                        'WP Mail SMTP From Email Update',
+	                        [
+	                            [
+	                                'item'    => 'WP Mail SMTP from_email',
+	                                'before'  => '' !== $before_smtp_email ? $before_smtp_email : 'No from email found before action.',
+	                                'action'  => 'Saved typed email ' . $from_email . ' into wp_mail_smtp[mail][from_email].',
+	                                'after'   => '' !== $after_smtp_email ? $after_smtp_email : 'No from email found after action.',
+	                                'meaning' => $smtp_verified ? 'The requested sender email is now saved in WP Mail SMTP options.' : 'The requested sender email was not verified in WP Mail SMTP options.',
+	                            ],
+	                        ],
+	                        'WP Mail SMTP from email was read, updated, and read again.',
+	                        'This report reads the WP Mail SMTP from_email option before the action, writes the typed email through the existing updater, then verifies the requested email afterward.',
+	                        [
+	                            [ 'label' => 'Before', 'value' => '' !== $before_smtp_email ? $before_smtp_email : 'No sender email was readable.' ],
+	                            [ 'label' => 'Action Taken', 'value' => 'Requested sender email: ' . $from_email . '.' ],
+	                            [ 'label' => 'Verified After', 'value' => $smtp_verified ? 'Requested email found in WP Mail SMTP options.' : 'Requested email not found in WP Mail SMTP options.' ],
+	                        ]
+	                    ),
+	                ]
+	            );
     }
 
     return hws_getting_started_quick_setup_result( false, 'Unknown Quick Setup task.', 'error', [ 'task' => $task ] );
@@ -1297,26 +1437,32 @@ function hws_getting_started_regenerate_favicon_ico_task(): array {
     $icon_preview_url    = $icon_url ? add_query_arg( 'hws_preview', $cache_bust, $icon_url ) : '';
     $favicon_preview_url = add_query_arg( 'hws_preview', $cache_bust, $favicon_url );
     $new_size      = file_exists( $favicon_path ) ? (int) filesize( $favicon_path ) : 0;
-    $rows     = [
-        [
-            'asset'  => 'Generated PNG Site Icon',
-            'status' => $icon_url ? 'Created and set as WordPress Site Icon' : 'Created without URL',
-            'url'    => $icon_url,
-            'meta'   => $attachment_id ? 'Attachment ID: ' . $attachment_id : '',
-        ],
-        [
-            'asset'  => 'Generated ICO Favicon',
-            'status' => $new_size > 0 ? 'Created at /favicon.ico' : 'Missing',
-            'url'    => $favicon_url,
-            'meta'   => $new_size > 0 ? size_format( $new_size ) : '',
-        ],
-        [
-            'asset'  => 'Existing /favicon.ico',
-            'status' => $purged_existing ? 'Purged before regeneration' : 'No existing file found',
-            'url'    => '',
-            'meta'   => $old_size > 0 ? size_format( $old_size ) : '',
-        ],
-    ];
+	    $rows     = [
+	        [
+	            'item'    => 'Generated PNG Site Icon',
+	            'before'  => 'Generated during this action from the site title letter; no prior attachment was reused.',
+	            'action'  => 'Called hws_create_letter_site_icon() and set the result as the WordPress Site Icon.',
+	            'after'   => $icon_url ? 'PNG URL verified: ' . $icon_url : 'Created without a readable URL.',
+	            'meaning' => $attachment_id ? 'WordPress Site Icon attachment ID ' . $attachment_id . ' is available.' : 'The PNG attachment could not be verified.',
+	            'url'     => $icon_url,
+	        ],
+	        [
+	            'item'    => 'Generated ICO Favicon',
+	            'before'  => $old_size > 0 ? 'Existing /favicon.ico was present at ' . size_format( $old_size ) . '.' : 'No existing /favicon.ico file was present.',
+	            'action'  => $purged_existing ? 'Purged the old /favicon.ico and regenerated a fresh ICO file.' : 'Generated a fresh ICO file at /favicon.ico.',
+	            'after'   => $new_size > 0 ? 'ICO file verified at ' . size_format( $new_size ) . '.' : 'ICO file was not found after generation.',
+	            'meaning' => $new_size > 0 ? 'Browsers can request the root favicon.ico URL.' : 'The favicon ICO still needs investigation.',
+	            'url'     => $favicon_url,
+	        ],
+	        [
+	            'item'    => 'Existing /favicon.ico cleanup',
+	            'before'  => $old_size > 0 ? 'Existing file size was ' . size_format( $old_size ) . '.' : 'No old favicon file existed before this run.',
+	            'action'  => $old_size > 0 ? 'Removed the old root favicon before writing the new one.' : 'No old file needed removal.',
+	            'after'   => file_exists( $favicon_path ) ? 'Root favicon path now exists.' : 'Root favicon path is still missing.',
+	            'meaning' => 'The old favicon state was handled before verifying the newly generated ICO.',
+	            'url'     => '',
+	        ],
+	    ];
 
     return hws_getting_started_quick_setup_result(
         $attachment_id > 0 && $new_size > 0,
@@ -1343,16 +1489,24 @@ function hws_getting_started_regenerate_favicon_ico_task(): array {
                 'favicon_ico_regeneration',
                 'Favicon ICO Regeneration',
                 $rows,
-                [
-                    'asset'  => 'Asset',
-                    'status' => 'Status',
-                    'url'    => 'URL',
-                    'meta'   => 'Meta',
-                ],
-                [
-                    'summary' => 'Quick Start called the same hws_create_letter_site_icon() path used by the Brand Assets Generate PNG + ICO button.',
-                    'meta'    => [
-                        'preview_assets' => array_values(
+	                [
+	                    'item'    => 'Item',
+	                    'before'  => 'Before Action',
+	                    'action'  => 'Action Taken',
+	                    'after'   => 'Verified After',
+	                    'meaning' => 'What Changed',
+	                    'url'     => 'URL',
+	                ],
+	                [
+	                    'summary' => 'Quick Start called the same hws_create_letter_site_icon() path used by the Brand Assets Generate PNG + ICO button.',
+	                    'meta'    => [
+	                        'documentation' => 'This report shows the favicon state before generation, the exact generator action, and the verified PNG plus ICO links afterward.',
+	                        'summary_items' => [
+	                            [ 'label' => 'Before', 'value' => $old_size > 0 ? 'An existing /favicon.ico file was present at ' . size_format( $old_size ) . '.' : 'No existing root ICO file was found.' ],
+	                            [ 'label' => 'Action Taken', 'value' => 'Generated a PNG WordPress Site Icon and a root /favicon.ico with the Brand Assets letter generator.' ],
+	                            [ 'label' => 'Verified After', 'value' => ( $attachment_id > 0 ? 'PNG attachment verified. ' : 'PNG attachment missing. ' ) . ( $new_size > 0 ? 'ICO file verified at ' . size_format( $new_size ) . '.' : 'ICO file missing.' ) ],
+	                        ],
+	                        'preview_assets' => array_values(
                             array_filter(
                                 [
                                     $icon_url ? [
@@ -1411,20 +1565,129 @@ function hws_getting_started_activate_plugin_task( string $plugin_path, string $
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
 
+    $before_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_path );
+    $before_active    = $before_installed && is_plugin_active( $plugin_path );
+
     if ( ! file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
-        return hws_getting_started_quick_setup_result( false, $label . ' is not installed.', 'warning', [ 'plugin' => $plugin_path ] );
+        return hws_getting_started_quick_setup_result(
+            false,
+            $label . ' is not installed.',
+            'warning',
+            [ 'plugin' => $plugin_path ],
+            [
+                hws_getting_started_before_after_report(
+                    'plugin_activation',
+                    $label . ' Activation',
+                    [
+                        [
+                            'item'    => $label,
+                            'before'  => 'Plugin file missing: ' . $plugin_path,
+                            'action'  => 'Activation skipped because WordPress cannot activate a missing plugin file.',
+                            'after'   => 'Plugin still missing.',
+                            'meaning' => 'Install the plugin before this checklist item can activate it.',
+                        ],
+                    ],
+                    $label . ' was not activated because it is missing.',
+                    'This report reads the plugin file and active state before activation, runs activation only when the file exists, then verifies the active state afterward.',
+                    [
+                        [ 'label' => 'Before', 'value' => 'Plugin file was missing.' ],
+                        [ 'label' => 'Verified After', 'value' => 'Plugin remains unavailable for activation.' ],
+                    ]
+                ),
+            ]
+        );
     }
 
     if ( is_plugin_active( $plugin_path ) ) {
-        return hws_getting_started_quick_setup_result( true, $label . ' is already active.', 'success', [ 'plugin' => $plugin_path ] );
+        return hws_getting_started_quick_setup_result(
+            true,
+            $label . ' is already active.',
+            'success',
+            [ 'plugin' => $plugin_path ],
+            [
+                hws_getting_started_before_after_report(
+                    'plugin_activation',
+                    $label . ' Activation',
+                    [
+                        [
+                            'item'    => $label,
+                            'before'  => 'Installed and active.',
+                            'action'  => 'No activation needed.',
+                            'after'   => 'Installed and active.',
+                            'meaning' => 'The required plugin state was already satisfied.',
+                        ],
+                    ],
+                    $label . ' active state was verified without changes.',
+                    'This report reads the plugin file and active state before activation, runs activation only when needed, then verifies the active state afterward.',
+                    [
+                        [ 'label' => 'Before', 'value' => 'Plugin was already active.' ],
+                        [ 'label' => 'Verified After', 'value' => 'Plugin is still active.' ],
+                    ]
+                ),
+            ]
+        );
     }
 
     $result = activate_plugin( $plugin_path );
+    $after_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_path );
+    $after_active    = $after_installed && is_plugin_active( $plugin_path );
     if ( is_wp_error( $result ) ) {
-        return hws_getting_started_quick_setup_result( false, 'Could not activate ' . $label . ': ' . $result->get_error_message(), 'error', [ 'plugin' => $plugin_path ] );
+        return hws_getting_started_quick_setup_result(
+            false,
+            'Could not activate ' . $label . ': ' . $result->get_error_message(),
+            'error',
+            [ 'plugin' => $plugin_path ],
+            [
+                hws_getting_started_before_after_report(
+                    'plugin_activation',
+                    $label . ' Activation',
+                    [
+                        [
+                            'item'    => $label,
+                            'before'  => ( $before_installed ? 'Installed' : 'Missing' ) . ', ' . ( $before_active ? 'active' : 'inactive' ) . '.',
+                            'action'  => 'Attempted activate_plugin(' . $plugin_path . ').',
+                            'after'   => ( $after_installed ? 'Installed' : 'Missing' ) . ', ' . ( $after_active ? 'active' : 'inactive' ) . '.',
+                            'meaning' => 'Activation failed: ' . $result->get_error_message(),
+                        ],
+                    ],
+                    $label . ' activation failed and the verified state is shown below.',
+                    'This report reads the plugin file and active state before activation, attempts activation, then verifies the active state afterward.',
+                    [
+                        [ 'label' => 'Before', 'value' => $before_active ? 'Plugin was active.' : 'Plugin was installed but inactive.' ],
+                        [ 'label' => 'Verified After', 'value' => $after_active ? 'Plugin is active.' : 'Plugin is not active.' ],
+                    ]
+                ),
+            ]
+        );
     }
 
-    return hws_getting_started_quick_setup_result( true, $label . ' activated.', 'success', [ 'plugin' => $plugin_path ] );
+    return hws_getting_started_quick_setup_result(
+        $after_active,
+        $after_active ? $label . ' activated and verified.' : $label . ' activation did not verify.',
+        $after_active ? 'success' : 'error',
+        [ 'plugin' => $plugin_path ],
+        [
+            hws_getting_started_before_after_report(
+                'plugin_activation',
+                $label . ' Activation',
+                [
+                    [
+                        'item'    => $label,
+                        'before'  => ( $before_installed ? 'Installed' : 'Missing' ) . ', ' . ( $before_active ? 'active' : 'inactive' ) . '.',
+                        'action'  => 'Ran activate_plugin(' . $plugin_path . ').',
+                        'after'   => ( $after_installed ? 'Installed' : 'Missing' ) . ', ' . ( $after_active ? 'active' : 'inactive' ) . '.',
+                        'meaning' => $after_active ? 'The plugin can now run on the site.' : 'The plugin did not reach the required active state.',
+                    ],
+                ],
+                $label . ' activation was run and verified.',
+                'This report reads the plugin file and active state before activation, runs activation, then verifies the active state afterward.',
+                [
+                    [ 'label' => 'Before', 'value' => $before_active ? 'Plugin was active.' : 'Plugin was installed but inactive.' ],
+                    [ 'label' => 'Verified After', 'value' => $after_active ? 'Plugin is active.' : 'Plugin is not active.' ],
+                ]
+            ),
+        ]
+    );
 }
 
 /**
@@ -1442,76 +1705,118 @@ function hws_getting_started_install_essential_plugins_task(): array {
     require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
     require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
 
-    $activated = 0;
-    $installed = 0;
-    $skipped   = 0;
-    $failed    = [];
+	    $activated = 0;
+	    $installed = 0;
+	    $skipped   = 0;
+	    $failed    = [];
+	    $rows      = [];
 
-    foreach ( hws_get_monitored_plugins() as $plugin_path => $info ) {
-        if ( ( $info['category'] ?? '' ) !== 'essential' ) {
-            continue;
-        }
+	    foreach ( hws_get_monitored_plugins() as $plugin_path => $info ) {
+	        if ( ( $info['category'] ?? '' ) !== 'essential' ) {
+	            continue;
+	        }
 
-        $name = (string) ( $info['name'] ?? $plugin_path );
-        if ( ! empty( $info['pro'] ) ) {
-            $skipped++;
-            continue;
-        }
+	        $name = (string) ( $info['name'] ?? $plugin_path );
+	        $before_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_path );
+	        $before_active    = $before_installed && is_plugin_active( $plugin_path );
+	        $action_result    = '';
+	        if ( ! empty( $info['pro'] ) ) {
+	            $skipped++;
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, $before_installed, $before_active, 'Skipped because this is marked as a pro/manual plugin.' );
+	            continue;
+	        }
 
-        if ( is_plugin_active( $plugin_path ) ) {
-            $skipped++;
-            continue;
-        }
+	        if ( is_plugin_active( $plugin_path ) ) {
+	            $skipped++;
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, $before_installed, true, 'No change needed; plugin was already active.' );
+	            continue;
+	        }
 
-        if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
-            $result = activate_plugin( $plugin_path );
-            if ( is_wp_error( $result ) ) {
-                $failed[] = $name . ': ' . $result->get_error_message();
-            } else {
-                $activated++;
-            }
-            continue;
-        }
+	        if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
+	            $result = activate_plugin( $plugin_path );
+	            if ( is_wp_error( $result ) ) {
+	                $failed[] = $name . ': ' . $result->get_error_message();
+	                $action_result = 'Activation failed: ' . $result->get_error_message();
+	            } else {
+	                $activated++;
+	                $action_result = 'Activated installed plugin.';
+	            }
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), $action_result );
+	            continue;
+	        }
 
-        if ( ( $info['download'] ?? 'manual' ) === 'manual' ) {
-            $skipped++;
-            continue;
-        }
+	        if ( ( $info['download'] ?? 'manual' ) === 'manual' ) {
+	            $skipped++;
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, false, false, 'Skipped because this plugin requires manual installation.' );
+	            continue;
+	        }
 
-        $slug = basename( dirname( $plugin_path ) );
-        $api  = plugins_api( 'plugin_information', [ 'slug' => $slug, 'fields' => [ 'sections' => false ] ] );
-        if ( is_wp_error( $api ) ) {
-            $failed[] = $name . ': repository lookup failed';
-            continue;
-        }
+	        $slug = basename( dirname( $plugin_path ) );
+	        $api  = plugins_api( 'plugin_information', [ 'slug' => $slug, 'fields' => [ 'sections' => false ] ] );
+	        if ( is_wp_error( $api ) ) {
+	            $failed[] = $name . ': repository lookup failed';
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), 'WordPress.org lookup failed.' );
+	            continue;
+	        }
 
-        $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
-        $result   = $upgrader->install( $api->download_link );
-        if ( ! $result || is_wp_error( $result ) ) {
-            $failed[] = $name . ': install failed';
-            continue;
-        }
+	        $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
+	        $result   = $upgrader->install( $api->download_link );
+	        if ( ! $result || is_wp_error( $result ) ) {
+	            $failed[] = $name . ': install failed';
+	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), 'Install failed from WordPress.org.' );
+	            continue;
+	        }
 
-        $activate_result = activate_plugin( $plugin_path );
-        if ( is_wp_error( $activate_result ) ) {
-            $failed[] = $name . ': activation failed after install';
-        } else {
-            $installed++;
-        }
-    }
+	        $activate_result = activate_plugin( $plugin_path );
+	        if ( is_wp_error( $activate_result ) ) {
+	            $failed[] = $name . ': activation failed after install';
+	            $action_result = 'Installed from WordPress.org, but activation failed.';
+	        } else {
+	            $installed++;
+	            $action_result = 'Installed from WordPress.org and activated.';
+	        }
+	        $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), $action_result );
+	    }
 
-    $success = [] === $failed;
-    return hws_getting_started_quick_setup_result(
-        $success,
+	    $success = [] === $failed;
+	    return hws_getting_started_quick_setup_result(
+	        $success,
         $success ? 'Essential plugin setup completed.' : 'Essential plugin setup completed with failures.',
         $success ? 'success' : 'warning',
         [
-            'installed' => $installed,
-            'activated' => $activated,
-            'skipped'   => $skipped,
-            'failed'    => $failed,
-        ]
-    );
+	            'installed' => $installed,
+	            'activated' => $activated,
+	            'skipped'   => $skipped,
+	            'failed'    => $failed,
+	        ],
+	        [
+	            hws_getting_started_before_after_report(
+	                'essential_plugin_setup',
+	                'Essential Plugin Setup',
+	                $rows,
+	                count( $rows ) . ' essential plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' checked.',
+	                'This report reads each essential plugin file and active state before the action, installs or activates where allowed, then reads the plugin state again afterward.',
+	                [
+	                    [ 'label' => 'Before', 'value' => count( array_filter( $rows, static fn( array $row ): bool => str_contains( (string) ( $row['before'] ?? '' ), 'Active' ) ) ) . ' plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' active before action.' ],
+	                    [ 'label' => 'Action Taken', 'value' => $installed . ' installed, ' . $activated . ' activated, ' . $skipped . ' skipped.' ],
+	                    [ 'label' => 'Verified After', 'value' => count( array_filter( $rows, static fn( array $row ): bool => str_contains( (string) ( $row['after'] ?? '' ), 'Active' ) ) ) . ' plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' active after action.' ],
+	                ]
+	            ),
+	        ]
+	    );
+}
+
+function hws_getting_started_essential_plugin_report_row( string $name, string $plugin_path, bool $before_installed, bool $before_active, bool $after_installed, bool $after_active, string $action_result ): array {
+    $before = $before_installed ? ( $before_active ? 'Installed, Active' : 'Installed, Inactive' ) : 'Missing';
+    $after  = $after_installed ? ( $after_active ? 'Installed, Active' : 'Installed, Inactive' ) : 'Missing';
+
+    return [
+        'item'    => $name,
+        'before'  => $before,
+        'action'  => $action_result,
+        'after'   => $after,
+        'meaning' => $after_active ? 'The plugin is available and active.' : ( $after_installed ? 'The plugin exists but is not active.' : 'The plugin is still missing.' ),
+    ];
 }
 
 /**
@@ -1633,11 +1938,19 @@ function hws_getting_started_delete_old_posts_keep_latest_10_task( array $payloa
                     'preserved_ids' => 'Preserved IDs',
                     'failed_ids'    => 'Failed IDs',
                 ],
-                [
-                    'summary' => 'Post type post only. The newest 10 matching posts were preserved; older matching posts were deleted with associated media through the existing cleanup scanner.',
-                ]
-            ),
-        ]
+	                [
+	                    'summary' => 'Post type post only. The newest 10 matching posts were preserved; older matching posts were deleted with associated media through the existing cleanup scanner.',
+	                    'meta'    => [
+	                        'documentation' => 'This destructive report scans only WordPress posts, preserves the newest 10, deletes older matching posts in batches through the existing Article & Media Cleanup scanner, and reports deleted posts, failed posts, deleted media, and preserved IDs.',
+	                        'summary_items' => [
+	                            [ 'label' => 'Before', 'value' => 'The scanner selected post type post with any status and protected the newest 10 posts.' ],
+	                            [ 'label' => 'Action Taken', 'value' => $deleted_total . ' old post' . ( 1 === $deleted_total ? '' : 's' ) . ' and ' . $deleted_media_total . ' associated media item' . ( 1 === $deleted_media_total ? '' : 's' ) . ' were deleted across ' . count( $batches ) . ' batch' . ( 1 === count( $batches ) ? '' : 'es' ) . '.' ],
+	                            [ 'label' => 'Verified After', 'value' => $failed_total . ' failed post deletion' . ( 1 === $failed_total ? '' : 's' ) . '; batch limit reached: ' . ( $last_has_more ? 'yes' : 'no' ) . '.' ],
+	                        ],
+	                    ],
+	                ]
+	            ),
+	        ]
     );
 }
 
@@ -1710,11 +2023,19 @@ function hws_getting_started_ensure_smp_hexa_plugins_task(): array {
                     'plugin_file'   => 'Plugin File',
                     'action_result' => 'Action Result',
                 ],
-                [
-                    'summary' => 'Required public WordPress.org plugins and HWS/SMP GitHub plugins are installed and activated through Hexa WP Core plugin checks. Pro/manual plugins are excluded from this automatic task.',
-                ]
-            ),
-        ]
+	                [
+	                    'summary' => 'Required public WordPress.org plugins and HWS/SMP GitHub plugins are installed and activated through Hexa WP Core plugin checks. Pro/manual plugins are excluded from this automatic task.',
+	                    'meta'    => [
+	                        'documentation' => 'This report checks the required news outlet plugin stack before each install or activation action, runs the Hexa WP Core plugin installer/status path where possible, and verifies installed/active state afterward.',
+	                        'summary_items' => [
+	                            [ 'label' => 'Before', 'value' => count( $definitions ) . ' required plugin definition' . ( 1 === count( $definitions ) ? '' : 's' ) . ' were checked.' ],
+	                            [ 'label' => 'Action Taken', 'value' => $installed . ' installed, ' . $activated . ' activated, ' . $already . ' already satisfied.' ],
+	                            [ 'label' => 'Verified After', 'value' => [] === $failed ? 'All required plugin states verified.' : count( $failed ) . ' plugin issue' . ( 1 === count( $failed ) ? '' : 's' ) . ' reported.' ],
+	                        ],
+	                    ],
+	                ]
+	            ),
+	        ]
     );
 }
 

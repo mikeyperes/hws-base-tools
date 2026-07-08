@@ -141,7 +141,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.111 (Current)
+### v10.18.112 (Current)
+
+- Quick Start reports now include clearer before/action/verified-after/what-changed proof for favicon generation, plugin activation, recommended snippets, essential plugin setup, news outlet cleanup, and email configuration tasks.
+- Favicon Quick Start output now shows the generated PNG and ICO URLs in the same checklist report with explicit verification details.
+
+### v10.18.111
 
 - Updated vendored Hexa WP Core to 0.19.33.
 - Removed the redundant Quick Start "Verify Required Launch Settings" pass; setup actions now include their own before/action/verified-after proof reports.
