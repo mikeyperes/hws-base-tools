@@ -232,6 +232,7 @@ function hws_getting_started_quick_setup_subtasks(): array {
     $callback = __NAMESPACE__ . '\\hws_getting_started_run_quick_setup_task';
 
     return [
+        hws_getting_started_quick_setup_task_definition( 'regenerate_favicon_ico', 'Generate PNG + ICO', 'setup_action', 'Uses the same letter favicon generator as Brand Assets, purges the existing physical /favicon.ico file, creates a fresh PNG Site Icon, and regenerates the ICO.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'disable_debug_settings', 'Disable Debug Settings', 'config_mutation', 'Sets WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG to false through the existing wp-config writer.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'set_memory_limit', 'Set WP Memory Limit', 'config_mutation', 'Sets WP_MEMORY_LIMIT to 4096M through the existing wp-config writer.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'enable_core_auto_updates', 'Enable WordPress Core Auto Updates', 'config_mutation', 'Enables WP_AUTO_UPDATE_CORE through the existing wp-config writer.', $callback ),
@@ -518,6 +519,9 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
     $inputs  = is_array( $payload['inputs'] ?? null ) ? $payload['inputs'] : [];
 
     switch ( $task ) {
+        case 'regenerate_favicon_ico':
+            return hws_getting_started_regenerate_favicon_ico_task();
+
         case 'disable_debug_settings':
             $config_change = hws_getting_started_apply_wp_config_constants(
                 [
@@ -671,6 +675,117 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
     }
 
     return hws_getting_started_quick_setup_result( false, 'Unknown Quick Setup task.', 'error', [ 'task' => $task ] );
+}
+
+/**
+ * @return array<string,mixed>
+ */
+function hws_getting_started_regenerate_favicon_ico_task(): array {
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_create_letter_site_icon' ) ) {
+        require_once __DIR__ . '/settings-dashboard.php';
+    }
+
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_create_letter_site_icon' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Letter favicon PNG + ICO generator is not available.', 'error' );
+    }
+
+    $favicon_path    = ABSPATH . 'favicon.ico';
+    $purged_existing = false;
+    $old_size        = 0;
+
+    if ( file_exists( $favicon_path ) ) {
+        $old_size        = (int) filesize( $favicon_path );
+        $purged_existing = @unlink( $favicon_path );
+
+        if ( ! $purged_existing && file_exists( $favicon_path ) ) {
+            return hws_getting_started_quick_setup_result( false, 'Could not purge the existing /favicon.ico file before regeneration.', 'error', [ 'favicon_path' => $favicon_path, 'old_size_bytes' => $old_size ] );
+        }
+    }
+
+    $letter     = strtoupper( substr( sanitize_title( get_bloginfo( 'name' ) ), 0, 1 ) ?: 'H' );
+    $background = '#111827';
+    $foreground = '#ffffff';
+    $result     = hws_create_letter_site_icon( $letter, $background, $foreground );
+
+    if ( is_wp_error( $result ) ) {
+        return hws_getting_started_quick_setup_result(
+            false,
+            $result->get_error_message(),
+            'error',
+            [
+                'letter'           => $letter,
+                'background'       => $background,
+                'foreground'       => $foreground,
+                'favicon_path'     => $favicon_path,
+                'purged_existing'  => $purged_existing,
+                'old_size_bytes'   => $old_size,
+                'old_size'         => $old_size > 0 ? size_format( $old_size ) : '',
+            ]
+        );
+    }
+
+    $attachment_id = (int) ( $result['attachment_id'] ?? 0 );
+    $icon_url      = (string) ( $result['icon_url'] ?? ( $attachment_id ? wp_get_attachment_url( $attachment_id ) : '' ) );
+    $favicon_url   = home_url( '/favicon.ico' );
+    $new_size      = file_exists( $favicon_path ) ? (int) filesize( $favicon_path ) : 0;
+    $rows     = [
+        [
+            'asset'  => 'Generated PNG Site Icon',
+            'status' => $icon_url ? 'Created and set as WordPress Site Icon' : 'Created without URL',
+            'url'    => $icon_url,
+            'meta'   => $attachment_id ? 'Attachment ID: ' . $attachment_id : '',
+        ],
+        [
+            'asset'  => 'Generated ICO Favicon',
+            'status' => $new_size > 0 ? 'Created at /favicon.ico' : 'Missing',
+            'url'    => $favicon_url,
+            'meta'   => $new_size > 0 ? size_format( $new_size ) : '',
+        ],
+        [
+            'asset'  => 'Existing /favicon.ico',
+            'status' => $purged_existing ? 'Purged before regeneration' : 'No existing file found',
+            'url'    => '',
+            'meta'   => $old_size > 0 ? size_format( $old_size ) : '',
+        ],
+    ];
+
+    return hws_getting_started_quick_setup_result(
+        $attachment_id > 0 && $new_size > 0,
+        $attachment_id > 0 && $new_size > 0 ? 'Generated a fresh PNG Site Icon and /favicon.ico through the Brand Assets letter generator.' : 'Favicon generation completed but one generated asset was not found.',
+        $attachment_id > 0 && $new_size > 0 ? 'success' : 'error',
+        [
+            'letter'           => $letter,
+            'background'       => $background,
+            'foreground'       => $foreground,
+            'attachment_id'    => $attachment_id,
+            'icon_url'         => $icon_url,
+            'png_url'          => $icon_url,
+            'favicon_url'      => $favicon_url,
+            'ico_url'          => $favicon_url,
+            'favicon_path'     => $favicon_path,
+            'favicon_size'     => $new_size > 0 ? size_format( $new_size ) : '',
+            'favicon_size_bytes' => $new_size,
+            'purged_existing'  => $purged_existing,
+            'old_size_bytes'   => $old_size,
+            'old_size'         => $old_size > 0 ? size_format( $old_size ) : '',
+        ],
+        [
+            ChecklistReportBuilder::table(
+                'favicon_ico_regeneration',
+                'Favicon ICO Regeneration',
+                $rows,
+                [
+                    'asset'  => 'Asset',
+                    'status' => 'Status',
+                    'url'    => 'URL',
+                    'meta'   => 'Meta',
+                ],
+                [
+                    'summary' => 'Quick Start called the same hws_create_letter_site_icon() path used by the Brand Assets Generate PNG + ICO button.',
+                ]
+            ),
+        ]
+    );
 }
 
 /**

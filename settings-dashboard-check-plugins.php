@@ -400,6 +400,14 @@ function hws_get_monitored_plugins() {
             'category'    => 'essential',
             'pro'         => false,
         ],
+        'wp-sweep/wp-sweep.php' => [
+            'name'        => 'WP-Sweep',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/wp-sweep/',
+            'category'    => 'essential',
+            'pro'         => false,
+        ],
 
         // === OPTIONAL ===
         'wp-optimize/wp-optimize.php' => [

@@ -196,10 +196,13 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Getting Started Checklist
 
-Version 0.19.27 adds `GettingStartedChecklist\DestructiveSampleRunner`, a reusable typed-confirmation sample that creates temporary posts/media, deletes only those temporary records, and returns Core deleted-post/deleted-file reports with permalinks, media URLs, file locations, and sizes.
+Version 0.19.30 adds an Activate action for installed-but-inactive forbidden plugin rows, so cleanup inventories can temporarily activate an unwanted plugin before taking other action when needed.
+
+Version 0.19.29 adds `PluginRecommendationRegistry`, a reusable Hexa plugin recommendation registry for site inventory scans, aggregate recommendations, per-provider recommendations, and installed plugins that are not recommended by any registered Hexa plugin.
 
 Version 0.19.28 adds subtle secondary Deactivate and Delete controls to reusable plugin inventory rows. Installed plugins can be deactivated or deleted through guarded AJAX actions while must-use and drop-in plugins remain blocked.
 
+Version 0.19.27 adds `GettingStartedChecklist\DestructiveSampleRunner`, a reusable typed-confirmation sample that creates temporary posts/media, deletes only those temporary records, and returns Core deleted-post/deleted-file reports with permalinks, media URLs, file locations, and sizes.
 Version 0.19.26 adds reusable Getting Started Checklist templates. Host plugins can register named templates such as `default` or `diamond_website`; Core renders the picker, loads the selected template's predefined step structure, sends the active template id through AJAX, and resolves callbacks against the selected template.
 
 Version 0.19.25 adds reusable Getting Started Checklist result reports, typed destructive confirmation inputs, and a WpAdminUiCleanup adapter that turns registered cleanup options into checklist subtasks with their attributes listed directly in the checklist UI.

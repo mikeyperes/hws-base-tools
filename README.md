@@ -141,7 +141,19 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.101 (Current)
+### v10.18.107 (Current)
+- Changed the Quick Start favicon task to use the same letter-based Generate PNG + ICO function as Brand Assets and report both the generated PNG Site Icon URL and physical `/favicon.ico` URL.
+
+### v10.18.106
+- Added Generate ICO as the first Quick Start task. It purges the physical `/favicon.ico` file and regenerates it from the current WordPress Site Icon PNG with a Hexa WP Core checklist report.
+
+### v10.18.105
+- Updated vendored Hexa WP Core to 0.19.30 so forbidden/unwanted plugin rows show Activate when an installed plugin is inactive, alongside Delete.
+
+### v10.18.104
+- Added WP-Sweep to the HWS Base Tools Plugins tab monitored/recommended plugin list as an installable WordPress.org plugin expected to be active.
+
+### v10.18.101
 - Updated the News Outlets Initial Setup Quick Start plugin task to exclude Pro/manual plugins and automatically install/activate the public WordPress.org stack requested for MashViral: Classic Editor, Elementor, LiteSpeed Cache, Rank Math SEO, Site Kit by Google, Wordfence Security, WP-Optimize, WP-Sweep, and WP Mail SMTP.
 
 ### v10.18.100
