@@ -131,15 +131,8 @@ function hws_getting_started_default_template_steps(): array {
             'id'          => 'quick_setup',
             'label'       => 'Run Quick Setup',
             'type'        => 'setup_action',
-            'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Requirements are attached only to the task that consumes them.',
+            'description' => 'Runs HWS Quick Setup as isolated Hexa Core tasks. Each action reports what existed before, what it changed, and what was verified afterward.',
             'subtasks'    => hws_getting_started_quick_setup_subtasks(),
-        ],
-        [
-            'id'          => 'required_launch_settings',
-            'label'       => 'Verify Required Launch Settings',
-            'type'        => 'status_check',
-            'description' => 'Runs the existing Going Live Checklist status checks for WP memory, comments, pingbacks, SMTP authentication, debug constants, and Wordfence alert email configuration.',
-            'subtasks'    => hws_getting_started_required_launch_setting_subtasks(),
         ],
         [
             'id'           => 'ui_cleanup',
@@ -610,6 +603,74 @@ function hws_getting_started_format_wp_config_value( mixed $value ): string {
 }
 
 /**
+ * @param array<int,array{label:string,value:string}> $summary_items
+ * @return array<string,mixed>
+ */
+function hws_getting_started_report_meta( string $documentation, array $summary_items = [] ): array {
+    return [
+        'documentation' => $documentation,
+        'summary_items' => $summary_items,
+    ];
+}
+
+function hws_getting_started_bool_label( mixed $value ): string {
+    if ( is_bool( $value ) ) {
+        return $value ? 'Enabled' : 'Disabled';
+    }
+
+    $normalized = strtolower( trim( (string) $value ) );
+    if ( in_array( $normalized, [ '1', 'true', 'yes', 'on', 'enabled' ], true ) ) {
+        return 'Enabled';
+    }
+    if ( in_array( $normalized, [ '0', 'false', 'no', 'off', 'disabled', '' ], true ) ) {
+        return 'Disabled';
+    }
+
+    return (string) $value;
+}
+
+/**
+ * @return array{exists:bool,writable:bool,size_bytes:int,size:string,before:string}
+ */
+function hws_getting_started_file_state( string $path ): array {
+    $exists     = file_exists( $path );
+    $writable   = $exists && is_writable( $path );
+    $size_bytes = $exists ? (int) filesize( $path ) : 0;
+    $size       = $size_bytes > 0 ? size_format( $size_bytes ) : '0 B';
+
+    if ( ! $exists ) {
+        $before = 'Not found before cleanup.';
+    } else {
+        $before = 'Found before cleanup; size was ' . $size . '; ' . ( $writable ? 'writable.' : 'not writable.' );
+    }
+
+    return [
+        'exists'     => $exists,
+        'writable'   => $writable,
+        'size_bytes' => $size_bytes,
+        'size'       => $size,
+        'before'     => $before,
+    ];
+}
+
+/**
+ * @param array<int,array<string,mixed>> $rows
+ * @param array<int,array{label:string,value:string}> $summary_items
+ * @return array<string,mixed>
+ */
+function hws_getting_started_before_after_report( string $type, string $title, array $rows, string $summary, string $documentation, array $summary_items = [] ): array {
+    return ChecklistReportBuilder::before_after(
+        $title,
+        $rows,
+        [
+            'type'    => $type,
+            'summary' => $summary,
+            'meta'    => hws_getting_started_report_meta( $documentation, $summary_items ),
+        ]
+    );
+}
+
+/**
  * @param array<string,mixed> $payload
  * @return array<string,mixed>
  */
@@ -657,57 +718,290 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
             $all_plugins = function_exists( 'get_plugins' ) ? array_keys( get_plugins() ) : [];
+            $before_plugins = (array) get_option( 'auto_update_plugins', [] );
+            $before_enabled = (bool) get_option( 'enable_auto_update_plugins', false );
             update_option( 'auto_update_plugins', $all_plugins );
             update_option( 'enable_auto_update_plugins', true );
-            return hws_getting_started_quick_setup_result( true, 'Plugin auto-updates enabled.', 'success', [ 'count' => count( $all_plugins ) ] );
+            $after_plugins = (array) get_option( 'auto_update_plugins', [] );
+            $after_enabled = (bool) get_option( 'enable_auto_update_plugins', false );
+            $plugin_count  = count( $all_plugins );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Plugin auto-updates enabled.',
+                'success',
+                [
+                    'installed_plugins' => $plugin_count,
+                    'before_count'      => count( $before_plugins ),
+                    'after_count'       => count( $after_plugins ),
+                ],
+                [
+                    hws_getting_started_before_after_report(
+                        'plugin_auto_update_options',
+                        'Plugin Auto-Update Changes',
+                        [
+                            [
+                                'item'    => 'Plugin auto-update list',
+                                'before'  => count( $before_plugins ) . ' plugin' . ( 1 === count( $before_plugins ) ? '' : 's' ) . ' selected before action.',
+                                'action'  => 'Saved all installed plugin files into the WordPress auto-update option.',
+                                'after'   => count( $after_plugins ) . ' of ' . $plugin_count . ' installed plugin' . ( 1 === $plugin_count ? '' : 's' ) . ' selected after action.',
+                                'meaning' => 'Installed plugins are now included in WordPress plugin auto-updates.',
+                            ],
+                            [
+                                'item'    => 'Auto-update setting flag',
+                                'before'  => hws_getting_started_bool_label( $before_enabled ),
+                                'action'  => 'Set enable_auto_update_plugins to true.',
+                                'after'   => hws_getting_started_bool_label( $after_enabled ),
+                                'meaning' => 'The HWS option flag now records plugin auto-updates as enabled.',
+                            ],
+                        ],
+                        'Plugin auto-update settings were read, updated, and read again after saving.',
+                        'This report uses WordPress options. It shows how many plugins were selected for auto-updates before the action, what was saved, and the verified option state afterward.',
+                        [
+                            [ 'label' => 'Before', 'value' => count( $before_plugins ) . ' plugin auto-update entries existed.' ],
+                            [ 'label' => 'After', 'value' => count( $after_plugins ) . ' plugin auto-update entries are saved.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'enable_theme_auto_updates':
             $all_themes = array_keys( wp_get_themes() );
+            $before_themes = (array) get_option( 'auto_update_themes', [] );
+            $before_enabled = (bool) get_option( 'enable_auto_update_themes', false );
             update_option( 'auto_update_themes', $all_themes );
             update_option( 'enable_auto_update_themes', true );
-            return hws_getting_started_quick_setup_result( true, 'Theme auto-updates enabled.', 'success', [ 'count' => count( $all_themes ) ] );
+            $after_themes = (array) get_option( 'auto_update_themes', [] );
+            $after_enabled = (bool) get_option( 'enable_auto_update_themes', false );
+            $theme_count = count( $all_themes );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Theme auto-updates enabled.',
+                'success',
+                [
+                    'installed_themes' => $theme_count,
+                    'before_count'     => count( $before_themes ),
+                    'after_count'      => count( $after_themes ),
+                ],
+                [
+                    hws_getting_started_before_after_report(
+                        'theme_auto_update_options',
+                        'Theme Auto-Update Changes',
+                        [
+                            [
+                                'item'    => 'Theme auto-update list',
+                                'before'  => count( $before_themes ) . ' theme' . ( 1 === count( $before_themes ) ? '' : 's' ) . ' selected before action.',
+                                'action'  => 'Saved all installed themes into the WordPress auto-update option.',
+                                'after'   => count( $after_themes ) . ' of ' . $theme_count . ' installed theme' . ( 1 === $theme_count ? '' : 's' ) . ' selected after action.',
+                                'meaning' => 'Installed themes are now included in WordPress theme auto-updates.',
+                            ],
+                            [
+                                'item'    => 'Auto-update setting flag',
+                                'before'  => hws_getting_started_bool_label( $before_enabled ),
+                                'action'  => 'Set enable_auto_update_themes to true.',
+                                'after'   => hws_getting_started_bool_label( $after_enabled ),
+                                'meaning' => 'The HWS option flag now records theme auto-updates as enabled.',
+                            ],
+                        ],
+                        'Theme auto-update settings were read, updated, and read again after saving.',
+                        'This report uses WordPress options. It shows how many themes were selected for auto-updates before the action, what was saved, and the verified option state afterward.',
+                        [
+                            [ 'label' => 'Before', 'value' => count( $before_themes ) . ' theme auto-update entries existed.' ],
+                            [ 'label' => 'After', 'value' => count( $after_themes ) . ' theme auto-update entries are saved.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'clean_log_files':
             $deleted = [];
             $skipped = [];
-            foreach ( [ WP_CONTENT_DIR . '/debug.log', ABSPATH . 'error_log' ] as $log_file ) {
-                if ( file_exists( $log_file ) && is_writable( $log_file ) ) {
-                    $size_bytes = (int) filesize( $log_file );
-                    $deleted[]  = [ 'path' => $log_file, 'size_bytes' => $size_bytes, 'size' => size_format( $size_bytes ) ];
-                    @unlink( $log_file );
+            $rows    = [];
+            foreach ( [ 'debug.log' => WP_CONTENT_DIR . '/debug.log', 'root error_log' => ABSPATH . 'error_log' ] as $label => $log_file ) {
+                $before = hws_getting_started_file_state( $log_file );
+                $action = 'No deletion needed.';
+                if ( $before['exists'] && $before['writable'] ) {
+                    $deleted[] = [ 'path' => $log_file, 'size_bytes' => $before['size_bytes'], 'size' => $before['size'] ];
+                    $removed   = @unlink( $log_file );
+                    $action    = $removed ? 'Deleted the writable log file.' : 'Tried to delete the writable log file, but unlink failed.';
                 } else {
                     $skipped[] = $log_file;
+                    $action    = $before['exists'] ? 'Skipped because the file was not writable.' : 'Skipped because the file did not exist.';
                 }
+
+                $after_exists = file_exists( $log_file );
+                $rows[] = [
+                    'item'    => $label,
+                    'before'  => $before['before'],
+                    'action'  => $action,
+                    'after'   => $after_exists ? 'Still present after cleanup.' : 'Not present after cleanup.',
+                    'meaning' => $after_exists ? 'Review file permissions or the log writer if this file should have been removed.' : 'The log file is no longer taking disk space at that path.',
+                ];
             }
-            return hws_getting_started_quick_setup_result( true, 'Log file cleanup completed.', 'success', [ 'deleted' => $deleted, 'skipped' => $skipped ], [ ChecklistReportBuilder::deleted_files( $deleted, [ 'title' => 'Log Files Deleted' ] ) ] );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Log file cleanup completed.',
+                'success',
+                [ 'deleted' => $deleted, 'skipped' => $skipped ],
+                [
+                    hws_getting_started_before_after_report(
+                        'log_file_cleanup',
+                        'Log File Cleanup',
+                        $rows,
+                        count( $deleted ) . ' log file' . ( 1 === count( $deleted ) ? '' : 's' ) . ' deleted.',
+                        'This scans only the HWS Quick Start log targets: wp-content/debug.log and the site-root error_log. Each row shows whether the file existed before, the cleanup action, and the verified state afterward.',
+                        [
+                            [ 'label' => 'Before', 'value' => count( $deleted ) . ' writable log file' . ( 1 === count( $deleted ) ? '' : 's' ) . ' matched cleanup rules.' ],
+                            [ 'label' => 'After', 'value' => count( $deleted ) . ' log file' . ( 1 === count( $deleted ) ? '' : 's' ) . ' deleted; ' . count( $skipped ) . ' skipped.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'clean_backup_files':
             if ( ! function_exists( __NAMESPACE__ . '\\hws_scan_backups' ) ) {
                 return hws_getting_started_quick_setup_result( false, 'Backup scanner is not available.', 'error' );
             }
             $deleted = [];
-            foreach ( hws_scan_backups() as $backup ) {
+            $rows    = [];
+            $backups = hws_scan_backups();
+            foreach ( $backups as $backup ) {
                 $backup_path = (string) ( $backup['path'] ?? '' );
                 if ( '' !== $backup_path && file_exists( $backup_path ) && is_writable( $backup_path ) ) {
-                    $size_bytes = (int) filesize( $backup_path );
-                    $deleted[]  = [ 'path' => $backup_path, 'size_bytes' => $size_bytes, 'size' => size_format( $size_bytes ) ];
-                    @unlink( $backup_path );
+                    $before = hws_getting_started_file_state( $backup_path );
+                    $deleted[] = [ 'path' => $backup_path, 'size_bytes' => $before['size_bytes'], 'size' => $before['size'] ];
+                    $removed = @unlink( $backup_path );
+                    $after_exists = file_exists( $backup_path );
+                    $rows[] = [
+                        'item'    => basename( $backup_path ),
+                        'before'  => $before['before'],
+                        'action'  => $removed ? 'Deleted the writable backup file.' : 'Tried to delete the writable backup file, but unlink failed.',
+                        'after'   => $after_exists ? 'Still present after cleanup.' : 'Not present after cleanup.',
+                        'meaning' => $after_exists ? 'Backup was detected but not fully removed.' : 'The backup file is no longer present at that path.',
+                    ];
                 }
             }
-            return hws_getting_started_quick_setup_result( true, 'Backup cleanup completed.', 'success', [ 'deleted_count' => count( $deleted ), 'deleted' => $deleted ], [ ChecklistReportBuilder::deleted_files( $deleted, [ 'title' => 'Backup Files Deleted' ] ) ] );
+            if ( [] === $rows ) {
+                $rows[] = [
+                    'item'    => 'Backup scanner result',
+                    'before'  => count( $backups ) . ' backup candidate' . ( 1 === count( $backups ) ? '' : 's' ) . ' returned by hws_scan_backups().',
+                    'action'  => 'No writable backup files were deleted.',
+                    'after'   => 'No deleted backup files to verify.',
+                    'meaning' => 'The scanner ran, but there were no writable backup files matching the cleanup action.',
+                ];
+            }
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Backup cleanup completed.',
+                'success',
+                [ 'deleted_count' => count( $deleted ), 'deleted' => $deleted ],
+                [
+                    hws_getting_started_before_after_report(
+                        'backup_file_cleanup',
+                        'Backup File Cleanup',
+                        $rows,
+                        count( $deleted ) . ' backup file' . ( 1 === count( $deleted ) ? '' : 's' ) . ' deleted.',
+                        'This uses the existing HWS backup scanner, then deletes only backup files that still exist and are writable. The report shows scanner output, action taken, and verified after state.',
+                        [
+                            [ 'label' => 'Before', 'value' => count( $backups ) . ' backup candidate' . ( 1 === count( $backups ) ? '' : 's' ) . ' returned by the scanner.' ],
+                            [ 'label' => 'After', 'value' => count( $deleted ) . ' writable backup file' . ( 1 === count( $deleted ) ? '' : 's' ) . ' deleted.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'close_comments':
             global $wpdb;
+            $before_default_comments = (string) get_option( 'default_comment_status', '' );
+            $before_default_pings    = (string) get_option( 'default_ping_status', '' );
+            $before_open_comments    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE comment_status = 'open'" );
             update_option( 'default_comment_status', 'closed' );
             update_option( 'default_ping_status', 'closed' );
             $updated_comments = $wpdb->query( "UPDATE {$wpdb->posts} SET comment_status = 'closed' WHERE comment_status = 'open'" );
-            return hws_getting_started_quick_setup_result( true, 'Comments closed.', 'success', [ 'updated_posts' => (int) $updated_comments ] );
+            $after_open_comments = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE comment_status = 'open'" );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Comments closed.',
+                'success',
+                [ 'updated_posts' => (int) $updated_comments ],
+                [
+                    hws_getting_started_before_after_report(
+                        'comment_status_changes',
+                        'Comment Status Changes',
+                        [
+                            [
+                                'item'    => 'Future comments default',
+                                'before'  => '' !== $before_default_comments ? $before_default_comments : 'not set',
+                                'action'  => 'Set default_comment_status to closed.',
+                                'after'   => (string) get_option( 'default_comment_status', '' ),
+                                'meaning' => 'New posts default to closed comments.',
+                            ],
+                            [
+                                'item'    => 'Future ping default touched by comments task',
+                                'before'  => '' !== $before_default_pings ? $before_default_pings : 'not set',
+                                'action'  => 'Set default_ping_status to closed.',
+                                'after'   => (string) get_option( 'default_ping_status', '' ),
+                                'meaning' => 'New posts default to closed pingbacks.',
+                            ],
+                            [
+                                'item'    => 'Existing posts with open comments',
+                                'before'  => (string) $before_open_comments,
+                                'action'  => 'Updated open comment_status rows to closed.',
+                                'after'   => (string) $after_open_comments,
+                                'meaning' => (int) $updated_comments . ' post row' . ( 1 === (int) $updated_comments ? '' : 's' ) . ' updated.',
+                            ],
+                        ],
+                        'Comment settings and existing post comment states were updated and verified.',
+                        'This report separates future defaults from existing post rows so it is clear what was changed before and after the action.',
+                        [
+                            [ 'label' => 'Before', 'value' => $before_open_comments . ' post' . ( 1 === $before_open_comments ? '' : 's' ) . ' had open comments.' ],
+                            [ 'label' => 'After', 'value' => $after_open_comments . ' post' . ( 1 === $after_open_comments ? '' : 's' ) . ' still have open comments.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'delete_comments':
             global $wpdb;
+            $before_comments = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->comments}" );
+            $before_meta     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->commentmeta}" );
             $deleted_comments = $wpdb->query( "DELETE FROM {$wpdb->comments}" );
             $wpdb->query( "DELETE FROM {$wpdb->commentmeta}" );
-            return hws_getting_started_quick_setup_result( true, 'Existing comments deleted.', 'success', [ 'deleted_comments' => (int) $deleted_comments ] );
+            $after_comments = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->comments}" );
+            $after_meta     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->commentmeta}" );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Existing comments deleted.',
+                'success',
+                [ 'deleted_comments' => (int) $deleted_comments ],
+                [
+                    hws_getting_started_before_after_report(
+                        'comment_deletion',
+                        'Comment Deletion',
+                        [
+                            [
+                                'item'    => 'Comments table',
+                                'before'  => $before_comments . ' comment row' . ( 1 === $before_comments ? '' : 's' ) . '.',
+                                'action'  => 'Deleted all rows from wp_comments.',
+                                'after'   => $after_comments . ' comment row' . ( 1 === $after_comments ? '' : 's' ) . '.',
+                                'meaning' => (int) $deleted_comments . ' comment row' . ( 1 === (int) $deleted_comments ? '' : 's' ) . ' deleted.',
+                            ],
+                            [
+                                'item'    => 'Comment meta table',
+                                'before'  => $before_meta . ' comment meta row' . ( 1 === $before_meta ? '' : 's' ) . '.',
+                                'action'  => 'Deleted all rows from wp_commentmeta.',
+                                'after'   => $after_meta . ' comment meta row' . ( 1 === $after_meta ? '' : 's' ) . '.',
+                                'meaning' => 'Comment metadata was cleared after comments were removed.',
+                            ],
+                        ],
+                        'Existing comments and comment metadata were counted, deleted, and counted again.',
+                        'This destructive action clears WordPress comments and comment metadata. The report shows row counts before deletion and verified counts after deletion.',
+                        [
+                            [ 'label' => 'Before', 'value' => $before_comments . ' comments and ' . $before_meta . ' comment meta rows existed.' ],
+                            [ 'label' => 'After', 'value' => $after_comments . ' comments and ' . $after_meta . ' comment meta rows remain.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'delete_old_posts_keep_latest_10':
             return hws_getting_started_delete_old_posts_keep_latest_10_task( $payload );
@@ -717,25 +1011,186 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
 
         case 'close_pingbacks':
             global $wpdb;
+            $before_default_ping = (string) get_option( 'default_ping_status', '' );
+            $before_open_pings   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE ping_status = 'open'" );
             update_option( 'default_ping_status', 'closed' );
             $updated_pings = $wpdb->query( "UPDATE {$wpdb->posts} SET ping_status = 'closed' WHERE ping_status = 'open'" );
-            return hws_getting_started_quick_setup_result( true, 'Pingbacks closed.', 'success', [ 'updated_posts' => (int) $updated_pings ] );
+            $after_open_pings = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE ping_status = 'open'" );
+            return hws_getting_started_quick_setup_result(
+                true,
+                'Pingbacks closed.',
+                'success',
+                [ 'updated_posts' => (int) $updated_pings ],
+                [
+                    hws_getting_started_before_after_report(
+                        'pingback_status_changes',
+                        'Pingback Status Changes',
+                        [
+                            [
+                                'item'    => 'Future pingback default',
+                                'before'  => '' !== $before_default_ping ? $before_default_ping : 'not set',
+                                'action'  => 'Set default_ping_status to closed.',
+                                'after'   => (string) get_option( 'default_ping_status', '' ),
+                                'meaning' => 'New posts default to closed pingbacks.',
+                            ],
+                            [
+                                'item'    => 'Existing posts with open pingbacks',
+                                'before'  => (string) $before_open_pings,
+                                'action'  => 'Updated open ping_status rows to closed.',
+                                'after'   => (string) $after_open_pings,
+                                'meaning' => (int) $updated_pings . ' post row' . ( 1 === (int) $updated_pings ? '' : 's' ) . ' updated.',
+                            ],
+                        ],
+                        'Pingback defaults and existing post pingback states were updated and verified.',
+                        'This report separates the future default from existing post rows so it is clear what changed before and after the action.',
+                        [
+                            [ 'label' => 'Before', 'value' => $before_open_pings . ' post' . ( 1 === $before_open_pings ? '' : 's' ) . ' had open pingbacks.' ],
+                            [ 'label' => 'After', 'value' => $after_open_pings . ' post' . ( 1 === $after_open_pings ? '' : 's' ) . ' still have open pingbacks.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'check_redis_object_cache':
             if ( ! class_exists( 'Redis' ) ) {
-                return hws_getting_started_quick_setup_result( false, 'Redis PHP extension is not installed.', 'warning' );
+                return hws_getting_started_quick_setup_result(
+                    false,
+                    'Redis PHP extension is not installed.',
+                    'warning',
+                    [ 'redis_extension' => false ],
+                    [
+                        hws_getting_started_before_after_report(
+                            'redis_object_cache_check',
+                            'Redis Object Cache Check',
+                            [
+                                [
+                                    'item'    => 'Redis PHP extension',
+                                    'before'  => 'Not installed.',
+                                    'action'  => 'Stopped before connection test.',
+                                    'after'   => 'No Redis connection attempted.',
+                                    'meaning' => 'The server needs the Redis PHP extension before this checklist item can verify object cache readiness.',
+                                ],
+                            ],
+                            'Redis could not be checked because the PHP extension is missing.',
+                            'This status check must first confirm the Redis PHP extension, then connect to Redis, then verify the LiteSpeed object-cache wp-config.php constant.',
+                            [
+                                [ 'label' => 'Before', 'value' => 'Redis PHP extension was not available.' ],
+                                [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
+                            ]
+                        ),
+                    ]
+                );
             }
+            $before_constant = hws_getting_started_read_wp_config_constant( 'LSCWP_OBJECT_CACHE' );
             try {
                 $redis = new \Redis();
                 if ( @$redis->connect( '127.0.0.1', 6379, 2 ) ) {
                     $config_change = hws_getting_started_apply_wp_config_constants( [ 'LSCWP_OBJECT_CACHE' => 'true' ] );
+                    $after_constant = hws_getting_started_wp_config_actual_value( $config_change, 'LSCWP_OBJECT_CACHE' );
                     $redis->close();
-                    return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'Redis connected and LiteSpeed object cache constant enabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
+                    return hws_getting_started_quick_setup_result(
+                        (bool) ( $config_change['result']['status'] ?? false ),
+                        'Redis connected and LiteSpeed object cache constant enabled.',
+                        ! empty( $config_change['result']['status'] ) ? 'success' : 'error',
+                        [
+                            'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ),
+                            'before_constant'   => $before_constant,
+                            'after_constant'    => $after_constant,
+                        ],
+                        [
+                            hws_getting_started_before_after_report(
+                                'redis_object_cache_check',
+                                'Redis Object Cache Check',
+                                [
+                                    [
+                                        'item'    => 'Redis PHP extension',
+                                        'before'  => 'Installed.',
+                                        'action'  => 'Checked PHP class Redis.',
+                                        'after'   => 'Available.',
+                                        'meaning' => 'The server can run the Redis PHP client.',
+                                    ],
+                                    [
+                                        'item'    => 'Redis service',
+                                        'before'  => 'Connection not tested yet.',
+                                        'action'  => 'Connected to 127.0.0.1:6379.',
+                                        'after'   => 'Connection successful.',
+                                        'meaning' => 'Redis is reachable from WordPress.',
+                                    ],
+                                    [
+                                        'item'    => 'LSCWP_OBJECT_CACHE wp-config.php constant',
+                                        'before'  => $before_constant,
+                                        'action'  => 'Requested true through the wp-config.php writer.',
+                                        'after'   => $after_constant,
+                                        'meaning' => 'LiteSpeed object cache is marked enabled when the verified value reads true.',
+                                    ],
+                                ],
+                                'Redis was checked, connected, and the LiteSpeed object-cache constant was verified.',
+                                'This status check verifies the Redis PHP extension, live Redis connection, and the wp-config.php value LiteSpeed Cache uses for object cache state.',
+                                [
+                                    [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
+                                    [ 'label' => 'After', 'value' => 'LSCWP_OBJECT_CACHE verified as ' . $after_constant . '.' ],
+                                ]
+                            ),
+                            $config_change['report'],
+                        ]
+                    );
                 }
             } catch ( \Exception $exception ) {
-                return hws_getting_started_quick_setup_result( false, 'Redis check failed: ' . $exception->getMessage(), 'warning' );
+                return hws_getting_started_quick_setup_result(
+                    false,
+                    'Redis check failed: ' . $exception->getMessage(),
+                    'warning',
+                    [ 'redis_error' => $exception->getMessage(), 'before_constant' => $before_constant ],
+                    [
+                        hws_getting_started_before_after_report(
+                            'redis_object_cache_check',
+                            'Redis Object Cache Check',
+                            [
+                                [
+                                    'item'    => 'Redis service',
+                                    'before'  => 'Redis PHP extension is installed.',
+                                    'action'  => 'Tried to connect to 127.0.0.1:6379.',
+                                    'after'   => 'Connection failed: ' . $exception->getMessage(),
+                                    'meaning' => 'The wp-config.php object-cache setting was not changed because Redis did not verify.',
+                                ],
+                            ],
+                            'Redis connection failed before object-cache configuration could be verified.',
+                            'This status check changes the LiteSpeed object-cache constant only after Redis is reachable.',
+                            [
+                                [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
+                                [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
+                            ]
+                        ),
+                    ]
+                );
             }
-            return hws_getting_started_quick_setup_result( false, 'Redis service is not running.', 'warning' );
+            return hws_getting_started_quick_setup_result(
+                false,
+                'Redis service is not running.',
+                'warning',
+                [ 'before_constant' => $before_constant ],
+                [
+                    hws_getting_started_before_after_report(
+                        'redis_object_cache_check',
+                        'Redis Object Cache Check',
+                        [
+                            [
+                                'item'    => 'Redis service',
+                                'before'  => 'Redis PHP extension is installed.',
+                                'action'  => 'Tried to connect to 127.0.0.1:6379.',
+                                'after'   => 'Connection was not established.',
+                                'meaning' => 'The wp-config.php object-cache setting was not changed because Redis did not verify.',
+                            ],
+                        ],
+                        'Redis service was not reachable, so object-cache configuration was not changed.',
+                        'This status check changes the LiteSpeed object-cache constant only after Redis is reachable.',
+                        [
+                            [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
+                            [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
+                        ]
+                    ),
+                ]
+            );
 
         case 'activate_litespeed_cache':
             return hws_getting_started_activate_plugin_task( 'litespeed-cache/litespeed-cache.php', 'LiteSpeed Cache' );

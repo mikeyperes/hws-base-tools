@@ -141,7 +141,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.110 (Current)
+### v10.18.111 (Current)
+
+- Updated vendored Hexa WP Core to 0.19.33.
+- Removed the redundant Quick Start "Verify Required Launch Settings" pass; setup actions now include their own before/action/verified-after proof reports.
+- Added plain-English before/action/verified-after reports for plugin/theme auto-updates, log cleanup, backup cleanup, comments, pingbacks, and Redis object-cache checks.
+
+### v10.18.110
 
 - Quick Start favicon generation now shows visible PNG and ICO preview cards above the URL report, with each preview opening the generated asset in a new tab.
 - Renamed wp-config report columns to `Target Value` and `Verified Value`, and changed the memory-limit task to report the verified value honestly. Values above 511M are treated as acceptable even when the exact requested value is overridden by the live site.
