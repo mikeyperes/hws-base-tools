@@ -141,7 +141,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.109 (Current)
+### v10.18.110 (Current)
+
+- Quick Start favicon generation now shows visible PNG and ICO preview cards above the URL report, with each preview opening the generated asset in a new tab.
+- Renamed wp-config report columns to `Target Value` and `Verified Value`, and changed the memory-limit task to report the verified value honestly. Values above 511M are treated as acceptable even when the exact requested value is overridden by the live site.
+- Updated vendored Hexa WP Core to 0.19.32.
+
+### v10.18.109
 - Hardened the HWS native updater preflight for sites where another plugin loaded an older Hexa Core class first; HWS now falls back to its local remover unless the shared Core purge method exists.
 
 ### v10.18.108

@@ -121,7 +121,9 @@ Namespace:
 Hexa\PluginCore\GettingStartedChecklist
 ```
 
-Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with collapsible parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, and a collapsed dark technical activity log.
+Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with collapsible parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, optional image preview assets in reports, and a collapsed dark technical activity log.
+
+Checklist reports can include `meta.preview_assets` as an array of `label`, `url`, `preview_url`, `format`, and `meta`. Core renders those as visible image preview cards above the report table. For `wp_config_changes`, Core uses `Target Value` and `Verified Value`; host plugins must decide success from the verified value, not just the writer return.
 
 Required rules:
 

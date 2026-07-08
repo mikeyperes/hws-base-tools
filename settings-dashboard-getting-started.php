@@ -477,12 +477,79 @@ function hws_getting_started_apply_wp_config_constants( array $constants ): arra
     }
 
     return [
-        'result' => $result,
-        'report' => ChecklistReportBuilder::wp_config_changes( array_values( $changes ) ),
+        'result'  => $result,
+        'changes' => array_values( $changes ),
+        'report'  => ChecklistReportBuilder::wp_config_changes( array_values( $changes ) ),
     ];
 }
 
+/**
+ * @param array{changes?:array<int,array<string,mixed>>} $config_change
+ */
+function hws_getting_started_wp_config_changes_verified( array $config_change ): bool {
+    foreach ( (array) ( $config_change['changes'] ?? [] ) as $change ) {
+        if ( ! is_array( $change ) ) {
+            continue;
+        }
+
+        $target = strtolower( trim( (string) ( $change['new_value'] ?? '' ) ) );
+        $actual = strtolower( trim( (string) ( $change['actual_value'] ?? '' ) ) );
+
+        if ( $target !== $actual ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function hws_getting_started_wp_config_actual_value( array $config_change, string $setting ): string {
+    foreach ( (array) ( $config_change['changes'] ?? [] ) as $change ) {
+        if ( is_array( $change ) && $setting === (string) ( $change['setting'] ?? '' ) ) {
+            return (string) ( $change['actual_value'] ?? '' );
+        }
+    }
+
+    return '';
+}
+
+function hws_getting_started_memory_limit_to_mb( string $value ): int {
+    $value = trim( $value );
+    if ( '' === $value || 'undefined' === strtolower( $value ) ) {
+        return 0;
+    }
+
+    if ( function_exists( 'wp_convert_hr_to_bytes' ) ) {
+        $bytes = wp_convert_hr_to_bytes( $value );
+        return $bytes > 0 ? (int) floor( $bytes / 1048576 ) : 0;
+    }
+
+    if ( ! preg_match( '/^([0-9]+)\s*([kmgt]?)b?$/i', $value, $matches ) ) {
+        return 0;
+    }
+
+    $number = (int) $matches[1];
+    $unit   = strtolower( $matches[2] ?? 'm' );
+
+    if ( 't' === $unit ) {
+        return $number * 1048576;
+    }
+    if ( 'g' === $unit ) {
+        return $number * 1024;
+    }
+    if ( 'k' === $unit ) {
+        return (int) floor( $number / 1024 );
+    }
+
+    return $number;
+}
+
 function hws_getting_started_read_wp_config_constant( string $constant ): string {
+    $file_value = hws_getting_started_read_wp_config_constant_from_file( $constant );
+    if ( '' !== $file_value ) {
+        return $file_value;
+    }
+
     if ( function_exists( __NAMESPACE__ . '\\check_wp_config_constant_status' ) ) {
         $value = check_wp_config_constant_status( $constant );
         return is_scalar( $value ) || null === $value ? (string) $value : wp_json_encode( $value );
@@ -497,6 +564,39 @@ function hws_getting_started_read_wp_config_constant( string $constant ): string
     }
 
     return 'undefined';
+}
+
+function hws_getting_started_read_wp_config_constant_from_file( string $constant ): string {
+    $path = defined( 'ABSPATH' ) ? ABSPATH . 'wp-config.php' : '';
+    if ( '' === $path || ! file_exists( $path ) || ! is_readable( $path ) ) {
+        return '';
+    }
+
+    $content = file_get_contents( $path );
+    if ( ! is_string( $content ) || '' === $content ) {
+        return '';
+    }
+
+    $pattern = "/define\s*\(\s*['\"]" . preg_quote( strtoupper( $constant ), '/' ) . "['\"]\s*,\s*(.*?)\s*\)\s*;/is";
+    if ( ! preg_match( $pattern, $content, $matches ) ) {
+        return '';
+    }
+
+    $raw = trim( (string) ( $matches[1] ?? '' ) );
+    if ( '' === $raw ) {
+        return '';
+    }
+
+    if ( preg_match( "/^(['\"])(.*)\\1$/s", $raw, $value_match ) ) {
+        return stripcslashes( (string) $value_match[2] );
+    }
+
+    $lower = strtolower( $raw );
+    if ( in_array( $lower, [ 'true', 'false', 'null' ], true ) ) {
+        return $lower;
+    }
+
+    return trim( $raw, " \t\n\r\0\x0B," );
 }
 
 function hws_getting_started_format_wp_config_value( mixed $value ): string {
@@ -531,15 +631,26 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
                 ]
             );
             @ini_set( 'display_errors', '0' );
-            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'Debug settings disabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constants' => [ 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG' ], 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
+            $verified = ! empty( $config_change['result']['status'] ) && hws_getting_started_wp_config_changes_verified( $config_change );
+            return hws_getting_started_quick_setup_result( $verified, $verified ? 'Debug settings verified disabled.' : 'Debug setting write did not verify. Check the Verified Value column.', $verified ? 'success' : 'error', [ 'constants' => [ 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG' ], 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'set_memory_limit':
             $config_change = hws_getting_started_apply_wp_config_constants( [ 'WP_MEMORY_LIMIT' => '4096M' ] );
-            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'WP_MEMORY_LIMIT set to 4096M.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constant' => 'WP_MEMORY_LIMIT', 'value' => '4096M', 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
+            $actual_value  = hws_getting_started_wp_config_actual_value( $config_change, 'WP_MEMORY_LIMIT' );
+            $actual_mb     = hws_getting_started_memory_limit_to_mb( $actual_value );
+            $exact_match   = '4096m' === strtolower( trim( $actual_value ) );
+            $acceptable    = $actual_mb >= 512;
+            $memory_status = $exact_match || $acceptable;
+            $message       = $exact_match
+                ? 'WP_MEMORY_LIMIT verified at 4096M.'
+                : ( $acceptable ? 'WP_MEMORY_LIMIT verified acceptable at ' . $actual_value . '. Target was 4096M.' : 'WP_MEMORY_LIMIT did not verify above 511M. Verified value: ' . ( '' !== $actual_value ? $actual_value : 'unknown' ) . '.' );
+
+            return hws_getting_started_quick_setup_result( $memory_status, $message, $memory_status ? 'success' : 'error', [ 'constant' => 'WP_MEMORY_LIMIT', 'target_value' => '4096M', 'verified_value' => $actual_value, 'verified_mb' => $actual_mb, 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'enable_core_auto_updates':
             $config_change = hws_getting_started_apply_wp_config_constants( [ 'WP_AUTO_UPDATE_CORE' => 'true' ] );
-            return hws_getting_started_quick_setup_result( (bool) ( $config_change['result']['status'] ?? false ), 'WordPress core auto-updates enabled.', ! empty( $config_change['result']['status'] ) ? 'success' : 'error', [ 'constant' => 'WP_AUTO_UPDATE_CORE', 'value' => 'true', 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
+            $verified = ! empty( $config_change['result']['status'] ) && hws_getting_started_wp_config_changes_verified( $config_change );
+            return hws_getting_started_quick_setup_result( $verified, $verified ? 'WordPress core auto-updates verified enabled.' : 'WordPress core auto-update write did not verify. Check the Verified Value column.', $verified ? 'success' : 'error', [ 'constant' => 'WP_AUTO_UPDATE_CORE', 'value' => 'true', 'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ) ], [ $config_change['report'] ] );
 
         case 'enable_plugin_auto_updates':
             if ( ! function_exists( 'get_plugins' ) && defined( 'ABSPATH' ) ) {
@@ -727,6 +838,9 @@ function hws_getting_started_regenerate_favicon_ico_task(): array {
     $attachment_id = (int) ( $result['attachment_id'] ?? 0 );
     $icon_url      = (string) ( $result['icon_url'] ?? ( $attachment_id ? wp_get_attachment_url( $attachment_id ) : '' ) );
     $favicon_url   = home_url( '/favicon.ico' );
+    $cache_bust    = (string) time();
+    $icon_preview_url    = $icon_url ? add_query_arg( 'hws_preview', $cache_bust, $icon_url ) : '';
+    $favicon_preview_url = add_query_arg( 'hws_preview', $cache_bust, $favicon_url );
     $new_size      = file_exists( $favicon_path ) ? (int) filesize( $favicon_path ) : 0;
     $rows     = [
         [
@@ -782,6 +896,28 @@ function hws_getting_started_regenerate_favicon_ico_task(): array {
                 ],
                 [
                     'summary' => 'Quick Start called the same hws_create_letter_site_icon() path used by the Brand Assets Generate PNG + ICO button.',
+                    'meta'    => [
+                        'preview_assets' => array_values(
+                            array_filter(
+                                [
+                                    $icon_url ? [
+                                        'label'       => 'Generated PNG Site Icon',
+                                        'format'      => 'PNG',
+                                        'url'         => $icon_url,
+                                        'preview_url' => $icon_preview_url,
+                                        'meta'        => $attachment_id ? 'Attachment ID: ' . $attachment_id : '',
+                                    ] : [],
+                                    $new_size > 0 ? [
+                                        'label'       => 'Generated ICO Favicon',
+                                        'format'      => 'ICO',
+                                        'url'         => $favicon_url,
+                                        'preview_url' => $favicon_preview_url,
+                                        'meta'        => size_format( $new_size ),
+                                    ] : [],
+                                ]
+                            )
+                        ),
+                    ],
                 ]
             ),
         ]
