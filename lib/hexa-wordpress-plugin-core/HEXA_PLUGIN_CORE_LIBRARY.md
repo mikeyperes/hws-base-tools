@@ -813,6 +813,12 @@ Purpose:
 - Version history ZIP downloads
 - Transient-backed update activity log
 
+Package hygiene rules:
+
+- Never ship or install nested VCS metadata inside a plugin package. Core excludes `.git`, `.svn`, `.hg`, `.bzr`, `.DS_Store`, and `Thumbs.db` from ZIP builders, direct installs, vendored Core installs, and GitHub plugin provisioning.
+- Native WordPress plugin updates call a Core pre-install purge for the current plugin folder before WordPress starts copying files. If locked metadata cannot be removed, Core returns a clear `WP_Error` instead of letting WordPress dump a long copy-failure list.
+- Do not append GitHub tokens or API keys to package URLs. If a private GitHub request needs auth, pass the token through the HTTP `Authorization` header only.
+
 ### Required Updater Config
 
 The updater can be initialized from a plugin file and a GitHub URL/repo:

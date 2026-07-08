@@ -262,6 +262,112 @@ public static function get_github_config() {
 }
 }
 
+function hws_is_current_plugin_upgrader_target( array $hook_extra ): bool {
+    $targets = array_unique(
+        array_filter(
+            [
+                Config::get_plugin_basename(),
+                Config::get_canonical_plugin_basename(),
+                function_exists( 'plugin_basename' ) ? plugin_basename( HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE ) : '',
+            ]
+        )
+    );
+
+    $requested = [];
+
+    if ( ! empty( $hook_extra['plugin'] ) && is_string( $hook_extra['plugin'] ) ) {
+        $requested[] = $hook_extra['plugin'];
+    }
+
+    if ( ! empty( $hook_extra['plugins'] ) && is_array( $hook_extra['plugins'] ) ) {
+        foreach ( $hook_extra['plugins'] as $plugin ) {
+            if ( is_string( $plugin ) ) {
+                $requested[] = $plugin;
+            }
+        }
+    }
+
+    foreach ( $requested as $plugin ) {
+        if ( in_array( $plugin, $targets, true ) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function hws_delete_path_recursive( string $path ): bool {
+    if ( ! file_exists( $path ) && ! is_link( $path ) ) {
+        return true;
+    }
+
+    if ( is_link( $path ) || is_file( $path ) ) {
+        return @unlink( $path );
+    }
+
+    if ( ! is_dir( $path ) ) {
+        return false;
+    }
+
+    $items = array_diff( (array) scandir( $path ), [ '.', '..' ] );
+    foreach ( $items as $item ) {
+        if ( ! hws_delete_path_recursive( $path . '/' . $item ) ) {
+            return false;
+        }
+    }
+
+    return @rmdir( $path );
+}
+
+function hws_purge_vendored_core_vcs_metadata(): true|\WP_Error {
+    $core_root = __DIR__ . '/lib/hexa-wordpress-plugin-core';
+
+    if ( ! is_dir( $core_root ) ) {
+        return true;
+    }
+
+    if ( class_exists( '\\Hexa\\PluginCore\\PluginUpdates\\UpdaterFilesystem' ) ) {
+        $removed = \Hexa\PluginCore\PluginUpdates\UpdaterFilesystem::purge_ignored_package_paths( $core_root, true );
+
+        return is_wp_error( $removed ) ? $removed : true;
+    }
+
+    $failed = [];
+    foreach ( [ '.git', '.svn', '.hg', '.bzr' ] as $directory ) {
+        $path = $core_root . '/' . $directory;
+        if ( file_exists( $path ) && ! hws_delete_path_recursive( $path ) ) {
+            $failed[] = $path;
+        }
+    }
+
+    foreach ( [ '.DS_Store', 'Thumbs.db' ] as $file ) {
+        $path = $core_root . '/' . $file;
+        if ( file_exists( $path ) && ! @unlink( $path ) ) {
+            $failed[] = $path;
+        }
+    }
+
+    if ( $failed ) {
+        return new \WP_Error(
+            'hws_base_tools_vendored_core_metadata_locked',
+            'HWS Base Tools cannot update cleanly because the vendored Hexa WordPress Plugin Core contains locked VCS metadata: ' . implode( ', ', $failed ) . '. Fix ownership/permissions, then run the WordPress update again.'
+        );
+    }
+
+    return true;
+}
+
+function hws_preflight_native_plugin_update( $response, array $hook_extra ) {
+    if ( ! hws_is_current_plugin_upgrader_target( $hook_extra ) ) {
+        return $response;
+    }
+
+    $purged = hws_purge_vendored_core_vcs_metadata();
+
+    return is_wp_error( $purged ) ? $purged : $response;
+}
+add_filter( 'upgrader_pre_install', __NAMESPACE__ . '\\hws_preflight_native_plugin_update', 9, 2 );
+
 function hws_request_value( string $key ): string {
     if ( ! isset( $_REQUEST[ $key ] ) || is_array( $_REQUEST[ $key ] ) ) {
         return '';
@@ -448,7 +554,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.107";
+$plugin_version = "10.18.108";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";

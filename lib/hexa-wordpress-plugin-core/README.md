@@ -196,6 +196,8 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Getting Started Checklist
 
+Version 0.19.31 adds updater package hygiene. Core ZIP builders, direct plugin updates, vendored Core package updates, and GitHub plugin provisioning now exclude VCS metadata such as `.git`, `.svn`, `.hg`, and `.bzr`; native plugin updates purge ignored metadata before install and fail with a clear error if locked metadata remains. GitHub access tokens are no longer appended to package URLs and must travel only through request headers.
+
 Version 0.19.30 adds an Activate action for installed-but-inactive forbidden plugin rows, so cleanup inventories can temporarily activate an unwanted plugin before taking other action when needed.
 
 Version 0.19.29 adds `PluginRecommendationRegistry`, a reusable Hexa plugin recommendation registry for site inventory scans, aggregate recommendations, per-provider recommendations, and installed plugins that are not recommended by any registered Hexa plugin.

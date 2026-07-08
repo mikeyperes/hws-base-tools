@@ -141,7 +141,10 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.107 (Current)
+### v10.18.108 (Current)
+- Updated vendored Hexa WP Core to 0.19.31 and added a native WordPress updater preflight that purges vendored Core VCS metadata before HWS Base Tools updates. If locked metadata remains, the updater now returns a clear ownership/permissions error instead of a long file-copy failure list.
+
+### v10.18.107
 - Changed the Quick Start favicon task to use the same letter-based Generate PNG + ICO function as Brand Assets and report both the generated PNG Site Icon URL and physical `/favicon.ico` URL.
 
 ### v10.18.106
