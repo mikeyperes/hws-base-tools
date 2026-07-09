@@ -141,7 +141,12 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.114 (Current)
+### v10.18.117 (Current)
+
+- Fixed the HWS Cleanup task table layout so long WP-Optimize result messages wrap cleanly instead of clipping or stretching the section.
+- Moved active database cleanup run state out of transients so WP-Optimize transient cleanup cannot delete the running session before table optimization finishes.
+
+### v10.18.114
 
 - Added a HWS Cleanup tab database cleanup section backed by reusable Hexa WP Core service/controller/renderer code. It runs WP-Optimize cleanup tasks, optimizes tables one by one over AJAX, and disables WP-Optimize after the run.
 - Added a separate Overview Redis Object Cache panel that reports both LiteSpeed Redis enabled state and actively running WordPress object-cache verification, with refresh and enable actions.

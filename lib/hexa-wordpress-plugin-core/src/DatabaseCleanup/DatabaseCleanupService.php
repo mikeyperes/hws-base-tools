@@ -88,7 +88,7 @@ final class DatabaseCleanupService {
             'cleanup_tasks'    => array_map( static fn( array $task ): string => (string) $task['id'], $tasks ),
         ];
 
-        set_transient( self::SESSION_PREFIX . $session_id, $state, HOUR_IN_SECONDS );
+        update_option( $this->session_option_name( $session_id ), $state, false );
 
         if ( ! $before['active'] && $after['active'] ) {
             $log[] = $this->log_entry( 'success', 'Activated WP-Optimize for this cleanup run.' );
@@ -218,7 +218,7 @@ final class DatabaseCleanupService {
             $log[] = $this->log_entry( 'info', 'WP-Optimize was already inactive after the cleanup run.' );
         }
 
-        delete_transient( self::SESSION_PREFIX . $session_id );
+        delete_option( $this->session_option_name( $session_id ) );
 
         return [
             'plugin_before_finish' => $this->public_plugin_state( $before ),
@@ -543,12 +543,16 @@ final class DatabaseCleanupService {
             return new \WP_Error( 'hpc_database_cleanup_missing_session', 'Cleanup session is missing.' );
         }
 
-        $session = get_transient( self::SESSION_PREFIX . $session_id );
+        $session = get_option( $this->session_option_name( $session_id ), false );
         if ( ! is_array( $session ) ) {
             return new \WP_Error( 'hpc_database_cleanup_expired_session', 'Cleanup session expired. Start a new run.' );
         }
 
         return $session;
+    }
+
+    private function session_option_name( string $session_id ): string {
+        return self::SESSION_PREFIX . $session_id;
     }
 
     /**
