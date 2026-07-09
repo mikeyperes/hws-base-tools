@@ -11,10 +11,39 @@ use Hexa\PluginCore\ContentCleanup\BackupCleanupRenderer;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
+use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupAjaxController;
+use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupRenderer;
+use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupService;
+use Hexa\PluginCore\ObjectCache\LiteSpeedRedisService;
 
 defined( 'ABSPATH' ) || exit;
 
 const HWS_CONTENT_CLEANUP_NONCE_ACTION = 'hws_base_tools_content_cleanup';
+
+function hws_database_cleanup_config(): array {
+    return [
+        'root_id'                 => 'hws-database-cleanup',
+        'title'                   => 'Database Cleanup',
+        'description'             => 'Runs WP-Optimize cleanup tasks, then optimizes database tables one row at a time with live AJAX reporting. If WP-Optimize is inactive before the run, HWS activates it for the run and disables it again afterward.',
+        'capability'              => 'manage_options',
+        'nonce_action'            => HWS_CONTENT_CLEANUP_NONCE_ACTION,
+        'nonce_field'             => 'nonce',
+        'wp_optimize_plugin_file' => 'wp-optimize/wp-optimize.php',
+        'status_action'           => 'hws_database_cleanup_status',
+        'start_action'            => 'hws_database_cleanup_start',
+        'cleanup_action'          => 'hws_database_cleanup_task',
+        'table_action'            => 'hws_database_cleanup_table',
+        'finish_action'           => 'hws_database_cleanup_finish',
+    ];
+}
+
+function hws_database_cleanup_service(): DatabaseCleanupService {
+    return new DatabaseCleanupService( hws_database_cleanup_config() );
+}
+
+function hws_litespeed_redis_service(): LiteSpeedRedisService {
+    return new LiteSpeedRedisService();
+}
 
 function hws_content_cleanup_config(): ContentCleanupConfig {
     return new ContentCleanupConfig(
@@ -186,15 +215,122 @@ function hws_register_content_cleanup_ajax(): void {
     ( new ContentCleanupAjaxController( hws_content_cleanup_config() ) )->register();
     ( new BackupCleanupAjaxController( hws_backup_file_cleanup_config() ) )->register();
     ( new ArticleMediaCleanupAjaxController( hws_article_media_cleanup_config() ) )->register();
+    ( new DatabaseCleanupAjaxController( hws_database_cleanup_config() ) )->register();
 
     $registered = true;
 }
 add_action( 'init', __NAMESPACE__ . '\\hws_register_content_cleanup_ajax', 20 );
 
+function hws_register_litespeed_redis_ajax(): void {
+    static $registered = false;
+
+    if ( $registered ) {
+        return;
+    }
+
+    add_action( 'wp_ajax_hws_litespeed_redis_status', __NAMESPACE__ . '\\hws_ajax_litespeed_redis_status' );
+    add_action( 'wp_ajax_hws_litespeed_redis_enable', __NAMESPACE__ . '\\hws_ajax_litespeed_redis_enable' );
+
+    $registered = true;
+}
+add_action( 'init', __NAMESPACE__ . '\\hws_register_litespeed_redis_ajax', 20 );
+
+function hws_ajax_litespeed_redis_status(): void {
+    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+        wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
+    }
+
+    hws_require_ajax_nonce_or_error();
+    wp_send_json_success( hws_litespeed_redis_service()->status() );
+}
+
+function hws_ajax_litespeed_redis_enable(): void {
+    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+        wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
+    }
+
+    hws_require_ajax_nonce_or_error();
+    $result = hws_litespeed_redis_service()->enable();
+    wp_send_json_success( $result );
+}
+
 function display_settings_cleanup(): void {
     hws_register_content_cleanup_ajax();
 
+    ( new DatabaseCleanupRenderer( hws_database_cleanup_config() ) )->render();
     ( new ContentCleanupRenderer( hws_content_cleanup_config() ) )->render();
     ( new BackupCleanupRenderer( hws_backup_file_cleanup_config() ) )->render();
     ( new ArticleMediaCleanupRenderer( hws_article_media_cleanup_config() ) )->render();
+}
+
+function hws_render_litespeed_redis_overview_panel(): void {
+    $nonce = wp_create_nonce( HWS_AJAX_NONCE );
+    ?>
+    <div class="hws-panel" id="hws-litespeed-redis-panel" data-hws-litespeed-redis data-nonce="<?php echo esc_attr( $nonce ); ?>">
+        <div class="hws-panel-header">LiteSpeed Redis Object Cache</div>
+        <div class="hws-panel-body">
+            <style>
+                #hws-litespeed-redis-panel .hws-redis-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 14px}
+                #hws-litespeed-redis-panel .hws-redis-card{background:#f6f7f7;border:1px solid #dcdcde;border-left:4px solid #c3c4c7;border-radius:6px;padding:14px}
+                #hws-litespeed-redis-panel .hws-redis-card.good{border-left-color:#00a32a}
+                #hws-litespeed-redis-panel .hws-redis-card.bad{border-left-color:#d63638}
+                #hws-litespeed-redis-panel .hws-redis-card strong{display:block;font-size:12px;margin:0 0 8px;text-transform:uppercase}
+                #hws-litespeed-redis-panel .hws-redis-value{align-items:center;display:flex;font-size:20px;font-weight:700;gap:8px}
+                #hws-litespeed-redis-panel .hws-redis-icon{align-items:center;border-radius:999px;display:inline-flex;height:24px;justify-content:center;width:24px}
+                #hws-litespeed-redis-panel .hws-redis-icon.good{background:#e7f6ed;color:#008a20}
+                #hws-litespeed-redis-panel .hws-redis-icon.bad{background:#fce8ea;color:#b42336}
+                #hws-litespeed-redis-panel .hws-redis-details{background:#fff;border:1px solid #dcdcde;border-radius:6px;color:#3c434a;font-size:13px;line-height:1.6;margin:0 0 14px;padding:12px}
+                #hws-litespeed-redis-panel .hws-redis-log{background:#0f1720;border-radius:6px;color:#dbe7f3;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px;max-height:180px;overflow:auto;padding:10px}
+                #hws-litespeed-redis-panel .hws-redis-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+                @media(max-width:800px){#hws-litespeed-redis-panel .hws-redis-grid{grid-template-columns:1fr}}
+            </style>
+            <div class="hws-redis-grid">
+                <div class="hws-redis-card" data-redis-enabled-card>
+                    <strong>Redis enabled</strong>
+                    <div class="hws-redis-value" data-redis-enabled-value>Checking...</div>
+                </div>
+                <div class="hws-redis-card" data-redis-active-card>
+                    <strong>Redis actively running</strong>
+                    <div class="hws-redis-value" data-redis-active-value>Checking...</div>
+                </div>
+            </div>
+            <div class="hws-redis-details" data-redis-details>Loading Redis object-cache status from LiteSpeed settings.</div>
+            <div class="hws-redis-actions">
+                <button type="button" class="hws-btn hws-btn-secondary" data-redis-refresh>Refresh Status</button>
+                <button type="button" class="hws-btn" data-redis-enable>Enable Redis Object Cache</button>
+            </div>
+            <div class="hws-redis-log" data-redis-log aria-live="polite"></div>
+            <script>
+            jQuery(function($){
+                var root=$('#hws-litespeed-redis-panel'); if(!root.length||root.data('ready')) return; root.data('ready',1);
+                var nonce=root.data('nonce');
+                function icon(ok){return '<span class="hws-redis-icon '+(ok?'good':'bad')+'">'+(ok?'✓':'×')+'</span><span>'+(ok?'Yes':'No')+'</span>'}
+                function log(message){var box=root.find('[data-redis-log]'); box.append($('<div/>').text(new Date().toTimeString().slice(0,8)+' '+message)); box.scrollTop(box[0].scrollHeight)}
+                function render(data){
+                    root.find('[data-redis-enabled-card]').toggleClass('good',!!data.enabled).toggleClass('bad',!data.enabled);
+                    root.find('[data-redis-active-card]').toggleClass('good',!!data.active).toggleClass('bad',!data.active);
+                    root.find('[data-redis-enabled-value]').html(icon(!!data.enabled));
+                    root.find('[data-redis-active-value]').html(icon(!!data.active));
+                    var details=[
+                        'LiteSpeed plugin: '+(data.plugin_active?'active':(data.installed?'installed, inactive':'missing')),
+                        'Object cache setting: '+(data.object_enabled?'on':'off'),
+                        'Driver: '+(data.driver_redis?'Redis':'not Redis'),
+                        'Drop-in: '+(data.dropin_present?'present':'missing'),
+                        'WordPress external object cache: '+(data.wp_using_ext?'yes':'no'),
+                        'Redis: '+(data.redis&&data.redis.connected?'connected':'not connected'),
+                        'Host: '+(data.host||'')+':'+(data.port||''),
+                        data.message||''
+                    ];
+                    root.find('[data-redis-details]').html(details.map(function(v){return $('<div/>').text(v).html()}).join('<br>'));
+                }
+                function post(action){return $.post(ajaxurl,{action:action,nonce:nonce}).then(function(resp){if(!resp||!resp.success){throw new Error(resp&&resp.data&&resp.data.message?resp.data.message:'AJAX request failed.')}return resp.data})}
+                function refresh(){log('Refreshing Redis status.');return post('hws_litespeed_redis_status').then(function(data){render(data);log(data.message||'Status refreshed.');return data}).catch(function(error){log('ERROR: '+error.message)})}
+                root.on('click','[data-redis-refresh]',function(e){e.preventDefault();refresh()});
+                root.on('click','[data-redis-enable]',function(e){e.preventDefault();var btn=$(this),old=btn.text();btn.prop('disabled',true).text('Enabling...');log('Saving LiteSpeed Redis object-cache settings.');post('hws_litespeed_redis_enable').then(function(data){render(data.after||data);(data.log||[]).forEach(function(row){log(row.message||'')});btn.text('Enable Redis Object Cache').prop('disabled',false)}).catch(function(error){log('ERROR: '+error.message);btn.text(old).prop('disabled',false)})});
+                refresh();
+            });
+            </script>
+        </div>
+    </div>
+    <?php
 }

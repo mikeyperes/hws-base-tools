@@ -1967,6 +1967,13 @@ function render_tab_overview() {
         display_settings_log_cleaner();
     }
     ?>
+
+    <!-- LiteSpeed Redis Object Cache -->
+    <?php
+    if ( function_exists( __NAMESPACE__ . '\\hws_render_litespeed_redis_overview_panel' ) ) {
+        hws_render_litespeed_redis_overview_panel();
+    }
+    ?>
     
     <!-- LiteSpeed Cache Status -->
     <?php render_litespeed_panel(); ?>

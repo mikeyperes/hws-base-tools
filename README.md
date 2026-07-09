@@ -141,7 +141,13 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.112 (Current)
+### v10.18.114 (Current)
+
+- Added a HWS Cleanup tab database cleanup section backed by reusable Hexa WP Core service/controller/renderer code. It runs WP-Optimize cleanup tasks, optimizes tables one by one over AJAX, and disables WP-Optimize after the run.
+- Added a separate Overview Redis Object Cache panel that reports both LiteSpeed Redis enabled state and actively running WordPress object-cache verification, with refresh and enable actions.
+- Added HWS Quick Start items for the shared database cleanup service and the rewritten LiteSpeed Redis verifier.
+
+### v10.18.112
 
 - Quick Start reports now include clearer before/action/verified-after/what-changed proof for favicon generation, plugin activation, recommended snippets, essential plugin setup, news outlet cleanup, and email configuration tasks.
 - Favicon Quick Start output now shows the generated PNG and ICO URLs in the same checklist report with explicit verification details.

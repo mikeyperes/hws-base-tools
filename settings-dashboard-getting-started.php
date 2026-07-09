@@ -233,10 +233,11 @@ function hws_getting_started_quick_setup_subtasks(): array {
         hws_getting_started_quick_setup_task_definition( 'enable_theme_auto_updates', 'Enable Theme Auto Updates', 'config_mutation', 'Enables auto-updates for installed themes through WordPress options.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'clean_log_files', 'Clean Log Files', 'setup_action', 'Deletes writable debug.log and root error_log files.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'clean_backup_files', 'Clean Backup Files', 'setup_action', 'Uses the existing HWS backup scanner and removes writable backup files it reports.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'run_database_cleanup', 'Run Database Cleanup', 'setup_action', 'Runs WP-Optimize cleanup tasks and table optimization, then disables WP-Optimize when finished.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'close_comments', 'Close Comments', 'config_mutation', 'Closes future comments and existing open post comments.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'delete_comments', 'Delete Comments', 'setup_action', 'Deletes existing comments and comment meta.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'close_pingbacks', 'Close Pingbacks', 'config_mutation', 'Closes future pingbacks and existing open post pingbacks.', $callback ),
-        hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Check Redis Object Cache', 'status_check', 'Checks Redis availability and enables the existing LiteSpeed object cache constant when Redis connects.', $callback ),
+        hws_getting_started_quick_setup_task_definition( 'check_redis_object_cache', 'Enable Redis Object Cache', 'setup_action', 'Uses LiteSpeed settings and object-cache checks to enable Redis and verify both enabled and actively running states.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_wordfence', 'Activate Wordfence', 'setup_action', 'Activates Wordfence when installed.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'enable_recommended_snippets', 'Enable Recommended Snippets', 'feature_toggle', 'Uses the existing Going Live Checklist snippet list and enables each recommended snippet option.', $callback ),
@@ -957,6 +958,65 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
                 ]
             );
 
+        case 'run_database_cleanup':
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_database_cleanup_service' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'HWS Database Cleanup service is not available.', 'error' );
+            }
+
+            $database_cleanup = hws_database_cleanup_service()->run_full_summary();
+            $task_rows        = is_array( $database_cleanup['tasks'] ?? null ) ? $database_cleanup['tasks'] : [];
+            $table_rows       = is_array( $database_cleanup['tables'] ?? null ) ? $database_cleanup['tables'] : [];
+            $success          = ! empty( $database_cleanup['success'] );
+
+            return hws_getting_started_quick_setup_result(
+                $success,
+                $success ? 'Database cleanup and table optimization completed.' : (string) ( $database_cleanup['message'] ?? 'Database cleanup failed.' ),
+                $success ? 'success' : 'error',
+                [
+                    'task_count'  => count( $task_rows ),
+                    'table_count' => count( $table_rows ),
+                ],
+                [
+                    hws_getting_started_before_after_report(
+                        'database_cleanup_tasks',
+                        'Database Cleanup Tasks',
+                        [] !== $task_rows ? $task_rows : [
+                            [
+                                'item'    => 'Database cleanup',
+                                'before'  => 'Queued',
+                                'action'  => 'Tried to run the HWS Database Cleanup service.',
+                                'after'   => (string) ( $database_cleanup['message'] ?? 'No task details returned.' ),
+                                'meaning' => $success ? 'Cleanup completed.' : 'Cleanup did not complete.',
+                            ],
+                        ],
+                        count( $task_rows ) . ' WP-Optimize cleanup task' . ( 1 === count( $task_rows ) ? '' : 's' ) . ' reported.',
+                        'This Quick Start item calls the same HWS Database Cleanup service used by the Cleanup tab. The full live table-by-table UI is available under HWS Base Tools > Cleanup.',
+                        [
+                            [ 'label' => 'Cleanup Tasks', 'value' => count( $task_rows ) . ' task' . ( 1 === count( $task_rows ) ? '' : 's' ) . ' reported.' ],
+                            [ 'label' => 'Tables', 'value' => count( $table_rows ) . ' table' . ( 1 === count( $table_rows ) ? '' : 's' ) . ' optimized or attempted.' ],
+                        ]
+                    ),
+                    ChecklistReportBuilder::table(
+                        'database_table_optimization',
+                        'Database Table Optimization',
+                        $table_rows,
+                        [
+                            'table'  => 'Table',
+                            'engine' => 'Engine',
+                            'before' => 'Overhead Before',
+                            'after'  => 'Overhead After',
+                            'status' => 'Status',
+                        ],
+                        [
+                            'summary' => count( $table_rows ) . ' database table' . ( 1 === count( $table_rows ) ? '' : 's' ) . ' reported.',
+                            'meta'    => [
+                                'documentation' => 'Each row was sent through the HWS Database Cleanup service table optimization path.',
+                            ],
+                        ]
+                    ),
+                ]
+            );
+
         case 'close_comments':
             global $wpdb;
             $before_default_comments = (string) get_option( 'default_comment_status', '' );
@@ -1100,141 +1160,60 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
             );
 
         case 'check_redis_object_cache':
-            if ( ! class_exists( 'Redis' ) ) {
-                return hws_getting_started_quick_setup_result(
-                    false,
-                    'Redis PHP extension is not installed.',
-                    'warning',
-                    [ 'redis_extension' => false ],
-                    [
-                        hws_getting_started_before_after_report(
-                            'redis_object_cache_check',
-                            'Redis Object Cache Check',
-                            [
-                                [
-                                    'item'    => 'Redis PHP extension',
-                                    'before'  => 'Not installed.',
-                                    'action'  => 'Stopped before connection test.',
-                                    'after'   => 'No Redis connection attempted.',
-                                    'meaning' => 'The server needs the Redis PHP extension before this checklist item can verify object cache readiness.',
-                                ],
-                            ],
-                            'Redis could not be checked because the PHP extension is missing.',
-                            'This status check must first confirm the Redis PHP extension, then connect to Redis, then verify the LiteSpeed object-cache wp-config.php constant.',
-                            [
-                                [ 'label' => 'Before', 'value' => 'Redis PHP extension was not available.' ],
-                                [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
-                            ]
-                        ),
-                    ]
-                );
+            if ( ! function_exists( __NAMESPACE__ . '\\hws_litespeed_redis_service' ) ) {
+                return hws_getting_started_quick_setup_result( false, 'LiteSpeed Redis service is not available.', 'error' );
             }
-            $before_constant = hws_getting_started_read_wp_config_constant( 'LSCWP_OBJECT_CACHE' );
-            try {
-                $redis = new \Redis();
-                if ( @$redis->connect( '127.0.0.1', 6379, 2 ) ) {
-                    $config_change = hws_getting_started_apply_wp_config_constants( [ 'LSCWP_OBJECT_CACHE' => 'true' ] );
-                    $after_constant = hws_getting_started_wp_config_actual_value( $config_change, 'LSCWP_OBJECT_CACHE' );
-                    $redis->close();
-                    return hws_getting_started_quick_setup_result(
-                        (bool) ( $config_change['result']['status'] ?? false ),
-                        'Redis connected and LiteSpeed object cache constant enabled.',
-                        ! empty( $config_change['result']['status'] ) ? 'success' : 'error',
-                        [
-                            'wp_config_message' => (string) ( $config_change['result']['message'] ?? '' ),
-                            'before_constant'   => $before_constant,
-                            'after_constant'    => $after_constant,
-                        ],
-                        [
-                            hws_getting_started_before_after_report(
-                                'redis_object_cache_check',
-                                'Redis Object Cache Check',
-                                [
-                                    [
-                                        'item'    => 'Redis PHP extension',
-                                        'before'  => 'Installed.',
-                                        'action'  => 'Checked PHP class Redis.',
-                                        'after'   => 'Available.',
-                                        'meaning' => 'The server can run the Redis PHP client.',
-                                    ],
-                                    [
-                                        'item'    => 'Redis service',
-                                        'before'  => 'Connection not tested yet.',
-                                        'action'  => 'Connected to 127.0.0.1:6379.',
-                                        'after'   => 'Connection successful.',
-                                        'meaning' => 'Redis is reachable from WordPress.',
-                                    ],
-                                    [
-                                        'item'    => 'LSCWP_OBJECT_CACHE wp-config.php constant',
-                                        'before'  => $before_constant,
-                                        'action'  => 'Requested true through the wp-config.php writer.',
-                                        'after'   => $after_constant,
-                                        'meaning' => 'LiteSpeed object cache is marked enabled when the verified value reads true.',
-                                    ],
-                                ],
-                                'Redis was checked, connected, and the LiteSpeed object-cache constant was verified.',
-                                'This status check verifies the Redis PHP extension, live Redis connection, and the wp-config.php value LiteSpeed Cache uses for object cache state.',
-                                [
-                                    [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
-                                    [ 'label' => 'After', 'value' => 'LSCWP_OBJECT_CACHE verified as ' . $after_constant . '.' ],
-                                ]
-                            ),
-                            $config_change['report'],
-                        ]
-                    );
-                }
-            } catch ( \Exception $exception ) {
-                return hws_getting_started_quick_setup_result(
-                    false,
-                    'Redis check failed: ' . $exception->getMessage(),
-                    'warning',
-                    [ 'redis_error' => $exception->getMessage(), 'before_constant' => $before_constant ],
-                    [
-                        hws_getting_started_before_after_report(
-                            'redis_object_cache_check',
-                            'Redis Object Cache Check',
-                            [
-                                [
-                                    'item'    => 'Redis service',
-                                    'before'  => 'Redis PHP extension is installed.',
-                                    'action'  => 'Tried to connect to 127.0.0.1:6379.',
-                                    'after'   => 'Connection failed: ' . $exception->getMessage(),
-                                    'meaning' => 'The wp-config.php object-cache setting was not changed because Redis did not verify.',
-                                ],
-                            ],
-                            'Redis connection failed before object-cache configuration could be verified.',
-                            'This status check changes the LiteSpeed object-cache constant only after Redis is reachable.',
-                            [
-                                [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
-                                [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
-                            ]
-                        ),
-                    ]
-                );
-            }
+
+            $service = hws_litespeed_redis_service();
+            $before  = $service->status();
+            $result  = $service->enable();
+            $after   = is_array( $result['after'] ?? null ) ? $result['after'] : $service->status();
+            $success = ! empty( $result['success'] );
+
             return hws_getting_started_quick_setup_result(
-                false,
-                'Redis service is not running.',
-                'warning',
-                [ 'before_constant' => $before_constant ],
+                $success,
+                $success ? 'LiteSpeed Redis object cache is enabled and active.' : (string) ( $result['message'] ?? 'LiteSpeed Redis object cache did not fully verify.' ),
+                $success ? 'success' : 'warning',
+                [
+                    'enabled_before' => ! empty( $before['enabled'] ),
+                    'active_before'  => ! empty( $before['active'] ),
+                    'enabled_after'  => ! empty( $after['enabled'] ),
+                    'active_after'   => ! empty( $after['active'] ),
+                    'host'           => (string) ( $after['host'] ?? '' ),
+                    'port'           => (int) ( $after['port'] ?? 0 ),
+                ],
                 [
                     hws_getting_started_before_after_report(
-                        'redis_object_cache_check',
-                        'Redis Object Cache Check',
+                        'litespeed_redis_object_cache',
+                        'LiteSpeed Redis Object Cache',
                         [
                             [
-                                'item'    => 'Redis service',
-                                'before'  => 'Redis PHP extension is installed.',
-                                'action'  => 'Tried to connect to 127.0.0.1:6379.',
-                                'after'   => 'Connection was not established.',
-                                'meaning' => 'The wp-config.php object-cache setting was not changed because Redis did not verify.',
+                                'item'    => 'Redis enabled in LiteSpeed',
+                                'before'  => hws_getting_started_bool_label( ! empty( $before['enabled'] ) ),
+                                'action'  => 'Saved LiteSpeed object-cache settings for Redis and asked LiteSpeed to refresh managed cache files.',
+                                'after'   => hws_getting_started_bool_label( ! empty( $after['enabled'] ) ),
+                                'meaning' => ! empty( $after['enabled'] ) ? 'LiteSpeed object cache is configured for Redis and the drop-in exists.' : 'LiteSpeed Redis configuration still needs attention.',
+                            ],
+                            [
+                                'item'    => 'Redis actively running',
+                                'before'  => hws_getting_started_bool_label( ! empty( $before['active'] ) ),
+                                'action'  => 'Ran Redis connection and WordPress object-cache set/get/delete tests.',
+                                'after'   => hws_getting_started_bool_label( ! empty( $after['active'] ) ),
+                                'meaning' => ! empty( $after['active'] ) ? 'Redis is reachable and WordPress object-cache calls verified.' : (string) ( $after['message'] ?? 'Object-cache verification failed.' ),
+                            ],
+                            [
+                                'item'    => 'LiteSpeed Redis target',
+                                'before'  => (string) ( $before['host'] ?? '' ) . ':' . (string) ( $before['port'] ?? '' ),
+                                'action'  => 'Used LiteSpeed object-cache settings as the source of truth.',
+                                'after'   => (string) ( $after['host'] ?? '' ) . ':' . (string) ( $after['port'] ?? '' ),
+                                'meaning' => 'This avoids the old hardcoded Redis localhost-only check.',
                             ],
                         ],
-                        'Redis service was not reachable, so object-cache configuration was not changed.',
-                        'This status check changes the LiteSpeed object-cache constant only after Redis is reachable.',
+                        $success ? 'LiteSpeed Redis object cache verified enabled and active.' : (string) ( $result['message'] ?? 'LiteSpeed Redis object cache needs attention.' ),
+                        'This report uses the shared LiteSpeed Redis service used by the HWS Overview Redis panel.',
                         [
-                            [ 'label' => 'Before', 'value' => 'LSCWP_OBJECT_CACHE read as ' . $before_constant . '.' ],
-                            [ 'label' => 'After', 'value' => 'No object-cache setting was changed.' ],
+                            [ 'label' => 'Enabled', 'value' => hws_getting_started_bool_label( ! empty( $after['enabled'] ) ) ],
+                            [ 'label' => 'Actively Running', 'value' => hws_getting_started_bool_label( ! empty( $after['active'] ) ) ],
                         ]
                     ),
                 ]
