@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.126 (Current)
+### v10.18.127 (Current)
+
+- Replaced AJAX-injected server editor markup in Footer Text with the supported
+  WordPress dynamic editor lifecycle and Core tab cleanup, restoring reliable
+  Visual and Text mode switching.
+
+### v10.18.126
 
 - Declared the shared toggle renderer as a lazy Footer Text tab dependency so
   the AJAX-rendered footer controls load without an undefined-function fatal.

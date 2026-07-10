@@ -96,6 +96,15 @@ expect_true(
     'Footer Text loads its shared toggle dependency before rendering'
 );
 
+$footer_editor_source = source( "src/FrontendContent/legacy-footer-text-settings.php" );
+expect_true(
+    ! str_contains( $footer_editor_source, "wp_editor(" )
+    && str_contains( $footer_editor_source, "<textarea" )
+    && str_contains( $footer_editor_source, "wp.editor.initialize(editorId" )
+    && str_contains( $footer_editor_source, "hexa-core-host-tab-before-load" ),
+    "Footer Text uses the supported dynamic editor lifecycle for AJAX tabs"
+);
+
 $secret_store = new HWS\BaseTools\Security\SecretStore( 'hws_master_secret_key' );
 expect_true( $secret_store->set( 'a-long-test-secret-value' ), 'master secret can be stored' );
 expect_true( get_option( 'hws_master_secret_key' ) !== 'a-long-test-secret-value', 'master secret is not stored as plaintext' );

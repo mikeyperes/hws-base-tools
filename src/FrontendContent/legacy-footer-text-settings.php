@@ -867,25 +867,13 @@ function display_settings_footer_text() {
             <div class="hws-ft-edit-grid">
                 <div>
                     <h3 class="hws-ft-col-title">Shared Footer Text</h3>
-                    <?php
-                    wp_editor(
-                        $footer_text_raw,
-                        'hws_footer_text_editor',
-                        [
-                            'textarea_name' => 'hws_footer_text_editor',
-                            'textarea_rows' => 10,
-                            'editor_height' => 260,
-                            'editor_class'  => 'hws-footer-text-editor-area',
-                            'media_buttons' => true,
-                            'teeny'         => false,
-                            'quicktags'     => true,
-                            'tinymce'       => [
-                                'wpautop'       => true,
-                                'content_style' => 'body#tinymce.wp-editor{color:#1d2327;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:14px;line-height:1.6;} body#tinymce.wp-editor p{color:#1d2327;}',
-                            ],
-                        ]
-                    );
-                    ?>
+                    <textarea
+                        id="hws_footer_text_editor"
+                        name="hws_footer_text_editor"
+                        rows="10"
+                        class="hws-footer-text-editor-area"
+                        style="width:100%;min-height:260px;"
+                    ><?php echo esc_textarea( $footer_text_raw ); ?></textarea>
                     <div class="hws-ft-editor-actions">
                         <button type="button" class="button button-primary" id="hws-footer-text-save-content">Save Footer Text</button>
                         <span class="hws-ft-saving" id="hws-footer-text-saving" aria-live="polite"></span>
@@ -1012,6 +1000,51 @@ function display_settings_footer_text() {
         var miniEmptyHtml    = '<span class="hws-ft-item-mini-empty">Sample text shows here once saved.</span>';
         var allAlignClasses  = 'hws-ft-align--left hws-ft-align--center hws-ft-align--right';
         var pickerUrl        = <?php echo wp_json_encode( add_query_arg( 'hws_footer_picker', '1', home_url( '/' ) ) ); ?>;
+
+        var editorId = "hws_footer_text_editor";
+        var editorInitAttempts = 0;
+
+        function removeFooterEditor() {
+            if (!(window.wp && wp.editor && typeof wp.editor.remove === "function")) return;
+
+            try {
+                wp.editor.remove(editorId);
+            } catch (error) {
+                var editor = window.tinymce && tinymce.get(editorId);
+                if (editor) editor.remove();
+            }
+        }
+
+        function initializeFooterEditor() {
+            if (!document.getElementById(editorId)) return;
+
+            if (!(window.wp && wp.editor && typeof wp.editor.initialize === "function")) {
+                editorInitAttempts += 1;
+                if (editorInitAttempts < 40) window.setTimeout(initializeFooterEditor, 250);
+                return;
+            }
+
+            removeFooterEditor();
+            wp.editor.initialize(editorId, {
+                tinymce: {
+                    wpautop: true,
+                    content_style: "body#tinymce.wp-editor{color:#1d2327;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:14px;line-height:1.6;} body#tinymce.wp-editor p{color:#1d2327;}"
+                },
+                quicktags: true,
+                mediaButtons: true
+            });
+        }
+
+        var tabRoot = document.querySelector("[data-hpc-tab-root]");
+        if (tabRoot) {
+            if (tabRoot.hwsFooterEditorCleanup) {
+                tabRoot.removeEventListener("hexa-core-host-tab-before-load", tabRoot.hwsFooterEditorCleanup);
+            }
+            tabRoot.hwsFooterEditorCleanup = removeFooterEditor;
+            tabRoot.addEventListener("hexa-core-host-tab-before-load", tabRoot.hwsFooterEditorCleanup);
+        }
+
+        initializeFooterEditor();
 
         function setBusy(isBusy) {
             $toggle.prop('disabled', isBusy);
