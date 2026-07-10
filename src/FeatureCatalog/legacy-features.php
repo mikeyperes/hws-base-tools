@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -172,15 +174,9 @@ function hws_render_feature_card( array $feature ): void {
     $feature_id    = $feature['id'] ?? '';
     $is_deprecated = ! empty( $feature['deprecated'] );
     $is_enabled    = (bool) get_option( $feature_id, false );
-    $info_text     = '';
-
-    if ( isset( $feature['info'] ) ) {
-        if ( is_callable( $feature['info'] ) ) {
-            $info_text = (string) call_user_func( $feature['info'] );
-        } elseif ( is_string( $feature['info'] ) ) {
-            $info_text = $feature['info'];
-        }
-    }
+    $info_text     = FeatureValueResolver::text( $feature['info'] ?? '' );
+    $description   = FeatureValueResolver::text( $feature['description'] ?? '' );
+    $code_example  = FeatureValueResolver::text( $feature['code_example'] ?? '' );
 
     ?>
     <article class="hws-feature-card <?php echo $is_enabled ? 'is-active' : ''; ?> <?php echo $is_deprecated ? 'is-deprecated' : ''; ?>" data-feature-id="<?php echo esc_attr( $feature_id ); ?>">
@@ -197,7 +193,7 @@ function hws_render_feature_card( array $feature ): void {
 
         <section>
             <h4>Description / Use Instructions</h4>
-            <p><?php echo esc_html( $feature['description'] ?? '' ); ?></p>
+            <p><?php echo esc_html( $description ); ?></p>
             <?php if ( $info_text ) : ?>
                 <div class="hws-feature-info"><?php echo wp_kses_post( $info_text ); ?></div>
             <?php endif; ?>
@@ -208,10 +204,10 @@ function hws_render_feature_card( array $feature ): void {
             <?php hws_render_feature_settings( $feature ); ?>
         </section>
 
-        <?php if ( ! empty( $feature['code_example'] ) ) : ?>
+        <?php if ( '' !== $code_example ) : ?>
             <section>
                 <h4>Code Example</h4>
-                <pre><code><?php echo esc_html( $feature['code_example'] ); ?></code></pre>
+                <pre><code><?php echo esc_html( $code_example ); ?></code></pre>
             </section>
         <?php endif; ?>
 

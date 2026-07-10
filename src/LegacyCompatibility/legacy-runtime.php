@@ -620,7 +620,7 @@ function get_snippets($type = "")
             'id' => 'register_acf_website_settings',
             'name' => 'Website Settings Page',
             'description' => 'Registers a Theme Options page with ACF fields for global site settings like logos, colors, and contact info.',
-            'info' => static fn() => display_acf_structure( 'group_6842076add7ad' ),
+            'info' => display_acf_structure( 'group_6842076add7ad' ),
             'function' => 'register_acf_website_settings',
             'scope_admin_only' => false,
             'recommended' => true
@@ -629,7 +629,7 @@ function get_snippets($type = "")
             'id' => 'register_user_custom_fields_2025',
             'name' => 'User Profile Fields (2025)',
             'description' => 'Extends WordPress user profiles with additional fields like bio, avatar, and preferences.',
-            'info'        => static fn() => display_acf_structure( 'group_684252fd99081' ),
+            'info'        => display_acf_structure( 'group_684252fd99081' ),
             'function' => 'register_user_custom_fields_2025',
             'scope_admin_only' => false,
             'recommended' => true
@@ -638,7 +638,7 @@ function get_snippets($type = "")
             'id' => 'register_user_custom_fields_additional_2025',
             'name' => 'Additional User Profile Fields',
             'description' => 'Extra user profile fields for extended functionality and metadata.',
-            'info'        => static fn() => display_acf_structure( 'group_6842_additional_user_fields_2025' ),
+            'info'        => display_acf_structure( 'group_6842_additional_user_fields_2025' ),
             'function' => 'register_user_custom_fields_additional_2025',
             'scope_admin_only' => false,
             'recommended' => true
@@ -649,7 +649,7 @@ function get_snippets($type = "")
             'id' => 'smp_enable_cpt_teammember',
             'name' => 'Team Member Custom Post Type',
             'description' => 'Creates a "Team Member" post type for displaying staff/team profiles on your site.',
-            'info' => static fn() => display_cpt_structure( 'team-member' ),
+            'info' => display_cpt_structure( 'team-member' ),
             'function' => 'enable_smp_cpt_teammember',
             'scope_admin_only' => false
         ],
@@ -657,7 +657,7 @@ function get_snippets($type = "")
             'id' => 'smp_enable_acf_teammember',
             'name' => 'Team Member ACF Fields',
             'description' => 'Adds custom fields to team members: job title, bio, photo, social links.',
-            'info'        => static fn() => display_acf_structure( 'group_64b3a05760b1a' ),
+            'info'        => display_acf_structure( 'group_64b3a05760b1a' ),
             'function' => 'enable_smp_acf_teammember',
             'scope_admin_only' => false
         ],
@@ -667,7 +667,7 @@ function get_snippets($type = "")
             'id' => 'smp_enable_cpt_organization',
             'name' => 'Organizations Custom Post Type',
             'description' => 'Creates an "Organization" post type for displaying company/partner profiles.',
-            'info' => static fn() => display_cpt_structure( 'organization' ),
+            'info' => display_cpt_structure( 'organization' ),
             'function' => 'enable_smp_cpt_organization',
             'scope_admin_only' => false,
             'deprecated' => true
@@ -676,7 +676,7 @@ function get_snippets($type = "")
             'id' => 'enable_cpt_testimonial',
             'name' => 'Testimonials Custom Post Type',
             'description' => 'Creates a "Testimonial" post type for displaying customer reviews and quotes.',
-            'info' => static fn() => display_cpt_structure( 'testimonial' ),
+            'info' => display_cpt_structure( 'testimonial' ),
             'function' => 'enable_cpt_testimonial',
             'scope_admin_only' => false,
             'deprecated' => true
@@ -685,7 +685,7 @@ function get_snippets($type = "")
             'id' => 'enable_acf_testimonial',
             'name' => 'Testimonial ACF Fields',
             'description' => 'Adds custom fields to testimonials: author name, company, rating, photo, etc.',
-            'info'        => static fn() => display_acf_structure( 'group_64c2177b44137' ),
+            'info'        => display_acf_structure( 'group_64c2177b44137' ),
             'function' => 'enable_acf_testimonial',
             'scope_admin_only' => false,
             'deprecated' => true
@@ -694,7 +694,7 @@ function get_snippets($type = "")
             'id' => 'smp_enable_acf_organization',
             'name' => 'Organization ACF Fields',
             'description' => 'Adds custom fields to organizations: logo, website, description, contact info.',
-            'info'        => static fn() => display_acf_structure( 'group_64bc3b458d863' ),
+            'info'        => display_acf_structure( 'group_64bc3b458d863' ),
             'function' => 'enable_smp_acf_organization',
             'scope_admin_only' => false,
             'deprecated' => true
@@ -704,7 +704,7 @@ function get_snippets($type = "")
             'id'          => 'register_user_custom_fields',
             'function'    => 'register_user_custom_fields',
             'description' => 'Adds social media profile links (Twitter, Facebook, LinkedIn, etc.) to author profiles.',
-            'info'        => static fn() => display_acf_structure( 'group_590d64c31db0a', true ),
+            'info'        => display_acf_structure( 'group_590d64c31db0a', true ),
             'scope_admin_only' => false,
             'deprecated'  => true
         ]
@@ -763,7 +763,7 @@ function get_snippets($type = "")
         'id' => 'register_sponsored_functionality',
         'name' => 'Sponsored Content Fields',
         'description' => 'Adds "Sponsored" checkbox and sponsor details fields to posts for affiliate/sponsored content disclosure.',
-        'info' => static fn() => display_acf_structure( 'group_sponsored_field' ),
+        'info' => display_acf_structure( 'group_sponsored_field' ),
         'function' => 'register_acf_sponsored_functionality',
         'scope_admin_only' => true
     ],
@@ -771,7 +771,7 @@ function get_snippets($type = "")
         'id' => 'enable_custom_rss_functionality',
         'name' => 'Custom RSS Feeds',
         'description' => 'Creates custom RSS feeds for specific post types and categories.',
-        'info' => static fn() => display_acf_structure( 'group_66e9ebd79f8e0' ),
+        'info' => display_acf_structure( 'group_66e9ebd79f8e0' ),
         'function' => 'enable_custom_rss_functionality',
         'scope_admin_only' => true
     ],

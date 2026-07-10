@@ -63,6 +63,7 @@ require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabRegistr
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
+require_once $root . '/src/FeatureCatalog/FeatureValueResolver.php';
 require_once $root . '/src/Security/SecretStore.php';
 require_once $root . '/src/Security/RemoteActionPolicy.php';
 
@@ -88,6 +89,14 @@ expect_true( $secret_store->set( 'a-long-test-secret-value' ), 'master secret ca
 expect_true( get_option( 'hws_master_secret_key' ) !== 'a-long-test-secret-value', 'master secret is not stored as plaintext' );
 expect_true( $secret_store->get() === 'a-long-test-secret-value', 'encrypted master secret round-trips' );
 expect_true( ! HWS\BaseTools\Security\RemoteActionPolicy::legacy_get_routes_allowed(), 'legacy remote GET actions default to disabled' );
+expect_true(
+    HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => static fn() => '<b>Lazy feature details</b>' ) === '<b>Lazy feature details</b>',
+    'nested lazy feature metadata resolves to text without Closure conversion'
+);
+expect_true(
+    '' === HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => new stdClass() ),
+    'non-scalar feature metadata resolves safely to an empty string'
+);
 
 $runtime_options = source( 'src/PluginRuntime/RuntimeOptions.php' );
 expect_true( str_contains( $runtime_options, "'hws_update_urls_enabled'       => 'no'" ), 'public update URLs seed disabled' );

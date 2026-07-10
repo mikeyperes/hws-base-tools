@@ -18,7 +18,8 @@
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-registry.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-collision.php",
       "@php lib/hexa-wordpress-plugin-core/tests/database-cleanup-state.php",
-      "@php lib/hexa-wordpress-plugin-core/tests/site-structure-lazy-workspace.php"
+      "@php lib/hexa-wordpress-plugin-core/tests/site-structure-lazy-workspace.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/snippet-metadata-renderer.php"
     ]
   },
   "config": {

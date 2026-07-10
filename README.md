@@ -164,7 +164,17 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.120 (Current)
+### v10.18.122 (Current)
+
+- Fixed the Features AJAX tab fatal by resolving nested lazy ACF/CPT metadata
+  callbacks before rendering descriptions and code examples.
+
+### v10.18.121
+
+- Updated the vendored Hexa WordPress Plugin Core package to `0.19.39`, including
+  metadata-only snippet catalog rendering.
+
+### v10.18.120
 
 - Replaced the historical `initialization.php` bootstrap with the canonical
   `hws-base-tools.php` entry and a thin legacy compatibility shim.
