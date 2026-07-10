@@ -1,0 +1,90 @@
+#hws-base-tools {
+  width: min(1400px, calc(100% - 20px));
+  overflow-x: clip;
+}
+
+#hws-base-tools > h1 {
+  margin: 18px 0 14px;
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+#hws-base-tools .hpc-host-tabs-shell {
+  min-width: 0;
+}
+
+#hws-base-tools .hpc-host-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #dcdcde;
+  background: #fff;
+}
+
+#hws-base-tools .hpc-host-tab {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+#hws-base-tools .hpc-host-tab-panel,
+#hws-base-tools .hws-panel,
+#hws-base-tools .hpc-card,
+#hws-base-tools table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#hws-base-tools .hpc-host-tab-panel {
+  padding-top: 14px;
+}
+
+#hws-base-tools .hws-panel {
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+#hws-base-tools .hws-panel-header {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+#hws-base-tools .hws-panel-body {
+  padding: 14px;
+}
+
+#hws-base-tools .widefat {
+  table-layout: fixed;
+}
+
+#hws-base-tools .widefat td,
+#hws-base-tools .widefat th,
+#hws-base-tools code,
+#hws-base-tools .hpc-path {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media (max-width: 782px) {
+  #hws-base-tools {
+    width: calc(100% - 10px);
+  }
+
+  #hws-base-tools .hpc-host-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #hws-base-tools .hpc-host-tab {
+    justify-content: center;
+    text-align: center;
+  }
+}

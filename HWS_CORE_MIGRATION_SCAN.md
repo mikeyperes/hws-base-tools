@@ -1,69 +1,102 @@
 # HWS Core Migration Scan
 
-This file records the current HWS Base Tools dashboard feature inventory and the order for moving repeated UI and behavior into Hexa WordPress Plugin Core.
+This is the current HWS-to-Core ownership audit. The implementation contract is
+in `docs/architecture.md`; the complete reusable Core API is in
+`HEXA_PLUGIN_CORE_LIBRARY.md`.
 
-## Current Dashboard Tabs
+## Completed Core Integrations
 
-- Overview: going-live checklist, quick setup, debug settings, wp-config controls, SMTP status, Wordfence status, error-log viewer, log cleaner, LiteSpeed, PHP/server checks, Elementor DB updater, plugin info.
-- Plugins: monitored plugin status, install/update controls, essential plugin checks, HWS GitHub plugin installs.
-- Themes: active theme and cleanup checks.
-- Features: feature cards with toggles, descriptions, settings, code examples, tests, activity logs.
-- Snippets: deprecated legacy snippet controls retained for compatibility.
-- Brand Assets: favicon/site icon, brand colors, logo asset slots, gallery ACF.
-- Website Types: ACF and website-type integrations.
-- UI Cleanup: admin bar, user profile, editor, footer, and admin UI hiding controls.
-- Advanced/Config: debug constants, wp-config editing, public setup URLs.
-- Comments: comment and pingback controls.
-- Update Center: GitHub updater, core package updater, version history, download ZIP.
-- Masked Login: login URL controls.
-- Footer Text: shared footer text and injection methods.
-- System Checks: health and deployment tests.
-- Backups/Log Cleaner: backups, generated files, and log deletion helpers.
+- Package runtime: every vendored candidate registers through Core
+  `bootstrap.php`; one compatible package root is selected before Core classes
+  load, and collisions/source mismatches are reportable.
+- Admin tabs: HWS tab definitions use `WpAdminTabs\TabRegistry` and
+  `HostTabsRenderer`; tab bodies and mapped AJAX handlers load on demand.
+- Admin components: collapsible cards, detail cards, toggles, dynamic buttons,
+  color controls, and shared visual patterns come from `WpAdminComponents`.
+- AJAX: HWS nonce/capability wrappers delegate to `WpAdminAjax\AjaxGuard`.
+- Activity logs: reusable log configuration, storage modes, entries, and dark
+  expandable displays come from `ActivityLog`.
+- Plugin inventory: reusable status, required/optional presentation,
+  install/activate/deactivate/delete actions, and GitHub slug normalization come
+  from `PluginChecks` and `PluginProvisioning`; HWS owns only its catalog.
+- Updates: native GitHub updates, direct installs, ZIP normalization, progress,
+  update panels, and vendored Core updates come from `PluginUpdates` and
+  `CorePackageUpdates`.
+- Shortcodes: HWS owns shortcode definitions and callbacks; catalog display,
+  parameters, examples, test methods, and real output come from
+  `ShortcodeRegistry`.
+- Cleanup: stale content, backups, article/media deletion, protected pages,
+  batch progress, and live reports come from `ContentCleanup`.
+- Database cleanup: provider-backed cleanup sessions and table iteration come
+  from `DatabaseCleanup`.
+- Object cache: LiteSpeed/Redis configuration and real cache round-trip checks
+  come from `ObjectCache`.
+- System environment: constants, ini values, memory, CPU, cgroup, shell safety,
+  and byte formatting come from `SystemEnvironment`.
+- wp-config: safe constant and ini-style mutation delegates to `WpConfigFile`.
+- Cron: schedule registration, status, and unscheduling delegate to
+  `WpCronTasks`.
+- UI cleanup: definitions, AJAX saves, selector hiding, postbox collapse, and
+  footer filtering use `WpAdminUiCleanup`; HWS owns its selector policy.
+- Site structure: critical-page and navigation assignment behavior uses
+  `SiteStructure`.
+- Fields/schema/FAQ: reusable ACF/CPT/taxonomy displays and profile/schema/FAQ
+  structures use `FieldStructures`, `AcfFieldFactory`, `SchemaDetection`,
+  `SchemaTools`, and `FaqSets` where applicable.
+- Smart search and credentials: reusable content lookup and protected key fields
+  come from `SmartSearch` and `CredentialVault`.
 
-## Repeated UI Patterns To Move Into Core
+## HWS Domain Boundaries
 
-- Panel shells: title, body, footer actions.
-- Subcards: compact repeated cards with status, preview, URL rows, and actions.
-- Toggle controls: enabled/disabled state, description, proof/test output.
-- Tooltips and helper text.
-- Collapsible sections and expandable detail rows.
-- Activity logs: dark, page-only/transient/permanent modes.
-- Code/shortcode rows with copy buttons.
-- AJAX action feedback and inline status messages.
-- Log viewers: source summaries, tabs, search, highlighting, delete buttons.
+- `PluginRuntime`: canonical boot, metadata, request classification, Core setup.
+- `AdminDashboard`: HWS tab registry, dashboard bridge, and dashboard assets.
+- `FeatureCatalog`: HWS feature/snippet/shortcode definitions and adapters.
+- `FrontendContent`: option-gated frontend hooks and content transforms.
+- `AcfFields`: HWS-owned field groups and opt-in legacy SMP compatibility.
+- `BrandAssets`: site logo, favicon, palette, and historical shortcode adapters.
+- `PluginPolicy`: HWS required, optional, forbidden, and library plugin lists.
+- `SystemHealth`: HWS-specific health composition and status presentation.
+- `Maintenance`: HWS cleanup schedules and Core service configuration.
+- `SitemapTools`: sitemap policy, discovery, and cache-control adapters.
+- `SiteProfile`: website type and site identity policy.
+- `SiteStructure`: HWS page/menu configuration.
+- `UiCleanup`: HWS wp-admin cleanup definitions.
+- `Security`: encrypted secret storage and disabled-by-default remote actions.
+- `LegacyCompatibility`: procedural callback adapters that cannot yet be renamed.
 
-## First Core Swaps
+## Remaining Extraction Candidates
 
-1. Hexa Core tab design: rendered from `Hexa\PluginCore\WpAdminComponents\CoreUi`.
-2. Overview error-log viewer: rendered from `Hexa\PluginCore\LogFiles\ErrorLogPanelRenderer`.
-3. Feature rows: replace hard-coded feature cards with core card/toggle primitives.
-4. Brand asset rows: replace logo/favicons cards with core subcards and copy rows.
-5. Update Center panels: replace local updater panels with core updater UI primitives.
-6. Tab framework: replace HWS tab output with the core tab registry while preserving existing tab IDs.
+These are boundaries for future Core releases, not permission to duplicate code
+inside HWS:
 
-## Deep Refactor Scan - 2026-06-19
+- Secret actions: Update Center and Masked Login still share route-state,
+  master-secret, audit-output, and enable/disable concepts. A future Core
+  `SecretActions` module should own that mechanism while HWS owns route policy.
+- Media assets: ICO generation, image resizing, square derivatives, attachment
+  persistence, and logo constraints can become a Core `MediaAssets` service.
+- Feature catalog: definitions, toggle state, test callbacks, code examples, and
+  logs can become a Core `FeatureRegistry`; HWS retains feature data.
+- Scheduled-task UI: log cleaner, backup cleaner, and Elementor DB jobs use Core
+  cron mechanics but still have HWS-specific repeated settings panels.
+- Historical SMP compatibility: founder/company shortcodes and dormant SMP ACF
+  groups must move to their owning SMP plugins after deployed references are
+  inventoried.
 
-### Extracted To Hexa WordPress Plugin Core
+## Flat-Code Prevention
 
-- Safe admin-AJAX guards: `safe-wrappers.php` functions `hws_create_nonce()`, `hws_verify_nonce( $nonce = null )`, `hws_require_ajax_nonce_or_error( $field = 'nonce' )`, and `hws_safe_ajax_handler( $callback, $capability = 'manage_options', $verify_nonce = true )` now delegate to `Hexa\PluginCore\WpAdminAjax\AjaxGuard`.
-- System environment helpers: `safe-wrappers.php` functions `hws_is_function_disabled( $function_name )`, `hws_safe_shell_exec( $command )`, `hws_safe_exec( $command, $timeout = 5 )`, `hws_get_constant( $name, $default = null )`, `hws_get_ini( $name, $default = null )`, `hws_parse_size( $size )`, `hws_read_system_file( $path )`, `hws_parse_cgroup_memory_limit( $value )`, `hws_get_cgroup_memory_limit()`, `hws_count_cpuset_cpus( $cpuset )`, `hws_get_cpu_info()`, `hws_get_memory_info()`, `hws_get_cpu_count()`, and `hws_format_bytes( $bytes, $precision = 2 )` now delegate to `Hexa\PluginCore\SystemEnvironment\SystemEnvironment`.
-- Plugin provisioning mechanics: `settings-dashboard-check-plugins.php` functions `hws_find_plugin_file_by_folder( string $slug ): string`, `hws_check_additional_hws_plugin_status( string $slug ): array`, `hws_prepare_wp_filesystem()`, `hws_cleanup_install_work_dir( string $path ): void`, `hws_normalize_hws_github_plugin_folder( string $slug )`, `hws_install_hws_github_plugin_package( string $slug, array $plugin )`, `hws_check_plugin_status( $plugin_path )`, `ajax_install_plugin()`, and `ajax_activate_plugin()` now delegate reusable discovery/install/activation logic to `Hexa\PluginCore\PluginProvisioning\PluginProvisioner`.
-- WP config mutation: `generic-functions.php` functions `modify_wp_config_constants( $constants_to_update )`, `check_wp_config_constant_status( $constant_name )`, `get_wp_config_defined_constants()`, `get_php_ini_value( $setting_name )`, and `toggle_php_ini_value( $setting_name, $new_value )` now delegate safe read/write logic to `Hexa\PluginCore\WpConfigFile\WpConfigFile`.
-- WP-Cron task mechanics: `settings-dashboard-log-delete-cron.php`, `settings-dashboard-backups.php`, and `settings-dashboard-elementor-db-cron.php` scheduling, unscheduling, custom interval registration, cron event inspection, and status payloads now delegate shared logic to `Hexa\PluginCore\WpCronTasks\WpCronTask`.
+- `hws-base-tools.php` is the canonical entry and contains no feature behavior.
+- `initialization.php` is a thin legacy entry.
+- Root implementation filenames are compatibility shims only.
+- New implementations go in a named `src/` domain.
+- New cross-plugin mechanisms go to the standalone Core repository first, then
+  the released Core package is vendored into HWS.
+- Large `legacy-*` files are migration surfaces, not extension points. New logic
+  must be extracted into a class and called through a thin adapter.
 
-### Next Generic Extractions
+## Verification Baseline
 
-- Plugin library UI: `settings-dashboard-check-plugins.php` still owns HWS-specific plugin catalog data (`hws_get_additional_hws_plugins(): array`, `hws_get_additional_hws_plugin( string $slug ): ?array`) and HTML rendering. Keep catalog data host-owned, but move reusable table/action UI into `WpAdminComponents` once another plugin needs the same panel.
-- Repeated scheduler UI panels: `settings-dashboard-log-delete-cron.php`, `settings-dashboard-backups.php`, and `settings-dashboard-elementor-db-cron.php` still repeat enable/disable/update/run-now table and AJAX UI patterns. The WP-Cron mechanics are now in core; extract shared UI rendering later only after preserving each task-specific payload.
-- Secret/public action URLs: `settings-dashboard-update-center.php` and `settings-dashboard-masked-login.php` both define URL keys, shared master secret usage, public output rendering, logs, AJAX toggles, and status payloads. Extract route/key/output behavior to a core `SecretActions` namespace.
-- Media and brand assets: favicon generation, ICO writing, image cropping, attachment persistence, logo slots, gallery IDs, and shortcode output are spread across `settings-dashboard.php`, `register-acf-website-settings.php`, and `snippet-website-settings-functionality.php`. Extract generic image processing to `MediaAssets`, then brand-specific registry/output to `BrandAssets`.
-- Feature registry: `initialization.php`, `settings-dashboard-features.php`, and snippet files duplicate feature metadata, toggles, tests, code examples, and logs. Extract definition/render/test contracts to a core `FeatureRegistry` namespace.
-
-## Error Log Findings
-
-HWS currently has two log systems:
-
-- Overview viewer in `settings-dashboard.php`: displays `debug.log`, root `error_log`, and `wp-admin/error_log`; extracts fatal/syntax lines; provides search and delete buttons.
-- Cleaner in `settings-dashboard-log-delete-cron.php`: owns scheduled deletion, manual cleanup, options, and cleaner activity output.
-
-The first migration moves the Overview display into core. The cleaner remains in HWS until core has a scheduler/options abstraction.
+- `composer test` lints every PHP file and verifies architecture/security rules.
+- Core package tests verify package integrity, single-root selection, collision
+  reporting, and database cleanup state restoration.
+- Release verification must also cover frontend, wp-admin, HWS AJAX tabs, cron,
+  updater, media/editor tabs, and browser console/page errors.

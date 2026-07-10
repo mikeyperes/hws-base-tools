@@ -1,6 +1,6 @@
 # HWS Base Tools
 
-**A comprehensive WordPress plugin for website management, optimization, security monitoring, and deployment readiness.**
+WordPress site policy and operations tooling for Hexa-managed websites.
 
 ---
 
@@ -21,30 +21,52 @@ Canonical plugin entry:
 
 ---
 
-## Dashboard Panels (Overview Tab)
+## Architecture
 
-### 🚀 Going Live Checklist
+The canonical plugin entry is `hws-base-tools.php`. It selects one shared Hexa
+WordPress Plugin Core package, registers the `HWS\BaseTools\` autoloader, and
+boots request-specific modules. `initialization.php` is only a compatibility
+entry for older active-plugin records.
+
+Implementation code is organized by ownership under `src/`. Historical root
+files remain thin include shims so deployed integrations do not break. New code
+must be added to a domain class or adapter, never to a root shim or a generic
+function dump.
+
+See [docs/architecture.md](docs/architecture.md) for the namespace map, runtime
+sequence, Core ownership rules, compatibility policy, and release test matrix.
+
+## Dashboard Tabs
+
+The dashboard shell and AJAX tab navigation come from
+`Hexa\PluginCore\WpAdminTabs`. HWS owns the tab definitions and site-specific
+callbacks. Quick Start is the second tab, Shortcodes is a first-class tab, and
+Legacy Snippets remains visible and marked deprecated.
+
+## Overview
+
+### Going Live Checklist
 Three-column deployment readiness checker:
 - **Snippets** — All recommended snippets enabled (ACF fields, auto-updates, admin logo, etc.)
 - **Plugins** — Essential plugins installed & active (Elementor, Wordfence, WP Mail SMTP, Rank Math, LiteSpeed, etc.)
 - **Settings & Server** — 25+ checks: WP_MEMORY_LIMIT, comments/pingbacks off, SMTP authenticated, WP_DEBUG off, display_errors off, Wordfence alerts, log file sizes (debug.log, error_log, wp-admin/error_log), WP_CRON disabled, Cloudflare active, PHP SAPI LiteSpeed, PHP ≥ 8.1, Imagick, no MyISAM tables, Redis active, post_max_size/upload_max ≥ 128MB, Brotli, max 2 themes, all updated, no Twenty* themes
 
-### ⚡ LiteSpeed Cache Panel
+### LiteSpeed Cache Panel
 Four-column status: Page Cache (on/off, private, browser, mobile, REST, TTL) · CSS/JS (minify, combine, async, defer) · Redis (connection, driver, version, memory, hit rate, uptime, keys) · Brotli & General (compression, PHP, SAPI, server)
 
-### 📧 SMTP Status
+### SMTP Status
 Detects WP Mail SMTP mailer type and auth status for 15+ providers (SendGrid, Mailgun, Postmark, Brevo, SparkPost, SMTP, Gmail/Outlook/Zoho OAuth, etc.)
 
-### 🛡️ Wordfence Security
+### Wordfence Security
 Plugin/firewall status, alert email config, collapsible setup instructions.
 
-### 🖥️ PHP & Server Extensions
+### PHP And Server Extensions
 22 PHP extensions with loaded/missing status (9 required, 13 recommended).
 
-### 📄 Error Logs
+### Error Logs
 Four-tab viewer: Fatal/Syntax Errors · debug.log · error_log · wp-admin/error_log. Real-time search, keyboard navigation, size display, delete buttons, display_errors indicator.
 
-### ⚙️ WP-Config Settings
+### WP-Config Settings
 Toggle WP_DEBUG, WP_DEBUG_LOG, WP_DEBUG_DISPLAY, SCRIPT_DEBUG, DISABLE_WP_CRON, WP_MEMORY_LIMIT.
 
 ---
@@ -58,8 +80,13 @@ Active theme verification, auto-update status, batch delete, warning for >2 them
 ## Features Tab
 Structured feature management with toggles, optional settings, use instructions, code examples, test reports, and activity logs.
 
-## Getting Started Checklist Tab
+## Quick Start Tab
 Reusable Hexa WP Core startup process runner. HWS registers the former Quick Setup process, environment checks, plugin version checks, core version checks, site identity checks, and permalink checks; Hexa WP Core provides the checklist UI, guarded AJAX execution, sequential subtasks, spinner/check/X states, and technical activity log.
+
+## Shortcodes Tab
+HWS supplies its shortcode definitions, descriptions, parameters, examples, and
+test methods. Hexa WP Core supplies the reusable catalog, real-output display,
+and isolated test structure.
 
 ## Brand Assets Tab
 One place for favicon and logo assets:
@@ -81,8 +108,8 @@ Hexa WP Core cleanup tools for stale page reports, backup file deletion, and art
 
 | Shortcode | Description |
 |-----------|-------------|
-| `[founder id="..."]` | Founder user data (name, title, bio, social URLs, education, etc.) |
-| `[company id="..."]` | Company user data (same attributes as founder) |
+| `[founder id="..."]` | Legacy SMP compatibility shortcode; new person/publication behavior belongs in the SMP plugins |
+| `[company id="..."]` | Legacy SMP compatibility shortcode; new organization behavior belongs in the SMP plugins |
 | `[website_content id="..."]` | ACF website settings options |
 | `[website_url]` | Site URL |
 | `[display_year]` | Current year |
@@ -103,21 +130,17 @@ Hexa WP Core cleanup tools for stale page reports, backup file deletion, and art
 
 ---
 
-## Reusable Helper Functions
+## Reusable Services
 
-All in `generic-functions.php` for site-wide use:
+Reusable cross-plugin behavior lives in the vendored Hexa WordPress Plugin
+Core under `lib/hexa-wordpress-plugin-core/src/`. HWS adapters use focused Core
+namespaces for tabs, admin components, AJAX guards, activity logs, plugin
+inventory, updates, cleanup, system environment, wp-config, cron tasks, and
+shortcode display.
 
-| Function | Returns |
-|----------|---------|
-| `hws_check_redis_status()` | `{ active, extension, connected, litespeed_enabled, info{}, error }` |
-| `hws_check_brotli_support()` | `{ enabled, details }` |
-| `hws_get_litespeed_info()` | Full LiteSpeed config array (cache, CSS, JS, object cache) |
-| `hws_get_glc_settings_checks()` | Array of `{ label, pass, value }` for 25+ checks |
-| `check_cloudflare_active()` | CF-Ray/CF-Connecting-IP header detection + NS fallback |
-| `check_smtp_auth_status_and_mailer()` | Auth status for 15+ mail providers |
-| `check_myisam_tables()` | MyISAM detection scoped to current WP prefix |
-| `hws_check_php_extensions()` | 22 extensions with loaded/required status |
-| `hws_render_instructions()` | Reusable collapsible instruction box |
+HWS-only reusable behavior lives in focused classes under `src/`. Historical
+functions in `generic-functions.php` are compatibility adapters and must not be
+used as the destination for new functionality.
 
 ---
 
@@ -141,7 +164,24 @@ All in `generic-functions.php` for site-wide use:
 
 ## Changelog
 
-### v10.18.117 (Current)
+### v10.18.120 (Current)
+
+- Replaced the historical `initialization.php` bootstrap with the canonical
+  `hws-base-tools.php` entry and a thin legacy compatibility shim.
+- Organized HWS runtime code into explicit domains under `src/`, added
+  request-specific dashboard, AJAX, frontend, ACF, cron, and CLI loading, and
+  retained root filenames only as compatibility shims.
+- Integrated Hexa WordPress Plugin Core through `PluginContext`,
+  `CoreBootstrap`, the shared package resolver, Core tabs, and the Core
+  Shortcode Registry display.
+- Updated the vendored Hexa WordPress Plugin Core package to `0.19.38`, including
+  the reusable lazy page workspace release.
+- Added security hardening for disabled-by-default remote actions, encrypted
+  master-secret storage, constant-time secret checks, and guarded updater AJAX.
+- Added architecture and migration documentation plus automated PHP, package
+  integrity, collision, and database-cleanup tests.
+
+### v10.18.117
 
 - Fixed the HWS Cleanup task table layout so long WP-Optimize result messages wrap cleanly instead of clipping or stretching the section.
 - Moved active database cleanup run state out of transients so WP-Optimize transient cleanup cannot delete the running session before table optimization finishes.

@@ -1,0 +1,27 @@
+{
+  "name": "hexa/hws-base-tools",
+  "description": "HWS site policy and operations plugin for WordPress.",
+  "type": "wordpress-plugin",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "HWS\\BaseTools\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": [
+      "@php tests/run.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/package-integrity.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/core-package-registry.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/core-package-collision.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/database-cleanup-state.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/site-structure-lazy-workspace.php"
+    ]
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
