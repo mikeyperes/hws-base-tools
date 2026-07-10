@@ -155,7 +155,10 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [ 'settings-dashboard-update-center.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'ui-cleanup', 'UI Cleanup', 'hws_base_tools\\display_settings_ui_cleanup', [ 'settings-dashboard-ui-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'website-types', 'Website Types & Fields', 'hws_base_tools\\display_settings_website_types', [ 'settings-dashboard-website-types.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'footer-text', 'Footer Text', 'hws_base_tools\\display_settings_footer_text', [ 'settings-dashboard-footer-text.php' ], false, static function(): bool {
+        $this->add( new DashboardModuleDefinition( 'footer-text', 'Footer Text', 'hws_base_tools\\display_settings_footer_text', [
+            'settings-dashboard-website-types.php',
+            'settings-dashboard-footer-text.php',
+        ], false, static function(): bool {
             return (bool) get_option( 'enable_footer_text_auto_injection', false );
         } ) );
         $this->add( new DashboardModuleDefinition( 'menu-tools', 'Menu Tools', 'hws_base_tools\\display_settings_menu_tools', [ 'settings-dashboard-menu-tools.php' ] ) );

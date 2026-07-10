@@ -164,7 +164,12 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.125 (Current)
+### v10.18.126 (Current)
+
+- Declared the shared toggle renderer as a lazy Footer Text tab dependency so
+  the AJAX-rendered footer controls load without an undefined-function fatal.
+
+### v10.18.125
 
 - Routed Website Types and Legacy Snippets metadata through the shared lazy
   value resolver so nested ACF/CPT detail callbacks cannot reach WordPress

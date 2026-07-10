@@ -91,6 +91,10 @@ expect_true(
     $registry->implementation_files_for_ajax_action( 'hws_sitemap_scan' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
     'Sitemap AJAX actions load their Site Profile dependency first'
 );
+expect_true(
+    $registry->implementation_files_for_tab( 'footer-text' ) === [ 'settings-dashboard-website-types.php', 'settings-dashboard-footer-text.php' ],
+    'Footer Text loads its shared toggle dependency before rendering'
+);
 
 $secret_store = new HWS\BaseTools\Security\SecretStore( 'hws_master_secret_key' );
 expect_true( $secret_store->set( 'a-long-test-secret-value' ), 'master secret can be stored' );
