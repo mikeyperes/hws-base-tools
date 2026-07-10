@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
+
 /**
  * HWS Base Tools - Website Types Settings
  *
@@ -372,15 +374,9 @@ function display_settings_website_types() {
                             // Check if deprecated
                             $is_deprecated = isset( $snippet['deprecated'] ) && $snippet['deprecated'];
 
-                            // Get info text
-                            $info_text = '';
-                            if ( isset( $snippet['info'] ) ) {
-                                if ( is_callable( $snippet['info'] ) ) {
-                                    $info_text = call_user_func( $snippet['info'] );
-                                } elseif ( is_string( $snippet['info'] ) ) {
-                                    $info_text = $snippet['info'];
-                                }
-                            }
+                            $info_text   = FeatureValueResolver::text( $snippet['info'] ?? '' );
+                            $name        = FeatureValueResolver::text( $snippet['name'] ?? '' );
+                            $description = FeatureValueResolver::text( $snippet['description'] ?? '' );
                         ?>
                             <div class="hws-snippet-item <?php echo $is_deprecated ? 'deprecated' : ''; ?>">
                                 <div class="hws-snippet-toggle">
@@ -394,12 +390,12 @@ function display_settings_website_types() {
                                 <div class="hws-snippet-content">
                                     <div class="hws-snippet-header">
                                         <code class="hws-snippet-id"><?php echo esc_html( $snippet_id ); ?></code>
-                                        <span class="hws-snippet-name"><?php echo esc_html( $snippet['name'] ); ?></span>
+                                        <span class="hws-snippet-name"><?php echo esc_html( $name ); ?></span>
                                         <?php if ( $is_deprecated ) : ?>
                                             <span class="hws-snippet-badge deprecated">Pending Delete</span>
                                         <?php endif; ?>
                                     </div>
-                                    <div class="hws-snippet-description"><?php echo esc_html( $snippet['description'] ); ?></div>
+                                    <div class="hws-snippet-description"><?php echo esc_html( $description ); ?></div>
                                     <?php if ( $info_text ) : ?>
                                         <div class="hws-snippet-details">
                                             <strong>Details:</strong><br>

@@ -105,6 +105,16 @@ expect_true(
     '' === HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => new stdClass() ),
     'non-scalar feature metadata resolves safely to an empty string'
 );
+$website_types_source = file_get_contents( $root . '/src/SiteProfile/legacy-website-types.php' );
+$legacy_snippets_source = file_get_contents( $root . '/src/FeatureCatalog/legacy-snippets.php' );
+expect_true(
+    str_contains( $website_types_source, "FeatureValueResolver::text( \$snippet['info'] ?? '' )" ),
+    'Website Types resolves nested lazy snippet metadata before escaping it'
+);
+expect_true(
+    str_contains( $legacy_snippets_source, "FeatureValueResolver::text( \$snippet['info'] ?? '' )" ),
+    'Legacy Snippets resolves nested lazy snippet metadata before escaping it'
+);
 expect_true(
     ! preg_match( "/'info'\s*=>\s*display_(?:acf|cpt)_structure\s*\(/", source( 'src/LegacyCompatibility/legacy-runtime.php' ) ),
     'ACF and CPT feature metadata stays deferred until dashboard helpers load'

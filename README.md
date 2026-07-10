@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.124 (Current)
+### v10.18.125 (Current)
+
+- Routed Website Types and Legacy Snippets metadata through the shared lazy
+  value resolver so nested ACF/CPT detail callbacks cannot reach WordPress
+  escaping functions as Closure objects.
+
+### v10.18.124
 
 - Added the Site Profile dependency to lazy Sitemaps tab and sitemap AJAX loads,
   preventing the news-outlet sitemap check from calling an undefined helper.

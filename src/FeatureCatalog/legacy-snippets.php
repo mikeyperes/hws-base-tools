@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
+
 /**
  * HWS Base Tools - Snippets Settings Dashboard
  *
@@ -77,15 +79,9 @@ function display_settings_snippets() {
                         // Check if snippet is deprecated
                         $is_deprecated = isset( $snippet['deprecated'] ) && $snippet['deprecated'];
 
-                        // Ensure info is a string (fallback to empty)
-                        $info_text = '';
-                        if ( isset( $snippet['info'] ) ) {
-                            if ( is_callable( $snippet['info'] ) ) {
-                                $info_text = call_user_func( $snippet['info'] );
-                            } elseif ( is_string( $snippet['info'] ) ) {
-                                $info_text = $snippet['info'];
-                            }
-                        }
+                        $info_text   = FeatureValueResolver::text( $snippet['info'] ?? '' );
+                        $name        = FeatureValueResolver::text( $snippet['name'] ?? '' );
+                        $description = FeatureValueResolver::text( $snippet['description'] ?? '' );
 
                         // Build deprecated class and badge
                         $deprecated_class = $is_deprecated ? ' deprecated' : '';
@@ -116,10 +112,10 @@ function display_settings_snippets() {
                             <div class="hws-snippet-content">
                                 <div class="hws-snippet-header">
                                     <code class="hws-snippet-id">' . esc_html( $snippet['id'] ) . '</code>
-                                    <span class="hws-snippet-name">' . esc_html( $snippet['name'] ) . '</span>
+                                    <span class="hws-snippet-name">' . esc_html( $name ) . '</span>
                                     ' . $deprecated_badge . '
                                 </div>
-                                <div class="hws-snippet-description">' . esc_html( $snippet['description'] ) . '</div>
+                                <div class="hws-snippet-description">' . esc_html( $description ) . '</div>
                                 ' . ( $info_text ? '<div class="hws-snippet-details"><strong>Details:</strong><br>' . wp_kses_post( $info_text ) . '</div>' : '' ) . '
                             </div>
                         </div>';
