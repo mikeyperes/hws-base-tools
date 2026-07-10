@@ -164,7 +164,12 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.122 (Current)
+### v10.18.123 (Current)
+
+- Kept ACF/CPT feature metadata deferred during early ACF initialization while
+  retaining nested callable resolution in the Features tab.
+
+### v10.18.122
 
 - Fixed the Features AJAX tab fatal by resolving nested lazy ACF/CPT metadata
   callbacks before rendering descriptions and code examples.

@@ -97,6 +97,10 @@ expect_true(
     '' === HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => new stdClass() ),
     'non-scalar feature metadata resolves safely to an empty string'
 );
+expect_true(
+    ! preg_match( "/'info'\s*=>\s*display_(?:acf|cpt)_structure\s*\(/", source( 'src/LegacyCompatibility/legacy-runtime.php' ) ),
+    'ACF and CPT feature metadata stays deferred until dashboard helpers load'
+);
 
 $runtime_options = source( 'src/PluginRuntime/RuntimeOptions.php' );
 expect_true( str_contains( $runtime_options, "'hws_update_urls_enabled'       => 'no'" ), 'public update URLs seed disabled' );
