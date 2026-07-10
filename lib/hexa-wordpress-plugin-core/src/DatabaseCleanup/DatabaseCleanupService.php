@@ -211,9 +211,12 @@ final class DatabaseCleanupService {
         $log    = [];
 
         $this->load_plugin_functions();
-        if ( function_exists( 'deactivate_plugins' ) && ! empty( $before['active'] ) ) {
+        $was_initially_active = ! empty( $session['initially_active'] );
+        if ( function_exists( 'deactivate_plugins' ) && ! $was_initially_active && ! empty( $before['active'] ) ) {
             deactivate_plugins( $this->plugin_file, true, false );
-            $log[] = $this->log_entry( 'success', 'Deactivated WP-Optimize after the cleanup run.' );
+            $log[] = $this->log_entry( 'success', 'Restored WP-Optimize to its inactive pre-run state.' );
+        } elseif ( $was_initially_active && ! empty( $before['active'] ) ) {
+            $log[] = $this->log_entry( 'info', 'WP-Optimize was active before the run and remains active.' );
         } else {
             $log[] = $this->log_entry( 'info', 'WP-Optimize was already inactive after the cleanup run.' );
         }

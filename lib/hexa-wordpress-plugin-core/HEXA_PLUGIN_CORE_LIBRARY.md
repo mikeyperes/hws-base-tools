@@ -27,11 +27,13 @@ src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
 src/ContentCleanup/     Hexa\PluginCore\ContentCleanup
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
+src/DatabaseCleanup/    Hexa\PluginCore\DatabaseCleanup
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
 src/FaqSets/            Hexa\PluginCore\FaqSets
 src/GettingStartedChecklist/
                         Hexa\PluginCore\GettingStartedChecklist
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/ObjectCache/        Hexa\PluginCore\ObjectCache
 src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
@@ -121,7 +123,9 @@ Namespace:
 Hexa\PluginCore\GettingStartedChecklist
 ```
 
-Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with collapsible parent steps, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, optional image preview assets in reports, and a collapsed dark technical activity log.
+Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with simple action rows, collapsible parent steps only when real subtasks exist, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, optional image preview assets in reports, and a collapsed dark technical activity log.
+
+Set `show_type_badges` to `false` for checklist screens that are meant to read as simple action lists. Keep it enabled when request type labels help operators understand mixed setup, status-check, destructive, and configuration tasks.
 
 Checklist reports can include `meta.preview_assets` as an array of `label`, `url`, `preview_url`, `format`, and `meta`. Core renders those as visible image preview cards above the report table. Reports can also include `meta.documentation` and `meta.summary_items` to show plain-English before/action/verified-after proof above the raw table. For `wp_config_changes`, Core uses `Before Action`, `Requested Value`, and `Verified After`; host plugins must decide success from the verified value, not just the writer return.
 
@@ -129,6 +133,7 @@ Required rules:
 
 - Keep plugin-specific callbacks in the host plugin.
 - Keep checklist UI, AJAX execution, status icons, subtask sequencing, and log rendering in Hexa Core.
+- Simple one-action steps should render as plain list rows with individual run buttons. Do not add fake subtasks or fake accordions for simple steps.
 - A parent step with subtasks must stay in the running state until each subtask has finished.
 - Callback returns may be `true`, `false`, a string, `WP_Error`, or an array with `success`, `message`, `logs`, and optional `data`.
 - Step and subtask `type` values should be one of `callback`, `status_check`, `setup_action`, `feature_toggle`, `config_mutation`, `ajax_request`, or `custom`.
@@ -767,13 +772,17 @@ $logger->add( new ActivityLogEntry( 'Update started.', [], 'admin', 'updater', n
 
 Every consuming plugin should:
 
-1. Load Composer or the vendored core autoloader.
-2. Create `Hexa\PluginCore\CoreRuntime\PluginContext`.
-3. Create `Hexa\PluginCore\CoreBootstrap\CoreBootstrap`.
-4. Add core modules and host adapter modules.
-5. Call `boot()` once.
+1. Require the vendored root `bootstrap.php` and register its candidate.
+2. Let the shared resolver select one package before referencing any Core class.
+3. Create `Hexa\PluginCore\CoreRuntime\PluginContext`.
+4. Create `Hexa\PluginCore\CoreBootstrap\CoreBootstrap`.
+5. Add core modules and host adapter modules, then call `boot()` once.
 
 ```php
+$core_root = __DIR__ . '/lib/hexa-wordpress-plugin-core';
+require_once $core_root . '/bootstrap.php';
+\hexa_plugin_core_register_package( 'example-plugin', $core_root );
+
 use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
 use Hexa\PluginCore\CoreRuntime\PluginContext;
 
@@ -1188,6 +1197,18 @@ public function register(): void;
 
 Do not execute feature behavior at include time.
 
+## Database Cleanup
+
+Namespace: `Hexa\PluginCore\DatabaseCleanup`
+
+Use `DatabaseCleanupService`, `DatabaseCleanupAjaxController`, and `DatabaseCleanupRenderer` for WP-Optimize-backed cleanup sessions. Core owns provider activation, task/table iteration, live reporting, and restoring the provider to its pre-run activation state. Hosts provide capability, nonce, AJAX names, labels, and the provider plugin file.
+
+## Object Cache
+
+Namespace: `Hexa\PluginCore\ObjectCache`
+
+Use `LiteSpeedRedisService` to distinguish configured Redis from a working object cache. A healthy `active` result requires LiteSpeed settings, a drop-in, direct Redis connectivity, and a successful WordPress cache round trip. Hosts own AJAX guards and placement, not duplicate connection logic.
+
 ## Support
 
 Namespace:
@@ -1199,10 +1220,19 @@ Hexa\PluginCore\CoreRuntime
 Core classes:
 
 ```text
+CorePackageRuntime
 PluginContext
 ```
 
 Use `PluginContext` for host plugin identity. Do not hard-code host plugin names inside shared core classes.
+
+`CorePackageRuntime::report()` exposes the single selected package root, every registered vendored candidate, package fingerprint mismatches, incompatible constraints, and Core classes loaded outside the selected root. Every host must use root `bootstrap.php`; competing plugin-specific autoloaders are forbidden.
+
+## Checklist Workflow Extensions
+
+`GettingStartedChecklistRenderer` exposes a host-neutral browser API on `root.hexaChecklistApi`. It dispatches `hexa:checklist:ready` and `hexa:checklist:run` events. A host with a specialized live workflow may claim only its own step by setting `event.detail.handled = true` and assigning `event.detail.promise`.
+
+The API provides input collection/validation, row state, reports, logs, and guarded arbitrary-action POST requests. Host-specific step IDs, input keys, AJAX actions, CSS, and result mapping stay in the host plugin. Number inputs support `min`, `max`, and `step` with browser and server enforcement.
 
 ## Agent Checklist
 

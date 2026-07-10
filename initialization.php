@@ -80,38 +80,6 @@ require_once __DIR__ . '/src/Core/Autoloader.php';
 
 \HWS\BaseTools\Core\Autoloader::register( __DIR__ . '/src' );
 
-function hws_register_hexa_plugin_core_autoloader(): void {
-    static $registered = false;
-
-    if ( $registered ) {
-        return;
-    }
-
-    $base_dir = __DIR__ . '/lib/hexa-wordpress-plugin-core/src/';
-    $prefix   = 'Hexa\\PluginCore\\';
-
-    spl_autoload_register( static function( $class_name ) use ( $base_dir, $prefix ) {
-        if ( strpos( $class_name, $prefix ) !== 0 ) {
-            return;
-        }
-
-        $relative_class = substr( $class_name, strlen( $prefix ) );
-        $file           = $base_dir . str_replace( '\\', DIRECTORY_SEPARATOR, $relative_class ) . '.php';
-
-        if ( is_readable( $file ) ) {
-            require_once $file;
-        }
-    } );
-
-    $registered = true;
-}
-
-hws_register_hexa_plugin_core_autoloader();
-
-if ( is_admin() && ! class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\CoreUi', false ) ) {
-    class_exists( '\\Hexa\\PluginCore\\WpAdminComponents\\CoreUi' );
-}
-
 include_once __DIR__ . '/safe-wrappers.php';
 if ( is_admin() ) {
     include_once __DIR__ . '/settings-dashboard-check-plugins.php';
@@ -557,7 +525,7 @@ $plugin_name = "Hexa Web Systems - Website Base Tool";
 $plugin_description = "Basic tools for optimization, performance, and debugging on Hexa based web systems.";
 $author_name = "Michael Peres";
 $plugin_uri = "https://github.com/mikeyperes/hws-base-tools";
-$plugin_version = "10.18.117";
+$plugin_version = "10.18.119";
 $author_uri = "https://michaelperes.com";
 $api_url = "https://api.github.com/repos/mikeyperes/hws-base-tools";
 $plugin_github_url = "https://github.com/mikeyperes/hws-base-tools";

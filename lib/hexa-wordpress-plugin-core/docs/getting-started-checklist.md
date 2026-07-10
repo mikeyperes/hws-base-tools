@@ -8,6 +8,8 @@ Hexa\PluginCore\GettingStartedChecklist
 
 Use this module when a plugin needs a reusable setup or onboarding process that runs plugin-owned callbacks in a predictable sequence.
 
+Set `show_type_badges` to `false` when the checklist is being used as a simple action list and the request type would read like non-clickable clutter.
+
 ## Core Classes
 
 - `GettingStartedChecklistConfig`: host-specific IDs, labels, action names, nonce settings, capability, and registered steps.
@@ -44,7 +46,7 @@ Each step may also define:
 
 Use `required_inputs` when a checklist item cannot run until an operator types a value. `inputs` is accepted as an alias for the same structure. Core owns the UI fields, client-side validation, AJAX payload, server-side validation, sanitization, and callback payload. The host plugin owns only the callback that consumes the typed value.
 
-Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, `search`, and `confirmation`. Required fields block item, step, and full-checklist execution until valid values are entered.
+Supported field types are `text`, `email`, `url`, `password`, `number`, `tel`, `search`, and `confirmation`. Number fields support `min`, `max`, and `step`; Core enforces the range in both the browser and the guarded server runner. Required fields block item, step, and full-checklist execution until valid values are entered.
 
 ```php
 [
@@ -128,6 +130,31 @@ function my_plugin_run_quick_start_task(array $payload): array {
 
 Do not use this runner to delete production posts. It is a reusable UI/proof sample for typed destructive confirmation and report rendering.
 
+## Workflow Extensions
+
+Use the browser workflow extension API when a host step needs a specialized live visualization that is not a general checklist report. Core still owns validation, state, AJAX helpers, logs, and the checklist lifecycle; the host owns only its domain-specific renderer and result mapping.
+
+Each rendered checklist root exposes `root.hexaChecklistApi` and dispatches:
+
+- `hexa:checklist:ready` when the API is available.
+- `hexa:checklist:run` before Core runs a step or item.
+
+The run event detail includes `api`, `row`, `scope`, `stepId`, `subtaskId`, `handled`, and `promise`. A host claims only its own step by setting `handled = true` and assigning a promise. The promise must resolve to `true` or `false`.
+
+```js
+const root = document.querySelector('[data-hpc-getting-started-checklist]');
+
+root.addEventListener('hexa:checklist:run', (event) => {
+    const detail = event.detail;
+    if (detail.scope !== 'step' || detail.stepId !== 'host-owned-workflow') return;
+
+    detail.handled = true;
+    detail.promise = runHostWorkflow(detail.api, detail.row);
+});
+```
+
+Do not add host step IDs, AJAX action names, field keys, or domain-specific CSS/JavaScript to `GettingStartedChecklistRenderer`.
+
 ## Basic Setup
 
 ```php
@@ -208,6 +235,8 @@ Callbacks may return:
 ## UI Behavior
 
 - `Run Checklist` executes top-level steps in order.
+- Simple steps render as one row in a continuous list with their own run button.
+- Only steps that actually contain subtasks render as expandable parent sections.
 - A step with subtasks shows the parent row as running while each subtask runs one after another.
 - A completed item shows a green check SVG.
 - A failed item shows a red X SVG.

@@ -139,31 +139,34 @@ final class GettingStartedChecklistRenderer {
 
     private function step_html( GettingStartedChecklistStep $step ): string {
         $subtasks = $step->subtasks;
+        $has_subtasks = [] !== $subtasks;
+        $show_type_badges = $this->config->show_type_badges();
 
         ob_start();
         ?>
-        <details class="hpc-gsc-step" data-gsc-step-card data-step-id="<?php echo esc_attr( $step->id ); ?>" open>
-            <summary class="hpc-gsc-row hpc-gsc-step-row" data-gsc-item data-gsc-step-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="" data-request-type="<?php echo esc_attr( $step->type ); ?>" data-has-action="<?php echo $step->has_callback() ? '1' : '0'; ?>" data-has-subtasks="<?php echo [] !== $subtasks ? '1' : '0'; ?>" data-has-required-inputs="<?php echo [] !== $step->required_inputs ? '1' : '0'; ?>" data-status="pending">
-                <?php echo $this->status_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <div class="hpc-gsc-main">
-                    <div class="hpc-gsc-title-line">
-                        <strong><?php echo esc_html( $step->label ); ?></strong>
-                        <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $step->type ) ); ?></span>
-                        <span class="hpc-gsc-state" data-gsc-state>Pending</span>
+        <?php if ( $has_subtasks ) : ?>
+            <details class="hpc-gsc-step hpc-gsc-step-parent" data-gsc-step-card data-step-id="<?php echo esc_attr( $step->id ); ?>" open>
+                <summary class="hpc-gsc-row hpc-gsc-step-row" data-gsc-item data-gsc-step-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="" data-request-type="<?php echo esc_attr( $step->type ); ?>" data-has-action="<?php echo $step->has_callback() ? '1' : '0'; ?>" data-has-subtasks="1" data-has-required-inputs="<?php echo [] !== $step->required_inputs ? '1' : '0'; ?>" data-status="pending">
+                    <?php echo $this->status_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <div class="hpc-gsc-main">
+                        <div class="hpc-gsc-title-line">
+                            <strong><?php echo esc_html( $step->label ); ?></strong>
+                            <?php if ( $show_type_badges ) : ?>
+                                <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $step->type ) ); ?></span>
+                            <?php endif; ?>
+                            <span class="hpc-gsc-state" data-gsc-state>Pending</span>
+                        </div>
+                        <?php if ( '' !== $step->description ) : ?>
+                            <p><?php echo esc_html( $step->description ); ?></p>
+                        <?php endif; ?>
+                        <?php echo $this->required_inputs_html( $step->required_inputs, $step->id, '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        <div class="hpc-gsc-report" data-gsc-report hidden></div>
                     </div>
-                    <?php if ( '' !== $step->description ) : ?>
-                        <p><?php echo esc_html( $step->description ); ?></p>
-                    <?php endif; ?>
-                    <?php echo $this->required_inputs_html( $step->required_inputs, $step->id, '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                    <div class="hpc-gsc-report" data-gsc-report hidden></div>
-                </div>
-                <div class="hpc-gsc-row-action">
-                    <span class="hpc-gsc-section-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>
-                    <?php echo DynamicButton::render( [ 'label' => [] !== $subtasks ? $step->action_label . ' Step' : $step->action_label, 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-step' => true, 'data-step-id' => $step->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                </div>
-            </summary>
-
-            <?php if ( [] !== $subtasks ) : ?>
+                    <div class="hpc-gsc-row-action">
+                        <span class="hpc-gsc-section-toggle" aria-hidden="true"><svg viewBox="0 0 512 512" focusable="false"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"></path></svg></span>
+                        <?php echo DynamicButton::render( [ 'label' => $step->action_label . ' Step', 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-step' => true, 'data-step-id' => $step->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </div>
+                </summary>
                 <div class="hpc-gsc-subtasks" data-gsc-subtasks="<?php echo esc_attr( $step->id ); ?>">
                     <?php foreach ( $subtasks as $subtask ) : ?>
                         <div class="hpc-gsc-row hpc-gsc-subtask-row" data-gsc-item data-gsc-subtask-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="<?php echo esc_attr( $subtask->id ); ?>" data-request-type="<?php echo esc_attr( $subtask->type ); ?>" data-has-action="<?php echo $subtask->has_callback() ? '1' : '0'; ?>" data-has-required-inputs="<?php echo [] !== $subtask->required_inputs ? '1' : '0'; ?>" data-status="pending">
@@ -171,7 +174,9 @@ final class GettingStartedChecklistRenderer {
                             <div class="hpc-gsc-main">
                                 <div class="hpc-gsc-title-line">
                                     <strong><?php echo esc_html( $subtask->label ); ?></strong>
-                                    <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $subtask->type ) ); ?></span>
+                                    <?php if ( $show_type_badges ) : ?>
+                                        <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $subtask->type ) ); ?></span>
+                                    <?php endif; ?>
                                     <span class="hpc-gsc-state" data-gsc-state>Pending</span>
                                 </div>
                                 <?php if ( '' !== $subtask->description ) : ?>
@@ -186,8 +191,31 @@ final class GettingStartedChecklistRenderer {
                         </div>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
-        </details>
+            </details>
+        <?php else : ?>
+            <div class="hpc-gsc-step hpc-gsc-step-single" data-gsc-step-card data-step-id="<?php echo esc_attr( $step->id ); ?>">
+                <div class="hpc-gsc-row hpc-gsc-step-row" data-gsc-item data-gsc-step-row data-step-id="<?php echo esc_attr( $step->id ); ?>" data-subtask-id="" data-request-type="<?php echo esc_attr( $step->type ); ?>" data-has-action="<?php echo $step->has_callback() ? '1' : '0'; ?>" data-has-subtasks="0" data-has-required-inputs="<?php echo [] !== $step->required_inputs ? '1' : '0'; ?>" data-status="pending">
+                    <?php echo $this->status_icon(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <div class="hpc-gsc-main">
+                        <div class="hpc-gsc-title-line">
+                            <strong><?php echo esc_html( $step->label ); ?></strong>
+                            <?php if ( $show_type_badges ) : ?>
+                                <span class="hpc-gsc-type"><?php echo esc_html( $this->type_label( $step->type ) ); ?></span>
+                            <?php endif; ?>
+                            <span class="hpc-gsc-state" data-gsc-state>Pending</span>
+                        </div>
+                        <?php if ( '' !== $step->description ) : ?>
+                            <p><?php echo esc_html( $step->description ); ?></p>
+                        <?php endif; ?>
+                        <?php echo $this->required_inputs_html( $step->required_inputs, $step->id, '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        <div class="hpc-gsc-report" data-gsc-report hidden></div>
+                    </div>
+                    <div class="hpc-gsc-row-action">
+                        <?php echo DynamicButton::render( [ 'label' => $step->action_label, 'working_label' => 'Running...', 'success_label' => 'Done', 'error_label' => 'Failed', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-gsc-run-step' => true, 'data-step-id' => $step->id ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php
         return (string) ob_get_clean();
     }
@@ -233,6 +261,9 @@ final class GettingStartedChecklistRenderer {
                         placeholder="<?php echo esc_attr( (string) ( $input['placeholder'] ?? '' ) ); ?>"
                         <?php echo $required ? 'required' : ''; ?>
                         <?php echo '' !== (string) ( $input['pattern'] ?? '' ) ? 'pattern="' . esc_attr( (string) $input['pattern'] ) . '"' : ''; ?>
+                        <?php echo '' !== (string) ( $input['min'] ?? '' ) ? 'min="' . esc_attr( (string) $input['min'] ) . '"' : ''; ?>
+                        <?php echo '' !== (string) ( $input['max'] ?? '' ) ? 'max="' . esc_attr( (string) $input['max'] ) . '"' : ''; ?>
+                        <?php echo '' !== (string) ( $input['step'] ?? '' ) ? 'step="' . esc_attr( (string) $input['step'] ) . '"' : ''; ?>
                         <?php echo '' !== (string) ( $input['autocomplete'] ?? '' ) ? 'autocomplete="' . esc_attr( (string) $input['autocomplete'] ) . '"' : ''; ?>
                         data-gsc-input
                         data-input-id="<?php echo esc_attr( $id ); ?>"
@@ -265,12 +296,14 @@ final class GettingStartedChecklistRenderer {
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker select{background:#fff;border:1px solid #cbd6e2;border-radius:6px;box-shadow:none;color:#111827;font-size:13px;min-height:34px;padding:5px 30px 5px 10px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-status{background:#eaf8ef;border:1px solid #ccefd7;border-radius:999px;color:var(--hpc-green);font-size:11px;font-weight:900;line-height:1;padding:7px 9px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker small{color:var(--hpc-muted);display:block;flex-basis:100%;font-size:11px;line-height:1.35}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-list{display:grid;gap:12px;margin:0 0 16px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-list{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;display:block;margin:0 0 16px;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step{background:#fff;border:0;border-top:1px solid var(--hpc-line);border-radius:0;overflow:hidden}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step:first-child{border-top:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step summary{cursor:pointer;list-style:none}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step summary::-webkit-details-marker{display:none}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row{align-items:flex-start;display:grid;gap:12px;grid-template-columns:34px minmax(0,1fr) auto;padding:14px}
-            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step-row{background:#fbfcfe}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-row{align-items:flex-start;display:grid;gap:12px;grid-template-columns:34px minmax(0,1fr) auto;padding:14px 16px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step-row{background:#fff}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step-parent[open]>.hpc-gsc-step-row{background:#fbfcfe}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-subtasks{border-top:1px solid #edf1f6;display:grid;gap:0}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-subtask-row{border-top:1px solid #edf1f6;margin-left:34px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-subtask-row:first-child{border-top:0}
@@ -556,6 +589,12 @@ final class GettingStartedChecklistRenderer {
                         message = label + ' is required.';
                     } else if (value && type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                         message = label + ' must be a valid email address.';
+                    } else if (value && type === 'number' && !Number.isFinite(Number(value))) {
+                        message = label + ' must be a number.';
+                    } else if (value && type === 'number' && input.min !== '' && Number(value) < Number(input.min)) {
+                        message = label + ' must be at least ' + input.min + '.';
+                    } else if (value && type === 'number' && input.max !== '' && Number(value) > Number(input.max)) {
+                        message = label + ' must be no more than ' + input.max + '.';
                     } else if (type === 'confirmation' && input.dataset.confirmText) {
                         var expected = text(input.dataset.confirmText);
                         var actual = value;
@@ -649,6 +688,68 @@ final class GettingStartedChecklistRenderer {
                     return payload.data || {};
                 });
             }
+            function postAction(action, payload){
+                var body = new URLSearchParams();
+                body.set('action', action || '');
+                body.set(root.dataset.nonceField || 'nonce', root.dataset.nonce || '');
+                Object.keys(payload || {}).forEach(function(key){
+                    var value = payload[key];
+                    if (Array.isArray(value)) {
+                        value.forEach(function(item){ body.append(key + '[]', item); });
+                    } else {
+                        body.set(key, value);
+                    }
+                });
+                return fetch(root.dataset.ajaxUrl || window.ajaxurl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+                    body: body.toString()
+                }).then(function(response){ return response.json(); }).then(function(payload){
+                    if (!payload || !payload.success) {
+                        var message = payload && payload.data && (payload.data.message || payload.data.error) ? (payload.data.message || payload.data.error) : 'AJAX request failed.';
+                        throw new Error(message);
+                    }
+                    return payload.data || {};
+                });
+            }
+            var extensionApi = {
+                root: root,
+                text: text,
+                escapeHtml: esc,
+                cssSelectorValue: css,
+                currentTemplateId: currentTemplateId,
+                collectRowInputs: collectRowInputs,
+                validateRowInputs: validateRowInputs,
+                setRowState: setRowState,
+                reportTarget: reportTarget,
+                clearReport: clearReport,
+                renderReports: renderReports,
+                addLog: addLog,
+                addLogs: addLogs,
+                refreshInputState: refreshInputState,
+                postAction: postAction
+            };
+            root.hexaChecklistApi = extensionApi;
+            root.dispatchEvent(new CustomEvent('hexa:checklist:ready', {detail:{api:extensionApi}}));
+            function runExtension(row, scope){
+                var detail = {
+                    api: extensionApi,
+                    row: row,
+                    scope: scope,
+                    stepId: row ? row.dataset.stepId || '' : '',
+                    subtaskId: row ? row.dataset.subtaskId || '' : '',
+                    handled: false,
+                    promise: null
+                };
+                root.dispatchEvent(new CustomEvent('hexa:checklist:run', {detail:detail}));
+                if (!detail.handled) return null;
+                return Promise.resolve(detail.promise).then(function(result){ return result !== false; }).catch(function(error){
+                    setRowState(row, 'failed', error && error.message ? error.message : 'Failed');
+                    addLog({level:'error', message:error && error.message ? error.message : 'Checklist workflow extension failed.', context:{step_id:detail.stepId, subtask_id:detail.subtaskId}});
+                    return false;
+                });
+            }
             function runItem(row){
                 var stepId = row ? row.dataset.stepId : '';
                 var subtaskId = row ? row.dataset.subtaskId : '';
@@ -658,6 +759,8 @@ final class GettingStartedChecklistRenderer {
                     refreshInputState();
                     return Promise.resolve(false);
                 }
+                var extension = runExtension(row, 'item');
+                if (extension) return extension;
                 setRowState(row, 'running', 'Running');
                 clearReport(row);
                 return postItem(stepId, subtaskId, collectRowInputs(row)).then(function(data){
@@ -703,6 +806,8 @@ final class GettingStartedChecklistRenderer {
                     refreshInputState();
                     return false;
                 }
+                var extension = runExtension(stepRow, 'step');
+                if (extension) return extension;
                 if (!subtasks.length) {
                     return runItem(stepRow);
                 }
