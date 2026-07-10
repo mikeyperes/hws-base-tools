@@ -164,7 +164,12 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.123 (Current)
+### v10.18.124 (Current)
+
+- Added the Site Profile dependency to lazy Sitemaps tab and sitemap AJAX loads,
+  preventing the news-outlet sitemap check from calling an undefined helper.
+
+### v10.18.123
 
 - Kept ACF/CPT feature metadata deferred during early ACF initialization while
   retaining nested callable resolution in the Features tab.

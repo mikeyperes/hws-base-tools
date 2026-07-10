@@ -83,6 +83,14 @@ expect_true( array_slice( $tab_ids, 0, 2 ) === [ 'overview', 'quick-start' ], 'Q
 expect_true( $registry->normalize( 'getting-started-checklist' ) === 'quick-start', 'legacy Quick Start route remains compatible' );
 expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legacy Snippets remains visible and deprecated' );
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
+expect_true(
+    $registry->implementation_files_for_tab( 'sitemaps' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
+    'Sitemaps tab loads its Site Profile dependency first'
+);
+expect_true(
+    $registry->implementation_files_for_ajax_action( 'hws_sitemap_scan' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
+    'Sitemap AJAX actions load their Site Profile dependency first'
+);
 
 $secret_store = new HWS\BaseTools\Security\SecretStore( 'hws_master_secret_key' );
 expect_true( $secret_store->set( 'a-long-test-secret-value' ), 'master secret can be stored' );

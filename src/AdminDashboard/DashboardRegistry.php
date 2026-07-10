@@ -66,29 +66,35 @@ final class DashboardRegistry {
 
     public function load_tab( string $id ): void {
         $id = $this->aliases[ $id ] ?? $id;
-        $module = $this->modules[ $id ] ?? null;
 
-        if ( ! $module ) {
-            return;
-        }
-
-        foreach ( $module->files as $file ) {
+        foreach ( $this->implementation_files_for_tab( $id ) as $file ) {
             $this->load_file( $file );
         }
     }
 
     public function load_ajax_action( string $action ): void {
-        foreach ( $this->ajax_file_map() as $prefix => $files ) {
-            if ( $action !== $prefix && ! str_starts_with( $action, $prefix ) ) {
-                continue;
-            }
-
-            foreach ( $files as $file ) {
-                $this->load_file( $file );
-            }
-
-            return;
+        foreach ( $this->implementation_files_for_ajax_action( $action ) as $file ) {
+            $this->load_file( $file );
         }
+    }
+
+    /** @return string[] */
+    public function implementation_files_for_tab( string $id ): array {
+        $id = $this->aliases[ $id ] ?? $id;
+        $module = $this->modules[ $id ] ?? null;
+
+        return $module ? $module->files : [];
+    }
+
+    /** @return string[] */
+    public function implementation_files_for_ajax_action( string $action ): array {
+        foreach ( $this->ajax_file_map() as $prefix => $files ) {
+            if ( $action === $prefix || str_starts_with( $action, $prefix ) ) {
+                return $files;
+            }
+        }
+
+        return [];
     }
 
     public function render( string $id ): bool {
@@ -140,7 +146,10 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'shortcodes', 'Shortcodes', [ \HWS\BaseTools\FeatureCatalog\ShortcodeCatalog::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps', 'hws_base_tools\\render_tab_sitemaps', [ 'settings-dashboard-sitemaps.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps', 'hws_base_tools\\render_tab_sitemaps', [
+            'settings-dashboard-site-profile.php',
+            'settings-dashboard-sitemaps.php',
+        ] ) );
         $this->add( new DashboardModuleDefinition( 'cleanup', 'Cleanup', 'hws_base_tools\\display_settings_cleanup', [ 'settings-dashboard-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'backups', 'Backups', 'hws_base_tools\\render_tab_backups', [ 'settings-dashboard-backups.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [ 'settings-dashboard-update-center.php' ] ) );
@@ -202,7 +211,7 @@ final class DashboardRegistry {
             'hws_footer_text_'                   => [ 'settings-dashboard-footer-text.php' ],
             'hws_toggle_ui_cleanup'              => [ 'settings-dashboard-ui-cleanup.php' ],
             'hws_ui_cleanup_bulk'                => [ 'settings-dashboard-ui-cleanup.php' ],
-            'hws_sitemap_'                       => [ 'settings-dashboard-sitemaps.php' ],
+            'hws_sitemap_'                       => [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
             'hws_content_cleanup_'               => [ 'settings-dashboard-cleanup.php' ],
             'hws_backup_file_cleanup_'           => [ 'settings-dashboard-cleanup.php' ],
             'hws_article_media_cleanup_'         => [ 'settings-dashboard-cleanup.php' ],
