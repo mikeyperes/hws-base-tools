@@ -164,7 +164,12 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.130 (Current)
+### v10.18.131 (Current)
+
+- Ensured the flat sidebar releases its desktop width when collapsed instead
+  of leaving an empty 220-pixel navigation track.
+
+### v10.18.130
 
 - Restored the Hexa Core sidebar as a flat, titled, one-column navigation list
   instead of bordered wrapping tab cards.

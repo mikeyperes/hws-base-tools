@@ -127,7 +127,9 @@ expect_true( str_contains( $dashboard_source, "'sidebar_identity'=> hws_dashboar
 expect_true(
     str_contains( $dashboard_css, '#hws-base-tools .hpc-host-tabs-shell.is-bar > .hpc-host-tabs' )
     && str_contains( $dashboard_css, '#hws-base-tools .hpc-host-rail .hpc-host-tabs' )
-    && str_contains( $dashboard_css, 'border-left-color: #4055df' ),
+    && str_contains( $dashboard_css, 'border-left-color: #4055df' )
+    && str_contains( $dashboard_css, '#hws-base-tools .hpc-host-tabs-shell.is-sidebar.is-sidebar-collapsed' )
+    && str_contains( $dashboard_css, 'grid-template-columns: 44px minmax(0, 1fr)' ),
     'HWS preserves the flat titled Core sidebar instead of overriding it with wrapping tab cards'
 );
 expect_true(
