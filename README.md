@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.133 (Current)
+### v10.18.134 (Current)
+
+- Updated Hexa WordPress Plugin Core to `0.19.57` so Quick Start search visibly
+  removes nonmatching grid rows instead of only marking them hidden in the DOM.
+- Allowed Core collapsible titles to wrap on narrow screens instead of truncating.
+
+### v10.18.133
 
 - Updated the bundled Hexa WordPress Plugin Core to `0.19.56` and enabled its
   reusable nested search on Quick Start.

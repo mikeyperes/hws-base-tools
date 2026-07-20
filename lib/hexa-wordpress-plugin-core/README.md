@@ -208,6 +208,8 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Collection Filters and Sidebar Header
 
+Version 0.19.57 gives filtered items an explicit Core hide state so host row layouts cannot override `hidden` and leave nonmatches visible. Core collapsible titles also wrap instead of truncating on narrow screens.
+
 Version 0.19.56 lets reusable Getting Started checklists opt into Core collection search. Nested and standalone actions are filterable, parent context is indexed with each child, counts update immediately, and active searches are reapplied after template row replacement.
 
 Version 0.19.55 keeps the complete grouped sidebar in normal document flow. The

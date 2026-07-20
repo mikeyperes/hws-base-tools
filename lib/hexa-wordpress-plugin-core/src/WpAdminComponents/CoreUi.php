@@ -97,7 +97,7 @@ final class CoreUi {
             .hpc-section{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;margin:0 0 14px;overflow:hidden}
             .hpc-section summary{align-items:center;cursor:pointer;display:flex;font-size:15px;font-weight:800;gap:12px;justify-content:space-between;list-style:none;padding:15px 16px}
             .hpc-section summary::-webkit-details-marker{display:none}
-            .hpc-section-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+            .hpc-section-title{min-width:0;overflow-wrap:anywhere;white-space:normal}
             .hpc-section-summary-side{align-items:center;display:inline-flex;flex:0 0 auto;gap:10px;margin-left:auto}
             .hpc-section-toggle{align-items:center;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;color:var(--hpc-blue);display:inline-flex;height:28px;justify-content:center;transition:background .18s,border-color .18s,color .18s;width:28px}
             .hpc-section-toggle svg{display:block;fill:currentColor;height:12px;transform:rotate(180deg);transition:transform .18s;width:12px}
@@ -128,6 +128,7 @@ final class CoreUi {
             .hpc-collection-filter-status{color:var(--hpc-muted);font-size:12px;justify-self:end;white-space:nowrap}
             .hpc-collection-filter-status strong{color:var(--hpc-ink)}
             .hpc-collection-filter-empty{color:var(--hpc-muted);font-size:13px;grid-column:1/-1;margin:0;padding:3px 0}
+            .hpc-ui [data-hpc-filter-hidden="1"]{display:none!important}
             @media(max-width:680px){.hpc-collection-filter{grid-template-columns:minmax(0,1fr)}.hpc-collection-filter-status{justify-self:start}}
             .hpc-smart-search{position:relative}
             .hpc-smart-search-status{color:var(--hpc-muted);font-size:12px;margin-top:6px}
@@ -251,11 +252,16 @@ final class CoreUi {
                             if (!text) text = item.textContent || '';
                             var matches = !query || text.toLocaleLowerCase().indexOf(query) !== -1;
                             item.hidden = !matches;
+                            if (matches) item.removeAttribute('data-hpc-filter-hidden');
+                            else item.setAttribute('data-hpc-filter-hidden', '1');
                             if (matches) visible++;
                         });
                         selected(groupSelector, target).forEach(function(group) {
                             var groupItems = items.filter(function(item) { return group.contains(item); });
-                            group.hidden = !!query && groupItems.length > 0 && groupItems.every(function(item) { return item.hidden; });
+                            var groupHidden = !!query && groupItems.length > 0 && groupItems.every(function(item) { return item.hidden; });
+                            group.hidden = groupHidden;
+                            if (groupHidden) group.setAttribute('data-hpc-filter-hidden', '1');
+                            else group.removeAttribute('data-hpc-filter-hidden');
                         });
                         var singular = filter.dataset.itemLabelSingular || 'item';
                         var plural = filter.dataset.itemLabelPlural || 'items';

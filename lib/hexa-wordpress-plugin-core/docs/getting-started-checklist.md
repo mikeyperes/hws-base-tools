@@ -10,7 +10,7 @@ Use this module when a plugin needs a reusable setup or onboarding process that 
 
 Set `show_type_badges` to `false` when the checklist is being used as a simple action list and the request type would read like non-clickable clutter.
 
-Set `show_search` to `true` when a checklist contains enough actions to need filtering. Core renders the shared collection-search UI, searches both parent and actionable child metadata, updates visible/total counts, hides empty parent groups, and reapplies the active query when a template replaces the checklist rows. Hosts may customize `search_label`, `search_placeholder`, and `search_empty_message`; the default remains disabled so existing checklists do not change unexpectedly.
+Set `show_search` to `true` when a checklist contains enough actions to need filtering. Core renders the shared collection-search UI, searches both parent and actionable child metadata, updates visible/total counts, force-hides nonmatches even when host row CSS declares a display mode, hides empty parent groups, and reapplies the active query when a template replaces the checklist rows. Hosts may customize `search_label`, `search_placeholder`, and `search_empty_message`; the default remains disabled so existing checklists do not change unexpectedly.
 
 ## Core Classes
 

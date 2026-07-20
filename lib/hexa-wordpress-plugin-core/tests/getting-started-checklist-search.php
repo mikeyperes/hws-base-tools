@@ -109,6 +109,9 @@ $checks = [
     'Renders the configured empty state.' => str_contains( $html, 'Nothing matches this setup search.' ),
     'Reapplies filtering when templates replace checklist rows.' => str_contains( $ui_source, 'new MutationObserver(function() { applyFilter(); })' )
         && str_contains( $ui_source, 'observe(target, {childList:true, subtree:true})' ),
+    'Uses an explicit filter state that cannot be overridden by row display rules.' => str_contains( $ui_source, "item.setAttribute('data-hpc-filter-hidden', '1')" )
+        && str_contains( $ui_source, '[data-hpc-filter-hidden="1"]{display:none!important}' ),
+    'Allows long collapsible titles to wrap instead of truncating.' => str_contains( $ui_source, '.hpc-section-title{min-width:0;overflow-wrap:anywhere;white-space:normal}' ),
 ];
 
 foreach ( $checks as $message => $passed ) {
