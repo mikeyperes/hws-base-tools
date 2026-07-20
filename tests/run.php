@@ -116,6 +116,7 @@ expect_true(
 );
 
 $dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );
+$dashboard_css = source( 'assets/admin/dashboard.css' );
 expect_true(
     str_contains( $dashboard_source, "'layout'          => 'sidebar'" )
     && str_contains( $dashboard_source, "'sidebar_collapsible' => true" )
@@ -123,6 +124,17 @@ expect_true(
     'HWS dashboard uses the Hexa Core grouped, collapsible, persistent sidebar shell'
 );
 expect_true( str_contains( $dashboard_source, "'sidebar_identity'=> hws_dashboard_sidebar_identity()" ), 'HWS sidebar displays plugin and Core version identity' );
+expect_true(
+    str_contains( $dashboard_css, '#hws-base-tools .hpc-host-tabs-shell.is-bar > .hpc-host-tabs' )
+    && str_contains( $dashboard_css, '#hws-base-tools .hpc-host-rail .hpc-host-tabs' )
+    && str_contains( $dashboard_css, 'border-left-color: #4055df' ),
+    'HWS preserves the flat titled Core sidebar instead of overriding it with wrapping tab cards'
+);
+expect_true(
+    str_contains( $dashboard_source, 'class="hws-going-live-grid"' )
+    && str_contains( $dashboard_css, 'grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr))' ),
+    'Overview checklist grid remains responsive without horizontal overflow'
+);
 
 $team_directory_source = source( 'src/TeamMembers/TeamMemberDirectory.php' );
 $team_feature_source = source( 'src/TeamMembers/TeamMemberFeature.php' );

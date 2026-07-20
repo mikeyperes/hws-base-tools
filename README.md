@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.129 (Current)
+### v10.18.130 (Current)
+
+- Restored the Hexa Core sidebar as a flat, titled, one-column navigation list
+  instead of bordered wrapping tab cards.
+- Prevented the overview checklist grid from forcing horizontal page overflow.
+
+### v10.18.129
 
 - Ensured the Features tab loads the shared HWS toggle component before feature
   cards render, preventing plain-checkbox fallbacks for Team Member templates

@@ -5266,7 +5266,7 @@ function render_going_live_checklist() {
             <?php endif; ?>
 
             <!-- ─── THREE-COLUMN GRID ─── -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+            <div class="hws-going-live-grid">
 
                 <!-- Column 1: Recommended Snippets -->
                 <div>
