@@ -93,7 +93,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
 - `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
 - `SearchDisplay`: five reusable front-end WordPress search-form templates with shared markup, CSS, and accessible interactions.
-- `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, selected post types and sources, and one-query-only SQL hooks.
+- `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, selected post types and sources, one-query-only SQL hooks, and guarded JetEngine search-template bridging.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
@@ -214,9 +214,9 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Native Search Query Behavior
 
-Version 0.19.59 adds `Hexa\PluginCore\SearchQuery`, a reusable native WordPress search-results engine. It separates all/any/exact term logic from whole/prefix/contains word matching, supports selected public post types and explicit native or advanced sources, and keeps display options outside the behavior contract.
+Version 0.19.60 adds a guarded JetEngine listing-grid adapter to `Hexa\PluginCore\SearchQuery`. Version 0.19.59 introduced the reusable native WordPress search-results engine, separating all/any/exact term logic from whole/prefix/contains word matching, supporting selected public post types and explicit native or advanced sources, and keeping display options outside the behavior contract.
 
-Its `pre_get_posts` coordination is deliberately narrow: unrelated, admin, AJAX, REST, cron, feed, nested, disabled, and empty queries are rejected before host settings are loaded. The SQL callback binds to one exact `WP_Query` object and removes itself immediately after that query reaches it. See `docs/search-query.md` for the host protocol and mandatory performance guards.
+Its `pre_get_posts` coordination is deliberately narrow: unrelated, admin, AJAX, REST, cron, feed, unmarked nested, disabled, and empty queries are rejected before host settings are loaded. A trusted adapter may explicitly mark a secondary query created by a search-results template; the SQL callback still binds to that one exact `WP_Query` object and removes itself immediately after the query reaches it. See `docs/search-query.md` for the host protocol and mandatory performance guards.
 
 ## Collection Filters and Sidebar Header
 

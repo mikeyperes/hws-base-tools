@@ -717,22 +717,30 @@ Classes:
 SearchQueryConfiguration
 SearchTermParser
 SearchQueryEngine
+JetEngineSearchAdapter
 ```
 
 Use this namespace to alter one explicitly eligible native WordPress search-results query. The host owns option storage, capability/nonce checks, available public post types and taxonomies, and the request marker. Core owns normalization, bounded parsing, selected-source SQL, and query scoping.
 
 ```php
+$settings_provider = static function (): array {
+    return \Hexa\PluginCore\SearchQuery\SearchQueryConfiguration::normalize(
+        (array) get_option( 'example_search_behavior', [] ),
+        get_post_types( [ 'public' => true ], 'names' ),
+        get_taxonomies( [ 'public' => true ], 'names' )
+    );
+};
 $engine = new \Hexa\PluginCore\SearchQuery\SearchQueryEngine(
-    static function (): array {
-        return \Hexa\PluginCore\SearchQuery\SearchQueryConfiguration::normalize(
-            (array) get_option( 'example_search_behavior', [] ),
-            get_post_types( [ 'public' => true ], 'names' ),
-            get_taxonomies( [ 'public' => true ], 'names' )
-        );
-    },
+    $settings_provider,
     'example_search'
 );
 $engine->register();
+
+$jet_engine = new \Hexa\PluginCore\SearchQuery\JetEngineSearchAdapter(
+    $settings_provider,
+    'example_search'
+);
+$jet_engine->register();
 ```
 
 Supported behavior:
@@ -743,7 +751,7 @@ Supported behavior:
 - public post-type selection, result count from 0 to 100, and relevance/newest/oldest/title ordering
 - `shortcode` scope through a hidden marker, or deliberate `all` public-search scope
 
-Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state, binds `posts_search` to one exact `WP_Query` object, and removes the temporary filter immediately after that object reaches it. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
+Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, unmarked nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state, binds `posts_search` to one exact `WP_Query` object, and removes the temporary filter immediately after that object reaches it. `JetEngineSearchAdapter` can explicitly mark a posts grid created by a search-results template; archive grids and unrelated requests stay untouched. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
 
 Do not copy this into host `pre_get_posts` callbacks. Do not use it for suggestions: `SmartSearch` remains the separate AJAX typeahead/content-picker system. Full protocol: `docs/search-query.md`.
 

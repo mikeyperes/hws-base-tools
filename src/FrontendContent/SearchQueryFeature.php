@@ -4,12 +4,14 @@ namespace HWS\BaseTools\FrontendContent;
 
 use Hexa\PluginCore\SearchQuery\SearchQueryConfiguration;
 use Hexa\PluginCore\SearchQuery\SearchQueryEngine;
+use Hexa\PluginCore\SearchQuery\JetEngineSearchAdapter;
 
 final class SearchQueryFeature {
     public const OPTION_KEY = 'hws_search_behavior';
     public const QUERY_VAR = 'hexa_search';
 
     private static ?SearchQueryEngine $engine = null;
+    private static ?JetEngineSearchAdapter $jet_engine_adapter = null;
 
     /** @return array<string,mixed> */
     public static function settings(): array {
@@ -98,6 +100,11 @@ final class SearchQueryFeature {
 
         self::$engine = new SearchQueryEngine( [ self::class, 'settings' ], self::QUERY_VAR );
         self::$engine->register();
+
+        if ( class_exists( JetEngineSearchAdapter::class ) ) {
+            self::$jet_engine_adapter = new JetEngineSearchAdapter( [ self::class, 'settings' ], self::QUERY_VAR );
+            self::$jet_engine_adapter->register();
+        }
     }
 
     /** @return array<int,array<string,string>> */

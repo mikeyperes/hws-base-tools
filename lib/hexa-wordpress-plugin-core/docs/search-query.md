@@ -53,6 +53,14 @@ Preserves quoted phrases, removes duplicate terms case-insensitively, strips exp
 
 `SearchQueryEngine::register(): void` registers the public marker query variable and the guarded query hook. `SearchQueryEngine::build_search_sql()` is public for deterministic testing; hosts should normally let WordPress call the registered hooks.
 
+### `JetEngineSearchAdapter`
+
+`new JetEngineSearchAdapter(callable $settings_provider, string $marker_key = 'hexa_search')`
+
+`JetEngineSearchAdapter::register(): void` bridges a JetEngine posts listing grid to the same engine when a search-results template creates a secondary `WP_Query` instead of rendering the native main query. It copies only the current main search text and host marker, then applies Core's private explicit-query marker. The engine still owns post-type, source, count, ordering, and SQL behavior.
+
+The adapter rejects admin, AJAX, REST, cron, XML-RPC, feed, empty, suppressed, disabled, non-search, and non-main request contexts before loading host settings. It skips JetEngine grids configured as archive templates because those already consume the native main query. A host can reject a specific grid with `hexa_plugin_core_search_query_jet_engine_should_handle` or the `hexa_search_query_disabled` query argument.
+
 ## Required Host Protocol
 
 The host plugin owns:
@@ -70,21 +78,26 @@ Example:
 use Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer;
 use Hexa\PluginCore\SearchQuery\SearchQueryConfiguration;
 use Hexa\PluginCore\SearchQuery\SearchQueryEngine;
+use Hexa\PluginCore\SearchQuery\JetEngineSearchAdapter;
 
 $marker = 'example_search';
-$engine = new SearchQueryEngine(
-    static function (): array {
-        $stored = get_option( 'example_search_behavior', [] );
+$settings_provider = static function (): array {
+    $stored = get_option( 'example_search_behavior', [] );
 
-        return SearchQueryConfiguration::normalize(
-            is_array( $stored ) ? $stored : [],
-            get_post_types( [ 'public' => true ], 'names' ),
-            get_taxonomies( [ 'public' => true ], 'names' )
-        );
-    },
+    return SearchQueryConfiguration::normalize(
+        is_array( $stored ) ? $stored : [],
+        get_post_types( [ 'public' => true ], 'names' ),
+        get_taxonomies( [ 'public' => true ], 'names' )
+    );
+};
+$engine = new SearchQueryEngine(
+    $settings_provider,
     $marker
 );
 $engine->register();
+
+$jet_engine = new JetEngineSearchAdapter( $settings_provider, $marker );
+$jet_engine->register();
 
 echo SearchDisplayRenderer::render(
     [
@@ -103,13 +116,13 @@ The engine uses `pre_get_posts` only as a narrow coordination point. Before invo
 - non-object or incompatible query values;
 - wp-admin;
 - AJAX, cron, REST, and XML-RPC requests;
-- non-main and non-search queries;
+- non-main and non-search queries, except a secondary query carrying Core's trusted explicit adapter marker;
 - feeds;
 - empty search text;
 - `suppress_filters` queries;
 - queries carrying `hexa_search_query_disabled`.
 
-After normalization it rejects disabled configurations and unmarked requests in `shortcode` scope. Only then does it set allowed post types, count, and ordering. Its temporary `posts_search` callback compares the candidate query by object identity and removes itself immediately after the exact object reaches the filter.
+After normalization it rejects disabled configurations and unmarked requests in `shortcode` scope. Only then does it set allowed post types, count, and ordering. Its temporary `posts_search` callback compares the candidate query by object identity and removes itself immediately after the exact object reaches the filter. Host code must never add the explicit adapter marker to ordinary loops.
 
 Never replace this with a permanent global `posts_search` callback. Never perform option, post-type, or taxonomy discovery before the cheap request/query guards. This ordering is part of the public performance contract.
 

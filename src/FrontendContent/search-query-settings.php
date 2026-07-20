@@ -94,7 +94,12 @@ function render_search_query_settings(): void {
 
         <div class="hws-search-query-callout">
             <strong>Strict request scope</strong>
-            <span>Only a non-empty public main search query can be changed. Admin, AJAX, REST, cron, feeds, nested queries, and unrelated requests are rejected before any SQL filter is attached.</span>
+            <span>Only a non-empty public main search query or a Core-marked compatible results template can be changed. Admin, AJAX, REST, cron, feeds, unmarked nested queries, and unrelated requests are rejected before any SQL filter is attached.</span>
+        </div>
+
+        <div class="hws-search-query-callout hws-search-query-template-callout">
+            <strong>Search-template compatibility</strong>
+            <span>Native WordPress result templates work directly. JetEngine post grids rendered inside an eligible search request are bridged to the same bounded engine; archive grids and unrelated listing grids remain untouched.</span>
         </div>
 
         <div class="hws-search-query-top-grid">
@@ -295,6 +300,7 @@ function render_search_query_settings(): void {
     .hws-search-query-intro h3{font-size:18px;margin:0 0 5px}
     .hws-search-query-intro p{color:#50575e;line-height:1.55;margin:0}
     .hws-search-query-callout{align-items:flex-start;background:#f5f8fc;border:1px solid #cad5e4;border-left:4px solid #3157d5;border-radius:6px;display:grid;gap:4px;padding:12px 14px}
+    .hws-search-query-template-callout{background:#f6faf7;border-color:#b8d6c0;border-left-color:#24753a}
     .hws-search-query-callout span,.hws-search-query-limit-note span{color:#50575e;line-height:1.5}
     .hws-search-query-top-grid,.hws-search-query-two-column,.hws-search-query-advanced-grid,.hws-search-query-results-row{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
     .hws-search-query-control-block,.hws-search-query-field,.hws-search-query-limit-note{background:#fff;border:1px solid #d5dce5;border-radius:6px;display:grid;gap:8px;min-width:0;padding:14px}

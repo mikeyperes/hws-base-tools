@@ -74,6 +74,7 @@ require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDi
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryConfiguration.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchTermParser.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryEngine.php';
+require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/JetEngineSearchAdapter.php';
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
@@ -246,8 +247,10 @@ expect_true(
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'data-hws-search-query-save' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "body.append('post_types[]',value)" )
     && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new SearchQueryEngine(' )
+    && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new JetEngineSearchAdapter(' )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Search-template compatibility' )
     && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
-    'Search Behavior exposes the five-plugin audit, refresh-free save, and reusable Core query engine'
+    'Search Behavior exposes the five-plugin audit, refresh-free save, reusable Core query engine, and guarded JetEngine template adapter'
 );
 $getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
 expect_true(
@@ -263,7 +266,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.59', 'HWS bundles Hexa WordPress Plugin Core 0.19.59' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.60', 'HWS bundles Hexa WordPress Plugin Core 0.19.60' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )

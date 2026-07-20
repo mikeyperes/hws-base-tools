@@ -85,6 +85,7 @@ Hexa WordPress Plugin Core owns:
 - `SearchQueryConfiguration`
 - `SearchTermParser`
 - `SearchQueryEngine`
+- `JetEngineSearchAdapter`
 - accepted modes and hard limits
 - exact-query request guards and SQL construction
 
@@ -101,7 +102,9 @@ The display and behavior options must remain separate. A visual template save ca
 
 ## Performance And Safety
 
-The engine's `pre_get_posts` callback rejects non-search, non-main, admin, AJAX, REST, cron, feed, XML-RPC, suppressed, disabled, and empty queries before it calls the HWS settings provider. This prevents ordinary loops from performing option or object discovery.
+The engine's `pre_get_posts` callback rejects non-search, non-main, admin, AJAX, REST, cron, feed, XML-RPC, suppressed, disabled, empty, and unmarked nested queries before it calls the HWS settings provider. This prevents ordinary loops from performing option or object discovery.
+
+Some JetEngine search-results templates render a separate posts listing query instead of the native main query. `JetEngineSearchAdapter` handles that exact compatibility case. It first requires an eligible frontend main search, checks shortcode-only scope, skips grids already configured as archive templates, copies the main search text and marker, and applies Core's private explicit-query marker. Only that resulting query can pass the engine's secondary-query guard. Hosts can opt a grid out with `hexa_plugin_core_search_query_jet_engine_should_handle` or `hexa_search_query_disabled`.
 
 For one eligible query, Core attaches a temporary `posts_search` filter. The filter compares the exact `WP_Query` object, ignores every other query, and removes itself immediately after the target reaches it. Taxonomy, author, and custom-field matching use opt-in correlated `EXISTS` clauses rather than broad joins.
 
@@ -111,4 +114,4 @@ Do not replace this with a global permanent `posts_search` filter or a less spec
 
 ## Release Proof
 
-Before release, run the Core query test and the complete HWS suite. Live browser proof must then use the visible HWS Search tab and a public fixture page to verify AJAX persistence, all/any/exact behavior, whole/prefix/contains behavior, field and post-type filtering, native form submission, and isolation from unmarked searches. Restore the original option and delete all fixtures afterward.
+Before release, run the Core query test and the complete HWS suite. Live browser proof must then use the visible HWS Search tab and a public fixture page to verify AJAX persistence, all/any/exact behavior, whole/prefix/contains behavior, field and post-type filtering, native form submission, and isolation from unmarked searches. When a JetEngine listing-grid search template is present, verify that it renders the same controlled result set without changing unmarked grids. Restore the original option and delete all fixtures afterward.

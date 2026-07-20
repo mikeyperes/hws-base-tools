@@ -9,6 +9,8 @@ namespace Hexa\PluginCore\SearchQuery;
  * removes itself immediately after the target query reaches posts_search.
  */
 final class SearchQueryEngine {
+    public const EXPLICIT_QUERY_VAR = 'hexa_search_query_explicit';
+
     /** @var callable */
     private $settings_provider;
 
@@ -145,7 +147,9 @@ final class SearchQueryEngine {
         if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
             return false;
         }
-        if ( ! method_exists( $query, 'is_main_query' ) || ! $query->is_main_query() ) {
+        $is_main_query = method_exists( $query, 'is_main_query' ) && $query->is_main_query();
+        $is_explicit_query = '1' === (string) $query->get( self::EXPLICIT_QUERY_VAR );
+        if ( ! $is_main_query && ! $is_explicit_query ) {
             return false;
         }
         if ( ! method_exists( $query, 'is_search' ) || ! $query->is_search() ) {
