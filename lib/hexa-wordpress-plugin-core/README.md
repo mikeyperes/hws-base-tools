@@ -208,6 +208,8 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Collection Filters and Sidebar Header
 
+Version 0.19.56 lets reusable Getting Started checklists opt into Core collection search. Nested and standalone actions are filterable, parent context is indexed with each child, counts update immediately, and active searches are reapplied after template row replacement.
+
 Version 0.19.55 keeps the complete grouped sidebar in normal document flow. The
 rail no longer uses sticky positioning, so long navigation remains reachable by
 normal page scrolling without pinning part of the sidebar to the viewport.
@@ -235,6 +237,8 @@ Version 0.19.45 keeps plugin inventory and plugin-check AJAX fragments free of d
 Version 0.19.44 makes plugin inventory policy explicit: satisfied required plugins render green, only host-configured entries are forbidden, absent forbidden entries can remain visible as compliant, and installed plugins outside registered policy remain neutral.
 
 ## Getting Started Checklist
+
+Version 0.19.56 adds the opt-in `show_search`, `search_label`, `search_placeholder`, and `search_empty_message` checklist configuration. Core owns the search UI and nested filtering behavior; host plugins only enable and label it.
 
 Version 0.19.40 decomposes the checklist and site-structure renderers into bounded asset collaborators and splits page menus and template workspaces behind the unchanged `PageStructureManager` facade. The package-local architecture test locks the public API and keeps every affected class below 700 lines.
 

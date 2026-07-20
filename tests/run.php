@@ -161,8 +161,26 @@ expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
     'HWS Shortcodes catalog documents the owned Team Member shortcode'
 );
+$getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
+expect_true(
+    str_contains( $getting_started_source, "'show_search'          => true" )
+    && str_contains( $getting_started_source, "'search_label'         => 'Search Quick Start'" ),
+    'Quick Start enables the reusable Hexa Core checklist search'
+);
+$feature_catalog_source = source( 'src/FeatureCatalog/legacy-features.php' );
+expect_true(
+    str_contains( $feature_catalog_source, 'CoreUi::collapsible(' )
+    && str_contains( $feature_catalog_source, "'open'      => false" )
+    && str_contains( $feature_catalog_source, 'CoreUi::render_assets();' ),
+    'Every HWS feature renders through a default-collapsed Hexa Core component'
+);
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.55', 'HWS bundles Hexa WordPress Plugin Core 0.19.55' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.56', 'HWS bundles Hexa WordPress Plugin Core 0.19.56' );
+expect_true(
+    str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
+    && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' ),
+    'Bundled Core checklist search filters nested items and refreshes after template changes'
+);
 expect_true(
     str_contains( $core_ui_source, '.hpc-host-rail{align-self:start' )
     && str_contains( $core_ui_source, 'padding:7px;position:static}' )

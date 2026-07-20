@@ -3,6 +3,7 @@
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -186,13 +187,11 @@ function hws_render_feature_card( array $feature ): void {
     $description   = FeatureValueResolver::text( $feature['description'] ?? '' );
     $code_example  = FeatureValueResolver::text( $feature['code_example'] ?? '' );
 
+    ob_start();
     ?>
-    <article class="hws-feature-card <?php echo $is_enabled ? 'is-active' : ''; ?> <?php echo $is_deprecated ? 'is-deprecated' : ''; ?>" data-feature-id="<?php echo esc_attr( $feature_id ); ?>">
+    <div class="hws-feature-card-content" data-feature-id="<?php echo esc_attr( $feature_id ); ?>">
         <header class="hws-feature-card-header">
-            <div>
-                <h3><?php echo esc_html( $feature['name'] ?? $feature_id ); ?></h3>
-                <code><?php echo esc_html( $feature_id ); ?></code>
-            </div>
+            <code><?php echo esc_html( $feature_id ); ?></code>
             <div class="hws-feature-toggle">
                 <span><?php echo $is_enabled ? 'Active' : 'Off'; ?></span>
                 <?php echo hws_render_feature_toggle( $feature ); ?>
@@ -233,8 +232,24 @@ function hws_render_feature_card( array $feature ): void {
             <h4>Activity Log</h4>
             <?php hws_render_feature_activity( $feature_id ); ?>
         </section>
-    </article>
+    </div>
     <?php
+    $body_html = (string) ob_get_clean();
+    $meta_html = CoreUi::pill( $is_enabled ? 'Active' : 'Off', $is_enabled ? 'success' : 'dark' );
+
+    if ( $is_deprecated ) {
+        $meta_html .= CoreUi::pill( 'Deprecated', 'warning' );
+    }
+
+    echo CoreUi::collapsible(
+        [
+            'title'     => (string) ( $feature['name'] ?? $feature_id ),
+            'body_html' => $body_html,
+            'open'      => false,
+            'meta_html' => $meta_html,
+            'class'     => trim( 'hws-feature-card ' . ( $is_enabled ? 'is-active ' : '' ) . ( $is_deprecated ? 'is-deprecated' : '' ) ),
+        ]
+    ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 
 function hws_output_feature_card_styles(): void {
@@ -259,10 +274,7 @@ function hws_output_feature_card_styles(): void {
             gap: 14px;
         }
         .hws-feature-card {
-            border: 1px solid #dcdcde;
-            border-radius: 8px;
-            background: #fff;
-            padding: 16px;
+            margin: 0;
             min-width: 0;
         }
         .hws-feature-card.is-active { border-left: 4px solid #00a32a; }
@@ -275,7 +287,7 @@ function hws_output_feature_card_styles(): void {
             justify-content: space-between;
             gap: 12px;
         }
-        .hws-feature-card h3 { margin: 0 0 4px; font-size: 15px; }
+        .hws-feature-card-header > code { overflow-wrap: anywhere; }
         .hws-feature-card h4 {
             margin: 14px 0 6px;
             color: #646970;
@@ -462,6 +474,8 @@ function hws_output_feature_card_scripts(): void {
 }
 
 function display_settings_features(): void {
+    CoreUi::render_assets();
+
     if ( function_exists( __NAMESPACE__ . '\\output_toggle_switch_styles' ) ) {
         output_toggle_switch_styles();
     }

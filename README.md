@@ -164,7 +164,14 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.132 (Current)
+### v10.18.133 (Current)
+
+- Updated the bundled Hexa WordPress Plugin Core to `0.19.56` and enabled its
+  reusable nested search on Quick Start.
+- Rebuilt every Features entry with the shared Hexa Core collapsible component;
+  all feature panels now load collapsed while retaining their complete controls.
+
+### v10.18.132
 
 - Updated the bundled Hexa WordPress Plugin Core to `0.19.55`.
 - Removed sticky positioning from the shared Core sidebar so the complete HWS

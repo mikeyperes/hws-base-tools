@@ -32,6 +32,10 @@ function hws_getting_started_checklist_config(): GettingStartedChecklistConfig {
             'template_label'       => 'Quick Start Template',
             'template_load_label'  => 'Load Template',
             'show_template_picker' => true,
+            'show_search'          => true,
+            'search_label'         => 'Search Quick Start',
+            'search_placeholder'   => 'Search setup actions and checks...',
+            'search_empty_message' => 'No Quick Start items match this search.',
             'templates'            => hws_getting_started_checklist_templates(),
         ]
     );

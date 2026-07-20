@@ -278,6 +278,9 @@ final class CoreUi {
                             input.focus();
                         });
                     }
+                    if (window.MutationObserver) {
+                        new MutationObserver(function() { applyFilter(); }).observe(target, {childList:true, subtree:true});
+                    }
                     applyFilter();
                 });
             }
