@@ -187,7 +187,10 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [ 'settings-dashboard-getting-started.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
         $this->add( new DashboardModuleDefinition( 'pages', 'Pages', 'hws_base_tools\\display_settings_pages', [ 'settings-dashboard-pages.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'features', 'Features', 'hws_base_tools\\display_settings_features', [ 'settings-dashboard-features.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'features', 'Features', 'hws_base_tools\\display_settings_features', [
+            'settings-dashboard-website-types.php',
+            'settings-dashboard-features.php',
+        ] ) );
         $this->add( new DashboardModuleDefinition( 'shortcodes', 'Shortcodes', [ \HWS\BaseTools\FeatureCatalog\ShortcodeCatalog::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );

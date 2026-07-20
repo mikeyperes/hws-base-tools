@@ -110,6 +110,10 @@ expect_true(
     $registry->implementation_files_for_tab( 'footer-text' ) === [ 'settings-dashboard-website-types.php', 'settings-dashboard-footer-text.php' ],
     'Footer Text loads its shared toggle dependency before rendering'
 );
+expect_true(
+    $registry->implementation_files_for_tab( 'features' ) === [ 'settings-dashboard-website-types.php', 'settings-dashboard-features.php' ],
+    'Features loads its shared toggle dependency before rendering'
+);
 
 $dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );
 expect_true(

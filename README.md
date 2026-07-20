@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.128 (Current)
+### v10.18.129 (Current)
+
+- Ensured the Features tab loads the shared HWS toggle component before feature
+  cards render, preventing plain-checkbox fallbacks for Team Member templates
+  and the rest of the feature catalog.
+
+### v10.18.128
 
 - Added the HWS-owned `[hws_team_members]` directory with minimal portrait grid,
   editorial list, and compact directory templates.
