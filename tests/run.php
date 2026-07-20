@@ -197,6 +197,12 @@ expect_true(
     && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hexa_search]'" ),
     'HWS frontend shortcode, admin previews, and shortcode catalog share the Hexa Core Search Display contract'
 );
+expect_true(
+    str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<div data-hws-search-form>' )
+    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'save.addEventListener(\'click\'' )
+    && ! str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<form data-hws-search-form>' ),
+    'Search settings avoid invalid nested forms while Core previews render native search forms'
+);
 $getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
 expect_true(
     str_contains( $getting_started_source, "'show_search'          => true" )

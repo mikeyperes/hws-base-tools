@@ -75,7 +75,7 @@ function render_tab_search(): void {
             <p class="hws-search-display-example"><code>[hexa_search style="overlay" accent="#2f6df6" placeholder="Search stories..."]</code></p>
         </section>
 
-        <form data-hws-search-form>
+        <div data-hws-search-form>
             <fieldset class="hws-search-display-templates">
                 <legend class="screen-reader-text">Search display template</legend>
                 <?php foreach ( $styles as $style => $definition ) :
@@ -133,14 +133,14 @@ function render_tab_search(): void {
             </section>
 
             <div class="hws-search-display-actions">
-                <button type="submit" class="button button-primary" data-hws-search-save>
+                <button type="button" class="button button-primary" data-hws-search-save>
                     <span class="dashicons dashicons-saved" aria-hidden="true"></span>
                     <span>Save Search Design</span>
                 </button>
                 <span class="spinner" data-hws-search-spinner></span>
                 <span class="hws-search-display-status" data-hws-search-status role="status" aria-live="polite"></span>
             </div>
-        </form>
+        </div>
     </div>
 
     <style>
@@ -218,8 +218,7 @@ function render_tab_search(): void {
         if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(value).then(function(){setStatus('Shortcode copied.','success');}).catch(function(){setStatus('Copy failed. Select the shortcode and copy it manually.','error');});return;}
         var field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var copied=false;try{copied=document.execCommand('copy');}catch(error){}document.body.removeChild(field);setStatus(copied?'Shortcode copied.':'Copy failed. Select the shortcode and copy it manually.',copied?'success':'error');
       });
-      form.addEventListener('submit',function(event){
-        event.preventDefault();
+      save.addEventListener('click',function(){
         var body=new URLSearchParams();
         body.set('action','hws_search_display_save');
         body.set('nonce',<?php echo wp_json_encode( $nonce ); ?>);
