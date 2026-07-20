@@ -161,7 +161,14 @@ expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
     'HWS Shortcodes catalog documents the owned Team Member shortcode'
 );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.54', 'HWS bundles Hexa WordPress Plugin Core 0.19.54' );
+$core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.55', 'HWS bundles Hexa WordPress Plugin Core 0.19.55' );
+expect_true(
+    str_contains( $core_ui_source, '.hpc-host-rail{align-self:start' )
+    && str_contains( $core_ui_source, 'padding:7px;position:static}' )
+    && ! str_contains( $core_ui_source, 'position:sticky;top:42px' ),
+    'Bundled Core sidebar remains in normal document flow instead of sticking to the viewport'
+);
 
 $footer_editor_source = source( "src/FrontendContent/legacy-footer-text-settings.php" );
 expect_true(

@@ -164,7 +164,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.131 (Current)
+### v10.18.132 (Current)
+
+- Updated the bundled Hexa WordPress Plugin Core to `0.19.55`.
+- Removed sticky positioning from the shared Core sidebar so the complete HWS
+  navigation moves normally with the page and remains reachable while scrolling.
+
+### v10.18.131
 
 - Ensured the flat sidebar releases its desktop width when collapsed instead
   of leaving an empty 220-pixel navigation track.

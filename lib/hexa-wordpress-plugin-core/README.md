@@ -208,6 +208,10 @@ This panel compares the vendored `VERSION` in the host plugin with the public Gi
 
 ## Collection Filters and Sidebar Header
 
+Version 0.19.55 keeps the complete grouped sidebar in normal document flow. The
+rail no longer uses sticky positioning, so long navigation remains reachable by
+normal page scrolling without pinning part of the sidebar to the viewport.
+
 Version 0.19.52 adds CoreUi::collection_filter() for searchable admin-card collections. Hosts supply the target ID, item selector, optional group selector, labels, and empty-state text. Core owns case-insensitive matching, visible/total counts, group hiding, clear and Escape behavior, and reinitialization after hexa-core-host-tab-loaded.
 
 Version 0.19.53 also initializes collection filters after DOMContentLoaded so first-render panels work before any AJAX navigation.
@@ -669,7 +673,7 @@ For sidebar layouts, hosts may pass a generic `sidebar_identity` array containin
 );
 ```
 
-The sidebar is expanded by default, uses a 214px desktop rail, collapses to an icon control, and stores state under a key scoped to `root_id` when persistence is enabled. Optional identity metadata sits above navigation while expanded and is hidden when collapsed. Its rail has no internal scroll container; mobile navigation and version text wrap without horizontal scrolling. Omit `layout` and `groups` for the standard top tab bar.
+The sidebar is expanded by default, uses a 214px desktop rail, collapses to an icon control, and stores state under a key scoped to `root_id` when persistence is enabled. Optional identity metadata sits above navigation while expanded and is hidden when collapsed. Its rail remains in normal document flow and has no internal scroll container, so the complete navigation is reached through page scrolling. Mobile navigation and version text wrap without horizontal scrolling. Omit `layout` and `groups` for the standard top tab bar.
 
 ## System Checks
 

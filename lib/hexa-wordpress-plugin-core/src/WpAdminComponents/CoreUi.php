@@ -58,7 +58,7 @@ final class CoreUi {
             .hpc-host-tabs-shell{margin:16px 0 0;max-width:100%;min-width:0}
             .hpc-host-tabs-shell.is-sidebar{--hpc-host-sidebar-width:214px;align-items:start;display:grid;gap:16px;grid-template-columns:var(--hpc-host-sidebar-width) minmax(0,1fr)}
             .hpc-host-tabs-shell.is-sidebar.is-sidebar-collapsed{grid-template-columns:44px minmax(0,1fr)}
-            .hpc-host-rail{align-self:start;background:#fff;border:1px solid var(--hpc-line);border-radius:var(--hpc-radius);max-height:none;max-width:100%;overflow:visible;padding:7px;position:sticky;top:42px}
+            .hpc-host-rail{align-self:start;background:#fff;border:1px solid var(--hpc-line);border-radius:var(--hpc-radius);max-height:none;max-width:100%;overflow:visible;padding:7px;position:static}
             .hpc-host-rail-header{border-bottom:1px solid #eef1f6;margin:0 2px 6px;min-width:0;padding:8px 9px 11px;position:relative}
             .hpc-host-rail-identity{margin:0;min-width:0;overflow-wrap:anywhere;padding:0;width:auto}
             .hpc-host-rail-plugin-name{color:var(--hpc-ink);display:block;font-size:14px;line-height:1.35;margin:0 0 4px;padding-right:38px}

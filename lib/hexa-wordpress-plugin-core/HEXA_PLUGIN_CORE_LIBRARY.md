@@ -1317,7 +1317,7 @@ Optional `sidebar_identity` data contains host plugin and Core names, installed 
 );
 ```
 
-The expanded desktop rail is 214px and has no internal vertical scroll. It collapses to a 44px icon control. Persistent state is scoped to `root_id`; identity metadata is hidden when collapsed; and mobile links and versions wrap without horizontal scrolling. Host plugins must remove obsolete host-level tab CSS and JavaScript after migration rather than maintaining two navigation systems.
+The expanded desktop rail is 214px, remains in normal document flow, and has no internal vertical scroll. It does not stick to the viewport, so the full navigation is reached through normal page scrolling. It collapses to a 44px icon control. Persistent state is scoped to `root_id`; identity metadata is hidden when collapsed; and mobile links and versions wrap without horizontal scrolling. Host plugins must remove obsolete host-level tab CSS and JavaScript after migration rather than maintaining two navigation systems.
 
 ## System Checks
 
