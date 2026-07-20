@@ -113,6 +113,7 @@ Plugin inventory and provisioning Hexa\PluginCore\PluginChecks
 GitHub plugin updater              Hexa\PluginCore\PluginUpdates
 Vendored Core updater              Hexa\PluginCore\CorePackageUpdates
 Shortcode catalog and testing      Hexa\PluginCore\ShortcodeRegistry
+Front-end search-form templates    Hexa\PluginCore\SearchDisplay
 UI cleanup behavior                Hexa\PluginCore\WpAdminUiCleanup
 Content and backup cleanup         Hexa\PluginCore\ContentCleanup
 Environment probes                Hexa\PluginCore\SystemEnvironment
@@ -172,7 +173,9 @@ Before release:
 5. Exercise AJAX tabs through visible browser controls.
 6. Exercise media/editor tabs, especially Brand Assets and Footer Text.
 7. Verify the Shortcodes tab lists definitions and produces test output.
-8. Confirm no PHP notices, page errors, or browser console errors.
+8. Verify every Search preview, AJAX settings persistence, shortcode output,
+   overlay controls, and native `/?s=` submission.
+9. Confirm no PHP notices, page errors, or browser console errors.
 
 Browser proof must use the exact visible UI path. A direct helper invocation is
 not proof that an operator workflow works.

@@ -54,16 +54,28 @@ function sanitize_key( string $value ): string {
     return (string) preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $value ) );
 }
 
+function sanitize_text_field( mixed $value ): string {
+    return trim( strip_tags( (string) $value ) );
+}
+
+function sanitize_hex_color( mixed $value ): ?string {
+    $value = trim( (string) $value );
+
+    return preg_match( '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value ) ? $value : null;
+}
+
 function apply_filters( string $hook, mixed $value ): mixed {
     return $value;
 }
 
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabDefinition.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabRegistry.php';
+require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDisplayRenderer.php';
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
 require_once $root . '/src/FeatureCatalog/FeatureValueResolver.php';
+require_once $root . '/src/FrontendContent/SearchDisplayFeature.php';
 require_once $root . '/src/Security/SecretStore.php';
 require_once $root . '/src/Security/RemoteActionPolicy.php';
 
@@ -83,6 +95,7 @@ expect_true( array_slice( $tab_ids, 0, 2 ) === [ 'overview', 'quick-start' ], 'Q
 expect_true( $registry->normalize( 'getting-started-checklist' ) === 'quick-start', 'legacy Quick Start route remains compatible' );
 expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legacy Snippets remains visible and deprecated' );
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
 foreach ( $groups as $group ) {
@@ -113,6 +126,11 @@ expect_true(
 expect_true(
     $registry->implementation_files_for_tab( 'features' ) === [ 'settings-dashboard-website-types.php', 'settings-dashboard-features.php' ],
     'Features loads its shared toggle dependency before rendering'
+);
+expect_true(
+    $registry->implementation_files_for_tab( 'search' ) === [ 'settings-dashboard-search.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_search_display_save' ) === [ 'settings-dashboard-search.php' ],
+    'Search tab and its AJAX save action load the focused Search Display adapter'
 );
 
 $dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );
@@ -161,6 +179,24 @@ expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
     'HWS Shortcodes catalog documents the owned Team Member shortcode'
 );
+$search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_settings(
+    [
+        'style'       => 'overlay',
+        'accent'      => '#2f6df6',
+        'placeholder' => ' Find stories ',
+    ]
+);
+expect_true(
+    $search_settings === [ 'style' => 'overlay', 'accent' => '#2f6df6', 'placeholder' => 'Find stories' ],
+    'HWS Search Display sanitizes the saved template, accent, and placeholder contract'
+);
+expect_true(
+    str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), "public const SHORTCODE = 'hexa_search'" )
+    && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchDisplayRenderer::render(' )
+    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'SearchDisplayRenderer::render(' )
+    && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hexa_search]'" ),
+    'HWS frontend shortcode, admin previews, and shortcode catalog share the Hexa Core Search Display contract'
+);
 $getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
 expect_true(
     str_contains( $getting_started_source, "'show_search'          => true" )
@@ -175,7 +211,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.57', 'HWS bundles Hexa WordPress Plugin Core 0.19.57' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.58', 'HWS bundles Hexa WordPress Plugin Core 0.19.58' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )

@@ -43,6 +43,10 @@ The dashboard shell and AJAX tab navigation come from
 callbacks. Quick Start is the second tab, Shortcodes is a first-class tab, and
 Legacy Snippets remains visible and marked deprecated.
 
+The Search tab provides five live front-end search previews from the shared
+`Hexa\PluginCore\SearchDisplay` renderer. Saving a design changes the default
+output of `[hexa_search]` without changing the shortcode wherever it is placed.
+
 ## Overview
 
 ### Going Live Checklist
@@ -88,6 +92,12 @@ HWS supplies its shortcode definitions, descriptions, parameters, examples, and
 test methods. Hexa WP Core supplies the reusable catalog, real-output display,
 and isolated test structure.
 
+## Search Tab
+Five selectable public site-search templates: Icon Reveal, Overlay, Pill,
+Underline, and Command Bar. Admin previews and `[hexa_search]` both call the
+same Hexa WP Core renderer. Searches submit through WordPress's native
+`/?s=query` flow; this feature does not load AJAX search results.
+
 ## Brand Assets Tab
 One place for favicon and logo assets:
 - Site Icon PNG and physical `/favicon.ico` links with open-in-new-tab actions
@@ -114,6 +124,8 @@ Hexa WP Core cleanup tools for stale page reports, backup file deletion, and art
 | `[website_url]` | Site URL |
 | `[display_year]` | Current year |
 | `[current_year]` | Current year alias |
+| `[hexa_search]` | Saved Hexa WP Core public search design |
+| `[hexa_search style="overlay" accent="#2f6df6"]` | One-placement search design override |
 | `[site_logo key="logo" size="medium"]` | Brand/logo asset image |
 | `[site_logo key="logo" size="full" output="url"]` | Brand/logo asset URL |
 | `[site_logo key="logo_text" size="medium" width="180"]` | Brand/logo image constrained inside the requested box without skewing |

@@ -3,6 +3,7 @@
 namespace HWS\BaseTools\FeatureCatalog;
 
 use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
+use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 
 final class ShortcodeCatalog {
@@ -44,6 +45,30 @@ final class ShortcodeCatalog {
                     [ 'label' => 'Editorial list', 'shortcode' => '[hws_team_members style="editorial_list"]', 'parameters' => [ 'style' => 'editorial_list' ] ],
                     [ 'label' => 'Compact directory', 'shortcode' => '[hws_team_members style="compact_directory"]', 'parameters' => [ 'style' => 'compact_directory' ] ],
                     [ 'label' => 'Featured Team Members', 'shortcode' => '[hws_team_members featured_only="1" limit="6"]', 'parameters' => [ 'featured_only' => 1, 'limit' => 6 ] ],
+                ],
+            ],
+            [
+                'id' => SearchDisplayFeature::SHORTCODE,
+                'label' => 'Site Search Display',
+                'shortcode' => '[hexa_search]',
+                'description' => 'Renders the selected Hexa WP Core site-search design and submits to the native WordPress search results URL.',
+                'test_method' => 'Render all five styles, submit a query, and confirm WordPress receives it through the native s query parameter. For overlay, also verify click, Cmd/Ctrl+K, Escape, and backdrop close.',
+                'source' => 'src/FrontendContent/SearchDisplayFeature.php',
+                'provider' => 'HWS Base Tools + Hexa WP Core SearchDisplay',
+                'parameters' => [
+                    'style' => 'icon-reveal|overlay|pill|underline|command',
+                    'accent' => '',
+                    'placeholder' => 'Search...',
+                    'label' => 'Search',
+                    'radius' => '',
+                ],
+                'examples' => [
+                    [ 'label' => 'Saved default', 'shortcode' => '[hexa_search]', 'parameters' => [] ],
+                    [ 'label' => 'Icon reveal', 'shortcode' => '[hexa_search style="icon-reveal"]', 'parameters' => [ 'style' => 'icon-reveal' ] ],
+                    [ 'label' => 'Overlay', 'shortcode' => '[hexa_search style="overlay" accent="#2f6df6"]', 'parameters' => [ 'style' => 'overlay', 'accent' => '#2f6df6' ] ],
+                    [ 'label' => 'Pill', 'shortcode' => '[hexa_search style="pill" placeholder="Search stories..."]', 'parameters' => [ 'style' => 'pill', 'placeholder' => 'Search stories...' ] ],
+                    [ 'label' => 'Underline', 'shortcode' => '[hexa_search style="underline"]', 'parameters' => [ 'style' => 'underline' ] ],
+                    [ 'label' => 'Command bar', 'shortcode' => '[hexa_search style="command" radius="8"]', 'parameters' => [ 'style' => 'command', 'radius' => 8 ] ],
                 ],
             ],
             [

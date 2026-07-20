@@ -19,6 +19,7 @@
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-collision.php",
       "@php lib/hexa-wordpress-plugin-core/tests/database-cleanup-state.php",
       "@php lib/hexa-wordpress-plugin-core/tests/getting-started-checklist-search.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/search-display-renderer.php",
       "@php lib/hexa-wordpress-plugin-core/tests/site-structure-lazy-workspace.php",
       "@php lib/hexa-wordpress-plugin-core/tests/snippet-metadata-renderer.php"
     ]

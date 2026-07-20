@@ -50,6 +50,7 @@ hexa-wordpress-plugin-core/
     SiteStructure/      -> Hexa\PluginCore\SiteStructure
     SchemaDetection/    -> Hexa\PluginCore\SchemaDetection
     SchemaTools/        -> Hexa\PluginCore\SchemaTools
+    SearchDisplay/      -> Hexa\PluginCore\SearchDisplay
     SmartSearch/        -> Hexa\PluginCore\SmartSearch
     SystemEnvironment/  -> Hexa\PluginCore\SystemEnvironment
     WpAdminUiCleanup/   -> Hexa\PluginCore\WpAdminUiCleanup
@@ -90,6 +91,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `ShortcodeRegistry`: shortcode definition registry, dashboard display renderer, examples, live output, and test runner contracts.
 - `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
 - `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
+- `SearchDisplay`: five reusable front-end WordPress search-form templates with shared markup, CSS, and accessible interactions.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
@@ -550,6 +552,24 @@ The storage key pattern is:
 ```text
 hpc_cred_{slug}_{keyName}
 ```
+
+## Front-End Search Display
+
+Use `Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer` for public site-search forms. It ships the `icon-reveal`, `overlay`, `pill`, `underline`, and `command` templates. Every template submits a native WordPress GET request using the `s` query parameter.
+
+```php
+echo \Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer::render(
+    [
+        'style'       => 'pill',
+        'accent'      => '#2f6df6',
+        'placeholder' => 'Search stories...',
+    ]
+);
+```
+
+Host plugins own saved settings and shortcode registration. They must call this renderer for both admin previews and front-end output. Do not copy its markup or assets into the host plugin.
+
+`SearchDisplay` is not the content-picker typeahead API. Use `SmartSearch` for AJAX result suggestions inside tools and admin workflows.
 
 ## Smart Search / X-Search
 

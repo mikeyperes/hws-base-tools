@@ -74,7 +74,7 @@ final class DashboardRegistry {
         $definitions = [
             'Overview' => [ 'overview', 'quick-start' ],
             'Site & Brand' => [ 'brand-assets', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
-            'Content' => [ 'features', 'shortcodes', 'comments' ],
+            'Content' => [ 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'WordPress Admin' => [ 'ui-cleanup', 'masked-login', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -191,6 +191,7 @@ final class DashboardRegistry {
             'settings-dashboard-website-types.php',
             'settings-dashboard-features.php',
         ] ) );
+        $this->add( new DashboardModuleDefinition( 'search', 'Search', 'hws_base_tools\\render_tab_search', [ 'settings-dashboard-search.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'shortcodes', 'Shortcodes', [ \HWS\BaseTools\FeatureCatalog\ShortcodeCatalog::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );
@@ -259,6 +260,7 @@ final class DashboardRegistry {
             'hws_elementor_db_'                  => [ 'settings-dashboard-elementor-db-cron.php' ],
             'hws_get_elementor_db_state'         => [ 'settings-dashboard-elementor-db-cron.php' ],
             'hws_feature_'                       => [ 'settings-dashboard-features.php' ],
+            'hws_search_display_'                => [ 'settings-dashboard-search.php' ],
             'hws_footer_text_'                   => [ 'settings-dashboard-footer-text.php' ],
             'hws_toggle_ui_cleanup'              => [ 'settings-dashboard-ui-cleanup.php' ],
             'hws_ui_cleanup_bulk'                => [ 'settings-dashboard-ui-cleanup.php' ],

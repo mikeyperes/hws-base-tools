@@ -111,6 +111,7 @@ function hws_boot_structured_admin_modules() {
 // CRITICAL: Load shortcodes FIRST at plugin load time (before any guards)
 // This ensures shortcodes work with Elementor, Gutenberg, and all page builders
 require_once HWS_BASE_TOOLS_DIR . '/snippet-website-settings-functionality.php';
+require_once HWS_BASE_TOOLS_DIR . '/src/FrontendContent/search-display.php';
 
 // === Guard: don't bootstrap ADMIN features during Elementor's internal AJAX ===
 if ( defined('DOING_AJAX') && DOING_AJAX ) {

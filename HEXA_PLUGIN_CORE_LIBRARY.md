@@ -41,6 +41,7 @@ src/SnippetRegistry/    Hexa\PluginCore\SnippetRegistry
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SiteStructure/      Hexa\PluginCore\SiteStructure
 src/SchemaDetection/    Hexa\PluginCore\SchemaDetection
+src/SearchDisplay/      Hexa\PluginCore\SearchDisplay
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
 src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
 src/WpAdminUiCleanup/   Hexa\PluginCore\WpAdminUiCleanup
@@ -671,6 +672,34 @@ $store = new \Hexa\PluginCore\CredentialVault\CredentialStore();
 $store->store( 'openai', 'api_key', $raw_key );
 $masked = $store->get_masked( 'openai', 'api_key' );
 ```
+
+## Front-End Search Display
+
+Namespace:
+
+```text
+Hexa\PluginCore\SearchDisplay
+```
+
+Class:
+
+```text
+SearchDisplayRenderer
+```
+
+Use this renderer for public site-search forms. It owns five selectable templates: `icon-reveal`, `overlay`, `pill`, `underline`, and `command`. Every template submits a native WordPress GET request with `name="s"`; it does not load AJAX search results.
+
+The host plugin owns its saved design option and shortcode. The host must call this same renderer for the backend preview and the front-end shortcode so preview markup cannot drift from production markup.
+
+```php
+echo \Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer::render([
+    'style'       => 'overlay',
+    'accent'      => '#2f6df6',
+    'placeholder' => 'Search stories...',
+]);
+```
+
+Do not duplicate the renderer CSS, SVG, markup, or interaction script inside a host plugin. Do not confuse this with `SmartSearch`, which is the separate AJAX typeahead/content-picker system.
 
 ## Smart Search / X-Search
 
