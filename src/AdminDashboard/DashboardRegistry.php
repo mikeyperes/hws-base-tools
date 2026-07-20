@@ -64,6 +64,51 @@ final class DashboardRegistry {
         return $id;
     }
 
+    /**
+     * @return array<int,array{label:string,tabs:array<int,string>}>
+     */
+    public function navigation_groups(): array {
+        $available = array_fill_keys( array_keys( $this->navigation_tabs() ), true );
+        $assigned = [];
+        $groups = [];
+        $definitions = [
+            'Overview' => [ 'overview', 'quick-start' ],
+            'Site & Brand' => [ 'brand-assets', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
+            'Content' => [ 'features', 'shortcodes', 'comments' ],
+            'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
+            'WordPress Admin' => [ 'ui-cleanup', 'masked-login', 'config', 'advanced', 'snippets', 'hexa-core' ],
+        ];
+
+        foreach ( $definitions as $label => $ids ) {
+            $group_tabs = [];
+            foreach ( $ids as $id ) {
+                if ( isset( $available[ $id ] ) && ! isset( $assigned[ $id ] ) ) {
+                    $group_tabs[] = $id;
+                    $assigned[ $id ] = true;
+                }
+            }
+
+            if ( $group_tabs ) {
+                $groups[] = [ 'label' => $label, 'tabs' => $group_tabs ];
+            }
+        }
+
+        $leftover = [];
+        foreach ( array_keys( $available ) as $id ) {
+            if ( ! isset( $assigned[ $id ] ) ) {
+                $leftover[] = $id;
+            }
+        }
+
+        if ( $leftover ) {
+            $groups[] = [ 'label' => 'More', 'tabs' => $leftover ];
+        }
+
+        return function_exists( 'apply_filters' )
+            ? (array) apply_filters( 'hws_base_tools_dashboard_tab_groups', $groups )
+            : $groups;
+    }
+
     public function load_tab( string $id ): void {
         $id = $this->aliases[ $id ] ?? $id;
 

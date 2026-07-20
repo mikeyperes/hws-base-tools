@@ -3,6 +3,7 @@
 namespace HWS\BaseTools\FeatureCatalog;
 
 use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
+use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 
 final class ShortcodeCatalog {
     public static function render(): void {
@@ -18,6 +19,33 @@ final class ShortcodeCatalog {
     /** @return array<int,array<string,mixed>> */
     public static function definitions(): array {
         return [
+            [
+                'id' => TeamMemberDirectory::SHORTCODE,
+                'label' => 'Team Member Directory',
+                'shortcode' => '[hws_team_members]',
+                'description' => 'Displays published HWS Team Member entries through the selected clean directory template.',
+                'test_method' => 'Confirm the Team Member CPT and ACF fields are active, then render each style and verify names, positions, images, and responsive layout.',
+                'source' => 'src/TeamMembers/TeamMemberDirectory.php',
+                'provider' => 'HWS Base Tools',
+                'parameters' => [
+                    'style' => 'portrait_grid|editorial_list|compact_directory',
+                    'featured_only' => 0,
+                    'category' => '',
+                    'limit' => -1,
+                    'columns' => 3,
+                    'show_excerpt' => 1,
+                    'link_profiles' => 1,
+                    'order' => 'ASC',
+                    'orderby' => 'menu_order',
+                ],
+                'examples' => [
+                    [ 'label' => 'Selected default', 'shortcode' => '[hws_team_members]', 'parameters' => [] ],
+                    [ 'label' => 'Minimal portrait grid', 'shortcode' => '[hws_team_members style="portrait_grid" columns="3"]', 'parameters' => [ 'style' => 'portrait_grid', 'columns' => 3 ] ],
+                    [ 'label' => 'Editorial list', 'shortcode' => '[hws_team_members style="editorial_list"]', 'parameters' => [ 'style' => 'editorial_list' ] ],
+                    [ 'label' => 'Compact directory', 'shortcode' => '[hws_team_members style="compact_directory"]', 'parameters' => [ 'style' => 'compact_directory' ] ],
+                    [ 'label' => 'Featured Team Members', 'shortcode' => '[hws_team_members featured_only="1" limit="6"]', 'parameters' => [ 'featured_only' => 1, 'limit' => 6 ] ],
+                ],
+            ],
             [
                 'id' => 'current_year',
                 'label' => 'Current Year',

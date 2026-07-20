@@ -93,7 +93,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
-- `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, and collapsible sections with visible chevron indicators.
+- `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, collapsible sections, and scoped CSS override editors and references.
 - `WpAdminAjax`: WordPress admin-AJAX nonce, capability, request parsing, action registration, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 - `WpConfigFile`: safe `wp-config.php` constant and `ini_set()` reads/writes with validation and rollback backup handling.
@@ -206,7 +206,33 @@ $core_config = CorePackageConfig::from_core_root(
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`. The host plugin updater and the vendored core updater both render as default-open persistent collapse cards. Each card reports the Git repo, Git URL, Git branch, Git version, current version, current-vs-Git comparison, green/red status flag, check-for-updates action, normalized ZIP download, and live update activity log.
 
+## Collection Filters and Sidebar Header
+
+Version 0.19.52 adds CoreUi::collection_filter() for searchable admin-card collections. Hosts supply the target ID, item selector, optional group selector, labels, and empty-state text. Core owns case-insensitive matching, visible/total counts, group hiding, clear and Escape behavior, and reinitialization after hexa-core-host-tab-loaded.
+
+Version 0.19.53 also initializes collection filters after DOMContentLoaded so first-render panels work before any AJAX navigation.
+
+Version 0.19.54 adds an optional host-selected text selector so shared logs and diagnostics do not create false search matches.
+
+The grouped sidebar now places plugin identity and its expand/collapse control in one rail header. The expanded control sits at the top-right; collapsed mode hides identity and centers the control in the compact rail.
+
+## Scoped CSS Override References
+
+Version 0.19.48 updates `Hexa\PluginCore\WpAdminComponents\ScopedCssOverride`. Host plugins provide a scope selector, short instructions, a formatted HTML structure example, and a formatted CSS example. Core renders a copyable `CoreUi::detail_card()` that is closed by default and prevents each host plugin from rebuilding this reference UI.
+
+Pass a setting key, saved value, host input class, and save-status HTML to render the actual CSS editor. Omit the setting key when a read-only reference is needed. Host plugins remain responsible for validation, persistence, and frontend output.
+
+## Plugin Inventory Policy
+
+Version 0.19.46 supports compact inventories without a separate Source column. Core places source beneath the plugin path, uses a fixed seven-column desktop layout without horizontal scrolling, and stacks labeled cells below 900px.
+
+Version 0.19.45 keeps plugin inventory and plugin-check AJAX fragments free of duplicate Core/DynamicButton asset tags, so refreshed row markup contains only fragment content.
+
+Version 0.19.44 makes plugin inventory policy explicit: satisfied required plugins render green, only host-configured entries are forbidden, absent forbidden entries can remain visible as compliant, and installed plugins outside registered policy remain neutral.
+
 ## Getting Started Checklist
+
+Version 0.19.40 decomposes the checklist and site-structure renderers into bounded asset collaborators and splits page menus and template workspaces behind the unchanged `PageStructureManager` facade. The package-local architecture test locks the public API and keeps every affected class below 700 lines.
 
 Version 0.19.35 adds `show_type_badges` to `GettingStartedChecklistConfig`. Host plugins can hide the non-interactive request-type pill when a checklist is used as a simple action list.
 
@@ -402,7 +428,7 @@ echo DetailedColorPicker::render([
 
 ## Activity Log Component
 
-Use the activity component for updater progress, imports, tests, maintenance tasks, and any admin workflow that benefits from a collapsible dark monitor.
+Use the activity component for updater progress, imports, tests, maintenance tasks, and any admin workflow that benefits from a collapsible dark monitor. Activity logs are collapsed by default; a host must explicitly pass `collapsed => false` when an open log is required.
 
 Storage modes:
 
@@ -424,7 +450,7 @@ $config = new ActivityLogConfig(
         'title'       => 'Example Activity Log',
         'storage'     => ActivityLogConfig::STORAGE_TRANSIENT,
         'storage_key' => 'example_activity_log',
-        'collapsed'   => false,
+        'collapsed'   => true,
     ]
 );
 
@@ -476,6 +502,23 @@ echo CoreUi::collapsible(
     [
         'title'     => 'Advanced details',
         'body_html' => '<p>Hidden until expanded.</p>',
+    ]
+);
+```
+
+For a formatted, closed-by-default scoped CSS editor or reference:
+
+```php
+use Hexa\PluginCore\WpAdminComponents\ScopedCssOverride;
+
+echo ScopedCssOverride::render(
+    [
+        'title'        => 'Component CSS override',
+        'selector'     => 'body .example-component',
+        'instructions' => [ 'Keep every rule inside this selector.' ],
+        'html_example' => '<div class="example-component">...</div>',
+        'css_example'  => "body .example-component {\n  color: #111827;\n}",
+        'open'         => false,
     ]
 );
 ```
@@ -593,20 +636,40 @@ use Hexa\PluginCore\LogFiles\ErrorLogSource;
 
 ## Host Dashboard Tabs
 
-Use `Hexa\PluginCore\WpAdminTabs\HostTabsRenderer` when the host dashboard itself needs the shared Hexa tab bar, AJAX loader, loading status, and browser-history behavior.
+Use `Hexa\PluginCore\WpAdminTabs\HostTabsRenderer` for the complete host dashboard shell. Core owns the tab or grouped-sidebar markup, responsive layout, AJAX loading, status updates, browser history, accessibility relationships, and optional persisted sidebar state. The host provides routes, labels, groups, request details, and the panel renderer.
+
+For sidebar layouts, hosts may pass a generic `sidebar_identity` array containing plugin and Core names, installed versions, GitHub versions, and repository URLs. Core owns its escaped markup, external-link safety, responsive wrapping, and collapsed-state visibility.
 
 ```php
 ( new \Hexa\PluginCore\WpAdminTabs\HostTabsRenderer() )->render(
     [
-        "tabs"            => $tabs,
-        "active"          => $active,
-        "page_url"        => admin_url( "options-general.php?page=example-plugin" ),
-        "ajax_action"     => "example_load_tab",
-        "nonce"           => $nonce,
-        "render_callback" => [ $dashboard, "tab" ],
+        "tabs"                => $tabs,
+        "active"              => $active,
+        "page_url"            => admin_url( "options-general.php?page=example-plugin" ),
+        "ajax_action"         => "example_load_tab",
+        "nonce"               => $nonce,
+        "root_id"             => "example-plugin-tabs",
+        "panel_id"            => "example-plugin-panel",
+        "layout"              => "sidebar",
+        "groups"              => $navigation_groups,
+        "sidebar_identity"    => [
+            "plugin_name"     => "Example Plugin",
+            "current_version" => $installed_version,
+            "github_version"  => $github_version,
+            "github_url"      => "https://github.com/example/example-plugin",
+            "core_name"       => "Hexa WP Core",
+            "core_version"    => $core_version,
+            "core_github_url" => "https://github.com/mikeyperes/hexa-wordpress-plugin-core",
+        ],
+        "sidebar_collapsible" => true,
+        "sidebar_collapsed"   => false,
+        "sidebar_persist"     => true,
+        "render_callback"     => [ $dashboard, "tab" ],
     ]
 );
 ```
+
+The sidebar is expanded by default, uses a 214px desktop rail, collapses to an icon control, and stores state under a key scoped to `root_id` when persistence is enabled. Optional identity metadata sits above navigation while expanded and is hidden when collapsed. Its rail has no internal scroll container; mobile navigation and version text wrap without horizontal scrolling. Omit `layout` and `groups` for the standard top tab bar.
 
 ## System Checks
 

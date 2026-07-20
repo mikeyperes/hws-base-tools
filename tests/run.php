@@ -83,6 +83,21 @@ expect_true( array_slice( $tab_ids, 0, 2 ) === [ 'overview', 'quick-start' ], 'Q
 expect_true( $registry->normalize( 'getting-started-checklist' ) === 'quick-start', 'legacy Quick Start route remains compatible' );
 expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legacy Snippets remains visible and deprecated' );
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
+$groups = $registry->navigation_groups();
+$grouped_tab_ids = [];
+foreach ( $groups as $group ) {
+    $grouped_tab_ids = array_merge( $grouped_tab_ids, $group['tabs'] ?? [] );
+}
+$sorted_grouped_tab_ids = $grouped_tab_ids;
+$sorted_tab_ids = $tab_ids;
+sort( $sorted_grouped_tab_ids );
+sort( $sorted_tab_ids );
+expect_true(
+    count( $grouped_tab_ids ) === count( array_unique( $grouped_tab_ids ) )
+    && $sorted_grouped_tab_ids === $sorted_tab_ids,
+    'grouped sidebar assigns every HWS tab exactly once'
+);
+expect_true( count( $groups ) === 5 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use five clear sidebar groups' );
 expect_true(
     $registry->implementation_files_for_tab( 'sitemaps' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
     'Sitemaps tab loads its Site Profile dependency first'
@@ -95,6 +110,40 @@ expect_true(
     $registry->implementation_files_for_tab( 'footer-text' ) === [ 'settings-dashboard-website-types.php', 'settings-dashboard-footer-text.php' ],
     'Footer Text loads its shared toggle dependency before rendering'
 );
+
+$dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );
+expect_true(
+    str_contains( $dashboard_source, "'layout'          => 'sidebar'" )
+    && str_contains( $dashboard_source, "'sidebar_collapsible' => true" )
+    && str_contains( $dashboard_source, "'sidebar_persist'     => true" ),
+    'HWS dashboard uses the Hexa Core grouped, collapsible, persistent sidebar shell'
+);
+expect_true( str_contains( $dashboard_source, "'sidebar_identity'=> hws_dashboard_sidebar_identity()" ), 'HWS sidebar displays plugin and Core version identity' );
+
+$team_directory_source = source( 'src/TeamMembers/TeamMemberDirectory.php' );
+$team_feature_source = source( 'src/TeamMembers/TeamMemberFeature.php' );
+expect_true(
+    str_contains( $team_directory_source, "public const SHORTCODE = 'hws_team_members'" )
+    && str_contains( $team_directory_source, "public const POST_TYPE = 'team-member'" ),
+    'HWS owns the Team Member directory shortcode and canonical post type contract'
+);
+expect_true(
+    str_contains( $team_directory_source, "'portrait_grid'" )
+    && str_contains( $team_directory_source, "'editorial_list'" )
+    && str_contains( $team_directory_source, "'compact_directory'" ),
+    'HWS Team Member directory exposes exactly the three requested template identifiers'
+);
+expect_true(
+    str_contains( $team_feature_source, 'Prerequisite check' )
+    && str_contains( $team_feature_source, 'data-hws-team-template' )
+    && str_contains( $team_feature_source, 'Copy-ready shortcodes' ),
+    'HWS Features UI includes readiness, visual template selection, and shortcode documentation'
+);
+expect_true(
+    str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
+    'HWS Shortcodes catalog documents the owned Team Member shortcode'
+);
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.54', 'HWS bundles Hexa WordPress Plugin Core 0.19.54' );
 
 $footer_editor_source = source( "src/FrontendContent/legacy-footer-text-settings.php" );
 expect_true(

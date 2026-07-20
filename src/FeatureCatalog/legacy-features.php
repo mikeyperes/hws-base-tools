@@ -1,6 +1,8 @@
 <?php namespace hws_base_tools;
 
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
+use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
+use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -74,6 +76,7 @@ function hws_get_all_dashboard_features(): array {
         'enable_current_year_shortcode',
         'enable_lowercase_upload_filenames',
         'enable_footer_text_auto_injection',
+        TeamMemberDirectory::FEATURE_OPTION,
     ];
 
     foreach ( [ 'Admin Features', 'Frontend Features' ] as $group_name ) {
@@ -109,6 +112,11 @@ function hws_render_feature_toggle( array $feature ): string {
 
 function hws_render_feature_settings( array $feature ): void {
     $feature_id = $feature['id'] ?? '';
+
+    if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
+        TeamMemberFeature::render_settings();
+        return;
+    }
 
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
         echo '<p class="hws-feature-muted">No custom ACF or option adjustments needed.</p>';
@@ -415,6 +423,39 @@ function hws_output_feature_card_scripts(): void {
                 $button.prop('disabled', false).text('Run Test');
             });
         });
+
+        $(document).off('change.hwsTeamTemplate', '[data-hws-team-template]').on('change.hwsTeamTemplate', '[data-hws-team-template]', function() {
+            var $input = $(this);
+            var $settings = $input.closest('[data-feature-settings]');
+            var $status = $settings.find('[data-hws-team-template-status]');
+            var featureId = $settings.data('feature-settings');
+            var style = $input.val() || '';
+
+            $settings.find('.hws-team-template-option').removeClass('is-selected');
+            $input.closest('.hws-team-template-option').addClass('is-selected');
+            $settings.find('[data-hws-team-template]').prop('disabled', true);
+            $status.text('Saving template...');
+
+            $.post(ajaxurl, {
+                action: 'hws_feature_save_settings',
+                nonce: hwsNonce,
+                feature_id: featureId,
+                style: style
+            }, function(response) {
+                if (!response || !response.success) {
+                    $status.text(response && response.data && response.data.message ? response.data.message : 'Save failed.');
+                    return;
+                }
+
+                var data = response.data || {};
+                $settings.find('[data-hws-team-selected-shortcode]').text(data.shortcode || '[hws_team_members]');
+                $status.text('Saved ' + (data.label || data.style || 'template') + '.');
+            }, 'json').fail(function() {
+                $status.text('AJAX error while saving the template.');
+            }).always(function() {
+                $settings.find('[data-hws-team-template]').prop('disabled', false);
+            });
+        });
     });
     </script>
     <?php
@@ -466,6 +507,13 @@ function ajax_hws_feature_save_settings(): void {
 
     $feature_id = isset( $_POST['feature_id'] ) ? sanitize_key( wp_unslash( $_POST['feature_id'] ) ) : '';
 
+    if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
+        $style = isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : TeamMemberDirectory::DEFAULT_STYLE;
+        $saved = TeamMemberFeature::save_style( $style );
+        hws_add_feature_activity( $feature_id, 'Selected the ' . $saved['label'] . ' template.' );
+        wp_send_json_success( $saved );
+    }
+
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
         wp_send_json_error( [ 'message' => 'No custom settings exist for this feature.' ] );
     }
@@ -515,6 +563,9 @@ function hws_run_feature_test( string $feature_id ): array {
     }
 
     switch ( $feature_id ) {
+        case TeamMemberDirectory::FEATURE_OPTION:
+            return TeamMemberFeature::test_report();
+
         case 'disable_non_admin_admin_bar':
             return [
                 'passed'  => true,

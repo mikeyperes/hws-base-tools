@@ -164,7 +164,16 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.127 (Current)
+### v10.18.128 (Current)
+
+- Added the HWS-owned `[hws_team_members]` directory with minimal portrait grid,
+  editorial list, and compact directory templates.
+- Added Team Member CPT/ACF readiness checks, AJAX template selection, visual
+  previews, shortcode examples, test reporting, and feature activity entries.
+- Updated the bundled Hexa WordPress Plugin Core to `0.19.54` and adopted its
+  grouped, collapsible, persistent AJAX sidebar navigation for all HWS tabs.
+
+### v10.18.127
 
 - Replaced AJAX-injected server editor markup in Footer Text with the supported
   WordPress dynamic editor lifecycle and Core tab cleanup, restoring reliable

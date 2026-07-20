@@ -65,6 +65,30 @@ Use `CoreUi::toggle()` for checkbox-style toggles. Core clips the hidden checkbo
 
 Use `CoreUi::detail_card()` for nested expandable/collapsible subcards inside a parent tool section. It is meant for descriptions, rule explanations, scan-location lists, and other supporting details that should not dominate the page on load.
 
+Use CoreUi::collection_filter() for a client-side search control above a repeated card collection. Give every top-level item a dedicated class through the CoreUi::collapsible() class argument; do not target every nested Core section.
+
+An optional group selector hides headings whose groups contain no matches. Core owns visible/total reporting, clear and Escape behavior, empty results, initial setup, and AJAX host-tab reinitialization.
+
+Set text_selector when repeated cards contain shared logs or diagnostics. Core searches only those descendant regions, then falls back to data-hpc-filter-text or full item text when no selector is supplied.
+
+Use `ScopedCssOverride::render()` for a closed-by-default CSS editor or reference panel. The host supplies its scope selector, concise instructions, formatted HTML structure, and formatted CSS example. When the host supplies a setting key and value, Core also renders the actual code editor and save-status slot. Core owns the details card, editor, code blocks, and copy actions; the host owns validation, persistence, and frontend output.
+
+```php
+use Hexa\PluginCore\WpAdminComponents\ScopedCssOverride;
+
+echo ScopedCssOverride::render(
+    [
+        'title'        => 'Component CSS override',
+        'selector'     => 'body .example-component',
+        'instructions' => [
+            'Keep every rule inside this selector.',
+            'Add a WordPress body class before it to target one page.',
+        ],
+        'html_example' => '<div class="example-component">...</div>',
+        'css_example'  => "body .example-component {\n  color: #111827;\n}",
+    ]
+);
+```
 
 ## WP Admin UI Cleanup
 
@@ -124,6 +148,8 @@ Hexa\PluginCore\GettingStartedChecklist
 ```
 
 Use `GettingStartedChecklistConfig` for host-owned action names, nonce settings, capability, labels, ordered steps, semantic request types, and request metadata. Use `GettingStartedChecklistAjaxController` to register the guarded AJAX runner. Use `GettingStartedChecklistRenderer` to render the reusable checklist UI with simple action rows, collapsible parent steps only when real subtasks exist, nested subtasks, spinner/check/X states, request type badges, sequential AJAX execution, optional image preview assets in reports, and a collapsed dark technical activity log.
+
+`GettingStartedChecklistRenderer` owns host-facing markup and delegates its scoped CSS/browser runtime to the internal `GettingStartedChecklistAssets` collaborator. Hosts continue to instantiate only the renderer.
 
 Set `show_type_badges` to `false` for checklist screens that are meant to read as simple action lists. Keep it enabled when request type labels help operators understand mixed setup, status-check, destructive, and configuration tasks.
 
@@ -198,16 +224,19 @@ Use `PluginCheckDefinition` arrays for host-owned plugin lists. Use `PluginCheck
 
 Required rules:
 
-- Keep plugin-specific catalog data in the host plugin.
-- Keep table UI, collapsible cards, install/activate actions, and status rendering in Hexa Core.
-- The green check or red X beside the plugin title is based on actual installed/present status.
-- Use `required` to show the Required/Optional badge and to style missing required rows.
+- Keep plugin-specific catalog and policy data in the host plugin.
+- Keep table UI, collapsible cards, plugin actions, and status rendering in Hexa Core.
+- Use `required => true` for dependencies that must be installed and active.
+- Use `should_not_contain => true` only for plugins the host explicitly forbids. Never infer forbidden policy from an installed plugin being absent from a recommendation list.
+- Leave installed-but-unlisted plugins neutral. Core labels them `Not listed`; it does not flag or remove them.
+- Render Policy, Installation, and Status as separate columns. A satisfied required policy and an absent forbidden policy are green; an unsatisfied required policy or installed forbidden policy is red.
+- Keep compliant forbidden definitions visible unless the host deliberately sets `hide_compliant_forbidden => true`.
 - Use `source => wordpress_org` with `wp_org_slug` for WordPress.org installs.
 - Use `source => github` with `github_repo` for GitHub ZIP installs. Core normalizes extracted `repo-main` folders to the configured slug.
 - Use `source => pro` or `manual` when a plugin requires a manual upload/download.
 - Use `source => must_use` or `dropin` for MU plugins and WordPress drop-ins; Core treats installed/present as active and skips update/auto-update checks.
-- Do not render a separate Installed column. Show installed/missing state as a Font Awesome SVG green check or red X beside the plugin title, with hover text explaining the state.
-- The Status column prints the icon plus `Active` or `Inactive`.
+- Keep shared Core and DynamicButton assets in the full renderer. AJAX content fragments must suppress automatic asset emission so style and script tags never land inside plugin rows.
+- When a host disables the Source column, Core renders source beneath the plugin path, uses a fixed seven-column desktop layout without horizontal scrolling, and stacks labeled cells below 900px.
 - Keep Deactivate and Delete as subtle secondary row controls. They are available for installed normal plugins, require confirmation where destructive, and remain blocked for must-use plugins and drop-ins.
 - Do not use emoji indicators in plugin inventory UIs.
 
@@ -508,6 +537,8 @@ Hexa\PluginCore\SiteStructure
 
 Use `PageStructureManager` for critical page blueprints, callback-backed assigned page storage, starter/template content, page details, managed page create/delete protection, WordPress navigation menu creation, custom menu items, add-all-pages menu actions, menu blueprint attachment, and page-to-menu-item attachment. Use `SiteStructureAjaxController` to keep host-specific AJAX action names while sharing nonce, capability, and request handling. Use `SiteStructureRenderer` for the admin UI. The renderer accepts `show_pages` and `show_menus` so hosts can split page assignment and menu building into separate tabs without duplicating menu code. For large page sets, `lazy_page_workspace` plus the `page_workspace` AJAX action renders one shared editor and loads only the selected page's detail/template payload.
 
+`PageStructureManager` remains the host-facing facade; internal `PageStructureMenuService` and `PageStructureTemplateService` collaborators isolate menu and template/workspace behavior without changing its public methods. `SiteStructureRenderer` similarly delegates browser behavior to internal `SiteStructureScriptRenderer`.
+
 ```php
 use Hexa\PluginCore\SiteStructure\PageStructureManager;
 use Hexa\PluginCore\SiteStructure\SiteStructureAjaxController;
@@ -749,6 +780,8 @@ page       render-only, removed on refresh
 transient  stored with set_transient
 permanent  stored with update_option
 ```
+
+Activity logs are collapsed by default. Hosts may opt into an initially open log by passing `collapsed => false`.
 
 Example:
 
@@ -1251,20 +1284,40 @@ Before changing a plugin that consumes this core:
 
 Namespace: `Hexa\PluginCore\WpAdminTabs`
 
-Use `HostTabsRenderer` for the visible host plugin tab shell. It owns the shared Hexa tab bar, AJAX tab loading, status text, history updates, and load events. Host plugins provide the tab array, active tab, admin page URL, AJAX action, nonce, and first-render callback.
+Use `HostTabsRenderer` for the complete visible host plugin shell. It owns the top-tab or grouped-sidebar markup, responsive UI, AJAX tab loading, status text, history updates, accessibility relationships, load events, and optional persisted sidebar state. Host plugins provide the tab registry, active tab, groups, admin page URL, AJAX action, nonce, unique root and panel IDs, and first-render callback.
+
+Optional `sidebar_identity` data contains host plugin and Core names, installed or GitHub versions, and repository URLs. Core owns escaping, markup, external-link safety, responsive wrapping, and hiding this metadata when the rail is collapsed.
 
 ```php
 ( new \Hexa\PluginCore\WpAdminTabs\HostTabsRenderer() )->render(
     [
-        "tabs"            => $tabs,
-        "active"          => $active,
-        "page_url"        => admin_url( "options-general.php?page=example-plugin" ),
-        "ajax_action"     => "example_load_tab",
-        "nonce"           => $nonce,
-        "render_callback" => [ $dashboard, "tab" ],
+        "tabs"                => $tabs,
+        "active"              => $active,
+        "page_url"            => admin_url( "options-general.php?page=example-plugin" ),
+        "ajax_action"         => "example_load_tab",
+        "nonce"               => $nonce,
+        "root_id"             => "example-plugin-tabs",
+        "panel_id"            => "example-plugin-panel",
+        "layout"              => "sidebar",
+        "groups"              => $navigation_groups,
+        "sidebar_identity"    => [
+            "plugin_name"     => "Example Plugin",
+            "current_version" => $installed_version,
+            "github_version"  => $github_version,
+            "github_url"      => "https://github.com/example/example-plugin",
+            "core_name"       => "Hexa WP Core",
+            "core_version"    => $core_version,
+            "core_github_url" => "https://github.com/mikeyperes/hexa-wordpress-plugin-core",
+        ],
+        "sidebar_collapsible" => true,
+        "sidebar_collapsed"   => false,
+        "sidebar_persist"     => true,
+        "render_callback"     => [ $dashboard, "tab" ],
     ]
 );
 ```
+
+The expanded desktop rail is 214px and has no internal vertical scroll. It collapses to a 44px icon control. Persistent state is scoped to `root_id`; identity metadata is hidden when collapsed; and mobile links and versions wrap without horizontal scrolling. Host plugins must remove obsolete host-level tab CSS and JavaScript after migration rather than maintaining two navigation systems.
 
 ## System Checks
 

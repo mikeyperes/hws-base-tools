@@ -10,6 +10,7 @@ use HWS\BaseTools\PluginRuntime\CoreIntegration;
 use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\FrontendContent\FeatureLoader;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
+use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 
 /**
  * Legacy bootstrap.
@@ -789,6 +790,7 @@ function get_snippets($type = "")
     // ─── NON-ADMIN / FRONTEND SNIPPETS ─────────────────────────────────
     $snippet_non_admin = [
     // ★ RECOMMENDED
+    TeamMemberFeature::definition(),
     [
         'id' => 'enable_elementor_social_icon_cleanup',
         'name' => 'Elementor Social Icons Cleanup',

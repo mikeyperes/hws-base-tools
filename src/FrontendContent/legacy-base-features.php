@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -60,4 +62,8 @@ function hws_lowercase_upload_filename( string $filename ): string {
 
 function enable_lowercase_upload_filenames(): void {
     add_filter( 'sanitize_file_name', __NAMESPACE__ . '\\hws_lowercase_upload_filename', 20 );
+}
+
+function enable_team_member_directory_templates(): void {
+    ( new TeamMemberDirectory() )->register();
 }

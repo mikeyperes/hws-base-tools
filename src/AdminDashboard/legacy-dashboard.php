@@ -2,6 +2,9 @@
 
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
 use HWS\BaseTools\Security\RemoteActionPolicy;
+use HWS\BaseTools\PluginRuntime\PluginMetadata;
+use Hexa\PluginCore\CorePackageUpdates\CorePackageStatus;
+use Hexa\PluginCore\PluginUpdates\PluginUpdateStatus;
 
 /**
  * HWS Base Tools - Main Settings Dashboard
@@ -572,6 +575,21 @@ function hws_render_dashboard_tab( string $tab_id ): void {
     }
 }
 
+function hws_dashboard_sidebar_identity(): array {
+    $plugin_status = ( new PluginUpdateStatus( hws_get_hexa_plugin_core_updater_config() ) )->get();
+    $core_status = ( new CorePackageStatus( hws_get_hexa_plugin_core_package_config() ) )->get();
+
+    return [
+        'plugin_name'     => (string) ( $plugin_status['plugin_name'] ?? PluginMetadata::NAME ),
+        'current_version' => (string) ( $plugin_status['current_version'] ?? PluginMetadata::VERSION ),
+        'github_version'  => (string) ( $plugin_status['latest_version'] ?? 'Unknown' ),
+        'github_url'      => (string) ( $plugin_status['github_url'] ?? 'https://github.com/' . PluginMetadata::GITHUB_REPOSITORY ),
+        'core_name'       => 'Hexa WP Core',
+        'core_version'    => (string) ( $core_status['current_version'] ?? 'Unknown' ),
+        'core_github_url' => (string) ( $core_status['github_url'] ?? 'https://github.com/mikeyperes/hexa-wordpress-plugin-core' ),
+    ];
+}
+
 function display_wp_admin_settings_page() {
     if ( ob_get_level() == 0 ) ob_start();
 
@@ -830,6 +848,12 @@ function display_wp_admin_settings_page() {
             'root_id'         => 'hws-core-tools-tabs',
             'panel_id'        => 'hws-core-tools-tab-panel',
             'label'           => 'HWS Base Tools sections',
+            'layout'          => 'sidebar',
+            'groups'          => DashboardRegistry::instance()->navigation_groups(),
+            'sidebar_identity'=> hws_dashboard_sidebar_identity(),
+            'sidebar_collapsible' => true,
+            'sidebar_collapsed'   => false,
+            'sidebar_persist'     => true,
             'render_callback' => __NAMESPACE__ . '\\hws_render_dashboard_tab',
         ] );
         ?>
