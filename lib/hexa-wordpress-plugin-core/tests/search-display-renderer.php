@@ -54,9 +54,10 @@ $invalid = SearchDisplayRenderer::render(
 );
 $custom = SearchDisplayRenderer::render(
     [
-        'style'  => 'command',
-        'accent' => '#2f6df6',
-        'radius' => '18',
+        'style'         => 'command',
+        'accent'        => '#2f6df6',
+        'radius'        => '18',
+        'hidden_fields' => [ 'hexa_search' => '1' ],
     ]
 );
 
@@ -89,6 +90,7 @@ $checks = [
     'Invalid CSS values are discarded.' => ! str_contains( $invalid, 'not-a-color' )
         && ! str_contains( $invalid, 'calc(10px)' ),
     'Valid accent and radius values become scoped CSS variables.' => str_contains( $custom, '--sd-accent:#2f6df6;--sd-radius:18px;' ),
+    'Host-provided request markers are included in visible and overlay forms.' => 2 === substr_count( $custom, 'type="hidden" name="hexa_search" value="1"' ),
     'Descriptions document behavior and intended placement.' => ! array_filter(
         $styles,
         static fn( array $definition ): bool => '' === $definition['label'] || '' === $definition['behavior'] || '' === $definition['description'] || '' === $definition['best_for']

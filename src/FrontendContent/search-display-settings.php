@@ -3,7 +3,9 @@
 namespace hws_base_tools;
 
 use Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
+use HWS\BaseTools\FrontendContent\SearchQueryFeature;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -47,12 +49,13 @@ function render_tab_search(): void {
     $styles = SearchDisplayRenderer::styles();
     $accent_value = '' !== $settings['accent'] ? $settings['accent'] : '#1b2230';
     $nonce = wp_create_nonce( HWS_AJAX_NONCE );
+    CoreUi::render_assets();
     ?>
-    <div class="hws-search-display-admin" id="hws-search-display-admin">
+    <div class="hws-search-display-admin hpc-ui" id="hws-search-display-admin">
         <header class="hws-search-display-heading">
             <div>
-                <h2>Site Search Display</h2>
-                <p>Select the public search-box design used by <code>[hexa_search]</code>. Every preview below is rendered by the same Hexa WP Core function used on the front end.</p>
+                <h2>Site Search</h2>
+                <p>Control both the public search-box design and the tightly scoped query behavior used by <code>[hexa_search]</code>.</p>
             </div>
             <div class="hws-search-display-current" aria-live="polite">
                 <span>Current design</span>
@@ -74,6 +77,8 @@ function render_tab_search(): void {
             </div>
             <p class="hws-search-display-example"><code>[hexa_search style="overlay" accent="#2f6df6" placeholder="Search stories..."]</code></p>
         </section>
+
+        <?php render_search_query_settings(); ?>
 
         <div data-hws-search-form>
             <fieldset class="hws-search-display-templates">
@@ -105,6 +110,7 @@ function render_tab_search(): void {
                                     'accent'      => $settings['accent'],
                                     'placeholder' => $settings['placeholder'],
                                     'id'          => 'hws-search-preview-' . $style,
+                                    'hidden_fields' => SearchQueryFeature::marker_fields(),
                                 ]
                             ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                             ?>

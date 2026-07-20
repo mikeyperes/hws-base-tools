@@ -46,6 +46,8 @@ Legacy Snippets remains visible and marked deprecated.
 The Search tab provides five live front-end search previews from the shared
 `Hexa\PluginCore\SearchDisplay` renderer. Saving a design changes the default
 output of `[hexa_search]` without changing the shortcode wherever it is placed.
+Its separate Search Behavior panel uses `Hexa\PluginCore\SearchQuery` for
+strictly scoped native result matching.
 
 ## Overview
 
@@ -96,7 +98,13 @@ and isolated test structure.
 Five selectable public site-search templates: Icon Reveal, Overlay, Pill,
 Underline, and Command Bar. Admin previews and `[hexa_search]` both call the
 same Hexa WP Core renderer. Searches submit through WordPress's native
-`/?s=query` flow; this feature does not load AJAX search results.
+`/?s=query` flow; this feature does not load AJAX search results. A separate,
+default-disabled behavior panel controls all/any/exact terms,
+whole/prefix/contains matching, dynamic public post types, title/content/excerpt/slug,
+opt-in taxonomy/author/custom-field sources, result count, ordering, and
+shortcode-only versus all-public-search scope. See
+[docs/search-query-audit.md](docs/search-query-audit.md) for the five-plugin
+source audit and the decisions carried into HWS.
 
 ## Brand Assets Tab
 One place for favicon and logo assets:
@@ -176,7 +184,25 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.134 (Current)
+### v10.18.137 (Current)
+
+- Added a comprehensive Search Behavior panel with AJAX persistence, dynamic
+  public post-type/taxonomy controls, matching modes, sources, limits, ordering,
+  and a visible five-plugin criteria audit.
+- Added the reusable Hexa WordPress Plugin Core `SearchQuery` engine with strict
+  request guards and one-query-only SQL filtering.
+- Updated the bundled Hexa WordPress Plugin Core to `0.19.59`.
+
+### v10.18.136
+
+- Fixed Search template settings so the AJAX save runs without nested forms.
+
+### v10.18.135
+
+- Added five reusable site-search display templates and the `[hexa_search]`
+  shortcode through Hexa WordPress Plugin Core `SearchDisplay`.
+
+### v10.18.134
 
 - Updated Hexa WordPress Plugin Core to `0.19.57` so Quick Start search visibly
   removes nonmatching grid rows instead of only marking them hidden in the DOM.

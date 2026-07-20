@@ -84,6 +84,7 @@ final class SearchDisplayFeature {
                 'placeholder' => (string) $attributes['placeholder'],
                 'label'       => (string) $attributes['label'],
                 'radius'      => (string) $attributes['radius'],
+                'hidden_fields' => SearchQueryFeature::marker_fields(),
             ]
         );
     }

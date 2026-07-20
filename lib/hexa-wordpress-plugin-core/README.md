@@ -51,6 +51,7 @@ hexa-wordpress-plugin-core/
     SchemaDetection/    -> Hexa\PluginCore\SchemaDetection
     SchemaTools/        -> Hexa\PluginCore\SchemaTools
     SearchDisplay/      -> Hexa\PluginCore\SearchDisplay
+    SearchQuery/        -> Hexa\PluginCore\SearchQuery
     SmartSearch/        -> Hexa\PluginCore\SmartSearch
     SystemEnvironment/  -> Hexa\PluginCore\SystemEnvironment
     WpAdminUiCleanup/   -> Hexa\PluginCore\WpAdminUiCleanup
@@ -92,6 +93,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
 - `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
 - `SearchDisplay`: five reusable front-end WordPress search-form templates with shared markup, CSS, and accessible interactions.
+- `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, selected post types and sources, and one-query-only SQL hooks.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
@@ -173,6 +175,8 @@ Before adding implementations in another Codex or Claude chat, read:
 - `docs/object-cache.md`
 - `docs/site-structure.md`
 - `docs/schema-detection.md`
+- `docs/search-display.md`
+- `docs/search-query.md`
 - `docs/field-structures.md`
 - `docs/faq-sets.md`
 - `docs/brand-colors.md`
@@ -207,6 +211,12 @@ $core_config = CorePackageConfig::from_core_root(
 ```
 
 This panel compares the vendored `VERSION` in the host plugin with the public GitHub repository `VERSION`. The host plugin updater and the vendored core updater both render as default-open persistent collapse cards. Each card reports the Git repo, Git URL, Git branch, Git version, current version, current-vs-Git comparison, green/red status flag, check-for-updates action, normalized ZIP download, and live update activity log.
+
+## Native Search Query Behavior
+
+Version 0.19.59 adds `Hexa\PluginCore\SearchQuery`, a reusable native WordPress search-results engine. It separates all/any/exact term logic from whole/prefix/contains word matching, supports selected public post types and explicit native or advanced sources, and keeps display options outside the behavior contract.
+
+Its `pre_get_posts` coordination is deliberately narrow: unrelated, admin, AJAX, REST, cron, feed, nested, disabled, and empty queries are rejected before host settings are loaded. The SQL callback binds to one exact `WP_Query` object and removes itself immediately after that query reaches it. See `docs/search-query.md` for the host protocol and mandatory performance guards.
 
 ## Collection Filters and Sidebar Header
 

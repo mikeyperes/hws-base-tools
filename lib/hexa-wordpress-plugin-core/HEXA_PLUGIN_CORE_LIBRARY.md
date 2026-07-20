@@ -42,6 +42,7 @@ src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SiteStructure/      Hexa\PluginCore\SiteStructure
 src/SchemaDetection/    Hexa\PluginCore\SchemaDetection
 src/SearchDisplay/      Hexa\PluginCore\SearchDisplay
+src/SearchQuery/        Hexa\PluginCore\SearchQuery
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
 src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
 src/WpAdminUiCleanup/   Hexa\PluginCore\WpAdminUiCleanup
@@ -696,10 +697,55 @@ echo \Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer::render([
     'style'       => 'overlay',
     'accent'      => '#2f6df6',
     'placeholder' => 'Search stories...',
+    'hidden_fields' => [ 'example_search' => '1' ],
 ]);
 ```
 
-Do not duplicate the renderer CSS, SVG, markup, or interaction script inside a host plugin. Do not confuse this with `SmartSearch`, which is the separate AJAX typeahead/content-picker system.
+Do not duplicate the renderer CSS, SVG, markup, or interaction script inside a host plugin. `hidden_fields` is the bridge to a shortcode-scoped `SearchQuery` engine; names are sanitized, values are escaped, and the renderer accepts at most ten fields.
+
+## Native Search Query Behavior
+
+Namespace:
+
+```text
+Hexa\PluginCore\SearchQuery
+```
+
+Classes:
+
+```text
+SearchQueryConfiguration
+SearchTermParser
+SearchQueryEngine
+```
+
+Use this namespace to alter one explicitly eligible native WordPress search-results query. The host owns option storage, capability/nonce checks, available public post types and taxonomies, and the request marker. Core owns normalization, bounded parsing, selected-source SQL, and query scoping.
+
+```php
+$engine = new \Hexa\PluginCore\SearchQuery\SearchQueryEngine(
+    static function (): array {
+        return \Hexa\PluginCore\SearchQuery\SearchQueryConfiguration::normalize(
+            (array) get_option( 'example_search_behavior', [] ),
+            get_post_types( [ 'public' => true ], 'names' ),
+            get_taxonomies( [ 'public' => true ], 'names' )
+        );
+    },
+    'example_search'
+);
+$engine->register();
+```
+
+Supported behavior:
+
+- term logic: `all`, `any`, or `exact`
+- word matching: `whole`, `prefix`, or `contains`
+- sources: title, content, excerpt, slug, selected taxonomy names, author display names, and selected custom-field keys
+- public post-type selection, result count from 0 to 100, and relevance/newest/oldest/title ordering
+- `shortcode` scope through a hidden marker, or deliberate `all` public-search scope
+
+Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state, binds `posts_search` to one exact `WP_Query` object, and removes the temporary filter immediately after that object reaches it. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
+
+Do not copy this into host `pre_get_posts` callbacks. Do not use it for suggestions: `SmartSearch` remains the separate AJAX typeahead/content-picker system. Full protocol: `docs/search-query.md`.
 
 ## Smart Search / X-Search
 

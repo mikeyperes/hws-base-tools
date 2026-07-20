@@ -114,6 +114,7 @@ GitHub plugin updater              Hexa\PluginCore\PluginUpdates
 Vendored Core updater              Hexa\PluginCore\CorePackageUpdates
 Shortcode catalog and testing      Hexa\PluginCore\ShortcodeRegistry
 Front-end search-form templates    Hexa\PluginCore\SearchDisplay
+Native search-result behavior      Hexa\PluginCore\SearchQuery
 UI cleanup behavior                Hexa\PluginCore\WpAdminUiCleanup
 Content and backup cleanup         Hexa\PluginCore\ContentCleanup
 Environment probes                Hexa\PluginCore\SystemEnvironment
@@ -174,7 +175,8 @@ Before release:
 6. Exercise media/editor tabs, especially Brand Assets and Footer Text.
 7. Verify the Shortcodes tab lists definitions and produces test output.
 8. Verify every Search preview, AJAX settings persistence, shortcode output,
-   overlay controls, and native `/?s=` submission.
+   overlay controls, native `/?s=` submission, term mode, word-matching mode,
+   content source, and shortcode-only query scope.
 9. Confirm no PHP notices, page errors, or browser console errors.
 
 Browser proof must use the exact visible UI path. A direct helper invocation is

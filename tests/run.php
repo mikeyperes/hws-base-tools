@@ -64,18 +64,22 @@ function sanitize_hex_color( mixed $value ): ?string {
     return preg_match( '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value ) ? $value : null;
 }
 
-function apply_filters( string $hook, mixed $value ): mixed {
+function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
     return $value;
 }
 
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabDefinition.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabRegistry.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDisplayRenderer.php';
+require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryConfiguration.php';
+require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchTermParser.php';
+require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryEngine.php';
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
 require_once $root . '/src/FeatureCatalog/FeatureValueResolver.php';
 require_once $root . '/src/FrontendContent/SearchDisplayFeature.php';
+require_once $root . '/src/FrontendContent/SearchQueryFeature.php';
 require_once $root . '/src/Security/SecretStore.php';
 require_once $root . '/src/Security/RemoteActionPolicy.php';
 
@@ -131,6 +135,10 @@ expect_true(
     $registry->implementation_files_for_tab( 'search' ) === [ 'settings-dashboard-search.php' ]
     && $registry->implementation_files_for_ajax_action( 'hws_search_display_save' ) === [ 'settings-dashboard-search.php' ],
     'Search tab and its AJAX save action load the focused Search Display adapter'
+);
+expect_true(
+    $registry->implementation_files_for_ajax_action( 'hws_search_behavior_save' ) === [ 'settings-dashboard-search.php' ],
+    'Search Behavior AJAX saves load the focused Search tab adapter'
 );
 
 $dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );
@@ -190,18 +198,56 @@ expect_true(
     $search_settings === [ 'style' => 'overlay', 'accent' => '#2f6df6', 'placeholder' => 'Find stories' ],
     'HWS Search Display sanitizes the saved template, accent, and placeholder contract'
 );
+$search_behavior = HWS\BaseTools\FrontendContent\SearchQueryFeature::sanitize_settings(
+    [
+        'enabled'          => '1',
+        'scope'            => 'shortcode',
+        'term_logic'       => 'any',
+        'word_matching'    => 'prefix',
+        'post_types'       => [ 'post', 'book', 'private' ],
+        'fields'           => [ 'title', 'slug' ],
+        'taxonomies'       => [ 'category', 'private_taxonomy' ],
+        'authors'          => '1',
+        'custom_fields'    => '_sku, publication_name',
+        'results_per_page' => '18',
+        'orderby'          => 'newest',
+    ],
+    [ 'post' => 'Posts', 'page' => 'Pages', 'book' => 'Books' ],
+    [ 'category' => 'Categories' ]
+);
+expect_true(
+    $search_behavior['enabled']
+    && $search_behavior['term_logic'] === 'any'
+    && $search_behavior['word_matching'] === 'prefix'
+    && $search_behavior['post_types'] === [ 'post', 'book' ]
+    && $search_behavior['fields'] === [ 'title', 'slug' ]
+    && $search_behavior['taxonomies'] === [ 'category' ]
+    && $search_behavior['custom_fields'] === [ '_sku', 'publication_name' ]
+    && 18 === $search_behavior['results_per_page'],
+    'HWS Search Behavior delegates a bounded post-type, source, matching, and result contract to Hexa Core'
+);
 expect_true(
     str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), "public const SHORTCODE = 'hexa_search'" )
     && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchDisplayRenderer::render(' )
+    && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchQueryFeature::marker_fields()' )
     && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'SearchDisplayRenderer::render(' )
     && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hexa_search]'" ),
-    'HWS frontend shortcode, admin previews, and shortcode catalog share the Hexa Core Search Display contract'
+    'HWS frontend shortcode, admin previews, and shortcode catalog share the marked Hexa Core Search Display contract'
 );
 expect_true(
     str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<div data-hws-search-form>' )
     && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'save.addEventListener(\'click\'' )
     && ! str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<form data-hws-search-form>' ),
     'Search settings avoid invalid nested forms while Core previews render native search forms'
+);
+expect_true(
+    str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'hws_search_behavior_save' )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Five-Plugin Search Criteria Audit' )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'data-hws-search-query-save' )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "body.append('post_types[]',value)" )
+    && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new SearchQueryEngine(' )
+    && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
+    'Search Behavior exposes the five-plugin audit, refresh-free save, and reusable Core query engine'
 );
 $getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
 expect_true(
@@ -217,7 +263,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.58', 'HWS bundles Hexa WordPress Plugin Core 0.19.58' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.59', 'HWS bundles Hexa WordPress Plugin Core 0.19.59' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )

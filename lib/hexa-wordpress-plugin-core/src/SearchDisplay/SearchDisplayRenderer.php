@@ -52,7 +52,7 @@ final class SearchDisplayRenderer {
     }
 
     /**
-     * @param array{style?:string,accent?:string,placeholder?:string,action_url?:string,label?:string,radius?:string,id?:string} $args
+     * @param array{style?:string,accent?:string,placeholder?:string,action_url?:string,label?:string,radius?:string,id?:string,hidden_fields?:array<string,scalar>} $args
      */
     public static function render( array $args = [] ): string {
         $style = self::style( (string) ( $args['style'] ?? 'pill' ) );
@@ -73,6 +73,7 @@ final class SearchDisplayRenderer {
         }
 
         $uid = self::instance_id( $style, (string) ( $args['id'] ?? '' ) );
+        $hidden_fields = self::hidden_fields_html( $args['hidden_fields'] ?? [] );
         $variables = '';
         if ( '' !== $accent ) {
             $variables .= '--sd-accent:' . $accent . ';';
@@ -85,11 +86,11 @@ final class SearchDisplayRenderer {
         $output  = self::assets();
         $output .= '<div class="hexa-search hexa-search--' . esc_attr( $style ) . '"' . $style_attribute
             . ' data-hexa-search data-style="' . esc_attr( $style ) . '">';
-        $output .= self::widget_html( $style, $uid, $action, $placeholder, $label );
+        $output .= self::widget_html( $style, $uid, $action, $placeholder, $label, $hidden_fields );
         $output .= '</div>';
 
         if ( in_array( $style, [ 'overlay', 'command' ], true ) ) {
-            $output .= self::overlay_html( $uid, $action, $placeholder, $label, $style_attribute );
+            $output .= self::overlay_html( $uid, $action, $placeholder, $label, $style_attribute, $hidden_fields );
         }
 
         return $output;
@@ -112,7 +113,7 @@ final class SearchDisplayRenderer {
         return 'hexa-search-' . substr( md5( $style . '|' . self::$instance_count ), 0, 10 );
     }
 
-    private static function widget_html( string $style, string $uid, string $action, string $placeholder, string $label ): string {
+    private static function widget_html( string $style, string $uid, string $action, string $placeholder, string $label, string $hidden_fields ): string {
         $action = esc_url( $action );
         $placeholder = esc_attr( $placeholder );
         $label_attribute = esc_attr( $label );
@@ -122,7 +123,7 @@ final class SearchDisplayRenderer {
         switch ( $style ) {
             case 'icon-reveal':
                 return '<form class="sd-reveal-form" role="search" action="' . $action . '" method="get">'
-                    . '<button type="button" class="sd-reveal-btn" data-sd-toggle aria-label="' . $label_attribute . '" aria-expanded="false">' . $icon . '</button>'
+                    . $hidden_fields . '<button type="button" class="sd-reveal-btn" data-sd-toggle aria-label="' . $label_attribute . '" aria-expanded="false">' . $icon . '</button>'
                     . '<span class="sd-reveal-field"><input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '" tabindex="-1"></span>'
                     . '</form>';
 
@@ -132,28 +133,55 @@ final class SearchDisplayRenderer {
 
             case 'underline':
                 return '<form class="sd-underline" role="search" action="' . $action . '" method="get">'
-                    . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '"></form>';
+                    . $hidden_fields . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '"></form>';
 
             case 'command':
                 return '<form class="sd-cmd" role="search" action="' . $action . '" method="get">'
-                    . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '">'
+                    . $hidden_fields . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '">'
                     . '<button class="sd-cmd-k" type="button" data-sd-open="' . esc_attr( $uid . '-dialog' ) . '" aria-label="Open expanded search" aria-controls="' . esc_attr( $uid . '-dialog' ) . '" aria-expanded="false">&#8984;K</button>'
                     . '<button class="sd-cmd-go" type="submit">' . $label_html . '</button></form>';
 
             case 'pill':
             default:
                 return '<form class="sd-pill" role="search" action="' . $action . '" method="get">'
-                    . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '"></form>';
+                    . $hidden_fields . $icon . '<input class="sd-input" type="search" name="s" placeholder="' . $placeholder . '" aria-label="' . $label_attribute . '"></form>';
         }
     }
 
-    private static function overlay_html( string $uid, string $action, string $placeholder, string $label, string $style_attribute ): string {
+    private static function overlay_html( string $uid, string $action, string $placeholder, string $label, string $style_attribute, string $hidden_fields ): string {
         return '<div class="hexa-search-overlay" id="' . esc_attr( $uid . '-dialog' ) . '" role="dialog" aria-modal="true" aria-label="' . esc_attr( $label ) . '"' . $style_attribute . ' hidden>'
             . '<div class="sd-ov-panel" role="document"><form class="sd-ov-bar" role="search" action="' . esc_url( $action ) . '" method="get">'
-            . self::icon()
+            . $hidden_fields . self::icon()
             . '<input class="sd-input" type="search" name="s" placeholder="' . esc_attr( $placeholder ) . '" aria-label="' . esc_attr( $label ) . '">'
             . '<button class="sd-ov-close" type="button" data-sd-close aria-label="Close search">Esc</button>'
             . '</form></div></div>';
+    }
+
+    /** @param mixed $fields */
+    private static function hidden_fields_html( $fields ): string {
+        if ( ! is_array( $fields ) ) {
+            return '';
+        }
+
+        $html = '';
+        $count = 0;
+        foreach ( $fields as $name => $value ) {
+            if ( ! is_string( $name ) || ! is_scalar( $value ) ) {
+                continue;
+            }
+
+            $name = sanitize_key( $name );
+            if ( '' === $name ) {
+                continue;
+            }
+
+            $html .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '">';
+            if ( ++$count >= 10 ) {
+                break;
+            }
+        }
+
+        return $html;
     }
 
     private static function icon(): string {
