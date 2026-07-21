@@ -2,7 +2,7 @@
 
 WordPress site policy and operations tooling for Hexa-managed websites.
 
-Version 10.18.139 synchronizes the vendored Hexa WP Core package to 0.19.63.
+Version 10.18.140 synchronizes the vendored Hexa WP Core package to 0.19.64.
 
 ---
 
