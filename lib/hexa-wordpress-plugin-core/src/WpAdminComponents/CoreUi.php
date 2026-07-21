@@ -118,8 +118,8 @@ final class CoreUi {
             .hpc-credential-head p{color:var(--hpc-muted);font-size:13px;margin:0}
             .hpc-collection-filter{align-items:center;background:#f8fafc;border:1px solid var(--hpc-line);border-radius:8px;display:grid;gap:8px 14px;grid-template-columns:minmax(240px,520px) auto;margin:18px 0;padding:12px 14px}
             .hpc-collection-filter-field{min-width:0;position:relative}
-            .hpc-collection-filter-icon{color:#718096;font-size:18px;height:18px;left:11px;pointer-events:none;position:absolute;top:50%;transform:translateY(-50%);width:18px}
-            .hpc-collection-filter-input{background:#fff;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;height:40px;margin:0;padding:0 40px 0 37px;width:100%}
+            .hpc-collection-filter-icon{color:#718096;font-size:18px;height:18px;left:14px;pointer-events:none;position:absolute;top:50%;transform:translateY(-50%);width:18px;z-index:1}
+            .hpc-collection-filter-field .hpc-collection-filter-input{background:#fff;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;font-size:13px;height:40px;margin:0;padding:0 44px 0 46px;width:100%}
             .hpc-collection-filter-input:focus{border-color:var(--hpc-blue);box-shadow:0 0 0 2px rgba(49,87,213,.14);outline:0}
             .hpc-collection-filter-clear{align-items:center;background:transparent;border:0;border-radius:5px;color:#64748b;cursor:pointer;display:flex;height:30px;justify-content:center;padding:0;position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px}
             .hpc-collection-filter-clear:hover{background:#eef2f7;color:#172033}
@@ -311,18 +311,34 @@ final class CoreUi {
     public static function toggle( string $name, bool $checked, string $label, array $args = [] ): string {
         $id           = isset( $args['id'] ) ? sanitize_key( (string) $args['id'] ) : sanitize_key( $name . '-' . md5( $label ) );
         $value        = isset( $args['value'] ) ? (string) $args['value'] : '1';
-        $class        = trim( 'hpc-toggle ' . sanitize_html_class( (string) ( $args['class'] ?? '' ) ) );
+        $class_names  = preg_split( '/\s+/', trim( 'hpc-toggle ' . (string) ( $args['class'] ?? '' ) ) ) ?: [];
+        $class_names  = array_values( array_filter( array_map( 'sanitize_html_class', $class_names ) ) );
+        $class        = implode( ' ', $class_names );
+        $input_names  = preg_split( '/\s+/', trim( (string) ( $args['input_class'] ?? '' ) ) ) ?: [];
+        $input_names  = array_values( array_filter( array_map( 'sanitize_html_class', $input_names ) ) );
+        $input_class  = [] !== $input_names ? ' class="' . esc_attr( implode( ' ', $input_names ) ) . '"' : '';
         $disabled     = ! empty( $args['disabled'] ) ? ' disabled' : '';
         $tooltip      = '' !== (string) ( $args['tooltip'] ?? '' ) ? ' ' . self::tooltip( (string) $args['tooltip'] ) : '';
         $checked_attr = $checked ? ' checked' : '';
+        $data_attrs   = '';
+
+        foreach ( (array) ( $args['data'] ?? [] ) as $data_key => $data_value ) {
+            if ( ! is_scalar( $data_value ) ) {
+                continue;
+            }
+            $data_key = sanitize_key( str_replace( '_', '-', (string) $data_key ) );
+            if ( '' === $data_key ) {
+                continue;
+            }
+            $data_attrs .= ' data-' . $data_key . '="' . esc_attr( (string) $data_value ) . '"';
+        }
 
         return '<label class="' . esc_attr( $class ) . '" for="' . esc_attr( $id ) . '">'
-            . '<input id="' . esc_attr( $id ) . '" type="checkbox" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '"' . $checked_attr . $disabled . '>'
+            . '<input id="' . esc_attr( $id ) . '" type="checkbox" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '"' . $input_class . $data_attrs . $checked_attr . $disabled . '>'
             . '<span class="hpc-toggle-ui" aria-hidden="true"></span>'
             . '<span class="hpc-toggle-label">' . esc_html( $label ) . $tooltip . '</span>'
             . '</label>';
     }
-
     public static function inline_details( string $summary, string $body_html, bool $open = false ): string {
         return '<details class="hpc-inline-details"' . ( $open ? ' open' : '' ) . '><summary>' . esc_html( $summary ) . '</summary><div class="hpc-inline-details-body">' . wp_kses_post( $body_html ) . '</div></details>';
     }
