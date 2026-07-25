@@ -4,6 +4,7 @@ namespace hws_base_tools;
 
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
 use HWS\BaseTools\AcfFields\AcfModule;
+use HWS\BaseTools\ContentTypes\SharedContentTypes;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 use HWS\BaseTools\PluginRuntime\RequestContext;
 use HWS\BaseTools\PluginRuntime\CoreIntegration;
@@ -85,6 +86,9 @@ require_once HWS_BASE_TOOLS_DIR . '/runtime-options.php';
 require_once HWS_BASE_TOOLS_DIR . '/safe-wrappers.php';
 require_once HWS_BASE_TOOLS_DIR . '/src/LegacyCompatibility/runtime-functions.php';
 ScheduledTaskLoader::load_for_request();
+
+// Shared content types are HWS-owned and register on init independently of ACF.
+SharedContentTypes::boot();
 
 add_action( 'plugins_loaded', [ CoreIntegration::class, 'boot' ], 20 );
 
@@ -672,7 +676,6 @@ function get_snippets($type = "")
             'info' => static fn() => display_cpt_structure( 'organization' ),
             'function' => 'enable_smp_cpt_organization',
             'scope_admin_only' => false,
-            'deprecated' => true
         ],
         [
             'id' => 'enable_cpt_testimonial',
@@ -681,7 +684,6 @@ function get_snippets($type = "")
             'info' => static fn() => display_cpt_structure( 'testimonial' ),
             'function' => 'enable_cpt_testimonial',
             'scope_admin_only' => false,
-            'deprecated' => true
         ],
         [
             'id' => 'enable_acf_testimonial',
@@ -690,7 +692,6 @@ function get_snippets($type = "")
             'info'        => static fn() => display_acf_structure( 'group_64c2177b44137' ),
             'function' => 'enable_acf_testimonial',
             'scope_admin_only' => false,
-            'deprecated' => true
         ],
         [
             'id' => 'smp_enable_acf_organization',
@@ -699,7 +700,6 @@ function get_snippets($type = "")
             'info'        => static fn() => display_acf_structure( 'group_64bc3b458d863' ),
             'function' => 'enable_smp_acf_organization',
             'scope_admin_only' => false,
-            'deprecated' => true
         ],
         [
             'name'        => 'Author Social Media Links',

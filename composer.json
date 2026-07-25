@@ -13,6 +13,7 @@
   },
   "scripts": {
     "test": [
+      "@php tests/shared-content-types-unit.php",
       "@php tests/run.php",
       "@php lib/hexa-wordpress-plugin-core/tests/package-integrity.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-registry.php",

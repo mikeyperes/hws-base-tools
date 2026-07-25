@@ -188,6 +188,24 @@ expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
     'HWS Shortcodes catalog documents the owned Team Member shortcode'
 );
+$shared_content_types = source( 'src/ContentTypes/SharedContentTypes.php' );
+expect_true(
+    str_contains( $shared_content_types, "public const ORGANIZATION = 'organization'" )
+    && str_contains( $shared_content_types, "public const TESTIMONIAL = 'testimonial'" )
+    && str_contains( $shared_content_types, "public const TEAM_MEMBER = 'team-member'" ),
+    'HWS owns the shared Organization, Testimonial, and Team Member post type contract'
+);
+expect_true(
+    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'SharedContentTypes::boot();' )
+    && ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'register-post-type-' ),
+    'shared post types register on init independently of the ACF lifecycle'
+);
+expect_true(
+    str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-organization.php' ), 'SharedContentTypes::register_type' )
+    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-testimonial.php' ), 'SharedContentTypes::register_type' )
+    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-team-member.php' ), 'SharedContentTypes::register_type' ),
+    'legacy shared post type callbacks are thin adapters to the canonical HWS registry'
+);
 $search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_settings(
     [
         'style'       => 'overlay',

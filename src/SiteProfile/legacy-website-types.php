@@ -46,6 +46,19 @@ function get_website_type_presets() {
                 'smp_enable_acf_teammember',
             ],
         ],
+        'organization_website' => [
+            'name'        => 'Organization Website',
+            'description' => 'Organization configuration with HWS-owned organization, team member, and testimonial content types.',
+            'icon'        => 'building',
+            'snippets'    => [
+                'smp_enable_cpt_organization',
+                'smp_enable_cpt_teammember',
+                'enable_cpt_testimonial',
+                'enable_acf_testimonial',
+                'smp_enable_acf_organization',
+                'smp_enable_acf_teammember',
+            ],
+        ],
         // Future presets can be added here
         // 'business_website' => [ ... ],
         // 'ecommerce_website' => [ ... ],

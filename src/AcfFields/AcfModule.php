@@ -24,9 +24,6 @@ final class AcfModule {
 
     private static function load_enabled_legacy_smp_features(): void {
         $features = [
-            'smp_enable_cpt_organization' => 'src/AcfFields/LegacySmp/register-post-type-organization.php',
-            'smp_enable_cpt_teammember'   => 'src/AcfFields/LegacySmp/register-post-type-team-member.php',
-            'enable_cpt_testimonial'      => 'src/AcfFields/LegacySmp/register-post-type-testimonial.php',
             'smp_enable_acf_organization' => 'src/AcfFields/LegacySmp/register-acf-organization.php',
             'smp_enable_acf_teammember'   => 'src/AcfFields/LegacySmp/register-acf-team-member.php',
             'enable_acf_testimonial'      => 'src/AcfFields/LegacySmp/register-acf-testimonial.php',

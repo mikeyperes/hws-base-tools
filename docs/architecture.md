@@ -47,6 +47,7 @@ src/PluginRuntime/       HWS\BaseTools\PluginRuntime
 src/AdminDashboard/      HWS\BaseTools\AdminDashboard
 src/FeatureCatalog/      HWS\BaseTools\FeatureCatalog
 src/FrontendContent/     HWS\BaseTools\FrontendContent
+src/ContentTypes/        HWS-owned shared WordPress content types
 src/AcfFields/           HWS\BaseTools\AcfFields
 src/BrandAssets/         HWS site identity and legacy brand adapters
 src/PluginPolicy/        HWS required/optional plugin policy
@@ -95,6 +96,13 @@ only when its tab or AJAX action needs it.
 
 `AcfFields\AcfModule` loads field definitions on `acf/init`. Legacy SMP field
 groups are disabled unless their explicit compatibility option is enabled.
+
+`ContentTypes\SharedContentTypes` is the canonical owner of the
+`organization`, `testimonial`, and `team-member` post types. It registers
+enabled types on WordPress `init` without depending on ACF. Product plugins may
+enable and consume these types, but must not register competing definitions.
+Historical `enable_*_cpt_*` functions remain thin compatibility adapters to
+this registry.
 
 ## Dashboard Contract
 
