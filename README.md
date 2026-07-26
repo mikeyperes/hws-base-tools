@@ -2,9 +2,8 @@
 
 WordPress site policy and operations tooling for Hexa-managed websites.
 
-Version 10.18.150 adds optional HWS-owned Services (`services`) and Knowledge
-Base (`knowledge-base`) custom post types. Both preserve their static landing
-pages while supporting reusable entries below those URL paths.
+Version 10.18.151 ensures enabled login branding loads on the early masked-login
+route before WordPress renders the login screen.
 
 ---
 
@@ -188,7 +187,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.150 (Current)
+### v10.18.151 (Current)
+
+- Fixed masked-login branding so the enabled Site Icon logo hook is registered
+  before the priority-1 `/hexa-admin/` fallback includes WordPress login.
+- Made custom login-logo hook registration idempotent.
+
+### v10.18.150
 
 - Added optional HWS-owned Services (`services`) and Knowledge Base
   (`knowledge-base`) custom post types with dedicated snippet toggles.

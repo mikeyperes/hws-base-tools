@@ -353,6 +353,20 @@ $runtime_options = source( 'src/PluginRuntime/RuntimeOptions.php' );
 expect_true( str_contains( $runtime_options, "'hws_update_urls_enabled'       => 'no'" ), 'public update URLs seed disabled' );
 expect_true( str_contains( $runtime_options, "'hws_login_urls_enabled'        => 'no'" ), 'public login-control URLs seed disabled' );
 
+$login_mask_source = source( 'src/Security/legacy-login-mask.php' );
+$login_logo_source = source( 'src/FrontendContent/legacy-login-logo.php' );
+expect_true(
+    str_contains( $login_mask_source, 'self::prepare_enabled_login_branding();' )
+    && strpos( $login_mask_source, 'self::prepare_enabled_login_branding();' ) < strpos( $login_mask_source, "require_once ABSPATH . 'wp-login.php';" )
+    && str_contains( $login_mask_source, "get_option( 'enable_wp_admin_logo', false )" ),
+    'masked login initializes enabled login branding before rendering WordPress login'
+);
+expect_true(
+    str_contains( $login_logo_source, "has_action( 'login_enqueue_scripts', \$render_callback )" )
+    && str_contains( $login_logo_source, "has_filter( 'login_headerurl', \$link_callback )" ),
+    'custom login branding registers its hooks idempotently'
+);
+
 $force_handler = source( 'src/PluginPolicy/legacy-plugin-checks.php' );
 $force_offset = strpos( $force_handler, 'function hws_ct_force_update_check' );
 $force_source = false === $force_offset ? '' : substr( $force_handler, $force_offset, 700 );

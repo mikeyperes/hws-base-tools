@@ -416,8 +416,34 @@ private static function serve_core_login_now(): void {
     if (!defined('DONOTCACHEOBJECT')) define('DONOTCACHEOBJECT', true);
     if (!defined('DONOTCACHEDB'))     define('DONOTCACHEDB', true);
 
+    self::prepare_enabled_login_branding();
+
     require_once ABSPATH . 'wp-login.php';
     exit;
+}
+
+/** Register login branding before the priority-1 masked route exits init. */
+private static function prepare_enabled_login_branding(): void {
+    if ( ! get_option( 'enable_wp_admin_logo', false ) ) {
+        return;
+    }
+
+    $callback = __NAMESPACE__ . '\\custom_wp_admin_logo';
+
+    if ( ! function_exists( $callback ) ) {
+        $plugin_root = defined( 'HWS_BASE_TOOLS_DIR' )
+            ? HWS_BASE_TOOLS_DIR
+            : dirname( __DIR__, 2 );
+        $loader = $plugin_root . '/snippet-login-logo.php';
+
+        if ( is_readable( $loader ) ) {
+            require_once $loader;
+        }
+    }
+
+    if ( function_exists( $callback ) ) {
+        call_user_func( $callback );
+    }
 }
 
 

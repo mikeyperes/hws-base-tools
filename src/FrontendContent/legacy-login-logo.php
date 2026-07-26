@@ -3,8 +3,16 @@
 namespace hws_base_tools;
 
 function custom_wp_admin_logo(): void {
-    add_action( 'login_enqueue_scripts', __NAMESPACE__ . '\\hws_render_custom_login_logo', 20 );
-    add_filter( 'login_headerurl', __NAMESPACE__ . '\\custom_wp_admin_logo_link' );
+    $render_callback = __NAMESPACE__ . '\\hws_render_custom_login_logo';
+    $link_callback   = __NAMESPACE__ . '\\custom_wp_admin_logo_link';
+
+    if ( ! has_action( 'login_enqueue_scripts', $render_callback ) ) {
+        add_action( 'login_enqueue_scripts', $render_callback, 20 );
+    }
+
+    if ( ! has_filter( 'login_headerurl', $link_callback ) ) {
+        add_filter( 'login_headerurl', $link_callback );
+    }
 }
 
 function hws_render_custom_login_logo(): void {
