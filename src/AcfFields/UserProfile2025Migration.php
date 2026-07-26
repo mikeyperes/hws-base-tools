@@ -630,7 +630,9 @@ final class UserProfile2025Migration {
 
     private static function acf_value( string $field_name, string $post_id, int $user_id ): mixed {
         if ( function_exists( 'get_field' ) ) {
-            $value = get_field( $field_name, $post_id, false );
+            // ACF group values use field keys in raw mode and field names in
+            // formatted mode. Migrations compare against canonical names.
+            $value = get_field( $field_name, $post_id, true );
             if ( false !== $value && null !== $value ) {
                 return $value;
             }

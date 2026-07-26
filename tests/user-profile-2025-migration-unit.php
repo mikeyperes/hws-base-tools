@@ -69,7 +69,14 @@ function get_user_meta( int $user_id, string $key, bool $single = false ): mixed
 
 function get_field( string $field_name, string $post_id, bool $format_value = true ): mixed {
     $user_id = (int) substr( $post_id, 5 );
-    return $GLOBALS['user_meta'][ $user_id ][ $field_name ] ?? false;
+    $value = $GLOBALS['user_meta'][ $user_id ][ $field_name ] ?? false;
+    if ( ! $format_value && 'urls' === $field_name && is_array( $value ) ) {
+        return array_combine(
+            array_map( static fn( string $name ): string => 'field_raw_' . $name, array_keys( $value ) ),
+            array_values( $value )
+        );
+    }
+    return $value;
 }
 
 function update_user_meta( int $user_id, string $key, mixed $value ): bool {
