@@ -9,7 +9,7 @@
  *
  * 1. "User - Additional"               → additional_public_email, additional_public_phone, additional_title,
  *                                          staff_writer, muckrack_verified, muckrack_url
- * 2. "User - General Fields"           → URLs group (22 platforms), subtitle
+ * 2. "User Profile Fields (2025)"      → URLs group (23 platforms), subtitle, location, schema, photos
  * 3. "Schema.org Structured Data"      → entity_type, education, inception_date, headquarters, sameas
  *
  * All fields support BOTH shortcode prefixes:
@@ -39,6 +39,7 @@
  *   [company id="url_x"]                     /  [founder id="url_x"]
  *   [company id="url_soundcloud"]            /  [founder id="url_soundcloud"]
  *   [company id="url_the_org"]               /  [founder id="url_the_org"]
+ *   [company id="url_wellfound"]             /  [founder id="url_wellfound"]
  *   [company id="url_whatsapp"]              /  [founder id="url_whatsapp"]
  *   [company id="url_telegram"]              /  [founder id="url_telegram"]
  *   [company id="url_signal"]                /  [founder id="url_signal"]
@@ -260,10 +261,10 @@ function register_user_custom_fields_additional_2025() {
 /**
  * Register ACF User fields: "general"
  *
- * Group: urls (22 platform sub_fields)
+ * Group: urls (23 platform sub_fields)
  *   facebook, instagram, linkedin, youtube, tiktok, f6s, imdb, muckrack,
  *   wikipedia, x, soundcloud, the_org, whatsapp, telegram, signal,
- *   calendly, amazon, github, audible, threads, crunchbase, website
+ *   calendly, amazon, github, audible, threads, crunchbase, website, wellfound
  *
  * Top-level: subtitle
  *
@@ -282,7 +283,7 @@ function register_user_custom_fields_2025()
 
     acf_add_local_field_group( array(
         'key' => 'group_684252fd99081',
-        'title' => '',
+        'title' => 'User Profile Fields (2025)',
         'fields' => array(
 
             // ─────────────────────────────────────────────────────────────
@@ -546,6 +547,25 @@ function register_user_custom_fields_2025()
                         'append' => '',
                     ),
 
+                    // — Wellfound
+                    array(
+                        'key' => 'field_hws_user_profile_2025_wellfound',
+                        'label' => 'Wellfound',
+                        'name' => 'wellfound',
+                        'aria-label' => '',
+                        'type' => 'text',
+                        'instructions' => 'Shortcode: <code>[company id="url_wellfound"]</code> or <code>[founder id="url_wellfound"]</code>',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
+                        'default_value' => '',
+                        'maxlength' => '',
+                        'allow_in_bindings' => 0,
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                    ),
+
                     // — WhatsApp
                     array(
                         'key' => 'field_684347c9ff6e6',
@@ -770,6 +790,47 @@ function register_user_custom_fields_2025()
                 'append' => '',
             ),
 
+            array(
+                'key' => 'field_hws_user_profile_2025_location',
+                'label' => 'Location',
+                'name' => 'location',
+                'type' => 'text',
+                'instructions' => 'Shortcode: <code>[company id="location"]</code> or <code>[founder id="location"]</code>',
+                'required' => 0,
+                'conditional_logic' => 0,
+                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
+                'default_value' => '',
+            ),
+
+            array(
+                'key' => 'field_hws_user_profile_2025_schema_markup',
+                'label' => 'Schema Markup',
+                'name' => 'schema_markup',
+                'type' => 'textarea',
+                'instructions' => 'Optional profile-specific structured data retained from the deprecated profile group.',
+                'required' => 0,
+                'conditional_logic' => 0,
+                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
+                'default_value' => '',
+                'rows' => 8,
+                'new_lines' => '',
+            ),
+
+            array(
+                'key' => 'field_hws_user_profile_2025_photos',
+                'label' => 'Photos',
+                'name' => 'photos',
+                'type' => 'gallery',
+                'instructions' => 'Profile media retained from the deprecated profile group.',
+                'required' => 0,
+                'conditional_logic' => 0,
+                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
+                'return_format' => 'array',
+                'preview_size' => 'medium',
+                'insert' => 'append',
+                'library' => 'all',
+            ),
+
         ),
 
         // — Show on all user roles
@@ -793,341 +854,4 @@ function register_user_custom_fields_2025()
         'description' => '',
         'show_in_rest' => 0,
     ) );
-}
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// LEGACY: OLD PROFILE FIELD GROUP (disabled — returns immediately)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Legacy user custom fields registration.
- * This function is disabled (returns early) — kept for reference only.
- */
-function register_user_custom_fields(){
-    // — Disabled: legacy field group no longer in use
-    return;
-
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
-        'key' => 'group_590d64c31db0a',
-        'title' => 'Profile',
-        'fields' => array(
-            array(
-                'key' => 'field_590bebe0280ad',
-                'label' => 'Title',
-                'name' => 'job_title',
-                'aria-label' => '',
-                'type' => 'text',
-                'instructions' => 'ex: Activist, Journalist ...',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'default_value' => '',
-                'placeholder' => '',
-                'prepend' => '',
-                'append' => '',
-                'formatting' => 'html',
-                'maxlength' => '',
-            ),
-            array(
-                'key' => 'field_66822d0c39f9f',
-                'label' => 'Location',
-                'name' => 'location',
-                'aria-label' => '',
-                'type' => 'text',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'default_value' => '',
-                'maxlength' => '',
-                'placeholder' => '',
-                'prepend' => '',
-                'append' => '',
-            ),
-            array(
-                'key' => 'field_66822ba5423ab',
-                'label' => 'Socials',
-                'name' => 'socials',
-                'aria-label' => '',
-                'type' => 'group',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'layout' => 'block',
-                'sub_fields' => array(
-                    array(
-                        'key' => 'field_66822be1423ac',
-                        'label' => 'Facebook',
-                        'name' => 'facebook',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822beb423ad',
-                        'label' => 'LinkedIn',
-                        'name' => 'linkedin',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822bf0423ae',
-                        'label' => 'X',
-                        'name' => 'x',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822bf4423af',
-                        'label' => 'YouTube',
-                        'name' => 'youtube',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822bfc423b0',
-                        'label' => 'Instagram',
-                        'name' => 'instagram',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66c57bff4da4e',
-                        'label' => 'SoundCloud',
-                        'name' => 'soundcloud',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66c57c125b4ee',
-                        'label' => 'TikTok',
-                        'name' => 'tiktok',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                ),
-            ),
-            array(
-                'key' => 'field_66822cd7b0e18',
-                'label' => 'Profiles',
-                'name' => 'profiles',
-                'aria-label' => '',
-                'type' => 'group',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'layout' => 'block',
-                'sub_fields' => array(
-                    array(
-                        'key' => 'field_66822ce7b0e19',
-                        'label' => 'Wikipedia',
-                        'name' => 'wikipedia',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822cefb0e1a',
-                        'label' => 'Crunchbase',
-                        'name' => 'crunchbase',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822d01b0e1b',
-                        'label' => 'MuckRack',
-                        'name' => 'muckrack',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66822df8613b4',
-                        'label' => 'F6S',
-                        'name' => 'f6s',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                    array(
-                        'key' => 'field_66c57c3cf9bb0',
-                        'label' => 'iMDb',
-                        'name' => 'imdb',
-                        'aria-label' => '',
-                        'type' => 'text',
-                        'instructions' => '',
-                        'required' => 0,
-                        'conditional_logic' => 0,
-                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                        'default_value' => '',
-                        'maxlength' => '',
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
-                    ),
-                ),
-            ),
-            array(
-                'key' => 'field_66822e117671a',
-                'label' => 'Schema Markup',
-                'name' => 'schema_markup',
-                'aria-label' => '',
-                'type' => 'textarea',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'default_value' => '',
-                'maxlength' => '',
-                'rows' => '',
-                'placeholder' => '',
-                'new_lines' => '',
-            ),
-            array(
-                'key' => 'field_66824b8521a57',
-                'label' => 'Photos',
-                'name' => 'photos',
-                'aria-label' => '',
-                'type' => 'gallery',
-                'instructions' => '',
-                'required' => 0,
-                'conditional_logic' => 0,
-                'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
-                'return_format' => 'array',
-                'library' => 'all',
-                'min' => '',
-                'max' => '',
-                'min_width' => '',
-                'min_height' => '',
-                'min_size' => '',
-                'max_width' => '',
-                'max_height' => '',
-                'max_size' => '',
-                'mime_types' => '',
-                'insert' => 'append',
-                'preview_size' => 'medium',
-            ),
-        ),
-        'location' => array(
-            array(
-                array(
-                    'param' => 'user_role',
-                    'operator' => '==',
-                    'value' => 'all',
-                ),
-            ),
-        ),
-        'menu_order' => 0,
-        'position' => 'normal',
-        'style' => 'seamless',
-        'label_placement' => 'top',
-        'instruction_placement' => 'label',
-        'hide_on_screen' => '',
-        'active' => true,
-        'description' => '',
-        'show_in_rest' => 0,
-    ) );
-
 }

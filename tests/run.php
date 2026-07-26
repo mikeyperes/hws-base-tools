@@ -351,6 +351,18 @@ expect_true( ! file_exists( $root . '/register-acf-functionality.php' ), 'unsafe
 expect_true( ! str_contains( source( 'src/AcfFields/LegacySmpUserFields.php' ), "0 => 'field_6482a0f010e43'" ), 'legacy ACF profile photo no longer clones itself' );
 expect_true( ! str_contains( source( 'src/AcfFields/LegacySmpUserFields.php' ), 'Deprecated legacy social/profile fields' ), 'unreachable legacy ACF payload is removed' );
 
+$profile_fields = source( 'src/AcfFields/legacy-user-fields.php' );
+$profile_migration = source( 'src/AcfFields/UserProfile2025Migration.php' );
+expect_true( str_contains( $profile_fields, "'title' => 'User Profile Fields (2025)'" ), 'canonical 2025 user profile group has an explicit title' );
+expect_true( str_contains( $profile_fields, "'name' => 'wellfound'" ), 'canonical profile URLs retain Wellfound separately from The Org' );
+expect_true( str_contains( $profile_migration, "'wellfound'  => [ 'well_found_url', 'wellfound_url' ]" ), 'legacy Wellfound values map to the canonical Wellfound field' );
+expect_true( str_contains( $profile_migration, "'group_590d64c31db0a'" ), 'deprecated Profile group is covered by canonical migration' );
+expect_true( str_contains( $profile_migration, "'group_6419bc02b6e93'" ), 'deprecated Author group is covered by canonical migration' );
+expect_true( str_contains( $profile_migration, 'acf_remove_local_field_group' ), 'deprecated local user-profile groups are suppressed after canonical activation' );
+expect_true( ! str_contains( $profile_fields, "'key' => 'group_590d64c31db0a'" ), 'deprecated Profile field definition is removed from HWS' );
+expect_true( ! file_exists( $root . '/src/AcfFields/legacy-migrations.php' ), 'unsafe legacy profile migration UI is removed' );
+expect_true( ! file_exists( $root . '/delete-snippet-acf-migration-structures.php' ), 'legacy profile migration loader is removed' );
+
 $root_implementation_files = [];
 foreach ( glob( $root . '/*.php' ) ?: [] as $root_php_file ) {
     $filename = basename( $root_php_file );

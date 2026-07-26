@@ -571,7 +571,6 @@ if ( function_exists( __NAMESPACE__ . '\\enable_comments_management' ) ) {
     enable_comments_management();
 }
 // — Legacy ACF migration UI (pending delete — moved to delete-prefixed file)
-require_once HWS_BASE_TOOLS_DIR . '/delete-snippet-acf-migration-structures.php';
 
 
 require_once HWS_BASE_TOOLS_DIR . '/snippet-clean-user.php';
@@ -668,7 +667,7 @@ function get_snippets($type = "")
             'scope_admin_only' => false
         ],
 
-        // ─── Deprecated ───────────────────────────────────────────────
+        // ─── Shared content structures ────────────────────────────────
         [
             'id' => 'smp_enable_cpt_organization',
             'name' => 'Organizations Custom Post Type',
@@ -701,15 +700,6 @@ function get_snippets($type = "")
             'function' => 'enable_smp_acf_organization',
             'scope_admin_only' => false,
         ],
-        [
-            'name'        => 'Author Social Media Links',
-            'id'          => 'register_user_custom_fields',
-            'function'    => 'register_user_custom_fields',
-            'description' => 'Adds social media profile links (Twitter, Facebook, LinkedIn, etc.) to author profiles.',
-            'info'        => static fn() => display_acf_structure( 'group_590d64c31db0a', true ),
-            'scope_admin_only' => false,
-            'deprecated'  => true
-        ]
     ];
 
 

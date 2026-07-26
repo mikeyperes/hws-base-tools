@@ -6,6 +6,8 @@ use HWS\BaseTools\PluginRuntime\PluginMetadata;
 
 final class AcfModule {
     public static function register(): void {
+        UserProfile2025Migration::register();
+
         foreach ( [
             'register-acf-fields-user.php',
             'register-acf-fields-rss.php',
