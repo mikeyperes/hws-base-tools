@@ -619,9 +619,9 @@ final class UserProfile2025Migration {
             return;
         }
 
-        if ( false === update_field( $field_key, $value, $post_id ) ) {
-            $report['errors'][] = 'ACF failed to update field ' . $field_key . '.';
-        }
+        // ACF returns false when the value is unchanged, even if it refreshed
+        // the hidden field-key reference. Verification runs after migration.
+        update_field( $field_key, $value, $post_id );
     }
 
     private static function field_reference( int $user_id, string $meta_key ): string {

@@ -103,7 +103,9 @@ function update_field( string $field_key, mixed $value, string $post_id ): bool 
     $GLOBALS['write_log'][] = [ 'update_field', $user_id, $field_key, $value ];
     $GLOBALS['user_meta'][ $user_id ][ $name ] = $value;
     $GLOBALS['user_meta'][ $user_id ][ '_' . $name ] = $field_key;
-    return true;
+    // Match ACF's no-op contract: references can be refreshed while the
+    // top-level call reports that the field value itself did not change.
+    return false;
 }
 
 function acf_remove_local_field_group( string $group_key ): void {
