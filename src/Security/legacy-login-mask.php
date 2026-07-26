@@ -502,6 +502,11 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
         $is_tool  = self::is_tool_request();
         $is_allow = self::ip_allowed($ip);
 
+        // Let WP Toolkit validate its short-lived, single-use login token.
+        if ( strcasecmp( $path, '/wp-login.php' ) === 0 && self::is_wp_toolkit_login_token_request( $o ) ) {
+            return;
+        }
+
         // ── Root /wp-admin (cheapest path) ───────────────────────────────────────────
         if ($path === '/wp-admin') {
             // Tools / allowlisted IPs:
@@ -573,6 +578,17 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
             }
             exit;
         }
+    }
+
+    /** Identify the cryptographically random token emitted by WP Toolkit. */
+    private static function is_wp_toolkit_login_token_request( array $options ): bool {
+        if ( empty( $options['compat_wptoolkit'] ) ) {
+            return false;
+        }
+
+        $token = $_GET['token'] ?? '';
+
+        return is_string( $token ) && 1 === preg_match( '/\A[a-f0-9]{64}\z/i', $token );
     }
 
 

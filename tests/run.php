@@ -366,6 +366,12 @@ expect_true(
     && str_contains( $login_logo_source, "has_filter( 'login_headerurl', \$link_callback )" ),
     'custom login branding registers its hooks idempotently'
 );
+expect_true(
+    str_contains( $login_mask_source, 'self::is_wp_toolkit_login_token_request( $o )' )
+    && str_contains( $login_mask_source, "empty( \$options['compat_wptoolkit'] )" )
+    && str_contains( $login_mask_source, "preg_match( '/\\A[a-f0-9]{64}\\z/i', \$token )" ),
+    'masked login permits only a well-formed WP Toolkit token to reach its validator'
+);
 
 $force_handler = source( 'src/PluginPolicy/legacy-plugin-checks.php' );
 $force_offset = strpos( $force_handler, 'function hws_ct_force_update_check' );

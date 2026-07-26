@@ -2,8 +2,8 @@
 
 WordPress site policy and operations tooling for Hexa-managed websites.
 
-Version 10.18.151 ensures enabled login branding loads on the early masked-login
-route before WordPress renders the login screen.
+Version 10.18.152 restores WP Toolkit one-time login compatibility while masked
+login protection is fully active.
 
 ---
 
@@ -187,7 +187,13 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.151 (Current)
+### v10.18.152 (Current)
+
+- Allowed only the exact short-lived 64-character WP Toolkit token request to
+  reach the toolkit validator before masked-login endpoint blocking runs.
+- Kept ordinary and malformed `/wp-login.php` requests hidden.
+
+### v10.18.151
 
 - Fixed masked-login branding so the enabled Site Icon logo hook is registered
   before the priority-1 `/hexa-admin/` fallback includes WordPress login.
