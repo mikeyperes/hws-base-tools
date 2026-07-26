@@ -186,7 +186,12 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.148 (Current)
+### v10.18.149 (Current)
+
+- Added the former `User - Admin` key to the canonical migration suppression
+  list so database-saved copies cannot reappear on other installations.
+
+### v10.18.148
 
 - Removed the dormant compatibility path that could recreate the superseded
   `User - Admin` ACF group. Its profile/team fields now live only in the

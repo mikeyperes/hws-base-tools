@@ -360,6 +360,7 @@ expect_true( str_contains( $profile_fields, "'name'              => 'team_member
 expect_true( str_contains( $profile_migration, "'wellfound'  => [ 'well_found_url', 'wellfound_url' ]" ), 'legacy Wellfound values map to the canonical Wellfound field' );
 expect_true( str_contains( $profile_migration, "'group_590d64c31db0a'" ), 'deprecated Profile group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_6419bc02b6e93'" ), 'deprecated Author group is covered by canonical migration' );
+expect_true( str_contains( $profile_migration, "'group_65a8b18d98147'" ), 'superseded User - Admin group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, 'acf_remove_local_field_group' ), 'deprecated local user-profile groups are suppressed after canonical activation' );
 expect_true( ! str_contains( $profile_fields, "'key' => 'group_590d64c31db0a'" ), 'deprecated Profile field definition is removed from HWS' );
 expect_true( ! file_exists( $root . '/src/AcfFields/legacy-migrations.php' ), 'unsafe legacy profile migration UI is removed' );

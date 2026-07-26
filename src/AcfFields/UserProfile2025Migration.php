@@ -17,6 +17,7 @@ final class UserProfile2025Migration {
     public const DEPRECATED_GROUP_KEYS = [
         'group_590d64c31db0a',
         'group_6419bc02b6e93',
+        'group_65a8b18d98147',
     ];
 
     private const URLS_FIELD_KEY = 'field_684253229b32a';

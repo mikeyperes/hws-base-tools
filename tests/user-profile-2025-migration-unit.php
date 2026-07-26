@@ -153,7 +153,7 @@ $options[ UserProfile2025Migration::PROFILE_OPTION ] = 1;
 UserProfile2025Migration::remove_deprecated_local_groups();
 $expect(
     UserProfile2025Migration::DEPRECATED_GROUP_KEYS === $removed_groups,
-    'both known deprecated profile groups are removed when the canonical option is enabled'
+    'all known deprecated profile groups are removed when the canonical option is enabled'
 );
 
 $snapshot = $user_meta;
