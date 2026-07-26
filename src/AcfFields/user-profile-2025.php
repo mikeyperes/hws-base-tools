@@ -5,7 +5,7 @@
  * Register ACF User Fields
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * This file registers three ACF field groups on user profile screens:
+ * This file registers the canonical ACF field groups on user profile screens:
  *
  * 1. "User - Additional"               → contact details, team/profile compatibility,
  *                                          staff_writer, muckrack_verified, muckrack_url
@@ -348,7 +348,7 @@ function register_user_custom_fields_2025()
         'fields' => array(
 
             // ─────────────────────────────────────────────────────────────
-            // URLs Group — 22 social media / web URL fields
+            // URLs Group — 23 social media / web URL fields
             // ─────────────────────────────────────────────────────────────
             array(
                 'key' => 'field_684253229b32a',

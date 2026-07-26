@@ -37,11 +37,6 @@ final class AcfModule {
             }
         }
 
-        // The old HWS-owned user group is disabled unless a site explicitly
-        // opts into compatibility mode. Person/publication plugins own it now.
-        if ( get_option( 'hws_enable_legacy_smp_user_fields', false ) ) {
-            LegacySmpUserFields::register();
-        }
     }
 
     private static function load( string $relative_path ): void {

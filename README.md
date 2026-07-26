@@ -186,7 +186,15 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.137 (Current)
+### v10.18.148 (Current)
+
+- Removed the dormant compatibility path that could recreate the superseded
+  `User - Admin` ACF group. Its profile/team fields now live only in the
+  canonical 2025 user groups, and the former SMP hook delegates to those groups.
+- Renamed the canonical user-field source module to `user-profile-2025.php` so
+  its ownership is explicit.
+
+### v10.18.137
 
 - Added a comprehensive Search Behavior panel with AJAX persistence, dynamic
   public post-type/taxonomy controls, matching modes, sources, limits, ordering,

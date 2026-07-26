@@ -348,10 +348,10 @@ expect_true( str_contains( $force_source, 'hws_require_ajax_nonce_or_error()' ),
 
 expect_true( ! str_contains( source( 'src/LegacyCompatibility/legacy-generic-functions.php' ), 'eval(' ), 'generic utilities contain no eval-based aliasing' );
 expect_true( ! file_exists( $root . '/register-acf-functionality.php' ), 'unsafe dead short-tag ACF file is removed' );
-expect_true( ! str_contains( source( 'src/AcfFields/LegacySmpUserFields.php' ), "0 => 'field_6482a0f010e43'" ), 'legacy ACF profile photo no longer clones itself' );
-expect_true( ! str_contains( source( 'src/AcfFields/LegacySmpUserFields.php' ), 'Deprecated legacy social/profile fields' ), 'unreachable legacy ACF payload is removed' );
+expect_true( ! file_exists( $root . '/src/AcfFields/LegacySmpUserFields.php' ), 'superseded User - Admin ACF registration is removed' );
+expect_true( ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'hws_enable_legacy_smp_user_fields' ), 'deprecated user-field compatibility option cannot reactivate an old group' );
 
-$profile_fields = source( 'src/AcfFields/legacy-user-fields.php' );
+$profile_fields = source( 'src/AcfFields/user-profile-2025.php' );
 $profile_migration = source( 'src/AcfFields/UserProfile2025Migration.php' );
 expect_true( str_contains( $profile_fields, "'title' => 'User Profile Fields (2025)'" ), 'canonical 2025 user profile group has an explicit title' );
 expect_true( str_contains( $profile_fields, "'name' => 'wellfound'" ), 'canonical profile URLs retain Wellfound separately from The Org' );
@@ -383,7 +383,7 @@ $flat_smp_files = [];
 foreach ( glob( $root . '/smp-core/*.php' ) ?: [] as $smp_php_file ) {
     $contents = (string) file_get_contents( $smp_php_file );
     $delegates_to_src = str_contains( $contents, '/src/AcfFields/LegacySmp/' )
-        || str_contains( $contents, 'HWS\\BaseTools\\AcfFields\\LegacySmpUserFields' );
+        || str_contains( $contents, 'register_user_custom_fields_2025' );
     if ( substr_count( $contents, "\n" ) >= 8 || ! $delegates_to_src ) {
         $flat_smp_files[] = basename( $smp_php_file );
     }
