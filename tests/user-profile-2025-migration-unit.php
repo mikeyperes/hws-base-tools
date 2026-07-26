@@ -33,6 +33,12 @@ $user_meta = [
         '_location'               => 'field_legacy_location',
         'additional'              => [ 'public_email' => 'hello@example.com' ],
         '_additional'             => 'field_legacy_additional',
+        'team_member'             => '1',
+        '_team_member'            => 'field_legacy_team_member',
+        'team_member_title'       => 'Editor',
+        '_team_member_title'      => 'field_legacy_team_member_title',
+        'what_best_describe_you'  => 'Journalist',
+        '_what_best_describe_you' => 'field_legacy_profile_type',
     ],
 ];
 $write_log = [];
@@ -99,6 +105,10 @@ function update_field( string $field_key, mixed $value, string $post_id ): bool 
         'field_hws_user_profile_2025_photos'     => 'photos',
         'field_6842_additional_group'            => 'additional',
         'field_hws_additional_staff_writer'      => 'staff_writer',
+        'field_hws_user_profile_2025_team_member' => 'team_member',
+        'field_hws_user_profile_2025_team_member_title' => 'team_member_title',
+        'field_hws_user_profile_2025_profile_type' => 'what_best_describe_you',
+        'field_hws_user_profile_2025_profile_photo' => 'profile_photo',
         'field_hws_additional_muckrack_verified' => 'muckrack_verified',
         'field_hws_additional_muckrack_url'      => 'muckrack_url',
     ];
@@ -170,7 +180,10 @@ $expect( '1' === ( $migrated['staff_writer'] ?? '' ), 'nested settings value rea
 $expect( '0' === ( $migrated['muckrack_verified'] ?? '' ), 'a false boolean is preserved as meaningful profile data' );
 $expect( [ 102, 101 ] === ( $migrated['photos'] ?? [] ), 'legacy profile photo is merged into the canonical gallery' );
 $expect( 'field_hws_user_profile_2025_location' === ( $migrated['_location'] ?? '' ), 'same-name legacy fields receive the canonical ACF reference' );
-$expect( ! isset( $migrated['facebook_url'], $migrated['job_title'], $migrated['profile_photo'], $migrated['settings'], $migrated['socials'] ), 'migrated deprecated metadata is removed' );
+$expect( 'field_hws_user_profile_2025_team_member' === ( $migrated['_team_member'] ?? '' ), 'team-member compatibility flag receives canonical ownership' );
+$expect( 'field_hws_user_profile_2025_profile_type' === ( $migrated['_what_best_describe_you'] ?? '' ), 'publication profile classification receives canonical ownership' );
+$expect( ! isset( $migrated['facebook_url'], $migrated['job_title'], $migrated['settings'], $migrated['socials'] ), 'migrated deprecated metadata is removed' );
+$expect( '101' === ( $migrated['profile_photo'] ?? '' ), 'primary profile photo remains available under its compatibility field name' );
 $expect( isset( $migrated['location'], $migrated['additional'], $migrated['photos'] ), 'canonical same-name content is retained' );
 
 if ( $failures ) {

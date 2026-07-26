@@ -26,6 +26,10 @@ final class UserProfile2025Migration {
     private const PHOTOS_FIELD_KEY = 'field_hws_user_profile_2025_photos';
     private const ADDITIONAL_FIELD_KEY = 'field_6842_additional_group';
     private const STAFF_WRITER_FIELD_KEY = 'field_hws_additional_staff_writer';
+    private const TEAM_MEMBER_FIELD_KEY = 'field_hws_user_profile_2025_team_member';
+    private const TEAM_MEMBER_TITLE_FIELD_KEY = 'field_hws_user_profile_2025_team_member_title';
+    private const PROFILE_TYPE_FIELD_KEY = 'field_hws_user_profile_2025_profile_type';
+    private const PROFILE_PHOTO_FIELD_KEY = 'field_hws_user_profile_2025_profile_photo';
     private const MUCKRACK_VERIFIED_FIELD_KEY = 'field_hws_additional_muckrack_verified';
     private const MUCKRACK_URL_FIELD_KEY = 'field_hws_additional_muckrack_url';
 
@@ -60,7 +64,6 @@ final class UserProfile2025Migration {
     private const SUBTITLE_SOURCES = [
         'job_title',
         'author_title',
-        'team_member_title',
     ];
 
     /** @var list<string> */
@@ -70,6 +73,10 @@ final class UserProfile2025Migration {
         'schema_markup',
         'photos',
         'staff_writer',
+        'team_member',
+        'team_member_title',
+        'what_best_describe_you',
+        'profile_photo',
         'muckrack_verified',
         'muckrack_url',
     ];
@@ -258,9 +265,13 @@ final class UserProfile2025Migration {
         self::migrate_photos( $user_id, $post_id, $dry_run, $cleanup_direct, $report );
 
         foreach ( [
-            'location'      => self::LOCATION_FIELD_KEY,
-            'schema_markup' => self::SCHEMA_FIELD_KEY,
-            'additional'    => self::ADDITIONAL_FIELD_KEY,
+            'location'               => self::LOCATION_FIELD_KEY,
+            'schema_markup'          => self::SCHEMA_FIELD_KEY,
+            'additional'             => self::ADDITIONAL_FIELD_KEY,
+            'team_member'            => self::TEAM_MEMBER_FIELD_KEY,
+            'team_member_title'      => self::TEAM_MEMBER_TITLE_FIELD_KEY,
+            'what_best_describe_you' => self::PROFILE_TYPE_FIELD_KEY,
+            'profile_photo'          => self::PROFILE_PHOTO_FIELD_KEY,
         ] as $meta_key => $field_key ) {
             self::refresh_direct_field( $user_id, $meta_key, $field_key, $post_id, $dry_run, $report );
         }
