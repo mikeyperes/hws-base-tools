@@ -2,7 +2,9 @@
 
 WordPress site policy and operations tooling for Hexa-managed websites.
 
-Version 10.18.142 synchronizes the vendored Hexa WP Core package to 0.19.66.
+Version 10.18.150 adds optional HWS-owned Services (`services`) and Knowledge
+Base (`knowledge-base`) custom post types. Both preserve their static landing
+pages while supporting reusable entries below those URL paths.
 
 ---
 
@@ -186,7 +188,14 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.149 (Current)
+### v10.18.150 (Current)
+
+- Added optional HWS-owned Services (`services`) and Knowledge Base
+  (`knowledge-base`) custom post types with dedicated snippet toggles.
+- Kept both landing paths available to static pages while entries use nested
+  single URLs, and loaded thin legacy callbacks for snippet compatibility.
+
+### v10.18.149
 
 - Added the former `User - Admin` key to the canonical migration suppression
   list so database-saved copies cannot reappear on other installations.

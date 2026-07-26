@@ -90,6 +90,16 @@ ScheduledTaskLoader::load_for_request();
 // Shared content types are HWS-owned and register on init independently of ACF.
 SharedContentTypes::boot();
 
+foreach ( [
+    'register-post-type-organization.php',
+    'register-post-type-testimonial.php',
+    'register-post-type-team-member.php',
+    'register-post-type-services.php',
+    'register-post-type-knowledge-base.php',
+] as $shared_content_type_adapter ) {
+    require_once HWS_BASE_TOOLS_DIR . '/src/AcfFields/LegacySmp/' . $shared_content_type_adapter;
+}
+
 add_action( 'plugins_loaded', [ CoreIntegration::class, 'boot' ], 20 );
 
 if ( 'yes' === (string) get_option( 'hws_sitemaps_litespeed_nocache_enabled', 'no' ) ) {
@@ -698,6 +708,22 @@ function get_snippets($type = "")
             'description' => 'Adds custom fields to organizations: logo, website, description, contact info.',
             'info'        => static fn() => display_acf_structure( 'group_64bc3b458d863' ),
             'function' => 'enable_smp_acf_organization',
+            'scope_admin_only' => false,
+        ],
+        [
+            'id' => 'hws_enable_cpt_services',
+            'name' => 'Services Custom Post Type',
+            'description' => 'Creates a Services post type for reusable service entries while preserving a static Services landing page.',
+            'info' => static fn() => display_cpt_structure( 'services' ),
+            'function' => 'enable_hws_cpt_services',
+            'scope_admin_only' => false,
+        ],
+        [
+            'id' => 'hws_enable_cpt_knowledge_base',
+            'name' => 'Knowledge Base Custom Post Type',
+            'description' => 'Creates a Knowledge Base post type for reusable articles while preserving a static Knowledge Base landing page.',
+            'info' => static fn() => display_cpt_structure( 'knowledge-base' ),
+            'function' => 'enable_hws_cpt_knowledge_base',
             'scope_admin_only' => false,
         ],
     ];

@@ -54,8 +54,8 @@ $expect = static function ( bool $condition, string $message ) use ( &$failures 
 
 $definitions = SharedContentTypes::definitions();
 $expect(
-    array_keys( $definitions ) === [ 'organization', 'testimonial', 'team-member' ],
-    'registry owns exactly the shared organization, testimonial, and team-member types'
+    array_keys( $definitions ) === [ 'organization', 'testimonial', 'team-member', 'services', 'knowledge-base' ],
+    'registry owns the shared organization, testimonial, team-member, services, and knowledge-base types'
 );
 
 foreach ( $definitions as $post_type => $definition ) {
@@ -77,7 +77,14 @@ $expect( SharedContentTypes::enable( SharedContentTypes::ORGANIZATION ), 'organi
 $expect( SharedContentTypes::enable( SharedContentTypes::ORGANIZATION ), 'enabling a selected type is idempotent' );
 SharedContentTypes::register_enabled();
 $expect( isset( $registered['organization'] ), 'enabled organization registers' );
-$expect( ! isset( $registered['testimonial'], $registered['team-member'] ), 'unselected shared types remain disabled' );
+$expect( ! isset( $registered['testimonial'], $registered['team-member'], $registered['services'], $registered['knowledge-base'] ), 'unselected shared types remain disabled' );
+
+$expect( SharedContentTypes::enable( SharedContentTypes::SERVICES ), 'services option can be enabled' );
+$expect( SharedContentTypes::enable( SharedContentTypes::KNOWLEDGE_BASE ), 'knowledge-base option can be enabled' );
+SharedContentTypes::register_enabled();
+$expect( isset( $registered['services'], $registered['knowledge-base'] ), 'enabled services and knowledge-base types register' );
+$expect( false === $definitions['services']['has_archive'], 'services preserves the static landing page' );
+$expect( false === $definitions['knowledge-base']['has_archive'], 'knowledge-base preserves the static landing page' );
 
 $count = count( $registered );
 $expect( ! SharedContentTypes::register_type( SharedContentTypes::ORGANIZATION ), 'duplicate registration is rejected' );

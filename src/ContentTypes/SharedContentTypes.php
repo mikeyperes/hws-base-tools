@@ -13,11 +13,15 @@ final class SharedContentTypes {
     public const ORGANIZATION = 'organization';
     public const TESTIMONIAL = 'testimonial';
     public const TEAM_MEMBER = 'team-member';
+    public const SERVICES = 'services';
+    public const KNOWLEDGE_BASE = 'knowledge-base';
 
     private const OPTIONS = [
-        self::ORGANIZATION => 'smp_enable_cpt_organization',
-        self::TESTIMONIAL  => 'enable_cpt_testimonial',
-        self::TEAM_MEMBER  => 'smp_enable_cpt_teammember',
+        self::ORGANIZATION   => 'smp_enable_cpt_organization',
+        self::TESTIMONIAL    => 'enable_cpt_testimonial',
+        self::TEAM_MEMBER    => 'smp_enable_cpt_teammember',
+        self::SERVICES       => 'hws_enable_cpt_services',
+        self::KNOWLEDGE_BASE => 'hws_enable_cpt_knowledge_base',
     ];
 
     private static bool $booted = false;
@@ -111,6 +115,28 @@ final class SharedContentTypes {
                     'supports'      => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],
                     'has_archive'   => 'team',
                     'rewrite'       => [ 'slug' => 'team-member', 'with_front' => false ],
+                ]
+            ),
+            self::SERVICES => self::definition(
+                'Service',
+                'Services',
+                [
+                    'menu_icon'     => 'dashicons-admin-tools',
+                    'menu_position' => 24,
+                    'supports'      => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],
+                    'has_archive'   => false,
+                    'rewrite'       => [ 'slug' => 'services', 'with_front' => false ],
+                ]
+            ),
+            self::KNOWLEDGE_BASE => self::definition(
+                'Knowledge Base Article',
+                'Knowledge Base',
+                [
+                    'menu_icon'     => 'dashicons-welcome-learn-more',
+                    'menu_position' => 25,
+                    'supports'      => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],
+                    'has_archive'   => false,
+                    'rewrite'       => [ 'slug' => 'knowledge-base', 'with_front' => false ],
                 ]
             ),
         ];

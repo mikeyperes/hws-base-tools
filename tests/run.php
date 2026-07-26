@@ -192,19 +192,32 @@ $shared_content_types = source( 'src/ContentTypes/SharedContentTypes.php' );
 expect_true(
     str_contains( $shared_content_types, "public const ORGANIZATION = 'organization'" )
     && str_contains( $shared_content_types, "public const TESTIMONIAL = 'testimonial'" )
-    && str_contains( $shared_content_types, "public const TEAM_MEMBER = 'team-member'" ),
-    'HWS owns the shared Organization, Testimonial, and Team Member post type contract'
+    && str_contains( $shared_content_types, "public const TEAM_MEMBER = 'team-member'" )
+    && str_contains( $shared_content_types, "public const SERVICES = 'services'" )
+    && str_contains( $shared_content_types, "public const KNOWLEDGE_BASE = 'knowledge-base'" ),
+    'HWS owns the shared Organization, Testimonial, Team Member, Services, and Knowledge Base post type contract'
 );
 expect_true(
     str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'SharedContentTypes::boot();' )
+    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'register-post-type-services.php'" )
+    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'register-post-type-knowledge-base.php'" )
     && ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'register-post-type-' ),
     'shared post types register on init independently of the ACF lifecycle'
 );
 expect_true(
     str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-organization.php' ), 'SharedContentTypes::register_type' )
     && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-testimonial.php' ), 'SharedContentTypes::register_type' )
-    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-team-member.php' ), 'SharedContentTypes::register_type' ),
+    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-team-member.php' ), 'SharedContentTypes::register_type' )
+    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-services.php' ), 'SharedContentTypes::register_type' )
+    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-knowledge-base.php' ), 'SharedContentTypes::register_type' ),
     'legacy shared post type callbacks are thin adapters to the canonical HWS registry'
+);
+expect_true(
+    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'id' => 'hws_enable_cpt_services'" )
+    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'function' => 'enable_hws_cpt_services'" )
+    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'id' => 'hws_enable_cpt_knowledge_base'" )
+    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'function' => 'enable_hws_cpt_knowledge_base'" ),
+    'Services and Knowledge Base are exposed as callable HWS snippet toggles'
 );
 $search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_settings(
     [
