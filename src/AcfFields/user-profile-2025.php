@@ -86,14 +86,8 @@
  *  - [company id="additional_public_phone"]  or  [founder id="additional_public_phone"]
  *  - [company id="additional_title"]         or  [founder id="additional_title"]
  */
-function register_user_custom_fields_additional_2025() {
-
-    // — Bail if ACF is not available
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
+function hws_user_additional_fields_group(): array {
+    return array(
         'key'                   => 'group_6842_additional_user_fields_2025',
         'title'                 => 'User - Additional',
         'fields'                => array(
@@ -311,7 +305,7 @@ function register_user_custom_fields_additional_2025() {
         'active'                => true,
         'description'           => '',
         'show_in_rest'          => 0,
-    ) );
+    );
 }
 
 
@@ -335,14 +329,8 @@ function register_user_custom_fields_additional_2025() {
  * Shortcode for subtitle:
  *   [company id="subtitle"]  or  [founder id="subtitle"]
  */
-function register_user_custom_fields_2025()
-{
-    // — Bail if ACF is not available
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
+function hws_user_profile_2025_group(): array {
+    return array(
         'key' => 'group_684252fd99081',
         'title' => 'User Profile Fields (2025)',
         'fields' => array(
@@ -914,5 +902,5 @@ function register_user_custom_fields_2025()
         'active' => true,
         'description' => '',
         'show_in_rest' => 0,
-    ) );
+    );
 }

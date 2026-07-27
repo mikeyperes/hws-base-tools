@@ -6,8 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Internal: hard gate so admin-only UI injections only run on:
- * /wp-admin/admin.php?page=website-settings
+ * Internal gate for the legacy page and its HWS dashboard replacement.
  *
  * We keep this separate so hf_render_user_info_once() and admin_enqueue_scripts hooks
  * can share the same guard and avoid running on CPT edit screens.
@@ -21,16 +20,14 @@ function hws_is_website_settings_admin_page(): bool {
 
 	global $pagenow;
 
-	// Must be admin.php?page=website-settings
-	if ( $pagenow !== 'admin.php' ) {
-		return false;
+	$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+	$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
+
+	if ( 'admin.php' === $pagenow && 'website-settings' === $page ) {
+		return true;
 	}
 
-	if ( empty( $_GET['page'] ) || $_GET['page'] !== 'website-settings' ) {
-		return false;
-	}
-
-	return true;
+	return 'options-general.php' === $pagenow && 'hws-core-tools' === $page && 'website-types' === $tab;
 }
 
 // register the shortcode
@@ -1171,8 +1168,7 @@ function company_shortcode( $atts ): string {
  */
 add_action('admin_enqueue_scripts', function( $hook ) {
 
-	// NOTE: Hard-enforced to only run on /wp-admin/admin.php?page=website-settings
-	// This preserves original documentation while preventing injection on CPT edit screens.
+	// Limit this injection to the legacy page or the HWS replacement tab.
 
 	// 1) Only run on Theme Options screen. (Uncomment return to hard-enforce.)
 	$screen = get_current_screen();
@@ -1438,8 +1434,7 @@ JS
  */
 add_action('admin_enqueue_scripts', function( $hook ) {
 
-	// NOTE: Hard-enforced to only run on /wp-admin/admin.php?page=website-settings
-	// This preserves original documentation while preventing injection on CPT edit screens.
+	// Limit this injection to the legacy page or the HWS replacement tab.
 
 	// 1) Limit to Theme Options screen (uncomment return to strictly enforce)
 	$screen = get_current_screen();

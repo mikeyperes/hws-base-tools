@@ -30,12 +30,8 @@ function hws_get_brand_assets_gallery_acf_field(): array {
     );
 }
 
-function hws_register_brand_assets_gallery_acf(): void {
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
+function hws_brand_assets_gallery_acf_group(): array {
+    return array(
         'key'                   => 'group_hws_brand_assets_gallery',
         'title'                 => 'HWS Brand Assets',
         'fields'                => array(
@@ -59,16 +55,11 @@ function hws_register_brand_assets_gallery_acf(): void {
         'active'                => true,
         'description'           => '',
         'show_in_rest'          => 0,
-    ) );
+    );
 }
 
-function register_acf_website_settings()
-{
-    if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-        return;
-    }
-
-    acf_add_local_field_group( array(
+function hws_website_settings_acf_group(): array {
+    return array(
         'key'               => 'group_6842076add7ad',
         'title'             => 'Theme Options - General',
         'fields'            => array(
@@ -440,14 +431,6 @@ function register_acf_website_settings()
         'active'            => true,
         'description'       => '',
         'show_in_rest'      => 0,
-    ) );
+    );
 
-    acf_add_options_page( array(
-        'page_title' => 'Website Settings',
-        'post_id'    => 'option',
-        'menu_slug'  => 'website-settings',
-        'redirect'   => false,
-    ) );
 }
-
-hws_register_brand_assets_gallery_acf();

@@ -1,11 +1,7 @@
 <?php namespace hws_base_tools;
-function enable_acf_testimonial(){
+function enable_acf_testimonial() {
 
-	if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-		return;
-	}
-
-		acf_add_local_field_group( array(
+	return array(
 	'key' => 'group_64c2177b44137',
 	'title' => 'Testimonial',
 	'fields' => array(
@@ -180,7 +176,7 @@ function enable_acf_testimonial(){
 	'description' => '',
 	'show_in_rest' => 0,
 	'display_title' => '',
-) );
+);
 
 
 

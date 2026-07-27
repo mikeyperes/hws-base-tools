@@ -9,6 +9,9 @@ use Hexa\PluginCore\WpAdminTabs\CoreTabConfig;
 use Hexa\PluginCore\WpAdminTabs\CoreTabModule;
 use HWS\BaseTools\AdminDashboard\DashboardAssets;
 use HWS\BaseTools\AdminDashboard\LegacyEventBridge;
+use HWS\BaseTools\AcfFields\SharedAcfStructures;
+use HWS\BaseTools\ContentTypes\SharedContentTypes;
+use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -47,6 +50,10 @@ final class CoreIntegration {
         self::$bootstrap
             ->add_module( new LegacyEventBridge() )
             ->add_module( new DashboardAssets() )
+            ->add_module( SharedContentTypes::registry() )
+            ->add_module( SharedAcfStructures::registry() )
+            ->add_module( PrimaryEntityIntegration::module() )
+            ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             ->add_module(
                 new CoreTabModule(
                     new CoreTabConfig(

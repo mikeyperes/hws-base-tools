@@ -1,12 +1,8 @@
 <?php namespace hws_base_tools;/**
  * Registers a custom ACF field "sponsored" as a single checkbox (true/false).
  */
-function register_acf_sponsored_functionality() {
-
-    // Only proceed if ACF is active and the function is available.
-    if ( function_exists('acf_add_local_field_group') ) {
-
-        acf_add_local_field_group( array(
+function hws_sponsored_acf_group(): array {
+        return array(
             'key'      => 'group_sponsored_field',
             'title'    => 'Sponsored Field Group',
             'fields'   => array(
@@ -31,6 +27,5 @@ function register_acf_sponsored_functionality() {
                     ),
                 ),
             ),
-        ) );
-    }
+        );
 }

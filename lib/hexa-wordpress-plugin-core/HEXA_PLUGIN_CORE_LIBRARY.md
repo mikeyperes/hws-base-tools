@@ -21,18 +21,24 @@ Do not rename these.
 ```text
 src/ActivityLog/        Hexa\PluginCore\ActivityLog
 src/AcfFieldFactory/    Hexa\PluginCore\AcfFieldFactory
+src/BrandColors/        Hexa\PluginCore\BrandColors
+src/BrandProfiles/      Hexa\PluginCore\BrandProfiles
 src/CoreBootstrap/      Hexa\PluginCore\CoreBootstrap
 src/CoreContracts/      Hexa\PluginCore\CoreContracts
 src/CorePackageUpdates/ Hexa\PluginCore\CorePackageUpdates
 src/CoreRuntime/        Hexa\PluginCore\CoreRuntime
 src/ContentCleanup/     Hexa\PluginCore\ContentCleanup
+src/ContentTypes/       Hexa\PluginCore\ContentTypes
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/DatabaseCleanup/    Hexa\PluginCore\DatabaseCleanup
+src/EntitySources/      Hexa\PluginCore\EntitySources
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
+src/FrontendForms/      Hexa\PluginCore\FrontendForms
 src/FaqSets/            Hexa\PluginCore\FaqSets
 src/GettingStartedChecklist/
                         Hexa\PluginCore\GettingStartedChecklist
 src/LogFiles/           Hexa\PluginCore\LogFiles
+src/MediaUploads/       Hexa\PluginCore\MediaUploads
 src/ObjectCache/        Hexa\PluginCore\ObjectCache
 src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
@@ -41,10 +47,13 @@ src/SnippetRegistry/    Hexa\PluginCore\SnippetRegistry
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SiteStructure/      Hexa\PluginCore\SiteStructure
 src/SchemaDetection/    Hexa\PluginCore\SchemaDetection
+src/SchemaTools/        Hexa\PluginCore\SchemaTools
 src/SearchDisplay/      Hexa\PluginCore\SearchDisplay
 src/SearchQuery/        Hexa\PluginCore\SearchQuery
 src/SmartSearch/        Hexa\PluginCore\SmartSearch
 src/SystemEnvironment/  Hexa\PluginCore\SystemEnvironment
+src/Taxonomies/         Hexa\PluginCore\Taxonomies
+src/Typography/         Hexa\PluginCore\Typography
 src/WpAdminUiCleanup/   Hexa\PluginCore\WpAdminUiCleanup
 src/WpAdminAjax/        Hexa\PluginCore\WpAdminAjax
 src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
@@ -52,6 +61,14 @@ src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
 src/WpCronTasks/        Hexa\PluginCore\WpCronTasks
 ```
+
+## Public Brand And Form Primitives
+
+Use `BrandProfiles\BrandProfile` to normalize the domain, display name, HTTPS logo, primary/accent colors, and support email for a public branded surface. Hosts own persistence and domain selection; never put product catalogs or payment IDs in Core.
+
+Use `FrontendForms\FieldSchema` for the canonical public field contract and `FrontendForms\RichTextValue` for WordPress-safe WYSIWYG storage plus plain-text projections. Hosts own the actual fields, validation messages, rendering, and submission workflow.
+
+Use `MediaUploads\ImageUploadPolicy` and `MediaUploads\WordPressImageUploader` for JPEG, PNG, and WEBP uploads. The host must verify its nonce and capability before storage and remains responsible for attachment association and retention.
 
 ## UI Components
 
@@ -74,6 +91,16 @@ An optional group selector hides headings whose groups contain no matches. Core 
 Set text_selector when repeated cards contain shared logs or diagnostics. Core searches only those descendant regions, then falls back to data-hpc-filter-text or full item text when no selector is supplied.
 
 Use `ScopedCssOverride::render()` for a closed-by-default CSS editor or reference panel. The host supplies its scope selector, concise instructions, formatted HTML structure, and formatted CSS example. When the host supplies a setting key and value, Core also renders the actual code editor and save-status slot. Core owns the details card, editor, code blocks, and copy actions; the host owns validation, persistence, and frontend output.
+
+Use `FontFamilyControl::render()` for a reusable font source selector. Core discovers Elementor global typography, exposes template/native/unique Elementor choices, validates saved source IDs through `BrandColors\FontFamilyProvider`, and resolves them to safe CSS values. Supply `weight_key`, `weight_value`, and a host save class to include the Core `FontWeightProvider` default/100-900 selector. Host plugins own persistence and frontend selectors; they must omit `font-family` or `font-weight` when Core returns an empty CSS value.
+
+Use `TypographyPreservation::defaults()` and `TypographyPreservation::setting_keys()` to define prefix-scoped font-family, size, color, and weight preservation settings. Render `TypographyPreservationControl` inside a `data-hpc-typography-scope` container and map each property to the host setting keys it disables. Core owns the four site-value toggles, left alignment, visibly muted disabled editors, state classes, target synchronization, and `hexa-typography-preserve-change` event; hosts own only their save transport and CSS declaration policy.
+
+Use `TypographyControl::render()` when a feature exposes the corresponding editors. Core composes `FontFamilyControl`, font weight, `ColorControl`, one or more size fields, and the preservation contract into one host-neutral interface with every toggle adjacent to its field. Hosts pass field configuration and save classes instead of concatenating separate controls. Preserving a color disables the complete Core color editor, including the native picker and import actions, while keeping the preservation toggle operable.
+
+For selectable visual templates, use `TemplateColorControl::render()` and `BrandColors\TemplateColorResolver`. The shared color modes are Original Template Color, Site Primary Color, Site Secondary Color, and Custom Design Color. Hosts register each template's native `accent` plus only the CSS variables for decorative surfaces that are allowed to change. Original Template Color emits no variables. Core resolves explicit picker and hex events before fallback synchronization so host save listeners receive the selected custom value regardless of script render order.
+
+Set `mode_control` on `TypographyControl::render()` and use `Typography\TemplateTypography` for the shared Original Template, Use Site Typography, and Custom Typography flow. Original Template preserves exact template declarations, Use Site Typography inherits the site, and Custom Typography exposes Core fields with adjacent per-property `Use site ...` controls.
 
 ```php
 use Hexa\PluginCore\WpAdminComponents\ScopedCssOverride;
@@ -791,17 +818,51 @@ Example:
 ]);
 ```
 
+## Content Types
+
+Namespace: Hexa\PluginCore\ContentTypes
+
+Classes: ContentTypeDefinition, ContentTypeSettingsStore, ContentTypeRegistry, ContentTypeRegistrar, ContentTypeAjaxController, ContentTypeRenderer.
+
+Use this for one reusable CPT contract across host plugins. Hosts supply owned or external definitions and keep business behavior. Core keeps the post-type key immutable, persists editable singular/plural labels and rewrite slugs, registers attached ACF groups, and renders the collapsed management UI. Register the registry as a `CoreBootstrap` module. See `docs/content-types.md` and test with `tests/content-types.php`.
+
+## Entity Sources
+
+Namespace: Hexa\PluginCore\EntitySources
+
+Classes: CanonicalEntityResolver, PrimaryEntityManager, PrimaryEntityModule, PrimaryEntityAjaxController, PrimaryEntityRenderer, EntityFieldInspector.
+
+Use this for an optional HWS-owned website type and primary user/post entity. Consumers resolve the canonical entity and its bound WordPress author rather than maintaining competing settings. No primary entity is a supported configuration. See `docs/entity-sources.md` and test with `tests/entity-sources.php`.
+
 ## Field Structures
 
 Namespace: Hexa\PluginCore\FieldStructures
 
-Classes: FieldStructureManager, FieldStructureRenderer
+Classes: AcfFieldGroupRegistry, AcfFieldGroupSettingsStore, AcfFieldGroupAjaxController, AcfFieldGroupRenderer, AcfSettingsPanel, FieldStructureManager, FieldStructureRenderer
 
 Use this for admin displays that explain and test ACF field groups, custom post types, taxonomies, and option-backed structures. Host plugins provide definitions; Hexa Core normalizes them, renders one row per structure, shows enabled and registered status, exposes setting toggles through the host save AJAX action, and keeps fields, dependencies, code examples, test reports, and activity notes in a consistent layout.
 
 Definition keys: id, label, type, setting_key, enabled, registered, acf_group_key, object_name, location, fields, dependencies, instructions, code_example, test_report, activity, edit_url. The registered and test_report values may be callbacks. Do not move plugin-specific ACF registration arrays into core; core owns the display and status model only.
 
 Example use: create a FieldStructureRenderer, pass an array of structure definitions, and pass save_action plus nonce when toggles should save through AJAX.
+
+Use `AcfFieldGroupRegistry` when Core must own the actual `acf/init` registration path and toggle state. Use `AcfSettingsPanel` to display established option-backed ACF groups inside a host tab without moving their stored values. Host plugins always retain their exact field arrays.
+
+## Schema Tools
+
+Namespace: Hexa\PluginCore\SchemaTools
+
+Classes: SchemaGraph, SchemaDocumentRenderer, SchemaInjector, SchemaDashboardRenderer.
+
+Host plugins build their own schema objects and hand the result to Core for graph cleanup, duplicate-node merging, safe JSON-LD rendering, and one-shot hook output. Do not move domain-specific Person, Organization, Publication, Profile, or Article mappings into Core. See `docs/schema-tools.md` and test with `tests/schema-document.php`.
+
+## Taxonomies
+
+Namespace: Hexa\PluginCore\Taxonomies
+
+Classes: TaxonomyDefinition, TaxonomyRegistry, TaxonomyRenderer.
+
+Hosts own taxonomy keys, terms, object types, and editorial meaning. Core owns duplicate-safe callback-backed registration and the shared reference UI. See `docs/taxonomies.md` and test with `tests/taxonomies.php`.
 
 ## Error Logs
 

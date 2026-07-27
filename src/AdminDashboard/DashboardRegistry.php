@@ -74,7 +74,7 @@ final class DashboardRegistry {
         $definitions = [
             'Overview' => [ 'overview', 'quick-start' ],
             'Site & Brand' => [ 'brand-assets', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
-            'Content' => [ 'features', 'search', 'shortcodes', 'comments' ],
+            'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'WordPress Admin' => [ 'ui-cleanup', 'masked-login', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -203,7 +203,8 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'backups', 'Backups', 'hws_base_tools\\render_tab_backups', [ 'settings-dashboard-backups.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [ 'settings-dashboard-update-center.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'ui-cleanup', 'UI Cleanup', 'hws_base_tools\\display_settings_ui_cleanup', [ 'settings-dashboard-ui-cleanup.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'website-types', 'Website Types & Fields', 'hws_base_tools\\display_settings_website_types', [ 'settings-dashboard-website-types.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'website-types', 'Website & Primary Entity', [ \HWS\BaseTools\SiteProfile\PrimaryEntityIntegration::class, 'render' ] ) );
+        $this->add( new DashboardModuleDefinition( 'custom-post-types', 'Custom Post Types', 'hws_base_tools\\render_tab_content_types', [ 'settings-dashboard-content-types.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'footer-text', 'Footer Text', 'hws_base_tools\\display_settings_footer_text', [
             'settings-dashboard-website-types.php',
             'settings-dashboard-footer-text.php',

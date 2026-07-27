@@ -4,7 +4,6 @@ namespace hws_base_tools;
 
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
 use HWS\BaseTools\AcfFields\AcfModule;
-use HWS\BaseTools\ContentTypes\SharedContentTypes;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 use HWS\BaseTools\PluginRuntime\RequestContext;
 use HWS\BaseTools\PluginRuntime\CoreIntegration;
@@ -86,19 +85,6 @@ require_once HWS_BASE_TOOLS_DIR . '/runtime-options.php';
 require_once HWS_BASE_TOOLS_DIR . '/safe-wrappers.php';
 require_once HWS_BASE_TOOLS_DIR . '/src/LegacyCompatibility/runtime-functions.php';
 ScheduledTaskLoader::load_for_request();
-
-// Shared content types are HWS-owned and register on init independently of ACF.
-SharedContentTypes::boot();
-
-foreach ( [
-    'register-post-type-organization.php',
-    'register-post-type-testimonial.php',
-    'register-post-type-team-member.php',
-    'register-post-type-services.php',
-    'register-post-type-knowledge-base.php',
-] as $shared_content_type_adapter ) {
-    require_once HWS_BASE_TOOLS_DIR . '/src/AcfFields/LegacySmp/' . $shared_content_type_adapter;
-}
 
 add_action( 'plugins_loaded', [ CoreIntegration::class, 'boot' ], 20 );
 
@@ -629,104 +615,9 @@ function get_snippets($type = "")
 {
 
     // ─── ACF FIELD SNIPPETS ────────────────────────────────────────────
-    $snippets_acf = [
-        // ★ RECOMMENDED — shown first in the list
-        [
-            'id' => 'register_acf_website_settings',
-            'name' => 'Website Settings Page',
-            'description' => 'Registers a Theme Options page with ACF fields for global site settings like logos, colors, and contact info.',
-            'info' => static fn() => display_acf_structure( 'group_6842076add7ad' ),
-            'function' => 'register_acf_website_settings',
-            'scope_admin_only' => false,
-            'recommended' => true
-        ],
-        [
-            'id' => 'register_user_custom_fields_2025',
-            'name' => 'User Profile Fields (2025)',
-            'description' => 'Extends WordPress user profiles with additional fields like bio, avatar, and preferences.',
-            'info'        => static fn() => display_acf_structure( 'group_684252fd99081' ),
-            'function' => 'register_user_custom_fields_2025',
-            'scope_admin_only' => false,
-            'recommended' => true
-        ],
-        [
-            'id' => 'register_user_custom_fields_additional_2025',
-            'name' => 'Additional User Profile Fields',
-            'description' => 'Extra user profile fields for extended functionality and metadata.',
-            'info'        => static fn() => display_acf_structure( 'group_6842_additional_user_fields_2025' ),
-            'function' => 'register_user_custom_fields_additional_2025',
-            'scope_admin_only' => false,
-            'recommended' => true
-        ],
-
-        // ─── Other ACF snippets ───────────────────────────────────────
-        [
-            'id' => 'smp_enable_cpt_teammember',
-            'name' => 'Team Member Custom Post Type',
-            'description' => 'Creates a "Team Member" post type for displaying staff/team profiles on your site.',
-            'info' => static fn() => display_cpt_structure( 'team-member' ),
-            'function' => 'enable_smp_cpt_teammember',
-            'scope_admin_only' => false
-        ],
-        [
-            'id' => 'smp_enable_acf_teammember',
-            'name' => 'Team Member ACF Fields',
-            'description' => 'Adds custom fields to team members: job title, bio, photo, social links.',
-            'info'        => static fn() => display_acf_structure( 'group_64b3a05760b1a' ),
-            'function' => 'enable_smp_acf_teammember',
-            'scope_admin_only' => false
-        ],
-
-        // ─── Shared content structures ────────────────────────────────
-        [
-            'id' => 'smp_enable_cpt_organization',
-            'name' => 'Organizations Custom Post Type',
-            'description' => 'Creates an "Organization" post type for displaying company/partner profiles.',
-            'info' => static fn() => display_cpt_structure( 'organization' ),
-            'function' => 'enable_smp_cpt_organization',
-            'scope_admin_only' => false,
-        ],
-        [
-            'id' => 'enable_cpt_testimonial',
-            'name' => 'Testimonials Custom Post Type',
-            'description' => 'Creates a "Testimonial" post type for displaying customer reviews and quotes.',
-            'info' => static fn() => display_cpt_structure( 'testimonial' ),
-            'function' => 'enable_cpt_testimonial',
-            'scope_admin_only' => false,
-        ],
-        [
-            'id' => 'enable_acf_testimonial',
-            'name' => 'Testimonial ACF Fields',
-            'description' => 'Adds custom fields to testimonials: author name, company, rating, photo, etc.',
-            'info'        => static fn() => display_acf_structure( 'group_64c2177b44137' ),
-            'function' => 'enable_acf_testimonial',
-            'scope_admin_only' => false,
-        ],
-        [
-            'id' => 'smp_enable_acf_organization',
-            'name' => 'Organization ACF Fields',
-            'description' => 'Adds custom fields to organizations: logo, website, description, contact info.',
-            'info'        => static fn() => display_acf_structure( 'group_64bc3b458d863' ),
-            'function' => 'enable_smp_acf_organization',
-            'scope_admin_only' => false,
-        ],
-        [
-            'id' => 'hws_enable_cpt_services',
-            'name' => 'Services Custom Post Type',
-            'description' => 'Creates a Services post type for reusable service entries while preserving a static Services landing page.',
-            'info' => static fn() => display_cpt_structure( 'services' ),
-            'function' => 'enable_hws_cpt_services',
-            'scope_admin_only' => false,
-        ],
-        [
-            'id' => 'hws_enable_cpt_knowledge_base',
-            'name' => 'Knowledge Base Custom Post Type',
-            'description' => 'Creates a Knowledge Base post type for reusable articles while preserving a static Knowledge Base landing page.',
-            'info' => static fn() => display_cpt_structure( 'knowledge-base' ),
-            'function' => 'enable_hws_cpt_knowledge_base',
-            'scope_admin_only' => false,
-        ],
-    ];
+    // ACF structures are managed exclusively by the Core-rendered Custom Post
+    // Types tab. Their established option names remain the compatibility layer.
+    $snippets_acf = [];
 
 
     // ─── ADMIN / SETTINGS SNIPPETS ─────────────────────────────────────
@@ -777,14 +668,6 @@ function get_snippets($type = "")
     ],
 
     // ─── Other admin snippets ─────────────────────────────────────────
-    [
-        'id' => 'register_sponsored_functionality',
-        'name' => 'Sponsored Content Fields',
-        'description' => 'Adds "Sponsored" checkbox and sponsor details fields to posts for affiliate/sponsored content disclosure.',
-        'info' => static fn() => display_acf_structure( 'group_sponsored_field' ),
-        'function' => 'register_acf_sponsored_functionality',
-        'scope_admin_only' => true
-    ],
     [
         'id' => 'enable_custom_rss_functionality',
         'name' => 'Custom RSS Feeds',

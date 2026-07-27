@@ -64,8 +64,9 @@ function maybe_purge_footer_text_cache_after_acf_save( $post_id ): void {
     }
 
     $page = isset( $_REQUEST['page'] ) ? sanitize_key( wp_unslash( $_REQUEST['page'] ) ) : '';
+    $tab  = isset( $_REQUEST['tab'] ) ? sanitize_key( wp_unslash( $_REQUEST['tab'] ) ) : '';
 
-    if ( 'website-settings' !== $page ) {
+    if ( 'website-settings' !== $page && ! ( 'hws-core-tools' === $page && 'website-types' === $tab ) ) {
         return;
     }
 

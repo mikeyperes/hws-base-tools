@@ -194,30 +194,25 @@ expect_true(
     && str_contains( $shared_content_types, "public const TESTIMONIAL = 'testimonial'" )
     && str_contains( $shared_content_types, "public const TEAM_MEMBER = 'team-member'" )
     && str_contains( $shared_content_types, "public const SERVICES = 'services'" )
-    && str_contains( $shared_content_types, "public const KNOWLEDGE_BASE = 'knowledge-base'" ),
-    'HWS owns the shared Organization, Testimonial, Team Member, Services, and Knowledge Base post type contract'
+    && ! str_contains( $shared_content_types, "KNOWLEDGE_BASE" ),
+    'HWS owns Organization, Testimonial, Team Member, and Services while SMP owns Knowledge Base'
 );
 expect_true(
-    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'SharedContentTypes::boot();' )
-    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'register-post-type-services.php'" )
-    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'register-post-type-knowledge-base.php'" )
-    && ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'register-post-type-' ),
-    'shared post types register on init independently of the ACF lifecycle'
+    str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'SharedContentTypes::registry()' )
+    && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'SharedAcfStructures::registry()' )
+    && ! str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'register-post-type-' ),
+    'shared post types and ACF structures register only through Hexa WP Core'
 );
 expect_true(
-    str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-organization.php' ), 'SharedContentTypes::register_type' )
-    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-testimonial.php' ), 'SharedContentTypes::register_type' )
-    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-team-member.php' ), 'SharedContentTypes::register_type' )
-    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-services.php' ), 'SharedContentTypes::register_type' )
-    && str_contains( source( 'src/AcfFields/LegacySmp/register-post-type-knowledge-base.php' ), 'SharedContentTypes::register_type' ),
-    'legacy shared post type callbacks are thin adapters to the canonical HWS registry'
+    ! glob( $root . '/src/AcfFields/LegacySmp/register-post-type-*.php' )
+    && ! glob( $root . '/smp-core/register-post-type-*.php' ),
+    'redundant legacy post-type registrars are removed'
 );
 expect_true(
-    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'id' => 'hws_enable_cpt_services'" )
-    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'function' => 'enable_hws_cpt_services'" )
-    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'id' => 'hws_enable_cpt_knowledge_base'" )
-    && str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), "'function' => 'enable_hws_cpt_knowledge_base'" ),
-    'Services and Knowledge Base are exposed as callable HWS snippet toggles'
+    str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'ContentTypeRenderer' )
+    && str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'AcfFieldGroupRenderer' )
+    && str_contains( source( 'src/AcfFields/SharedAcfStructures.php' ), "'legacy_option'" ),
+    'CPT and ACF controls use the generic Core UI while retaining legacy option state'
 );
 $search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_settings(
     [
@@ -297,7 +292,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.66', 'HWS bundles Hexa WordPress Plugin Core 0.19.66' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '0.19.78', 'HWS bundles Hexa WordPress Plugin Core 0.19.78' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )

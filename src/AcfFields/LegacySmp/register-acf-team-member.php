@@ -1,11 +1,6 @@
 <?php namespace hws_base_tools;
-function enable_smp_acf_teammember(){
-
-	if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-		return;
-	}
-
-	acf_add_local_field_group( array(
+function enable_smp_acf_teammember() {
+	return array(
 	'key' => 'group_64b3a05760b1a',
 	'title' => 'Team Member',
 	'fields' => array(
@@ -68,4 +63,4 @@ function enable_smp_acf_teammember(){
 	'active' => true,
 	'description' => '',
 	'show_in_rest' => 0,
-) );}?>
+); } ?>

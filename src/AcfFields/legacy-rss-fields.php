@@ -1,11 +1,7 @@
 <?php namespace hws_base_tools;
 
-function register_acf_rss(){
-	if ( ! function_exists( 'acf_add_local_field_group' ) ) {
-		return;
-	}
-
-	\acf_add_local_field_group( array(
+function hws_rss_acf_group(): array {
+	return array(
 	'key' => 'group_66e9ebd79f8e0',
 	'title' => 'RSS Structures',
 	'fields' => array(
@@ -160,7 +156,14 @@ function register_acf_rss(){
 	'active' => true,
 	'description' => '',
 	'show_in_rest' => 0,
-) );
+	);
+
+}
+
+function register_acf_rss(): void {
+	if ( ! function_exists( 'acf_add_options_page' ) ) {
+		return;
+	}
 
 
 
@@ -169,7 +172,5 @@ function register_acf_rss(){
 	'menu_slug' => 'rss-structures',
 	'redirect' => false,
 ) );
-
-
-}
+	}
 ?>
