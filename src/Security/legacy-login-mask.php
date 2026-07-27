@@ -76,6 +76,7 @@ const DEFAULT_SLUG = 'hexa-admin';
 
 
         // Settings are rendered inside HWS Base Tools > Security > Masked Login.
+        add_action('admin_menu', [__CLASS__, 'register_legacy_redirect_page'], PHP_INT_MAX);
         add_action('admin_init', [__CLASS__, 'register_settings']);
         add_action('admin_init', [__CLASS__, 'redirect_legacy_settings_page'], 1);
 
@@ -640,6 +641,18 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
 
     public static function admin_menu() {
         // Compatibility method retained for integrations that called it directly.
+    }
+
+    public static function register_legacy_redirect_page(): void {
+        add_submenu_page(
+            'options-general.php',
+            'Masked Login',
+            'Masked Login',
+            'manage_options',
+            'hws-login-masking',
+            [ __CLASS__, 'render_settings' ]
+        );
+        remove_submenu_page( 'options-general.php', 'hws-login-masking' );
     }
 
     public static function redirect_legacy_settings_page(): void {

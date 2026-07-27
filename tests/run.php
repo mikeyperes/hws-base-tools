@@ -379,9 +379,11 @@ $masked_login_tab_source = source( 'settings-dashboard-masked-login.php' );
 $login_logo_source = source( 'src/FrontendContent/legacy-login-logo.php' );
 expect_true(
     ! str_contains( $login_mask_source, 'add_options_page' )
+    && str_contains( $login_mask_source, 'register_legacy_redirect_page' )
+    && str_contains( $login_mask_source, 'remove_submenu_page' )
     && str_contains( $login_mask_source, 'redirect_legacy_settings_page' )
     && str_contains( $login_mask_source, "'hws-login-masking'" ),
-    'Masked Login has no standalone settings page and redirects its legacy route into HWS'
+    'Masked Login has no visible standalone page and preserves a hidden redirect route into HWS'
 );
 expect_true(
     str_contains( $masked_login_tab_source, "require_once __DIR__ . '/snippet-login-mask.php';" )
