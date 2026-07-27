@@ -90,7 +90,7 @@ final class IntegrationTests {
 
         $registry->register(
             'hws.primary-entity-ajax',
-            'Primary author AJAX save route is registered',
+            'Primary author automatic save route is registered',
             static function(): array {
                 $hook = function_exists( 'has_action' ) ? has_action( 'wp_ajax_hws_save_primary_entity' ) : false;
                 return [
@@ -100,7 +100,7 @@ final class IntegrationTests {
                     'actual' => false !== $hook ? 'Registered at priority ' . $hook : 'Not registered',
                 ];
             },
-            [ 'group' => 'HWS Base Tools', 'host' => 'hws-base-tools', 'description' => 'Confirms the visible Save Website Profile workflow has a server handler.' ]
+            [ 'group' => 'HWS Base Tools', 'host' => 'hws-base-tools', 'description' => 'Confirms author selection can save automatically and return the profile preview.' ]
         );
     }
 }

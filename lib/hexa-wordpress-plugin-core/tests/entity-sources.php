@@ -104,4 +104,13 @@ entity_assert( 'person' === $saved['entity']['entity_type'], 'Personal Website m
 $saved = $derived_manager->save( [ 'site_type' => 'company_website', 'enabled' => true, 'source' => 'wordpress_user', 'object_id' => 11, 'entity_type' => 'person' ] );
 entity_assert( 'organization' === $saved['entity']['entity_type'], 'Company Website must derive Organization without an editable semantic selector.' );
 
+$renderer_source = (string) file_get_contents( $root . '/src/EntitySources/PrimaryEntityRenderer.php' );
+entity_assert( ! str_contains( $renderer_source, 'hpc-primary-save' ), 'Primary entity settings must not require a manual save button.' );
+entity_assert(
+    str_contains( $renderer_source, "document.addEventListener('hexa-search-selected'" )
+    && str_contains( $renderer_source, "save(root,'selection')" )
+    && str_contains( $renderer_source, 'preview_html' ),
+    'Selecting an entity must save automatically and replace the live profile preview.'
+);
+
 echo "PASS: Canonical entities support optional sources, derived website semantics, and independent website classification.\n";

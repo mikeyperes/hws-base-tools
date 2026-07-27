@@ -222,6 +222,14 @@ expect_true(
     && str_contains( $primary_entity_source, "'allow_entity_type_selection' => false" ),
     'HWS derives a read-only semantic type from website type'
 );
+$primary_entity_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/PrimaryEntityRenderer.php' );
+expect_true(
+    ! str_contains( $primary_entity_renderer, 'hpc-primary-save' )
+    && str_contains( $primary_entity_renderer, "document.addEventListener('hexa-search-selected'" )
+    && str_contains( $primary_entity_renderer, "save(root,'selection')" )
+    && str_contains( $primary_entity_renderer, 'preview_html' ),
+    'primary author selection saves automatically and loads its profile without a manual save button'
+);
 expect_true(
     str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), "hexa_plugin_core_register_integration_tests" )
     && file_exists( $root . '/src/Diagnostics/IntegrationTests.php' )
@@ -317,7 +325,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.0', 'HWS bundles Hexa WordPress Plugin Core 1.1.0' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.1', 'HWS bundles Hexa WordPress Plugin Core 1.1.1' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
