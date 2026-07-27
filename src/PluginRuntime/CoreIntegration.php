@@ -12,6 +12,7 @@ use HWS\BaseTools\AdminDashboard\LegacyEventBridge;
 use HWS\BaseTools\AcfFields\SharedAcfStructures;
 use HWS\BaseTools\ContentTypes\SharedContentTypes;
 use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
+use HWS\BaseTools\Diagnostics\IntegrationTests;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -73,6 +74,7 @@ final class CoreIntegration {
     }
 
     public static function boot(): void {
+        add_action( 'hexa_plugin_core_register_integration_tests', [ IntegrationTests::class, 'register' ] );
         self::bootstrap()->boot();
     }
 }

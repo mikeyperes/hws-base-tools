@@ -76,7 +76,8 @@ final class DashboardRegistry {
             'Site & Brand' => [ 'brand-assets', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
-            'WordPress Admin' => [ 'ui-cleanup', 'masked-login', 'config', 'advanced', 'snippets', 'hexa-core' ],
+            'Security' => [ 'masked-login' ],
+            'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
 
         foreach ( $definitions as $label => $ids ) {

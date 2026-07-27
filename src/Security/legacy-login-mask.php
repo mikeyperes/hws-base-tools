@@ -75,9 +75,9 @@ const DEFAULT_SLUG = 'hexa-admin';
         }
 
 
-        // Simple admin UI (Tools → Login Masking).
-        add_action('admin_menu', [__CLASS__, 'admin_menu']);
+        // Settings are rendered inside HWS Base Tools > Security > Masked Login.
         add_action('admin_init', [__CLASS__, 'register_settings']);
+        add_action('admin_init', [__CLASS__, 'redirect_legacy_settings_page'], 1);
 
         // Ensure options exist.
         self::seed_options();
@@ -639,21 +639,16 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
      * ============================================================ */
 
     public static function admin_menu() {
-        add_options_page(
-            'HWS Login Masking',
-            'Masked Login - Hexa Cloud Services',
-            'manage_options',
-            'hws-login-masking',
-            [__CLASS__, 'render_settings']
-        );
-        /*
-        add_management_page(
-            'HWS Login Masking',
-            'Login Masking',
-            'manage_options',
-            'hws-login-masking',
-            [__CLASS__, 'render_settings']
-        );*/
+        // Compatibility method retained for integrations that called it directly.
+    }
+
+    public static function redirect_legacy_settings_page(): void {
+        $page = isset( $_GET['page'] ) && ! is_array( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+        if ( 'hws-login-masking' !== $page || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        wp_safe_redirect( admin_url( 'options-general.php?page=hws-core-tools&tab=masked-login' ) );
+        exit;
     }
 
     public static function register_settings() {
@@ -710,140 +705,13 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
     }
 
 
-    private static function login_help_text(): string {
-        $o     = self::opts();
-        $url   = esc_url(self::login_url());
-        $slug  = esc_html(self::slug());
-        $json  = esc_url(home_url('/.well-known/hws-login.json'));
-        $admin = esc_url(home_url('/wp-admin/'));
-        $toolkit = !empty($o['compat_wptoolkit']) ? 'Enabled' : 'Disabled';
-        $hide    = !empty($o['hide_wp_admin']) ? 'Enabled' : 'Disabled';
-        $wk      = !empty($o['well_known']) ? 'Enabled' : 'Disabled';
-
-        return '
-            <p><strong>Masked login is active.</strong></p>
-            <ul style="list-style: disc; padding-left: 20px;">
-                <li><strong>Login URL:</strong> <a href="'.$url.'" target="_blank">'.$url.'</a> (slug: <code>'.$slug.'</code>)</li>
-                <li><strong>WP Toolkit & Allowlisted IPs:</strong> '.$toolkit.' — may follow redirect from <code><a href="'.home_url('/wp-login.php').'" target="_blank">'.home_url('/wp-login.php').'</a></code>.</li>
-                <li><strong>/wp-admin/ visibility:</strong> '.$hide.' — guests get 404 at <a href="'.$admin.'" target="_blank">'.$admin.'</a> (ajax/upload allowed).</li>
-                <li><strong>.well-known discovery:</strong> '.$wk.' — <a href="'.$json.'" target="_blank">'.$json.'</a>.</li>
-                <li><strong>Emergency:</strong> <code><a href="'.home_url('/?hws=bypass').'" target="_blank">/?hws=bypass</a></code> (native login), <code><a href="'.home_url('/?hws=repair').'" target="_blank">/?hws=repair</a></code> (fix rewrites & purge caches).</li>
-                <li><strong>Disable masking:</strong> <code>define(\'HWS_DISABLE_LOGIN_MASKING\', true);</code> in <code>wp-config.php</code>.</li>
-            </ul>';
-    }
-
-
     /**
      * Render the admin settings page with a help box and a few toggles.
      */
     public static function render_settings() {
-        if (!current_user_can('manage_options')) return;
-        $o = self::opts();
-        ?>
-        <div class="wrap">
-            <h1>HWS Login Masking</h1>
-
-            <!-- Help/explanation panel -->
-            <div class="notice notice-info" style="padding:12px;margin-top:10px;">
-                <?php echo self::login_help_text(); ?>
-            </div>
-
-            <!-- Settings form (slug is read-only because it's fixed in code) -->
-            <form method="post" action="options.php" style="margin-top: 12px;">
-                <?php settings_fields('hws_login_mask_group'); ?>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row">Enable</th>
-                        <td>
-                            <label>
-                                <input type="checkbox"
-                                       name="<?php echo esc_attr(self::OPT_KEY); ?>[enabled]"
-                                       value="1"
-                                       <?php checked(!empty($o['enabled'])); ?>>
-                                Turn on masked login
-                            </label>
-                        </td>
-                    </tr>
-
-                    <tr>
-    <th scope="row">Masked Slug</th>
-    <td>
-        <input type="text"
-               name="<?php echo esc_attr(self::OPT_KEY); ?>[slug]"
-               class="regular-text"
-               value="<?php echo esc_attr(self::slug()); ?>"
-               pattern="[a-z0-9\-]+"
-               title="Lowercase letters, numbers, and dashes only">
-        <p class="description">
-            The URL segment used for login (default <code>hexa-admin</code>). Example:
-            <code><?php echo esc_html( home_url('/') ); ?><span id="hws-slug-preview"><?php echo esc_html(self::slug()); ?></span>/</code>
-        </p>
-    </td>
-</tr>
-
-                    <tr>
-                        <th scope="row">Hide /wp-admin/ for guests</th>
-                        <td>
-                            <label>
-                                <input type="checkbox"
-                                       name="<?php echo esc_attr(self::OPT_KEY); ?>[hide_wp_admin]"
-                                       value="1"
-                                       <?php checked(!empty($o['hide_wp_admin'])); ?>>
-                                Return 404 for /wp-admin/ when not logged in (admin-ajax.php & async-upload.php remain allowed)
-                            </label>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row">Compatibility: WP Toolkit</th>
-                        <td>
-                            <label>
-                                <input type="checkbox"
-                                       name="<?php echo esc_attr(self::OPT_KEY); ?>[compat_wptoolkit]"
-                                       value="1"
-                                       <?php checked(!empty($o['compat_wptoolkit'])); ?>>
-                                Allow /wp-login.php → masked URL (302) for “WP Toolkit” user agent
-                            </label>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row">Allowlist IPs</th>
-                        <td>
-                            <input type="text"
-                                   name="<?php echo esc_attr(self::OPT_KEY); ?>[allowlist_ips]"
-                                   value="<?php echo esc_attr($o['allowlist_ips']); ?>"
-                                   class="regular-text"
-                                   placeholder="127.0.0.1, 51.81.93.236, 10.0.0.0/8">
-                            <p class="description">IPs/CIDR ranges that may follow a redirect from /wp-login.php to the masked URL.</p>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row">.well-known discovery</th>
-                        <td>
-                            <label>
-                                <input type="checkbox"
-                                       name="<?php echo esc_attr(self::OPT_KEY); ?>[well_known]"
-                                       value="1"
-                                       <?php checked(!empty($o['well_known'])); ?>>
-                                Serve <code>/.well-known/hws-login.json</code> with the current masked login URL and metadata
-                            </label>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php submit_button(); ?>
-            </form>
-
-            <!-- Convenience: show the current login URL -->
-            <p><strong>Current login URL:</strong>
-                <a href="<?php echo esc_url(self::login_url()); ?>">
-                    <?php echo esc_html(self::login_url()); ?>
-                </a>
-            </p>
-        </div>
-        <?php
+        if ( ! current_user_can( 'manage_options' ) ) return;
+        wp_safe_redirect( admin_url( 'options-general.php?page=hws-core-tools&tab=masked-login' ) );
+        exit;
     }
 }
 

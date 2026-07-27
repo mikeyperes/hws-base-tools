@@ -10,7 +10,8 @@ final class PrimaryEntityManager {
             [
                 'entity_option' => 'hws_primary_entity', 'site_type_option' => 'hws_site_type',
                 'site_types' => [], 'sources' => [], 'migration_flag' => 'hws_primary_entity_migrated_v1',
-                'legacy_resolvers' => [],
+                'site_entity_types' => [], 'allow_entity_type_selection' => true,
+                'legacy_resolvers' => [], 'render_args' => [],
             ],
             $config
         );
@@ -48,9 +49,26 @@ final class PrimaryEntityManager {
         return array_key_exists( $value, $this->site_types() ) ? $value : $default;
     }
 
+    public function entity_type_for_site_type( ?string $site_type = null ): string {
+        $site_type = sanitize_key( $site_type ?? $this->site_type() );
+        $map = (array) $this->config['site_entity_types'];
+        $mapped = sanitize_key( (string) ( $map[ $site_type ] ?? 'auto' ) );
+        return in_array( $mapped, CanonicalEntityResolver::TYPES, true ) ? $mapped : 'auto';
+    }
+
+    public function entity_type_label( ?string $site_type = null ): string {
+        $type = $this->entity_type_for_site_type( $site_type );
+        return 'auto' === $type ? 'Automatic' : ucfirst( $type );
+    }
+
     /** @return array<string,mixed> */
     public function settings(): array {
-        return CanonicalEntityResolver::settings( (string) $this->config['entity_option'] );
+        $settings = CanonicalEntityResolver::settings( (string) $this->config['entity_option'] );
+        $derived_type = $this->entity_type_for_site_type();
+        if ( 'auto' !== $derived_type ) {
+            $settings['entity_type'] = $derived_type;
+        }
+        return $settings;
     }
 
     /** @return array<string,mixed>|null */
@@ -67,9 +85,15 @@ final class PrimaryEntityManager {
 
         $sources = $this->sources();
         $source_id = sanitize_key( (string) ( $values['source'] ?? '' ) );
+        if ( ! isset( $sources[ $source_id ] ) && 1 === count( $sources ) ) {
+            $source_id = (string) array_key_first( $sources );
+        }
         $source = $sources[ $source_id ] ?? null;
-        $type = sanitize_key( (string) ( $values['entity_type'] ?? 'auto' ) );
-        $type = in_array( $type, CanonicalEntityResolver::TYPES, true ) ? $type : 'auto';
+        $type = $this->entity_type_for_site_type( $site_type );
+        if ( 'auto' === $type && ! empty( $this->config['allow_entity_type_selection'] ) ) {
+            $requested_type = sanitize_key( (string) ( $values['entity_type'] ?? 'auto' ) );
+            $type = in_array( $requested_type, CanonicalEntityResolver::TYPES, true ) ? $requested_type : 'auto';
+        }
 
         $settings = [
             'enabled' => ! empty( $values['enabled'] ) && null !== $source && ! empty( $values['object_id'] ) ? 1 : 0,

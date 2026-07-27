@@ -88,4 +88,20 @@ entity_assert( 'Verified Person' === CanonicalEntityResolver::first_field( $save
 $saved = $manager->save( [ 'site_type' => 'other', 'enabled' => false, 'source' => '', 'object_id' => 0, 'entity_type' => 'auto' ] );
 entity_assert( null === $saved['entity'] && 'other' === $saved['site_type'], 'Website type must remain independent when no entity is attached.' );
 
-echo "PASS: Canonical entities support optional user/post sources and independent website classification.\n";
+$derived_manager = new PrimaryEntityManager(
+    [
+        'entity_option' => 'hws_primary_entity',
+        'site_type_option' => 'hws_site_type',
+        'site_types' => [ 'personal_website' => 'Personal Website', 'company_website' => 'Company Website' ],
+        'site_entity_types' => [ 'personal_website' => 'person', 'company_website' => 'organization' ],
+        'allow_entity_type_selection' => false,
+        'sources' => [ 'wordpress_user' => [ 'kind' => 'user', 'label' => 'WordPress Author' ] ],
+    ]
+);
+$saved = $derived_manager->save( [ 'site_type' => 'personal_website', 'enabled' => true, 'source' => '', 'object_id' => 11, 'entity_type' => 'organization' ] );
+entity_assert( 'wordpress_user' === $saved['settings']['source'], 'A single configured source must be selected automatically.' );
+entity_assert( 'person' === $saved['entity']['entity_type'], 'Personal Website must derive Person and ignore a conflicting submitted semantic type.' );
+$saved = $derived_manager->save( [ 'site_type' => 'company_website', 'enabled' => true, 'source' => 'wordpress_user', 'object_id' => 11, 'entity_type' => 'person' ] );
+entity_assert( 'organization' === $saved['entity']['entity_type'], 'Company Website must derive Organization without an editable semantic selector.' );
+
+echo "PASS: Canonical entities support optional sources, derived website semantics, and independent website classification.\n";

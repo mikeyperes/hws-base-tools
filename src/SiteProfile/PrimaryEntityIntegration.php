@@ -25,15 +25,19 @@ final class PrimaryEntityIntegration {
                     'news_outlet' => 'News Outlet', 'personal_website' => 'Personal Website',
                     'company_website' => 'Company Website', 'ecommerce_website' => 'e-Commerce Website', 'other' => 'Other',
                 ],
+                'site_entity_types' => [
+                    'news_outlet' => 'publication', 'personal_website' => 'person',
+                    'company_website' => 'organization', 'ecommerce_website' => 'organization', 'other' => 'person',
+                ],
+                'allow_entity_type_selection' => false,
                 'sources' => [
-                    'wordpress_user' => [ 'label' => 'WordPress Author', 'kind' => 'user', 'description' => 'A WordPress user account representing a person, organization, or publication.' ],
-                    'verified_profile' => [ 'label' => 'Verified Profile', 'kind' => 'post', 'post_type' => 'profile', 'description' => 'A profile managed by SMP Verified Profiles.' ],
-                    'organization' => [ 'label' => 'Organization Record', 'kind' => 'post', 'post_type' => 'organization', 'description' => 'An HWS-owned Organization content record.' ],
+                    'wordpress_user' => [ 'label' => 'WordPress Author', 'kind' => 'user', 'description' => 'HWS binds only a WordPress user. Verified Profile and Organization relationships remain owned by their respective plugins.' ],
                 ],
                 'capability' => 'manage_options', 'ajax_action' => 'hws_save_primary_entity',
                 'nonce_action' => 'hws_primary_entity', 'nonce_field' => 'nonce',
                 'migration_flag' => 'hws_primary_entity_migrated_v1',
                 'legacy_resolvers' => [ [ self::class, 'resolve_legacy_entity' ] ],
+                'render_args' => [ 'title' => 'Website & Primary Entity', 'consumers' => self::consumers() ],
             ]
         );
         return self::$manager;
@@ -57,19 +61,17 @@ final class PrimaryEntityIntegration {
     }
 
     public static function render(): void {
-        echo ( new PrimaryEntityRenderer() )->render(
-            self::manager(),
-            [
-                'title' => 'Website & Primary Entity',
-                'consumers' => [
-                    [ 'label' => 'SFPF Person Profile', 'description' => 'Consumes Person entities and their user-profile fields.', 'active' => static fn( array $entity ): bool => 'person' === $entity['entity_type'] && self::plugin_active( 'sfpf-person-profile-integration' ) ],
-                    [ 'label' => 'SMC Organization Profile', 'description' => 'Consumes Organization entities and organization fields.', 'active' => static fn( array $entity ): bool => 'organization' === $entity['entity_type'] && self::plugin_active( 'smc-organization-profile-integration' ) ],
-                    [ 'label' => 'SMP Publication', 'description' => 'Consumes Publication or Organization entities as the publication identity.', 'active' => static fn( array $entity ): bool => in_array( $entity['entity_type'], [ 'publication', 'organization' ], true ) && self::plugin_active( 'smp-publication-integration' ) ],
-                    [ 'label' => 'SMP Verified Profiles', 'description' => 'Supplies and consumes Verified Profile entities.', 'active' => static fn( array $entity ): bool => 'verified_profile' === $entity['source'] && self::plugin_active( 'smp-verified-profiles' ) ],
-                ],
-            ]
-        );
+        echo ( new PrimaryEntityRenderer() )->render( self::manager() );
         echo self::website_settings_panel()->render();
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public static function consumers(): array {
+        return [
+            [ 'label' => 'SFPF Person Profile', 'description' => 'Consumes a Person website author and keeps its founder-to-Organization relationship inside SFPF.', 'active' => static fn( array $entity ): bool => 'person' === $entity['entity_type'] && self::plugin_active( 'sfpf-person-profile-integration' ) ],
+            [ 'label' => 'SMC Organization Profile', 'description' => 'Consumes an Organization website author while Organization records remain owned by SMC.', 'active' => static fn( array $entity ): bool => 'organization' === $entity['entity_type'] && self::plugin_active( 'smc-organization-profile-integration' ) ],
+            [ 'label' => 'SMP Publication', 'description' => 'Consumes a News Outlet author as the publication identity.', 'active' => static fn( array $entity ): bool => 'publication' === $entity['entity_type'] && self::plugin_active( 'smp-publication-integration' ) ],
+        ];
     }
 
     /** @return array<string,mixed> */
@@ -92,9 +94,6 @@ final class PrimaryEntityIntegration {
             $id = self::object_id( $website['company'] ?? 0 );
             if ( $id ) return [ 'source' => 'wordpress_user', 'object_id' => $id, 'entity_type' => 'organization', 'migrated_from' => 'Website company user' ];
         }
-
-        $organization_id = absint( get_option( 'smc_primary_organization_id', get_option( 'sfpf_primary_organization', 0 ) ) );
-        if ( $organization_id ) return [ 'source' => 'organization', 'object_id' => $organization_id, 'entity_type' => 'organization', 'migrated_from' => 'SMC primary organization' ];
 
         $publication_user = self::acf_option( [ 'smpi_publication_user', 'publication_user' ] );
         $id = self::object_id( $publication_user );

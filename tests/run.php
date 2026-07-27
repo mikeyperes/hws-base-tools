@@ -115,7 +115,12 @@ expect_true(
     && $sorted_grouped_tab_ids === $sorted_tab_ids,
     'grouped sidebar assigns every HWS tab exactly once'
 );
-expect_true( count( $groups ) === 5 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use five clear sidebar groups' );
+expect_true( count( $groups ) === 6 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use six clear sidebar groups' );
+$security_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Security' === ( $group['label'] ?? '' ) ) );
+expect_true(
+    1 === count( $security_groups ) && ( $security_groups[0]['tabs'] ?? [] ) === [ 'masked-login' ],
+    'Masked Login has one dedicated Security sidebar location'
+);
 expect_true(
     $registry->implementation_files_for_tab( 'sitemaps' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
     'Sitemaps tab loads its Site Profile dependency first'
@@ -202,6 +207,26 @@ expect_true(
     && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'SharedAcfStructures::registry()' )
     && ! str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'register-post-type-' ),
     'shared post types and ACF structures register only through Hexa WP Core'
+);
+$primary_entity_source = source( 'src/SiteProfile/PrimaryEntityIntegration.php' );
+expect_true(
+    str_contains( $primary_entity_source, "'wordpress_user' => [ 'label' => 'WordPress Author', 'kind' => 'user'" )
+    && ! str_contains( $primary_entity_source, "'verified_profile' =>" )
+    && ! str_contains( $primary_entity_source, "'organization' => [ 'label'" ),
+    'HWS owns only the optional WordPress author source, not Verified Profile or Organization records'
+);
+expect_true(
+    str_contains( $primary_entity_source, "'personal_website' => 'person'" )
+    && str_contains( $primary_entity_source, "'company_website' => 'organization'" )
+    && str_contains( $primary_entity_source, "'news_outlet' => 'publication'" )
+    && str_contains( $primary_entity_source, "'allow_entity_type_selection' => false" ),
+    'HWS derives a read-only semantic type from website type'
+);
+expect_true(
+    str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), "hexa_plugin_core_register_integration_tests" )
+    && file_exists( $root . '/src/Diagnostics/IntegrationTests.php' )
+    && file_exists( $root . '/lib/hexa-wordpress-plugin-core/src/IntegrationTests/TestRunner.php' ),
+    'HWS registers plugin-specific checks with the bundled Core integration-test framework'
 );
 expect_true(
     ! glob( $root . '/src/AcfFields/LegacySmp/register-post-type-*.php' )
@@ -292,7 +317,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.0.0', 'HWS bundles Hexa WordPress Plugin Core 1.0.0' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.0', 'HWS bundles Hexa WordPress Plugin Core 1.1.0' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -349,7 +374,29 @@ expect_true( str_contains( $runtime_options, "'hws_update_urls_enabled'       =>
 expect_true( str_contains( $runtime_options, "'hws_login_urls_enabled'        => 'no'" ), 'public login-control URLs seed disabled' );
 
 $login_mask_source = source( 'src/Security/legacy-login-mask.php' );
+$masked_login_dashboard_source = source( 'src/Security/legacy-masked-login.php' );
+$masked_login_tab_source = source( 'settings-dashboard-masked-login.php' );
 $login_logo_source = source( 'src/FrontendContent/legacy-login-logo.php' );
+expect_true(
+    ! str_contains( $login_mask_source, 'add_options_page' )
+    && str_contains( $login_mask_source, 'redirect_legacy_settings_page' )
+    && str_contains( $login_mask_source, "'hws-login-masking'" ),
+    'Masked Login has no standalone settings page and redirects its legacy route into HWS'
+);
+expect_true(
+    str_contains( $masked_login_tab_source, "require_once __DIR__ . '/snippet-login-mask.php';" )
+    && str_contains( $masked_login_dashboard_source, 'hws-ml-settings-form' )
+    && str_contains( $masked_login_dashboard_source, 'hws-ml-setting-slug' )
+    && str_contains( $masked_login_dashboard_source, 'hws-ml-slug-preview' ),
+    'Masked Login dashboard loads its implementation and embeds the complete configuration form'
+);
+expect_true(
+    str_contains( $masked_login_dashboard_source, 'CoreUi::collapsible' )
+    && str_contains( $masked_login_dashboard_source, "'title' => 'Activity Log'" )
+    && str_contains( $masked_login_dashboard_source, "'open' => false" )
+    && ! str_contains( $masked_login_dashboard_source, '<h3>🔐 Masked Login</h3>' ),
+    'Masked Login uses Core sections, keeps its log collapsed, and removes the legacy emoji hero'
+);
 expect_true(
     str_contains( $login_mask_source, 'self::prepare_enabled_login_branding();' )
     && strpos( $login_mask_source, 'self::prepare_enabled_login_branding();' ) < strpos( $login_mask_source, "require_once ABSPATH . 'wp-login.php';" )

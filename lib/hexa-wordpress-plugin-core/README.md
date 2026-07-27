@@ -44,6 +44,7 @@ hexa-wordpress-plugin-core/
     FaqSets/            -> Hexa\PluginCore\FaqSets
     GettingStartedChecklist/
                         -> Hexa\PluginCore\GettingStartedChecklist
+    IntegrationTests/   -> Hexa\PluginCore\IntegrationTests
     LogFiles/           -> Hexa\PluginCore\LogFiles
     MediaUploads/       -> Hexa\PluginCore\MediaUploads
     ObjectCache/        -> Hexa\PluginCore\ObjectCache
@@ -92,11 +93,12 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `ContentTypes`: immutable WordPress post-type keys with reusable registration, editable labels and rewrite slugs, ACF group toggles, guarded AJAX persistence, and a shared collapsed-by-default management UI.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `DatabaseCleanup`: guarded provider-backed cleanup sessions, per-task cleanup, per-table optimization, pre/post provider state restoration, and live AJAX progress.
-- `EntitySources`: optional canonical website/entity selection, legacy migration, user/post resolution, attached-author extraction, field inspection, and reusable admin UI.
+- `EntitySources`: optional canonical website/entity selection, derived semantic types, legacy migration, user/post resolution, complete author/profile cards, attached-author extraction, field inspection, and reusable admin UI.
 - `FieldStructures`: reusable ACF group registration and settings panels plus displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FrontendForms`: canonical public field schemas plus WordPress-safe WYSIWYG normalization and plain-text projection.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
 - `GettingStartedChecklist`: reusable plugin startup/onboarding checklist UI, collapsible parent steps, typed step/subtask registration, guarded AJAX execution, sequential subtask processing, request metadata payloads, spinner/check/X states, callback result normalization, reusable destructive sample runner, deleted-post/deleted-file reports, image preview report assets, and collapsed dark technical activity logs.
+- `IntegrationTests`: automatic Core and host release checks, plugin-defined test registration, exception-safe pass/fail execution, capability-protected HTML and JSON report URLs, detailed expected/actual output, and per-test timing.
 - `LogFiles`: shared error-log source definitions, tail readers, classifiers, search/highlight UI, and renderers.
 - `MediaUploads`: reusable image MIME, extension, and size policy plus guarded WordPress Media Library storage.
 - `ObjectCache`: provider-specific object-cache status and activation adapters, including verified LiteSpeed Redis checks.
@@ -186,6 +188,7 @@ Before adding implementations in another Codex or Claude chat, read:
 - `docs/folder-map.md`
 - `docs/setup-protocol.md`
 - `docs/implementation-checklist.md`
+- `docs/integration-tests.md`
 - `docs/new-plugin-master-checklist.md`
 - `docs/content-cleanup.md`
 - `docs/content-types.md`
