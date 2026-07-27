@@ -389,8 +389,9 @@ expect_true(
     str_contains( $masked_login_tab_source, "require_once __DIR__ . '/snippet-login-mask.php';" )
     && str_contains( $masked_login_dashboard_source, 'hws-ml-settings-form' )
     && str_contains( $masked_login_dashboard_source, 'hws-ml-setting-slug' )
-    && str_contains( $masked_login_dashboard_source, 'hws-ml-slug-preview' ),
-    'Masked Login dashboard loads its implementation and embeds the complete configuration form'
+    && str_contains( $masked_login_dashboard_source, 'hws-ml-slug-preview' )
+    && str_contains( $masked_login_dashboard_source, 'Login masking is active. Current login URL:' ),
+    'Masked Login dashboard loads its implementation, embeds its configuration, and reports status clearly'
 );
 expect_true(
     str_contains( $masked_login_dashboard_source, 'CoreUi::collapsible' )
