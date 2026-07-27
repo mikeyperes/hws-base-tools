@@ -2197,15 +2197,17 @@ function hws_check_redis_status() {
     $result['litespeed_enabled'] = ( (bool) $ls_obj && (bool) $ls_kind && ! empty( $ls_host ) );
 
     // — Determine connection target (use LS config, fall back to localhost)
-    $host = ! empty( $ls_host ) ? $ls_host : '127.0.0.1';
-    $port = $ls_port > 0 ? $ls_port : 6379;
+    $host           = ! empty( $ls_host ) ? trim( (string) $ls_host ) : '127.0.0.1';
+    $is_unix_socket = str_starts_with( $host, '/' ) || str_starts_with( $host, 'unix://' );
+    $port           = $is_unix_socket ? 0 : ( $ls_port > 0 ? $ls_port : 6379 );
+    $target         = $is_unix_socket ? $host : "{$host}:{$port}";
 
     // — Attempt connection using LiteSpeed's exact config
     try {
         $redis = new \Redis();
         $ok = @$redis->connect( $host, $port, 2.0 );
         if ( ! $ok ) {
-            $result['error'] = "Connection refused ({$host}:{$port})";
+            $result['error'] = "Connection refused ({$target})";
             return $result;
         }
 

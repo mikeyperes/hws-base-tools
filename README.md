@@ -2,8 +2,8 @@
 
 WordPress site policy and operations tooling for Hexa-managed websites.
 
-Version 10.18.152 restores WP Toolkit one-time login compatibility while masked
-login protection is fully active.
+Version 10.18.153 supports LiteSpeed Redis connections over per-account Unix
+sockets without reporting a false TCP connection error.
 
 ---
 
@@ -187,7 +187,14 @@ used as the destination for new functionality.
 
 ## Changelog
 
-### v10.18.152 (Current)
+### v10.18.153 (Current)
+
+- Preserved Redis port `0` when LiteSpeed stores a Unix socket path as its
+  object-cache host.
+- Removed the false TCP/DNS connection warning while retaining the existing
+  live Redis `PING`, authentication, database, and server-info checks.
+
+### v10.18.152
 
 - Allowed only the exact short-lived 64-character WP Toolkit token request to
   reach the toolkit validator before masked-login endpoint blocking runs.

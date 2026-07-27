@@ -379,7 +379,14 @@ $force_source = false === $force_offset ? '' : substr( $force_handler, $force_of
 expect_true( str_contains( $force_source, "current_user_can( 'update_plugins' )" ), 'force update AJAX checks capability' );
 expect_true( str_contains( $force_source, 'hws_require_ajax_nonce_or_error()' ), 'force update AJAX verifies nonce' );
 
-expect_true( ! str_contains( source( 'src/LegacyCompatibility/legacy-generic-functions.php' ), 'eval(' ), 'generic utilities contain no eval-based aliasing' );
+$generic_utilities_source = source( 'src/LegacyCompatibility/legacy-generic-functions.php' );
+expect_true( ! str_contains( $generic_utilities_source, 'eval(' ), 'generic utilities contain no eval-based aliasing' );
+expect_true(
+    str_contains( $generic_utilities_source, "str_starts_with( \$host, '/' )" )
+    && str_contains( $generic_utilities_source, "str_starts_with( \$host, 'unix://' )" )
+    && str_contains( $generic_utilities_source, '$port           = $is_unix_socket ? 0' ),
+    'Redis status checks preserve port zero for Unix socket connections'
+);
 expect_true( ! file_exists( $root . '/register-acf-functionality.php' ), 'unsafe dead short-tag ACF file is removed' );
 expect_true( ! file_exists( $root . '/src/AcfFields/LegacySmpUserFields.php' ), 'superseded User - Admin ACF registration is removed' );
 expect_true( ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'hws_enable_legacy_smp_user_fields' ), 'deprecated user-field compatibility option cannot reactivate an old group' );
