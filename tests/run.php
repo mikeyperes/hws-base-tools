@@ -244,6 +244,30 @@ expect_true(
     && str_contains( $entity_inventory_renderer, 'All available WordPress and ACF fields' ),
     'primary author field inventory is rendered by Core in Custom Post Types instead of Website & Primary Entity'
 );
+$primary_author_image = source( 'src/BrandAssets/PrimaryAuthorImage.php' );
+expect_true(
+    str_contains( $primary_author_image, 'PrimaryEntityIntegration::manager()->resolve()' )
+    && str_contains( $primary_author_image, "get_field( 'profile_photo'" )
+    && str_contains( $primary_author_image, 'get_avatar_url' ),
+    'favicon profile-image source resolves from the canonical primary author'
+);
+expect_true(
+    str_contains( $dashboard_source, 'hws-primary-author-favicon-preview' )
+    && str_contains( $dashboard_source, 'Use Primary Author Profile Image' )
+    && str_contains( $dashboard_source, "source: 'primary_user'" )
+    && str_contains( $dashboard_source, "\$source === 'primary_user'" )
+    && str_contains( $dashboard_source, 'hws_create_square_brand_asset_from_path' ),
+    'favicon panel shows and applies the primary author image through the existing PNG and ICO workflow'
+);
+$ui_cleanup_source = source( 'src/UiCleanup/legacy-ui-cleanup.php' );
+expect_true(
+    str_contains( $ui_cleanup_source, "'hide_woocommerce_customer_billing_info'" )
+    && str_contains( $ui_cleanup_source, '#fieldset-billing, #fieldset-shipping' )
+    && str_contains( $ui_cleanup_source, "[ 'Customer billing address', 'Customer shipping address' ]" )
+    && str_contains( $ui_cleanup_source, "add_filter( 'woocommerce_customer_meta_fields'" )
+    && str_contains( $ui_cleanup_source, "[ 'profile.php', 'user-edit.php' ]" ),
+    'WooCommerce billing cleanup removes complete billing and shipping profile sections'
+);
 expect_true(
     str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), "hexa_plugin_core_register_integration_tests" )
     && file_exists( $root . '/src/Diagnostics/IntegrationTests.php' )

@@ -105,6 +105,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.1.6
+
+- Added a UI Cleanup option that completely removes WooCommerce customer billing and shipping sections from profile and user-edit screens.
+- Added the primary WordPress author profile image as a visible Site Icon and favicon source, using the existing PNG and ICO workflow.
+
 ### 11.1.5
 
 - Moved the selected primary author’s complete WordPress/ACF field inventory from Website & Primary Entity to the Custom Post Types tab after ACF Structures.

@@ -106,6 +106,14 @@ function get_ui_cleanup_options(): array {
             'default'       => false,
             'section'       => 'wordpress',
         ],
+        'hide_woocommerce_customer_billing_info' => [
+            'label'         => 'WooCommerce Customer Billing & Shipping',
+            'description'   => 'Completely hides the Customer billing address and Customer shipping address sections on profile and user-edit screens.',
+            'css_selectors' => '#fieldset-billing, #fieldset-shipping',
+            'js_hide'       => [ 'Customer billing address', 'Customer shipping address' ],
+            'default'       => false,
+            'section'       => 'woocommerce',
+        ],
         'hide_post_editor_comments' => [
             'label'         => 'Post Editor Comments',
             'description'   => 'Hides the Comments metabox on post and page editor screens.',
@@ -202,6 +210,11 @@ function display_settings_ui_cleanup() {
         'wordfence'  => [
             'title' => 'Wordfence',
             'icon'  => '🛡️',
+            'items' => [],
+        ],
+        'woocommerce' => [
+            'title' => 'WooCommerce',
+            'icon'  => '',
             'items' => [],
         ],
         'rankmath'   => [
@@ -612,7 +625,11 @@ function inject_ui_cleanup_css() {
             }
             // Add JS hide targets (for h2 headers that need text matching)
             if ( ! empty( $opt['js_hide'] ) ) {
-                $js_hide_headers[] = $opt['js_hide'];
+                foreach ( (array) $opt['js_hide'] as $header_text ) {
+                    if ( is_scalar( $header_text ) && '' !== trim( (string) $header_text ) ) {
+                        $js_hide_headers[] = trim( (string) $header_text );
+                    }
+                }
             }
             // Add input IDs to hide their containing rows
             if ( ! empty( $opt['js_input_id'] ) ) {
@@ -754,6 +771,28 @@ function inject_ui_cleanup_css() {
     }
 }
 add_action( 'admin_head', __NAMESPACE__ . '\\inject_ui_cleanup_css', 999 );
+
+/**
+ * Remove WooCommerce customer address fields only from user-profile screens.
+ *
+ * @param mixed $fieldsets WooCommerce profile fieldsets.
+ * @return mixed
+ */
+function hws_hide_woocommerce_customer_profile_fieldsets( $fieldsets ) {
+    global $pagenow;
+
+    return in_array( (string) $pagenow, [ 'profile.php', 'user-edit.php' ], true ) ? [] : $fieldsets;
+}
+
+function apply_woocommerce_customer_billing_cleanup(): void {
+    if ( ! get_ui_cleanup_option( 'hide_woocommerce_customer_billing_info' ) ) {
+        return;
+    }
+
+    add_filter( 'woocommerce_customer_meta_fields', __NAMESPACE__ . '\\hws_hide_woocommerce_customer_profile_fieldsets', PHP_INT_MAX );
+}
+
+apply_woocommerce_customer_billing_cleanup();
 
 /**
  * Suppress Rank Math admin footer text without relying on visual hiding.

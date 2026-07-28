@@ -1,10 +1,12 @@
 <?php namespace hws_base_tools;
 
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
+use HWS\BaseTools\BrandAssets\PrimaryAuthorImage;
 use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 use Hexa\PluginCore\CorePackageUpdates\CorePackageStatus;
 use Hexa\PluginCore\PluginUpdates\PluginUpdateStatus;
+use Hexa\PluginCore\WpAdminComponents\DynamicButton;
 
 /**
  * HWS Base Tools - Main Settings Dashboard
@@ -3863,11 +3865,13 @@ function render_site_icon_panel() {
     $has_icon       = has_site_icon();
     $icon_id        = (int) get_option( 'site_icon', 0 );
     $icon_url       = $has_icon ? get_site_icon_url( 512 ) : '';
+    $primary_author = PrimaryAuthorImage::resolve();
     $favicon_path   = ABSPATH . 'favicon.ico';
     $favicon_exists = file_exists( $favicon_path );
     $favicon_size   = $favicon_exists ? size_format( filesize( $favicon_path ) ) : '';
     $favicon_url    = home_url( '/favicon.ico' );
     $letter         = strtoupper( substr( sanitize_title( get_bloginfo( 'name' ) ), 0, 1 ) ?: 'H' );
+    DynamicButton::render_assets();
     ?>
     <div class="hws-panel" id="hws-brand-favicon-panel">
         <div class="hws-panel-header">Site Icon / Favicon</div>
@@ -3899,6 +3903,50 @@ function render_site_icon_panel() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="hws-primary-author-favicon-source" style="margin-bottom:14px;padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;min-width:0;max-width:100%;">
+                        <strong style="display:block;margin-bottom:10px;">Primary author profile image</strong>
+                        <?php if ( $primary_author && '' !== $primary_author['url'] ) : ?>
+                            <div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:14px;align-items:start;min-width:0;">
+                                <img id="hws-primary-author-favicon-preview" src="<?php echo esc_url( $primary_author['url'] ); ?>" alt="<?php echo esc_attr( $primary_author['name'] . ' profile image' ); ?>" style="width:80px;height:80px;object-fit:cover;border:1px solid #dcdcde;border-radius:6px;background:#fff;">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700;"><?php echo esc_html( $primary_author['name'] ); ?></div>
+                                    <div style="font-size:12px;color:#646970;margin-top:3px;">WordPress User ID <?php echo (int) $primary_author['id']; ?> · <?php echo esc_html( $primary_author['source'] ); ?></div>
+                                    <div id="hws-primary-author-favicon-url" style="font-size:12px;margin-top:8px;min-width:0;"><?php echo hws_asset_external_link( $primary_author['url'] ); ?></div>
+                                    <div style="margin-top:10px;">
+                                        <?php
+                                        echo DynamicButton::render(
+                                            [
+                                                'id'            => 'hws-use-primary-author-favicon',
+                                                'label'         => 'Use Primary Author Profile Image',
+                                                'working_label' => 'Creating Site Icon...',
+                                                'success_label' => 'Profile Image Applied',
+                                                'error_label'   => 'Could Not Apply Image',
+                                                'class'         => 'hpc-button secondary',
+                                                'render_assets' => false,
+                                                'attrs'         => [ 'data-primary-user-id' => $primary_author['id'] ],
+                                            ]
+                                        );
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php else : ?>
+                            <p style="margin:0;color:#646970;font-size:12.5px;">Assign a primary WordPress author with a profile image in Website &amp; Primary Entity to enable this source.</p>
+                            <?php
+                            echo DynamicButton::render(
+                                [
+                                    'id'            => 'hws-use-primary-author-favicon',
+                                    'label'         => 'Use Primary Author Profile Image',
+                                    'working_label' => 'Creating Site Icon...',
+                                    'class'         => 'hpc-button secondary',
+                                    'disabled'      => true,
+                                    'render_assets' => false,
+                                ]
+                            );
+                            ?>
+                        <?php endif; ?>
                     </div>
 
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -4409,6 +4457,47 @@ function render_brand_logo_assets_panel() {
             frame.open();
         });
 
+        $('#hws-use-primary-author-favicon').on('click', function() {
+            var button = this;
+            if (button.disabled) {
+                return;
+            }
+
+            if (window.HexaWpCoreDynamicButton) {
+                window.HexaWpCoreDynamicButton.start(button, 'Creating Site Icon...');
+            } else {
+                button.disabled = true;
+            }
+            $('#hws-favicon-status').text('Cropping the primary author profile image and generating PNG + ICO...');
+
+            $.post(ajaxurl, { action: 'hws_copy_favicon', nonce: hwsNonce, source: 'primary_user' }, function(response) {
+                if (response && response.success) {
+                    setStatus($('#hws-favicon-status'), response.data.message, true);
+                    updateFaviconPanel(response.data);
+                    if (window.HexaWpCoreDynamicButton) {
+                        window.HexaWpCoreDynamicButton.success(button, 'Profile Image Applied');
+                    } else {
+                        button.disabled = false;
+                    }
+                } else {
+                    var message = response && response.data ? response.data : 'Primary author image could not be applied.';
+                    setStatus($('#hws-favicon-status'), message, false);
+                    if (window.HexaWpCoreDynamicButton) {
+                        window.HexaWpCoreDynamicButton.error(button, 'Could Not Apply Image');
+                    } else {
+                        button.disabled = false;
+                    }
+                }
+            }, 'json').fail(function() {
+                setStatus($('#hws-favicon-status'), 'Primary author image request failed.', false);
+                if (window.HexaWpCoreDynamicButton) {
+                    window.HexaWpCoreDynamicButton.error(button, 'Could Not Apply Image');
+                } else {
+                    button.disabled = false;
+                }
+            });
+        });
+
         $('#hws-copy-favicon').on('click', function() {
             $('#hws-favicon-status').text('Creating ICO...');
             $.post(ajaxurl, { action: 'hws_copy_favicon', nonce: hwsNonce, source: 'site_icon' }, function(response) {
@@ -4587,6 +4676,14 @@ function hws_create_square_brand_asset_attachment( int $source_attachment_id, st
     $source_path = get_attached_file( $source_attachment_id );
     if ( ! $source_path || ! file_exists( $source_path ) ) {
         return new \WP_Error( 'hws_brand_asset_source_missing', 'Could not locate the selected image file.' );
+    }
+
+    return hws_create_square_brand_asset_from_path( $source_path, $key );
+}
+
+function hws_create_square_brand_asset_from_path( string $source_path, string $key ) {
+    if ( '' === $source_path || ! file_exists( $source_path ) ) {
+        return new \WP_Error( 'hws_brand_asset_source_missing', 'Could not locate the source image file.' );
     }
 
     $editor = wp_get_image_editor( $source_path );
@@ -4862,6 +4959,62 @@ function ajax_copy_favicon() {
             'favicon_url'   => home_url( '/favicon.ico' ),
             'favicon_size'  => file_exists( ABSPATH . 'favicon.ico' ) ? size_format( filesize( ABSPATH . 'favicon.ico' ) ) : '',
         ] );
+        return;
+    }
+
+    // Resolve the image server-side from HWS's canonical primary author.
+    if ( $source === 'primary_user' ) {
+        $primary_author = PrimaryAuthorImage::resolve();
+        if ( ! $primary_author || '' === $primary_author['url'] ) {
+            wp_send_json_error( 'No primary author profile image is available.' );
+        }
+
+        $file_path = '';
+        $tmp       = '';
+        if ( $primary_author['attachment_id'] > 0 ) {
+            $attached_file = get_attached_file( $primary_author['attachment_id'] );
+            if ( is_string( $attached_file ) && file_exists( $attached_file ) ) {
+                $file_path = $attached_file;
+            }
+        }
+
+        if ( '' === $file_path ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            $downloaded = download_url( $primary_author['url'], 15 );
+            if ( is_wp_error( $downloaded ) ) {
+                wp_send_json_error( 'Could not download the primary author image: ' . $downloaded->get_error_message() );
+            }
+            $tmp       = $downloaded;
+            $file_path = $downloaded;
+        }
+
+        $cropped = hws_create_square_brand_asset_from_path( $file_path, 'favicon' );
+        if ( '' !== $tmp && file_exists( $tmp ) ) {
+            @unlink( $tmp );
+        }
+        if ( is_wp_error( $cropped ) ) {
+            wp_send_json_error( $cropped->get_error_message() );
+        }
+
+        $attachment_id = (int) $cropped;
+        update_option( 'site_icon', $attachment_id );
+        $result = hws_create_resized_favicon( get_attached_file( $attachment_id ) );
+        if ( str_contains( $result, 'Could not' ) ) {
+            wp_send_json_error( $result );
+        }
+
+        wp_send_json_success(
+            [
+                'message'             => $primary_author['name'] . ' profile image applied. ' . $result,
+                'attachment_id'       => $attachment_id,
+                'icon_url'            => wp_get_attachment_image_url( $attachment_id, 'full' ),
+                'favicon_url'         => home_url( '/favicon.ico' ),
+                'favicon_size'        => file_exists( ABSPATH . 'favicon.ico' ) ? size_format( filesize( ABSPATH . 'favicon.ico' ) ) : '',
+                'primary_user_id'     => $primary_author['id'],
+                'primary_user_name'   => $primary_author['name'],
+                'source_image_url'    => $primary_author['url'],
+            ]
+        );
         return;
     }
 
