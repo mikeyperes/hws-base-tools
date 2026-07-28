@@ -116,6 +116,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.4
+
+- Suppressed the local Brand Template breadcrumb when the active Elementor header already renders a Rank Math breadcrumb.
+
 ### 11.2.3
 
 - Made the Rank Math dependency check admin-safe because Rank Math registers its breadcrumb shortcode only for frontend rendering requests.

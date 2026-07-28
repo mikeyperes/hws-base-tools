@@ -107,6 +107,13 @@ foreach ( [ 'author', 'category', 'tag' ] as $context ) {
     $archive_settings = $archives[0]['settings'] ?? [];
     brand_expect( 1 === count( $breadcrumbs ), "{$context} includes one native Elementor Rank Math shortcode widget" );
     brand_expect(
+        str_contains(
+            (string) ( $breadcrumbs[0]['settings']['custom_css'] ?? '' ),
+            'body:has(.elementor-location-header .rank-math-breadcrumb) selector{display:none;}'
+        ),
+        "{$context} suppresses its local breadcrumb when the global Elementor header already renders one"
+    );
+    brand_expect(
         1 === count( $archives )
         && '4' === ( $archive_settings['archive_classic_columns'] ?? '' )
         && '2' === ( $archive_settings['archive_classic_columns_tablet'] ?? '' )

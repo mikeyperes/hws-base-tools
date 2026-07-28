@@ -351,7 +351,7 @@ final class ElementorStructureFactory {
             $title,
             [
                 'shortcode' => '[rank_math_breadcrumb]',
-                'custom_css' => 'selector .rank-math-breadcrumb{color:var(--e-global-color-secondary);font-family:var(--e-global-typography-text-font-family);font-size:12px;font-weight:500;letter-spacing:.2px;}selector .rank-math-breadcrumb p{margin:0;}selector .rank-math-breadcrumb a{color:var(--e-global-color-primary);text-decoration:none;}selector .rank-math-breadcrumb a:hover{color:var(--e-global-color-text);text-decoration:underline;}',
+                'custom_css' => 'body:has(.elementor-location-header .rank-math-breadcrumb) selector{display:none;}selector .rank-math-breadcrumb{color:var(--e-global-color-secondary);font-family:var(--e-global-typography-text-font-family);font-size:12px;font-weight:500;letter-spacing:.2px;}selector .rank-math-breadcrumb p{margin:0;}selector .rank-math-breadcrumb a{color:var(--e-global-color-primary);text-decoration:none;}selector .rank-math-breadcrumb a:hover{color:var(--e-global-color-text);text-decoration:underline;}',
             ]
         );
     }
