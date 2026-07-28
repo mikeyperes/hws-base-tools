@@ -9,7 +9,7 @@
  *
  * 1. "User - Additional"               → contact details, team/profile compatibility,
  *                                          staff_writer, muckrack_verified, muckrack_url
- * 2. "User Profile Fields (2025)"      → URLs group (23 platforms), subtitle, location, schema, photos
+ * 2. "User Profile Fields (2025)"      → URLs group (24 platforms), subtitle, location, schema, photos
  * 3. "Schema.org Structured Data"      → entity_type, education, inception_date, headquarters, sameas
  *
  * All fields support BOTH shortcode prefixes:
@@ -36,6 +36,7 @@
  *   [company id="url_imdb"]                  /  [founder id="url_imdb"]
  *   [company id="url_muckrack"]              /  [founder id="url_muckrack"]
  *   [company id="url_wikipedia"]             /  [founder id="url_wikipedia"]
+ *   [company id="url_wikidata"]              /  [founder id="url_wikidata"]
  *   [company id="url_x"]                     /  [founder id="url_x"]
  *   [company id="url_soundcloud"]            /  [founder id="url_soundcloud"]
  *   [company id="url_the_org"]               /  [founder id="url_the_org"]
@@ -316,9 +317,9 @@ function hws_user_additional_fields_group(): array {
 /**
  * Register ACF User fields: "general"
  *
- * Group: urls (23 platform sub_fields)
+ * Group: urls (24 platform sub_fields)
  *   facebook, instagram, linkedin, youtube, tiktok, f6s, imdb, muckrack,
- *   wikipedia, x, soundcloud, the_org, whatsapp, telegram, signal,
+ *   wikipedia, wikidata, x, soundcloud, the_org, whatsapp, telegram, signal,
  *   calendly, amazon, github, audible, threads, crunchbase, website, wellfound
  *
  * Top-level: subtitle
@@ -336,7 +337,7 @@ function hws_user_profile_2025_group(): array {
         'fields' => array(
 
             // ─────────────────────────────────────────────────────────────
-            // URLs Group — 23 social media / web URL fields
+            // URLs Group — 24 social media / web URL fields
             // ─────────────────────────────────────────────────────────────
             array(
                 'key' => 'field_684253229b32a',
@@ -534,6 +535,21 @@ function hws_user_profile_2025_group(): array {
                         'placeholder' => '',
                         'prepend' => '',
                         'append' => '',
+                    ),
+
+                    // — Wikidata
+                    array(
+                        'key' => 'field_hws_user_profile_2025_wikidata',
+                        'label' => 'Wikidata',
+                        'name' => 'wikidata',
+                        'aria-label' => '',
+                        'type' => 'url',
+                        'instructions' => 'Shortcode: <code>[company id="url_wikidata"]</code> or <code>[founder id="url_wikidata"]</code>',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
+                        'default_value' => '',
+                        'placeholder' => 'https://www.wikidata.org/wiki/Q...',
                     ),
 
                     // — X (Twitter)

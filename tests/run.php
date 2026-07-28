@@ -561,9 +561,16 @@ $profile_fields = source( 'src/AcfFields/user-profile-2025.php' );
 $profile_migration = source( 'src/AcfFields/UserProfile2025Migration.php' );
 expect_true( str_contains( $profile_fields, "'title' => 'User Profile Fields (2025)'" ), 'canonical 2025 user profile group has an explicit title' );
 expect_true( str_contains( $profile_fields, "'name' => 'wellfound'" ), 'canonical profile URLs retain Wellfound separately from The Org' );
+expect_true(
+    str_contains( $profile_fields, "'key' => 'field_hws_user_profile_2025_wikidata'" )
+    && str_contains( $profile_fields, "'name' => 'wikidata'" )
+    && str_contains( $profile_fields, "'type' => 'url'" ),
+    'canonical profile URLs include a dedicated Wikidata URL field'
+);
 expect_true( str_contains( $profile_fields, "'name'              => 'what_best_describe_you'" ), 'canonical 2025 fields retain publication profile classification' );
 expect_true( str_contains( $profile_fields, "'name'              => 'team_member'" ), 'canonical 2025 fields retain the team-member compatibility flag' );
 expect_true( str_contains( $profile_migration, "'wellfound'  => [ 'well_found_url', 'wellfound_url' ]" ), 'legacy Wellfound values map to the canonical Wellfound field' );
+expect_true( str_contains( $profile_migration, "'wikidata'   => [ 'wikidata_url', 'profiles_wikidata' ]" ), 'legacy Wikidata values map to the canonical Wikidata field' );
 expect_true( str_contains( $profile_migration, "'group_590d64c31db0a'" ), 'deprecated Profile group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_6419bc02b6e93'" ), 'deprecated Author group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_65a8b18d98147'" ), 'superseded User - Admin group is covered by canonical migration' );

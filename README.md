@@ -116,6 +116,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.8
+
+- Added a dedicated Wikidata URL to the canonical HWS user-profile URL group, including legacy metadata migration and shortcode support.
+
 ### 11.2.7
 
 - Removed synchronous GitHub version requests from the dashboard sidebar and kept it on local/cached version data.

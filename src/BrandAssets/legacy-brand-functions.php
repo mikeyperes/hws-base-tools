@@ -850,6 +850,7 @@ function hf_render_user_info_once( $field ) {
 		'imdb'       => 'iMDb',
 		'muckrack'   => 'MuckRack',
 		'wikipedia'  => 'Wikipedia',
+		'wikidata'   => 'Wikidata',
 		'x'          => 'X',
 		'soundcloud' => 'SoundCloud',
 		'the_org'    => 'The Org',

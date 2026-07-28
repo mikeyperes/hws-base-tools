@@ -45,6 +45,7 @@ final class UserProfile2025Migration {
         'imdb'       => [ 'imdb_url', 'profiles_imdb' ],
         'muckrack'   => [ 'muckrack_url', 'muck_rack_url', 'profiles_muckrack' ],
         'wikipedia'  => [ 'wikipedia_url', 'profiles_wikipedia' ],
+        'wikidata'   => [ 'wikidata_url', 'profiles_wikidata' ],
         'x'          => [ 'twitter_url', 'x_url', 'socials_x' ],
         'soundcloud' => [ 'soundcloud_url', 'socials_soundcloud' ],
         'the_org'    => [ 'the_org_url' ],

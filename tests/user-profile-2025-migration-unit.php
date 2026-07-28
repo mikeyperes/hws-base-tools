@@ -17,6 +17,8 @@ $user_meta = [
         'facebook_url'            => 'https://facebook.com/example',
         '_facebook_url'           => 'field_legacy_facebook',
         'well_found_url'          => 'https://wellfound.com/company/example',
+        'wikidata_url'            => 'https://www.wikidata.org/wiki/Q42',
+        '_wikidata_url'           => 'field_legacy_wikidata',
         'socials'                 => [ 'linkedin' => 'https://linkedin.com/company/example' ],
         '_socials'                => 'field_legacy_socials',
         'job_title'               => 'Chief Executive Officer',
@@ -175,6 +177,7 @@ $expect( [] === $real_report['conflicts'] && [] === $real_report['errors'], 'rea
 $expect( 'https://facebook.com/example' === ( $migrated['urls']['facebook'] ?? '' ), 'flat Facebook URL reaches the canonical URLs group' );
 $expect( 'https://linkedin.com/company/example' === ( $migrated['urls']['linkedin'] ?? '' ), 'nested social URL reaches the canonical URLs group' );
 $expect( 'https://wellfound.com/company/example' === ( $migrated['urls']['wellfound'] ?? '' ), 'Wellfound remains distinct in the canonical URLs group' );
+$expect( 'https://www.wikidata.org/wiki/Q42' === ( $migrated['urls']['wikidata'] ?? '' ), 'legacy Wikidata URL reaches the canonical URLs group' );
 $expect( 'Chief Executive Officer' === ( $migrated['subtitle'] ?? '' ), 'legacy title reaches the canonical subtitle' );
 $expect( '1' === ( $migrated['staff_writer'] ?? '' ), 'nested settings value reaches the canonical direct field' );
 $expect( '0' === ( $migrated['muckrack_verified'] ?? '' ), 'a false boolean is preserved as meaningful profile data' );
