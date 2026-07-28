@@ -73,6 +73,8 @@ hexa-wordpress-plugin-core/
 
 Version 1.0.0 establishes the shared Core contracts as the stable major baseline for Hexa WordPress plugins. It consolidates reusable content-type and ACF registration, optional canonical entity sources, schema document handling, admin UI, AJAX, updater, search, cleanup, and frontend display infrastructure behind the `Hexa\PluginCore` namespace.
 
+Version 1.1.2 renders canonical-entity social links as labeled rows with complete clickable URLs and makes disabled Core-managed ACF groups suppress active database copies that share the same group key.
+
 ## Schema Tools
 
 The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.

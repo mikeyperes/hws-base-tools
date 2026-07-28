@@ -53,7 +53,7 @@ final class EntityProfileCardRenderer {
 
             <section class="hpc-entity-profile-section">
                 <h4>Social and public links</h4>
-                <?php if ( $socials ) : ?><div class="hpc-entity-socials"><?php foreach ( $socials as $label => $url ) : ?><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $label ); ?><span aria-hidden="true">&#8599;</span></a><?php endforeach; ?></div><?php else : ?><p class="hpc-small">No social URLs are set on this author.</p><?php endif; ?>
+                <?php if ( $socials ) : ?><dl class="hpc-entity-socials"><?php foreach ( $socials as $label => $url ) : ?><div><dt><?php echo esc_html( $label ); ?></dt><dd><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $url ); ?></a></dd></div><?php endforeach; ?></dl><?php else : ?><p class="hpc-small">No social URLs are set on this author.</p><?php endif; ?>
             </section>
 
             <section class="hpc-entity-profile-section">

@@ -845,9 +845,9 @@ Use this for one reusable CPT contract across host plugins. Hosts supply owned o
 
 Namespace: Hexa\PluginCore\EntitySources
 
-Classes: CanonicalEntityResolver, PrimaryEntityManager, PrimaryEntityModule, PrimaryEntityAjaxController, PrimaryEntityRenderer, EntityFieldInspector.
+Classes: CanonicalEntityResolver, PrimaryEntityManager, PrimaryEntityModule, PrimaryEntityAjaxController, PrimaryEntityRenderer, EntityProfileCardRenderer, EntityFieldInspector.
 
-Use this for an optional HWS-owned website type and primary user/post entity. Consumers resolve the canonical entity and its bound WordPress author rather than maintaining competing settings. No primary entity is a supported configuration. See `docs/entity-sources.md` and test with `tests/entity-sources.php`.
+Use this for an optional HWS-owned website type and primary user/post entity. Consumers resolve the canonical entity and its bound WordPress author rather than maintaining competing settings. Profile cards render social links as labeled rows with each complete URL visible and clickable. No primary entity is a supported configuration. See `docs/entity-sources.md` and test with `tests/entity-sources.php`.
 
 ## Field Structures
 
@@ -861,7 +861,7 @@ Definition keys: id, label, type, setting_key, enabled, registered, acf_group_ke
 
 Example use: create a FieldStructureRenderer, pass an array of structure definitions, and pass save_action plus nonce when toggles should save through AJAX.
 
-Use `AcfFieldGroupRegistry` when Core must own the actual `acf/init` registration path and toggle state. Use `AcfSettingsPanel` to display established option-backed ACF groups inside a host tab without moving their stored values. Host plugins always retain their exact field arrays.
+Use `AcfFieldGroupRegistry` when Core must own the actual `acf/init` registration path and toggle state. A disabled definition also deactivates database-imported copies that use the same ACF group key. Use `AcfSettingsPanel` to display established option-backed ACF groups inside a host tab without moving their stored values. Host plugins always retain their exact field arrays.
 
 ## Schema Tools
 

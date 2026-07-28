@@ -112,5 +112,12 @@ entity_assert(
     && str_contains( $renderer_source, 'preview_html' ),
     'Selecting an entity must save automatically and replace the live profile preview.'
 );
+$profile_renderer_source = (string) file_get_contents( $root . '/src/EntitySources/EntityProfileCardRenderer.php' );
+entity_assert(
+    str_contains( $profile_renderer_source, '<dl class="hpc-entity-socials">' )
+    && str_contains( $profile_renderer_source, 'esc_html( $url )' )
+    && ! str_contains( $profile_renderer_source, '<span aria-hidden="true">&#8599;</span>' ),
+    'Social links must render as labeled rows with each complete URL visible.'
+);
 
 echo "PASS: Canonical entities support optional sources, derived website semantics, and independent website classification.\n";

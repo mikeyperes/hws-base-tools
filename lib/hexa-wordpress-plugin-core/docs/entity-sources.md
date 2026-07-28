@@ -11,7 +11,7 @@ This namespace provides an optional canonical website/entity source shared by ho
 - `PrimaryEntityModule`: registers migration, search, and save hooks.
 - `PrimaryEntityAjaxController`: guarded AJAX saving.
 - `PrimaryEntityRenderer`: shared selector, derived semantic-type display, AJAX-refreshed preview, field inventory, and consumer status UI.
-- `EntityProfileCardRenderer`: complete user identity, account/contact details, social URLs, profile photos, gallery, and biography UI.
+- `EntityProfileCardRenderer`: complete user identity, account/contact details, labeled social-link rows with full clickable URLs, profile photos, gallery, and biography UI.
 - `EntityFieldInspector`: groups native and ACF values while masking credential-like fields.
 
 ```php
