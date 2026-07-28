@@ -73,7 +73,7 @@ final class DashboardRegistry {
         $groups = [];
         $definitions = [
             'Overview' => [ 'overview', 'quick-start' ],
-            'Site & Brand' => [ 'brand-assets', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
+            'Site & Brand' => [ 'brand-assets', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
@@ -187,6 +187,7 @@ final class DashboardRegistry {
         ] ) );
         $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [ 'settings-dashboard-getting-started.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
+        $this->add( new DashboardModuleDefinition( 'brand-templates', 'Brand Templates', [ \HWS\BaseTools\BrandTemplates\BrandTemplatesAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'pages', 'Pages', 'hws_base_tools\\display_settings_pages', [ 'settings-dashboard-pages.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'features', 'Features', 'hws_base_tools\\display_settings_features', [
             'settings-dashboard-website-types.php',

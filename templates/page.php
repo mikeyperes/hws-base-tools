@@ -1,0 +1,7 @@
+<?php
+
+defined( 'ABSPATH' ) || exit;
+
+get_header();
+\HWS\BaseTools\BrandTemplates\BrandTemplateRenderer::render( \HWS\BaseTools\BrandTemplates\BrandTemplateRegistry::PAGE );
+get_footer();

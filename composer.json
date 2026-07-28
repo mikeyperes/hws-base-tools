@@ -13,6 +13,7 @@
   },
   "scripts": {
     "test": [
+      "@php tests/brand-templates-unit.php",
       "@php tests/shared-content-types-unit.php",
       "@php tests/user-profile-2025-migration-unit.php",
       "@php tests/run.php",

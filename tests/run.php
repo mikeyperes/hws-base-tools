@@ -101,6 +101,7 @@ expect_true( $registry->normalize( 'getting-started-checklist' ) === 'quick-star
 expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legacy Snippets remains visible and deprecated' );
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
 foreach ( $groups as $group ) {
@@ -116,6 +117,11 @@ expect_true(
     'grouped sidebar assigns every HWS tab exactly once'
 );
 expect_true( count( $groups ) === 6 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use six clear sidebar groups' );
+$site_brand_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Site & Brand' === ( $group['label'] ?? '' ) ) );
+expect_true(
+    1 === count( $site_brand_groups ) && in_array( 'brand-templates', $site_brand_groups[0]['tabs'] ?? [], true ),
+    'Brand Templates has one canonical location in the Site & Brand sidebar group'
+);
 $security_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Security' === ( $group['label'] ?? '' ) ) );
 expect_true(
     1 === count( $security_groups ) && ( $security_groups[0]['tabs'] ?? [] ) === [ 'masked-login' ],

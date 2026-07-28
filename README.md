@@ -41,8 +41,21 @@ The HWS dashboard includes:
 - Plugins, themes, updates, backups, cleanup, and system checks.
 - Brand Assets, Footer Text, UI Cleanup, and Site Structure tools.
 - Sitemaps, Search Display, Search Behavior, Features, and Shortcodes.
+- Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
 
 Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational actions report progress without requiring full page refreshes.
+
+## Brand Templates
+
+Open **Settings > HWS Core Tools > Brand Templates** to opt into default Author, Page, Single Post, Category, or Tag behavior. All switches are disabled by default.
+
+- `author.php`, `page.php`, `category.php`, and `tag.php` are plugin-owned fallbacks.
+- Page and Single Post content-style switches are separately scoped and optional.
+- Elementor imports use native containers, dynamic tags, current-query archive widgets, global Kit tokens, responsive controls, and Rank Math breadcrumbs.
+- The default Page import excludes the front page.
+- Matching Theme Builder conditions are treated as conflicts. HWS never overwrites or deactivates another template automatically.
+- Managed imports are idempotent, backed up before replacement or activation changes, and expose a restore action.
+- If a matching Elementor document is active, the PHP fallback yields to Elementor.
 
 ## Primary Entity
 
@@ -102,6 +115,13 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 11.2.0
+
+- Added the Brand Templates dashboard for Author, Page, Single Post, Category, and Tag defaults.
+- Added conflict-aware, reversible native Elementor Theme Builder imports with exact preview contexts and conditions.
+- Added plugin-owned Author, Page, Category, and Tag fallbacks plus optional scoped Page and Single Post content styles.
+- Added Rank Math breadcrumbs, dynamic archive data, responsive current-query grids, duplicate-breadcrumb protection, and focused regression coverage.
 
 ### 11.1.7
 
