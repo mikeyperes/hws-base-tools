@@ -40,6 +40,9 @@ final class ElementorTemplateImporter {
                 $errors[] = sprintf( 'Required Elementor dynamic tag "%s" is unavailable.', $tag );
             }
         }
+        if ( BrandTemplateRegistry::get( $context ) && ( ! function_exists( 'shortcode_exists' ) || ! shortcode_exists( 'rank_math_breadcrumb' ) ) ) {
+            $errors[] = 'The Rank Math breadcrumb shortcode is unavailable.';
+        }
 
         return [ 'available' => ! $errors, 'errors' => $errors ];
     }
@@ -423,10 +426,10 @@ final class ElementorTemplateImporter {
     /** @return string[] */
     private static function required_widgets( string $context ): array {
         return match ( sanitize_key( $context ) ) {
-            BrandTemplateRegistry::AUTHOR => [ 'breadcrumbs', 'image', 'heading', 'text-editor', 'archive-posts' ],
-            BrandTemplateRegistry::PAGE => [ 'breadcrumbs', 'heading', 'theme-post-content' ],
-            BrandTemplateRegistry::SINGLE_POST => [ 'breadcrumbs', 'heading', 'post-info', 'theme-post-featured-image', 'theme-post-content' ],
-            BrandTemplateRegistry::CATEGORY, BrandTemplateRegistry::TAG => [ 'breadcrumbs', 'heading', 'text-editor', 'archive-posts' ],
+            BrandTemplateRegistry::AUTHOR => [ 'shortcode', 'image', 'heading', 'text-editor', 'archive-posts' ],
+            BrandTemplateRegistry::PAGE => [ 'shortcode', 'heading', 'theme-post-content' ],
+            BrandTemplateRegistry::SINGLE_POST => [ 'shortcode', 'heading', 'post-info', 'theme-post-featured-image', 'theme-post-content' ],
+            BrandTemplateRegistry::CATEGORY, BrandTemplateRegistry::TAG => [ 'shortcode', 'heading', 'text-editor', 'archive-posts' ],
             default => [],
         };
     }

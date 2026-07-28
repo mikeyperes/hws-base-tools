@@ -116,6 +116,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.2
+
+- Replaced Elementor Pro's Yoast-only breadcrumb widget with Elementor's native Shortcode widget and the Rank Math `[rank_math_breadcrumb]` shortcode.
+- Added an import dependency check so Brand Templates cannot claim Rank Math breadcrumb support when the shortcode is unavailable.
+
 ### 11.2.1
 
 - Preserved escaped Elementor dynamic-tag JSON in versioned managed-template backups.

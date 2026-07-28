@@ -96,10 +96,16 @@ foreach ( $expected_contexts as $context ) {
 foreach ( [ 'author', 'category', 'tag' ] as $context ) {
     $flat = [];
     brand_flatten( ElementorStructureFactory::elements( $context ), $flat );
-    $breadcrumbs = array_values( array_filter( $flat, static fn( array $element ): bool => 'breadcrumbs' === ( $element['widgetType'] ?? '' ) ) );
+    $breadcrumbs = array_values(
+        array_filter(
+            $flat,
+            static fn( array $element ): bool => 'shortcode' === ( $element['widgetType'] ?? '' )
+                && '[rank_math_breadcrumb]' === ( $element['settings']['shortcode'] ?? '' )
+        )
+    );
     $archives = array_values( array_filter( $flat, static fn( array $element ): bool => 'archive-posts' === ( $element['widgetType'] ?? '' ) ) );
     $archive_settings = $archives[0]['settings'] ?? [];
-    brand_expect( 1 === count( $breadcrumbs ), "{$context} includes one native Rank Math breadcrumb widget" );
+    brand_expect( 1 === count( $breadcrumbs ), "{$context} includes one native Elementor Rank Math shortcode widget" );
     brand_expect(
         1 === count( $archives )
         && '4' === ( $archive_settings['archive_classic_columns'] ?? '' )
@@ -123,7 +129,8 @@ $css = (string) file_get_contents( $root . '/assets/frontend/brand-templates.css
 brand_expect(
     str_contains( $importer, 'get_conditions_conflicts_by_location' )
     && str_contains( $importer, 'BrandTemplateBackupStore::create' )
-    && str_contains( $importer, 'save_conditions' ),
+    && str_contains( $importer, 'save_conditions' )
+    && str_contains( $importer, "shortcode_exists( 'rank_math_breadcrumb' )" ),
     'Elementor imports use official conflict detection, backups, and condition persistence'
 );
 brand_expect(

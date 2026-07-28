@@ -347,22 +347,11 @@ final class ElementorStructureFactory {
     private static function breadcrumbs_widget( string $id, string $title ): array {
         return self::widget(
             $id,
-            'breadcrumbs',
+            'shortcode',
             $title,
             [
-                'html_tag' => '',
-                'align' => 'left',
-                'typography_typography' => 'custom',
-                'typography_font_size' => self::size( 12 ),
-                'typography_font_weight' => '500',
-                'typography_letter_spacing' => [ 'unit' => 'px', 'size' => 0.2, 'sizes' => [] ],
-                '__globals__' => [
-                    'text_color' => 'globals/colors?id=secondary',
-                    'link_color' => 'globals/colors?id=primary',
-                    'link_hover_color' => 'globals/colors?id=text',
-                    'typography_typography' => 'globals/typography?id=text',
-                ],
-                'custom_css' => 'selector .rank-math-breadcrumb p{margin:0;}selector a{text-decoration:none;}selector a:hover{text-decoration:underline;}',
+                'shortcode' => '[rank_math_breadcrumb]',
+                'custom_css' => 'selector .rank-math-breadcrumb{color:var(--e-global-color-secondary);font-family:var(--e-global-typography-text-font-family);font-size:12px;font-weight:500;letter-spacing:.2px;}selector .rank-math-breadcrumb p{margin:0;}selector .rank-math-breadcrumb a{color:var(--e-global-color-primary);text-decoration:none;}selector .rank-math-breadcrumb a:hover{color:var(--e-global-color-text);text-decoration:underline;}',
             ]
         );
     }
