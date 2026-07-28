@@ -46,13 +46,11 @@ Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational 
 
 ## Primary Entity
 
-HWS stores `hws_site_type` and the optional `hws_primary_entity` record. A selected source may be:
+HWS stores `hws_site_type` and the optional `hws_primary_entity` record. New sites remain unclassified until a website type is deliberately selected. The optional primary entity source is:
 
 - A WordPress user.
-- A Verified Profile post.
-- An Organization post.
 
-The entity panel shows the selected record, semantic type, public/edit links, bound WordPress author when applicable, WordPress identity values, and every available ACF field grouped by source. SFPF, SMC, SMP Publication, and Verified Profiles consume this canonical selection while retaining read-only legacy fallbacks for migration.
+The entity panel shows the selected author, semantic type, public/edit links, WordPress identity values, and available profile data. SFPF, SMC, SMP Publication, and Verified Profiles consume this canonical selection while retaining plugin-owned entity relationships and read-only legacy fallbacks for migration.
 
 ## Custom Post Types
 
@@ -85,7 +83,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.1.3 |
+| Hexa WP Core bundle | 1.1.4 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -104,6 +102,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 11.1.7
+
+- Left new sites unclassified until an administrator deliberately selects a website type, without changing existing saved selections.
+- Cleaned up the optional primary-author empty state and removed the blank Smart Search selection strip.
+- Updated the bundled Hexa WP Core to 1.1.4.
 
 ### 11.1.6
 

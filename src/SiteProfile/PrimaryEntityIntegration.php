@@ -29,7 +29,8 @@ final class PrimaryEntityIntegration {
                     'news_outlet' => 'publication', 'personal_website' => 'person',
                     'company_website' => 'organization', 'ecommerce_website' => 'organization', 'other' => 'person',
                 ],
-                'allow_entity_type_selection' => false,
+                'allow_entity_type_selection' => false, 'allow_empty_site_type' => true,
+                'site_type_placeholder' => 'Select website type',
                 'sources' => [
                     'wordpress_user' => [ 'label' => 'WordPress Author', 'kind' => 'user', 'description' => 'HWS binds only a WordPress user. Verified Profile and Organization relationships remain owned by their respective plugins.' ],
                 ],
@@ -76,7 +77,7 @@ final class PrimaryEntityIntegration {
 
     /** @return array<string,mixed> */
     public static function resolve_legacy_entity(): array {
-        $site_type = (string) get_option( 'hws_site_type', 'other' );
+        $site_type = (string) get_option( 'hws_site_type', '' );
         if ( 'news_outlet' === $site_type ) {
             $publication_user = self::acf_option( [ 'smpi_publication_user', 'publication_user' ] );
             $id = self::object_id( $publication_user );

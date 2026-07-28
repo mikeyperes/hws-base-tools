@@ -77,6 +77,8 @@ Version 1.1.2 renders canonical-entity social links as labeled rows with complet
 
 Version 1.1.3 separates the complete WordPress/ACF entity field inventory into a reusable renderer so host plugins can place it in their field-management area without duplicating it inside the primary-entity selector.
 
+Version 1.1.4 adds an opt-in unconfigured website-type state, an intentional empty primary-entity presentation, and reliable hidden-state styling for empty Smart Search selections.
+
 ## Schema Tools
 
 The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.

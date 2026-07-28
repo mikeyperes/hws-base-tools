@@ -1910,6 +1910,7 @@ function render_site_profile_panel(): void {
                 <label>
                     <strong style="display:block;margin-bottom:6px;">Website Type</strong>
                     <select id="hws-site-type" style="width:100%;max-width:360px;">
+                        <option value="" <?php selected( $site_type, '' ); ?> disabled>Select website type</option>
                         <?php foreach ( hws_site_type_options() as $value => $label ) : ?>
                             <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $site_type, $value ); ?>><?php echo esc_html( $label ); ?></option>
                         <?php endforeach; ?>
@@ -1936,7 +1937,7 @@ function render_site_profile_panel(): void {
             $.post(ajaxurl, {
                 action: 'hws_save_site_type',
                 nonce: hwsNonce,
-                site_type: $('#hws-site-type').val() || 'other'
+                site_type: $('#hws-site-type').val() || ''
             }, function(response) {
                 if (!response || !response.success) {
                     $status.text('Save failed.');
@@ -2942,7 +2943,7 @@ function ajax_save_site_type() {
 
     hws_require_ajax_nonce_or_error();
 
-    $site_type = isset( $_POST['site_type'] ) ? hws_sanitize_site_type( (string) wp_unslash( $_POST['site_type'] ) ) : 'other';
+    $site_type = isset( $_POST['site_type'] ) ? hws_sanitize_site_type( (string) wp_unslash( $_POST['site_type'] ) ) : '';
 
     update_option( HWS_SITE_TYPE_OPTION, $site_type, false );
 

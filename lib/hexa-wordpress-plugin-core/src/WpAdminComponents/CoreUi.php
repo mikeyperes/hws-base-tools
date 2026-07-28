@@ -135,6 +135,7 @@ final class CoreUi {
             .hpc-ui [data-hpc-filter-hidden="1"]{display:none!important}
             @media(max-width:680px){.hpc-collection-filter{grid-template-columns:minmax(0,1fr)}.hpc-collection-filter-status{justify-self:start}}
             .hpc-smart-search{position:relative}
+            .hpc-smart-search-results[hidden],.hpc-smart-search-selected[hidden]{display:none!important}
             .hpc-smart-search-status{color:var(--hpc-muted);font-size:12px;margin-top:6px}
             .hpc-smart-search-results{background:#fff;border:1px solid #d3dce8;border-radius:8px;box-shadow:0 12px 30px rgba(15,23,42,.12);left:0;margin-top:6px;max-height:260px;overflow:auto;position:absolute;right:0;z-index:30}
             .hpc-smart-search-result{background:#fff;border:0;border-bottom:1px solid #edf1f6;color:#172033;cursor:pointer;display:grid;gap:2px;grid-template-columns:minmax(0,1fr) auto;padding:10px 12px;text-align:left;width:100%}

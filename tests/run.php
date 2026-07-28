@@ -219,10 +219,13 @@ expect_true(
     str_contains( $primary_entity_source, "'personal_website' => 'person'" )
     && str_contains( $primary_entity_source, "'company_website' => 'organization'" )
     && str_contains( $primary_entity_source, "'news_outlet' => 'publication'" )
-    && str_contains( $primary_entity_source, "'allow_entity_type_selection' => false" ),
+    && str_contains( $primary_entity_source, "'allow_entity_type_selection' => false" )
+    && str_contains( $primary_entity_source, "'allow_empty_site_type' => true" )
+    && str_contains( $primary_entity_source, "'site_type_placeholder' => 'Select website type'" ),
     'HWS derives a read-only semantic type from website type'
 );
 $primary_entity_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/PrimaryEntityRenderer.php' );
+$core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
 $entity_profile_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/EntityProfileCardRenderer.php' );
 $entity_inventory_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/EntityFieldInventoryRenderer.php' );
 expect_true(
@@ -231,6 +234,12 @@ expect_true(
     && str_contains( $primary_entity_renderer, "save(root,'selection')" )
     && str_contains( $primary_entity_renderer, 'preview_html' ),
     'primary author selection saves automatically and loads its profile without a manual save button'
+);
+expect_true(
+    str_contains( $primary_entity_renderer, 'No primary author assigned' )
+    && str_contains( $primary_entity_renderer, 'site_type_placeholder' )
+    && str_contains( $core_ui_source, '.hpc-smart-search-selected[hidden]{display:none!important}' ),
+    'unconfigured website and primary-author states are intentional and do not show an empty selected strip'
 );
 expect_true(
     str_contains( $entity_profile_renderer, '<dl class="hpc-entity-socials">' )
@@ -364,7 +373,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.3', 'HWS bundles Hexa WordPress Plugin Core 1.1.3' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.4', 'HWS bundles Hexa WordPress Plugin Core 1.1.4' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -402,10 +411,16 @@ expect_true(
     'non-scalar feature metadata resolves safely to an empty string'
 );
 $website_types_source = file_get_contents( $root . '/src/SiteProfile/legacy-website-types.php' );
+$site_profile_source = file_get_contents( $root . '/src/SiteProfile/legacy-site-profile.php' );
 $legacy_snippets_source = file_get_contents( $root . '/src/FeatureCatalog/legacy-snippets.php' );
 expect_true(
     str_contains( $website_types_source, "FeatureValueResolver::text( \$snippet['info'] ?? '' )" ),
     'Website Types resolves nested lazy snippet metadata before escaping it'
+);
+expect_true(
+    str_contains( $site_profile_source, "get_option( HWS_SITE_TYPE_OPTION, '' )" )
+    && str_contains( $site_profile_source, "?? 'Not selected'" ),
+    'new websites keep their website type empty while existing saved classifications remain valid'
 );
 expect_true(
     str_contains( $legacy_snippets_source, "FeatureValueResolver::text( \$snippet['info'] ?? '' )" ),
