@@ -40,8 +40,8 @@ final class ElementorTemplateImporter {
                 $errors[] = sprintf( 'Required Elementor dynamic tag "%s" is unavailable.', $tag );
             }
         }
-        if ( BrandTemplateRegistry::get( $context ) && ( ! function_exists( 'shortcode_exists' ) || ! shortcode_exists( 'rank_math_breadcrumb' ) ) ) {
-            $errors[] = 'The Rank Math breadcrumb shortcode is unavailable.';
+        if ( BrandTemplateRegistry::get( $context ) && ! defined( 'RANK_MATH_VERSION' ) && ! function_exists( 'rank_math' ) ) {
+            $errors[] = 'Rank Math is unavailable, so its breadcrumb shortcode cannot be rendered.';
         }
 
         return [ 'available' => ! $errors, 'errors' => $errors ];

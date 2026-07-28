@@ -130,7 +130,7 @@ brand_expect(
     str_contains( $importer, 'get_conditions_conflicts_by_location' )
     && str_contains( $importer, 'BrandTemplateBackupStore::create' )
     && str_contains( $importer, 'save_conditions' )
-    && str_contains( $importer, "shortcode_exists( 'rank_math_breadcrumb' )" ),
+    && str_contains( $importer, "defined( 'RANK_MATH_VERSION' )" ),
     'Elementor imports use official conflict detection, backups, and condition persistence'
 );
 brand_expect(
