@@ -75,7 +75,7 @@ final class DashboardRegistry {
             'Overview' => [ 'overview', 'quick-start' ],
             'Site & Brand' => [ 'brand-assets', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'plugins', 'system-checks', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'plugins', 'system-checks', 'mail-authentication', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -197,6 +197,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'shortcodes', 'Shortcodes', [ \HWS\BaseTools\FeatureCatalog\ShortcodeCatalog::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'mail-authentication', 'Mail Authentication', 'hws_base_tools\\render_tab_mail_authentication', [ 'settings-dashboard-mail-authentication.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps', 'hws_base_tools\\render_tab_sitemaps', [
             'settings-dashboard-site-profile.php',
             'settings-dashboard-sitemaps.php',
@@ -277,6 +278,7 @@ final class DashboardRegistry {
             'hws_menu_tools_'                    => [ 'settings-dashboard-menu-tools.php' ],
             'hws_pages_'                         => [ 'settings-dashboard-pages.php' ],
             'hws_getting_started_'               => [ 'settings-dashboard-getting-started.php' ],
+            'hws_mail_authentication_'            => [ 'settings-dashboard-mail-authentication.php' ],
             'hws_update_center'                  => [ 'settings-dashboard-update-center.php' ],
             'hws_toggle_update_urls'             => [ 'settings-dashboard-update-center.php' ],
             'hws_login_mask_'                    => [ 'settings-dashboard-masked-login.php' ],

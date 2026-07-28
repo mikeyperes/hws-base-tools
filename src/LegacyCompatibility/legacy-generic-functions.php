@@ -223,84 +223,13 @@ if (!function_exists(__NAMESPACE__ . '\\add_settings_menu')) {
 
 if (!function_exists(__NAMESPACE__ . '\\check_smtp_auth_status_and_mailer')) {
     /**
-     * Check SMTP authentication status using WP Mail SMTP stored options.
-     * Mirrors the plugin's own is_mailer_complete() logic for each provider.
+     * Report the authoritative SMTP2GO status from the shared authentication service.
      *
      * @since 10.9.0
      * @return array { status: bool, mailer: string, raw_value: string }
      */
     function check_smtp_auth_status_and_mailer() {
-        // — Plugin must be active
-        if ( ! is_plugin_active( 'wp-mail-smtp/wp_mail_smtp.php' ) ) {
-            return [ 'status' => false, 'mailer' => '', 'raw_value' => 'WP Mail SMTP not active' ];
-        }
-
-        // — Read the plugin's stored options (same source is_mailer_complete reads)
-        $opts   = get_option( 'wp_mail_smtp', [] );
-        $mailer = $opts['mail']['mailer'] ?? 'none';
-        $from   = $opts['mail']['from_email'] ?? '';
-
-        // — PHP mail() and "none" have no authentication layer
-        if ( $mailer === 'mail' || $mailer === 'none' ) {
-            return [
-                'status'    => false,
-                'mailer'    => $mailer,
-                'raw_value' => $mailer === 'mail'
-                    ? 'PHP mail() — no SMTP authentication'
-                    : 'No mailer configured',
-            ];
-        }
-
-        // — API-key-based mailers: each stores api_key under $opts[$mailer]['api_key']
-        $api_key_mailers = [
-            'sendgrid', 'sendinblue', 'sparkpost', 'mandrill',
-            'sendlayer', 'smtp2go', 'smtpcom', 'elasticemail',
-            'mailjet', 'pepipostapi', 'mailersend', 'resend',
-        ];
-        if ( in_array( $mailer, $api_key_mailers, true ) ) {
-            $mailer_opts = $opts[ $mailer ] ?? [];
-            $has_key     = ! empty( $mailer_opts['api_key'] );
-            return [
-                'status'    => $has_key,
-                'mailer'    => $mailer,
-                'raw_value' => $has_key
-                    ? esc_html( $from ) . ' — ' . $mailer
-                    : 'API key missing — ' . $mailer,
-            ];
-        }
-
-        // — Mailgun: needs api_key AND domain
-        if ( $mailer === 'mailgun' ) {
-            $mg = $opts['mailgun'] ?? [];
-            $ok = ! empty( $mg['api_key'] ) && ! empty( $mg['domain'] );
-            return [ 'status' => $ok, 'mailer' => 'mailgun',
-                'raw_value' => $ok ? esc_html($from).' — Mailgun ('.$mg['domain'].')' : 'Mailgun API key or domain missing' ];
-        }
-
-        // — Postmark: uses server_api_token
-        if ( $mailer === 'postmark' ) {
-            $ok = ! empty( ($opts['postmark'] ?? [])['server_api_token'] );
-            return [ 'status' => $ok, 'mailer' => 'postmark',
-                'raw_value' => $ok ? esc_html($from).' — Postmark' : 'Postmark server API token missing' ];
-        }
-
-        // — SMTP mailer: needs host AND port
-        if ( $mailer === 'smtp' ) {
-            $s = $opts['smtp'] ?? [];
-            $ok = ! empty( $s['host'] ) && ! empty( $s['port'] );
-            return [ 'status' => $ok, 'mailer' => 'smtp',
-                'raw_value' => $ok ? esc_html($from).' — SMTP ('.$s['host'].')' : 'SMTP host/port not configured' ];
-        }
-
-        // — OAuth mailers (Gmail, Outlook, Zoho): check client_id
-        if ( in_array( $mailer, [ 'gmail', 'outlook', 'zoho' ], true ) ) {
-            $ok = ! empty( ($opts[ $mailer ] ?? [])['client_id'] );
-            return [ 'status' => $ok, 'mailer' => $mailer,
-                'raw_value' => $ok ? esc_html($from).' — '.ucfirst($mailer).' OAuth' : ucfirst($mailer).' not authorized' ];
-        }
-
-        // — Unknown mailer: assume configured
-        return [ 'status' => true, 'mailer' => $mailer, 'raw_value' => esc_html($from).' — '.$mailer ];
+        return ( new \HWS\BaseTools\MailAuthentication\Smtp2goAuthenticationService() )->legacy_status();
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_smtp_auth_status_and_mailer function is already declared",true);
 

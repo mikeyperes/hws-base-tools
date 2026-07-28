@@ -11,6 +11,7 @@ use Hexa\PluginCore\PluginChecks\PluginCheckDefinition;
 use Hexa\PluginCore\PluginChecks\PluginCheckService;
 use Hexa\PluginCore\PluginProvisioning\PluginProvisioner;
 use Hexa\PluginCore\WpAdminUiCleanup\CleanupChecklistAdapter;
+use HWS\BaseTools\MailAuthentication\Smtp2goAuthenticationService;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -280,7 +281,36 @@ function hws_getting_started_quick_setup_subtasks(): array {
                 ],
             ]
         ),
+        hws_getting_started_quick_setup_task_definition(
+            'test_smtp2go_authentication',
+            'Test SMTP2GO Authentication',
+            'status_check',
+            'Runs the same three-stage SMTP2GO test as the Mail Authentication tab: settings, live API-key validation, then a real test email.',
+            $callback,
+            [
+                [
+                    'id'          => 'smtp_test_recipient',
+                    'label'       => 'Test email recipient',
+                    'type'        => 'email',
+                    'required'    => true,
+                    'value'       => hws_getting_started_default_mail_test_recipient(),
+                    'description' => 'The test message is sent only after settings and API-key validation pass.',
+                ],
+            ]
+        ),
     ];
+}
+
+function hws_getting_started_default_mail_test_recipient(): string {
+    if ( function_exists( 'wp_get_current_user' ) ) {
+        $user = wp_get_current_user();
+        if ( $user instanceof \WP_User && is_email( (string) $user->user_email ) ) {
+            return (string) $user->user_email;
+        }
+    }
+
+    $admin_email = sanitize_email( (string) get_option( 'admin_email', '' ) );
+    return is_email( $admin_email ) ? $admin_email : '';
 }
 
 /**
@@ -1357,6 +1387,60 @@ function hws_getting_started_run_quick_setup_task( array $payload ): array {
 	                            [ 'label' => 'Before', 'value' => '' !== $before_smtp_email ? $before_smtp_email : 'No sender email was readable.' ],
 	                            [ 'label' => 'Action Taken', 'value' => 'Requested sender email: ' . $from_email . '.' ],
 	                            [ 'label' => 'Verified After', 'value' => $smtp_verified ? 'Requested email found in WP Mail SMTP options.' : 'Requested email not found in WP Mail SMTP options.' ],
+	                        ]
+	                    ),
+	                ]
+	            );
+
+	        case 'test_smtp2go_authentication':
+	            $recipient = isset( $inputs['smtp_test_recipient'] ) ? sanitize_email( (string) $inputs['smtp_test_recipient'] ) : '';
+	            $result    = ( new Smtp2goAuthenticationService() )->run( $recipient );
+	            $rows      = [];
+
+	            foreach ( (array) ( $result['steps'] ?? [] ) as $step ) {
+	                if ( ! is_array( $step ) ) {
+	                    continue;
+	                }
+	                $step_id     = (string) ( $step['id'] ?? '' );
+	                $step_status = (string) ( $step['status'] ?? 'unknown' );
+	                $action  = match ( $step_id ) {
+	                    'settings'   => 'Inspected WP Mail SMTP activation, selected mailer, From Email, and SMTP2GO API-key presence.',
+	                    'api_key'    => 'skipped' === $step_status
+	                        ? 'No SMTP2GO API validation request was sent because the preceding stage failed.'
+	                        : 'Sent an authenticated validation request to SMTP2GO without exposing the key.',
+	                    'test_email' => 'skipped' === $step_status
+	                        ? 'No test message was sent because the preceding stage failed.'
+	                        : 'Sent a test message through wp_mail() and the WP Mail SMTP SMTP2GO provider.',
+	                    default      => 'Ran the registered SMTP2GO authentication step.',
+	                };
+	                $rows[] = [
+	                    'item'    => (string) ( $step['label'] ?? $step_id ),
+	                    'before'  => 'Not yet verified in this test run.',
+	                    'action'  => $action,
+	                    'after'   => ucfirst( $step_status ) . ' at ' . (string) ( $step['timestamp'] ?? $result['completed_at'] ?? '' ) . '.',
+	                    'meaning' => (string) ( $step['message'] ?? '' ),
+	                ];
+	            }
+
+	            return hws_getting_started_quick_setup_result(
+	                ! empty( $result['success'] ),
+	                (string) ( $result['message'] ?? 'SMTP2GO authentication test failed.' ),
+	                ! empty( $result['success'] ) ? 'success' : 'error',
+	                [
+	                    'recipient'    => (string) ( $result['recipient'] ?? $recipient ),
+	                    'started_at'   => (string) ( $result['started_at'] ?? '' ),
+	                    'completed_at' => (string) ( $result['completed_at'] ?? '' ),
+	                ],
+	                [
+	                    hws_getting_started_before_after_report(
+	                        'smtp2go_authentication_test',
+	                        'SMTP2GO Authentication Test',
+	                        $rows,
+	                        (string) ( $result['message'] ?? '' ),
+	                        'This Quick Start item and the Mail Authentication tab call the same HWS SMTP2GO authentication service. No API key is included in reports or logs.',
+	                        [
+	                            [ 'label' => 'Recipient', 'value' => (string) ( $result['recipient'] ?? $recipient ) ],
+	                            [ 'label' => 'Result', 'value' => ! empty( $result['success'] ) ? 'All three stages passed.' : 'The workflow stopped at the first failed stage.' ],
 	                        ]
 	                    ),
 	                ]

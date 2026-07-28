@@ -102,6 +102,7 @@ expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legac
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['mail-authentication'] ), 'HWS Mail Authentication tab is registered through the dashboard registry' );
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
 foreach ( $groups as $group ) {
@@ -151,6 +152,35 @@ expect_true(
 expect_true(
     $registry->implementation_files_for_ajax_action( 'hws_search_behavior_save' ) === [ 'settings-dashboard-search.php' ],
     'Search Behavior AJAX saves load the focused Search tab adapter'
+);
+expect_true(
+    $registry->implementation_files_for_tab( 'mail-authentication' ) === [ 'settings-dashboard-mail-authentication.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_mail_authentication_run_test' ) === [ 'settings-dashboard-mail-authentication.php' ],
+    'Mail Authentication tab and AJAX action load the focused adapter'
+);
+
+$mail_auth_source = source( 'src/MailAuthentication/Smtp2goAuthenticationService.php' );
+$mail_admin_source = source( 'src/MailAuthentication/MailAuthenticationAdmin.php' );
+$getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
+expect_true(
+    str_contains( $mail_auth_source, "private const VALIDATION_URL = 'https://api.smtp2go.com/v3/api_keys/view'" )
+    && str_contains( $mail_auth_source, 'private function settings_step' )
+    && str_contains( $mail_auth_source, 'private function api_key_step' )
+    && str_contains( $mail_auth_source, 'private function test_email_step' ),
+    'SMTP2GO authentication service owns the ordered settings, API-key, and test-email stages'
+);
+expect_true(
+    str_contains( $mail_admin_source, 'DynamicButton::render' )
+    && str_contains( $mail_admin_source, 'CoreUi::collapsible' )
+    && str_contains( $mail_admin_source, 'Smtp2goAuthenticationService() )->run' ),
+    'Mail Authentication tab uses Hexa Core UI and the shared SMTP2GO service'
+);
+expect_true(
+    str_contains( $getting_started_source, "'test_smtp2go_authentication'" )
+    && str_contains( $getting_started_source, '( new Smtp2goAuthenticationService() )->run( $recipient )' )
+    && str_contains( $getting_started_source, 'No SMTP2GO API validation request was sent because the preceding stage failed.' )
+    && str_contains( $getting_started_source, 'No test message was sent because the preceding stage failed.' ),
+    'Quick Start calls the same full SMTP2GO authentication service'
 );
 
 $dashboard_source = source( 'src/AdminDashboard/legacy-dashboard.php' );

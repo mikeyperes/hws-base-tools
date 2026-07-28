@@ -2831,22 +2831,15 @@ function hws_quick_setup_apply_wp_mail_smtp_from_email( string $from_email ): ar
     }
 
     update_option( 'wp_mail_smtp', $smtp_options );
+    $saved_options = get_option( 'wp_mail_smtp', [] );
+    $saved_email   = is_array( $saved_options ) ? sanitize_email( (string) ( $saved_options['mail']['from_email'] ?? '' ) ) : '';
+    $verified      = strtolower( $saved_email ) === strtolower( $from_email );
 
-    $smtp_status = function_exists( __NAMESPACE__ . '\\check_smtp_auth_status_and_mailer' )
-        ? check_smtp_auth_status_and_mailer()
-        : [ 'status' => false, 'raw_value' => 'SMTP status checker unavailable' ];
-
-    if ( ! empty( $smtp_status['status'] ) ) {
-        return [
-            'success' => true,
-            'message' => "✓ WP Mail SMTP from email set from typed input; authenticated mailer confirmed",
-        ];
-    }
-
-    $smtp_detail = $smtp_status['raw_value'] ?? 'Mailer credentials still required';
     return [
-        'success' => false,
-        'message' => "<span class='warning'>⚠ WP Mail SMTP from email set from typed input; authentication still needs credentials (" . esc_html( (string) $smtp_detail ) . ")</span>",
+        'success' => $verified,
+        'message' => $verified
+            ? 'WP Mail SMTP From Email was saved and read back successfully. Run the SMTP2GO Authentication task to test the key and delivery.'
+            : "<span class='warning'>WP Mail SMTP From Email did not verify after saving.</span>",
     ];
 }
 

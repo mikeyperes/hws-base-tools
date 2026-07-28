@@ -116,6 +116,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.5
+
+- Added a dedicated Mail Authentication tab with an ordered SMTP2GO settings, API-key, and test-delivery workflow.
+- Added the same full SMTP2GO authentication test to Quick Start and made legacy SMTP health reporting use its authoritative result.
+
 ### 11.2.4
 
 - Suppressed the local Brand Template breadcrumb when the active Elementor header already renders a Rank Math breadcrumb.
