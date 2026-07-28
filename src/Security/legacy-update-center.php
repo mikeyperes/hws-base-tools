@@ -857,6 +857,12 @@ function display_settings_update_center() {
         </div>
     </div>
 
+    <?php
+    if ( function_exists( __NAMESPACE__ . '\\hws_ct_display_plugin_info' ) ) {
+        hws_ct_display_plugin_info();
+    }
+    ?>
+
     <!-- ──────── Inline JS ──────── -->
     <script>
     jQuery(document).ready(function($) {

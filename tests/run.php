@@ -199,6 +199,19 @@ expect_true(
 );
 expect_true( str_contains( $dashboard_source, "'sidebar_identity'=> hws_dashboard_sidebar_identity()" ), 'HWS sidebar displays plugin and Core version identity' );
 expect_true(
+    str_contains( $dashboard_source, "get_site_transient( \$plugin_config->cache_key( 'github_version' ) )" )
+    && ! str_contains( $dashboard_source, 'new PluginUpdateStatus' )
+    && ! str_contains( $dashboard_source, 'new CorePackageStatus' ),
+    'HWS sidebar identity uses only local and cached version data'
+);
+expect_true(
+    ! in_array( 'settings-dashboard-plugin-info.php', $registry->implementation_files_for_tab( 'overview' ), true )
+    && in_array( 'settings-dashboard-plugin-info.php', $registry->implementation_files_for_tab( 'update-center' ), true )
+    && str_contains( source( 'src/Security/legacy-update-center.php' ), 'hws_ct_display_plugin_info();' )
+    && ! str_contains( $dashboard_source, 'hws_ct_display_plugin_info();' ),
+    'Git updater panels load in Update Center without blocking the default Overview'
+);
+expect_true(
     str_contains( $dashboard_css, '#hws-base-tools .hpc-host-tabs-shell.is-bar > .hpc-host-tabs' )
     && str_contains( $dashboard_css, '#hws-base-tools .hpc-host-rail .hpc-host-tabs' )
     && str_contains( $dashboard_css, 'border-left-color: #4055df' )

@@ -4,8 +4,6 @@ use HWS\BaseTools\AdminDashboard\DashboardRegistry;
 use HWS\BaseTools\BrandAssets\PrimaryAuthorImage;
 use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
-use Hexa\PluginCore\CorePackageUpdates\CorePackageStatus;
-use Hexa\PluginCore\PluginUpdates\PluginUpdateStatus;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use Hexa\PluginCore\WpAdminComponents\DynamicButton;
 
@@ -579,17 +577,19 @@ function hws_render_dashboard_tab( string $tab_id ): void {
 }
 
 function hws_dashboard_sidebar_identity(): array {
-    $plugin_status = ( new PluginUpdateStatus( hws_get_hexa_plugin_core_updater_config() ) )->get();
-    $core_status = ( new CorePackageStatus( hws_get_hexa_plugin_core_package_config() ) )->get();
+    $plugin_config = hws_get_hexa_plugin_core_updater_config();
+    $core_config   = hws_get_hexa_plugin_core_package_config();
+    $github_cached = get_site_transient( $plugin_config->cache_key( 'github_version' ) );
+    $github_version = is_scalar( $github_cached ) ? trim( (string) $github_cached ) : '';
 
     return [
-        'plugin_name'     => (string) ( $plugin_status['plugin_name'] ?? PluginMetadata::NAME ),
-        'current_version' => (string) ( $plugin_status['current_version'] ?? PluginMetadata::VERSION ),
-        'github_version'  => (string) ( $plugin_status['latest_version'] ?? 'Unknown' ),
-        'github_url'      => (string) ( $plugin_status['github_url'] ?? 'https://github.com/' . PluginMetadata::GITHUB_REPOSITORY ),
+        'plugin_name'     => $plugin_config->plugin_name(),
+        'current_version' => $plugin_config->version(),
+        'github_version'  => $github_version,
+        'github_url'      => $plugin_config->github_url(),
         'core_name'       => 'Hexa WP Core',
-        'core_version'    => (string) ( $core_status['current_version'] ?? 'Unknown' ),
-        'core_github_url' => (string) ( $core_status['github_url'] ?? 'https://github.com/mikeyperes/hexa-wordpress-plugin-core' ),
+        'core_version'    => $core_config->current_version(),
+        'core_github_url' => $core_config->github_url(),
     ];
 }
 
@@ -1892,12 +1892,6 @@ function render_tab_overview() {
     }
     ?>
 
-    <!-- Plugin Info -->
-    <?php
-    if ( function_exists( __NAMESPACE__ . '\\hws_ct_display_plugin_info' ) ) {
-        hws_ct_display_plugin_info();
-    }
-    ?>
     <?php
 }
 

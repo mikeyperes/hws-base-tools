@@ -183,7 +183,6 @@ final class DashboardRegistry {
             'settings-dashboard-backups.php',
             'settings-dashboard-log-delete-cron.php',
             'settings-dashboard-cleanup.php',
-            'settings-dashboard-plugin-info.php',
         ] ) );
         $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [ 'settings-dashboard-getting-started.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
@@ -204,7 +203,10 @@ final class DashboardRegistry {
         ] ) );
         $this->add( new DashboardModuleDefinition( 'cleanup', 'Cleanup', 'hws_base_tools\\display_settings_cleanup', [ 'settings-dashboard-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'backups', 'Backups', 'hws_base_tools\\render_tab_backups', [ 'settings-dashboard-backups.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [ 'settings-dashboard-update-center.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [
+            'settings-dashboard-update-center.php',
+            'settings-dashboard-plugin-info.php',
+        ] ) );
         $this->add( new DashboardModuleDefinition( 'ui-cleanup', 'UI Cleanup', 'hws_base_tools\\display_settings_ui_cleanup', [ 'settings-dashboard-ui-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'website-types', 'Website & Primary Entity', [ \HWS\BaseTools\SiteProfile\PrimaryEntityIntegration::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'custom-post-types', 'Custom Post Types', 'hws_base_tools\\render_tab_content_types', [ 'settings-dashboard-content-types.php' ] ) );

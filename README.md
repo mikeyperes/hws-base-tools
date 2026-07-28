@@ -116,6 +116,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.7
+
+- Removed synchronous GitHub version requests from the dashboard sidebar and kept it on local/cached version data.
+- Moved the Git updater panels from the default Overview into Update Center so the initial HWS dashboard request stays local.
+
 ### 11.2.6
 
 - Added direct new-tab links from the Brand Assets primary-author image card to the WordPress profile editor and public author archive.
