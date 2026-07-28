@@ -103,6 +103,12 @@ expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered thr
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['mail-authentication'] ), 'HWS Mail Authentication tab is registered through the dashboard registry' );
+expect_true(
+    $registry->implementation_files_for_ajax_action( 'hws_plugin_library_install_activate' ) === [ 'settings-dashboard-check-plugins.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_plugin_status_install_activate' ) === [ 'settings-dashboard-check-plugins.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_unrecommended_plugins_delete' ) === [ 'settings-dashboard-check-plugins.php' ],
+    'plugin inventory AJAX actions load their controller module before dispatch'
+);
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
 foreach ( $groups as $group ) {
@@ -293,16 +299,20 @@ $primary_author_image = source( 'src/BrandAssets/PrimaryAuthorImage.php' );
 expect_true(
     str_contains( $primary_author_image, 'PrimaryEntityIntegration::manager()->resolve()' )
     && str_contains( $primary_author_image, "get_field( 'profile_photo'" )
-    && str_contains( $primary_author_image, 'get_avatar_url' ),
-    'favicon profile-image source resolves from the canonical primary author'
+    && str_contains( $primary_author_image, 'get_avatar_url' )
+    && str_contains( $primary_author_image, "'edit_url'" )
+    && str_contains( $primary_author_image, "'view_url'" ),
+    'favicon profile-image source resolves the canonical primary author and both profile destinations'
 );
 expect_true(
     str_contains( $dashboard_source, 'hws-primary-author-favicon-preview' )
     && str_contains( $dashboard_source, 'Use Primary Author Profile Image' )
+    && str_contains( $dashboard_source, "CoreUi::external_link( \$primary_author['edit_url'], 'Open Backend Profile' )" )
+    && str_contains( $dashboard_source, "CoreUi::external_link( \$primary_author['view_url'], 'Open Frontend Author Page' )" )
     && str_contains( $dashboard_source, "source: 'primary_user'" )
     && str_contains( $dashboard_source, "\$source === 'primary_user'" )
     && str_contains( $dashboard_source, 'hws_create_square_brand_asset_from_path' ),
-    'favicon panel shows and applies the primary author image through the existing PNG and ICO workflow'
+    'favicon panel links to the primary author backend and frontend and applies the image through the existing PNG and ICO workflow'
 );
 $ui_cleanup_source = source( 'src/UiCleanup/legacy-ui-cleanup.php' );
 expect_true(

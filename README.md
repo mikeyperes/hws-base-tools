@@ -116,6 +116,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.6
+
+- Added direct new-tab links from the Brand Assets primary-author image card to the WordPress profile editor and public author archive.
+- Restored all lazy-loaded plugin inventory AJAX actions so install, activate, refresh, deactivate, and delete controls reach their registered controllers.
+
 ### 11.2.5
 
 - Added a dedicated Mail Authentication tab with an ordered SMTP2GO settings, API-key, and test-delivery workflow.

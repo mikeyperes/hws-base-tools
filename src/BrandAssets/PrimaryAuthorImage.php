@@ -9,7 +9,7 @@ use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 defined( 'ABSPATH' ) || exit;
 
 final class PrimaryAuthorImage {
-    /** @return array{id:int,name:string,url:string,attachment_id:int,source:string,edit_url:string}|null */
+    /** @return array{id:int,name:string,url:string,attachment_id:int,source:string,edit_url:string,view_url:string}|null */
     public static function resolve(): ?array {
         $entity = PrimaryEntityIntegration::manager()->resolve();
         if ( ! is_array( $entity ) || 'user' !== (string) ( $entity['kind'] ?? '' ) ) {
@@ -42,6 +42,7 @@ final class PrimaryAuthorImage {
             'attachment_id' => $image['attachment_id'],
             'source'        => $source,
             'edit_url'      => esc_url_raw( (string) ( $entity['edit_url'] ?? '' ) ),
+            'view_url'      => esc_url_raw( (string) ( $entity['view_url'] ?? '' ) ),
         ];
     }
 

@@ -6,6 +6,7 @@ use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 use Hexa\PluginCore\CorePackageUpdates\CorePackageStatus;
 use Hexa\PluginCore\PluginUpdates\PluginUpdateStatus;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use Hexa\PluginCore\WpAdminComponents\DynamicButton;
 
 /**
@@ -3908,7 +3909,7 @@ function render_site_icon_panel() {
                                     <div style="font-weight:700;"><?php echo esc_html( $primary_author['name'] ); ?></div>
                                     <div style="font-size:12px;color:#646970;margin-top:3px;">WordPress User ID <?php echo (int) $primary_author['id']; ?> · <?php echo esc_html( $primary_author['source'] ); ?></div>
                                     <div id="hws-primary-author-favicon-url" style="font-size:12px;margin-top:8px;min-width:0;"><?php echo hws_asset_external_link( $primary_author['url'] ); ?></div>
-                                    <div style="margin-top:10px;">
+                                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
                                         <?php
                                         echo DynamicButton::render(
                                             [
@@ -3922,6 +3923,12 @@ function render_site_icon_panel() {
                                                 'attrs'         => [ 'data-primary-user-id' => $primary_author['id'] ],
                                             ]
                                         );
+                                        if ( '' !== $primary_author['edit_url'] ) {
+                                            echo CoreUi::external_link( $primary_author['edit_url'], 'Open Backend Profile' );
+                                        }
+                                        if ( '' !== $primary_author['view_url'] ) {
+                                            echo CoreUi::external_link( $primary_author['view_url'], 'Open Frontend Author Page' );
+                                        }
                                         ?>
                                     </div>
                                 </div>
