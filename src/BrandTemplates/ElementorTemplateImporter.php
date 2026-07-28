@@ -229,6 +229,10 @@ final class ElementorTemplateImporter {
         if ( null === $snapshot ) {
             return self::result( false, 'missing_backup', 'No managed-template backup is available.', $post_id );
         }
+        $elementor_data = BrandTemplateBackupStore::elementor_data( $snapshot );
+        if ( null === $elementor_data ) {
+            return self::result( false, 'invalid_backup', 'The latest backup contains invalid Elementor JSON and was not applied.', $post_id );
+        }
 
         BrandTemplateBackupStore::create( $post_id, 'State before restoring backup' );
         wp_update_post(
@@ -242,6 +246,7 @@ final class ElementorTemplateImporter {
         $terms = isset( $snapshot['terms'] ) && is_array( $snapshot['terms'] ) ? $snapshot['terms'] : [];
         wp_set_object_terms( $post_id, array_map( 'sanitize_key', $terms ), 'elementor_library_type', false );
         $meta = isset( $snapshot['meta'] ) && is_array( $snapshot['meta'] ) ? $snapshot['meta'] : [];
+        $meta['_elementor_data'] = $elementor_data;
         foreach ( $meta as $key => $value ) {
             $key = sanitize_key( (string) $key );
             if ( '' === $key || BrandTemplateBackupStore::META_KEY === $key ) {

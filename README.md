@@ -116,6 +116,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.1
+
+- Preserved escaped Elementor dynamic-tag JSON in versioned managed-template backups.
+- Added strict backup decoding and JSON validation so a corrupt snapshot cannot be applied.
+
 ### 11.2.0
 
 - Added the Brand Templates dashboard for Author, Page, Single Post, Category, and Tag defaults.

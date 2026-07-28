@@ -116,6 +116,7 @@ brand_expect(
 );
 
 $importer = (string) file_get_contents( $root . '/src/BrandTemplates/ElementorTemplateImporter.php' );
+$backup_store = (string) file_get_contents( $root . '/src/BrandTemplates/BrandTemplateBackupStore.php' );
 $loader = (string) file_get_contents( $root . '/src/BrandTemplates/TemplateLoader.php' );
 $admin = (string) file_get_contents( $root . '/src/BrandTemplates/BrandTemplatesAdmin.php' );
 $css = (string) file_get_contents( $root . '/assets/frontend/brand-templates.css' );
@@ -124,6 +125,13 @@ brand_expect(
     && str_contains( $importer, 'BrandTemplateBackupStore::create' )
     && str_contains( $importer, 'save_conditions' ),
     'Elementor imports use official conflict detection, backups, and condition persistence'
+);
+brand_expect(
+    str_contains( $backup_store, "'data_encoding' => 'base64'" )
+    && str_contains( $backup_store, 'base64_decode' )
+    && str_contains( $backup_store, 'JSON_ERROR_NONE' )
+    && str_contains( $importer, "'invalid_backup'" ),
+    'managed backups preserve escaped Elementor JSON and reject corrupt snapshots before restore'
 );
 brand_expect(
     str_contains( $loader, 'has_active_elementor_document' )
