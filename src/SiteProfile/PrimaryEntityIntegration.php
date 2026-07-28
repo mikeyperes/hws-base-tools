@@ -37,7 +37,7 @@ final class PrimaryEntityIntegration {
                 'nonce_action' => 'hws_primary_entity', 'nonce_field' => 'nonce',
                 'migration_flag' => 'hws_primary_entity_migrated_v1',
                 'legacy_resolvers' => [ [ self::class, 'resolve_legacy_entity' ] ],
-                'render_args' => [ 'title' => 'Website & Primary Entity', 'consumers' => self::consumers() ],
+                'render_args' => [ 'title' => 'Website & Primary Entity', 'consumers' => self::consumers(), 'show_field_inventory' => false ],
             ]
         );
         return self::$manager;

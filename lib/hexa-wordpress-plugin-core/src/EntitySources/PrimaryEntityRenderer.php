@@ -77,7 +77,7 @@ final class PrimaryEntityRenderer {
         if ( ! $entity ) {
             return '<section class="hpc-card hpc-primary-empty"><h3>No primary author assigned</h3><p>This is a valid configuration. Website classification and unrelated HWS features continue to operate without an author profile.</p></section>';
         }
-        $groups = ( new EntityFieldInspector() )->inspect( $entity );
+        $show_field_inventory = ! array_key_exists( 'show_field_inventory', $args ) || ! empty( $args['show_field_inventory'] );
         ob_start();
         ?>
         <section class="hpc-card hpc-primary-preview">
@@ -89,26 +89,11 @@ final class PrimaryEntityRenderer {
             <?php echo ( new EntityProfileCardRenderer() )->render( $entity ); ?>
 
             <?php if ( ! empty( $entity['settings']['migrated_from'] ) ) : ?><p class="hpc-small">Migrated from: <?php echo esc_html( $entity['settings']['migrated_from'] ); ?></p><?php endif; ?>
-            <div class="hpc-primary-field-groups">
-                <h4>All available WordPress and ACF fields</h4>
-                <p class="hpc-small">Every detected field remains available here, including empty fields. Protected credential values are never printed.</p>
-                <?php foreach ( $groups as $group ) : ?>
-                    <?php echo CoreUi::collapsible( [ 'title' => $group['label'], 'meta_html' => CoreUi::pill( count( $group['fields'] ) . ' fields', 'dark' ), 'body_html' => $this->field_table( $group['fields'] ), 'open' => false, 'persist_key' => 'primary-entity-' . $entity['id'] . '-' . sanitize_key( $group['key'] ), 'query_state' => false ] ); ?>
-                <?php endforeach; ?>
-            </div>
+            <?php if ( $show_field_inventory ) : ?><?php echo ( new EntityFieldInventoryRenderer() )->render( $entity, [ 'standalone' => false ] ); ?><?php endif; ?>
             <?php if ( ! empty( $args['consumers'] ) ) : ?><?php echo $this->consumer_status( (array) $args['consumers'], $entity ); ?><?php endif; ?>
         </section>
         <?php
         return (string) ob_get_clean();
-    }
-
-    /** @param array<int,array<string,mixed>> $fields */
-    private function field_table( array $fields ): string {
-        $html = '<div class="hpc-primary-field-table"><div class="head">Field</div><div class="head">Type</div><div class="head">Current value</div>';
-        foreach ( $fields as $field ) {
-            $html .= '<div><strong>' . esc_html( $field['label'] ) . '</strong><small>' . esc_html( $field['name'] ) . '</small></div><div>' . esc_html( $field['type'] ) . '</div><div class="' . ( $field['set'] ? '' : 'empty' ) . '">' . esc_html( $field['value'] ) . '</div>';
-        }
-        return $html . '</div>';
     }
 
     /** @param array<int,array<string,mixed>> $consumers @param array<string,mixed> $entity */

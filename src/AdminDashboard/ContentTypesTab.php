@@ -3,9 +3,11 @@
 namespace HWS\BaseTools\AdminDashboard;
 
 use Hexa\PluginCore\ContentTypes\ContentTypeRenderer;
+use Hexa\PluginCore\EntitySources\EntityFieldInventoryRenderer;
 use Hexa\PluginCore\FieldStructures\AcfFieldGroupRenderer;
 use HWS\BaseTools\AcfFields\SharedAcfStructures;
 use HWS\BaseTools\ContentTypes\SharedContentTypes;
+use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -26,6 +28,15 @@ final class ContentTypesTab {
                 'title'          => 'ACF Structures',
                 'description'    => 'Manage site, user, sponsored-content, and RSS field groups from the same shared Core interface.',
                 'persist_prefix' => 'hws-acf-structures',
+            ]
+        );
+
+        echo ( new EntityFieldInventoryRenderer() )->render(
+            PrimaryEntityIntegration::manager()->resolve(),
+            [
+                'title'          => 'All available WordPress and ACF fields',
+                'description'    => 'Inspect every WordPress and ACF field available to the selected primary author. Empty fields remain listed, while protected credential values are never printed.',
+                'persist_prefix' => 'hws-primary-author-fields',
             ]
         );
     }

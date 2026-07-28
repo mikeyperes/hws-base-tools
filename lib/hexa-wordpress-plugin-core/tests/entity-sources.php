@@ -113,11 +113,20 @@ entity_assert(
     'Selecting an entity must save automatically and replace the live profile preview.'
 );
 $profile_renderer_source = (string) file_get_contents( $root . '/src/EntitySources/EntityProfileCardRenderer.php' );
+$inventory_renderer_source = (string) file_get_contents( $root . '/src/EntitySources/EntityFieldInventoryRenderer.php' );
 entity_assert(
     str_contains( $profile_renderer_source, '<dl class="hpc-entity-socials">' )
     && str_contains( $profile_renderer_source, 'esc_html( $url )' )
     && ! str_contains( $profile_renderer_source, '<span aria-hidden="true">&#8599;</span>' ),
     'Social links must render as labeled rows with each complete URL visible.'
+);
+entity_assert(
+    str_contains( $renderer_source, "'show_field_inventory'" )
+    && str_contains( $renderer_source, 'new EntityFieldInventoryRenderer()' )
+    && ! str_contains( $renderer_source, 'new EntityFieldInspector()' )
+    && str_contains( $inventory_renderer_source, 'new EntityFieldInspector()' )
+    && str_contains( $inventory_renderer_source, 'All available WordPress and ACF fields' ),
+    'The reusable field inventory must be independently placeable outside the primary-entity preview.'
 );
 
 echo "PASS: Canonical entities support optional sources, derived website semantics, and independent website classification.\n";

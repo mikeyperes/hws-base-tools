@@ -845,9 +845,9 @@ Use this for one reusable CPT contract across host plugins. Hosts supply owned o
 
 Namespace: Hexa\PluginCore\EntitySources
 
-Classes: CanonicalEntityResolver, PrimaryEntityManager, PrimaryEntityModule, PrimaryEntityAjaxController, PrimaryEntityRenderer, EntityProfileCardRenderer, EntityFieldInspector.
+Classes: CanonicalEntityResolver, PrimaryEntityManager, PrimaryEntityModule, PrimaryEntityAjaxController, PrimaryEntityRenderer, EntityProfileCardRenderer, EntityFieldInventoryRenderer, EntityFieldInspector.
 
-Use this for an optional HWS-owned website type and primary user/post entity. Consumers resolve the canonical entity and its bound WordPress author rather than maintaining competing settings. Profile cards render social links as labeled rows with each complete URL visible and clickable. No primary entity is a supported configuration. See `docs/entity-sources.md` and test with `tests/entity-sources.php`.
+Use this for an optional HWS-owned website type and primary user/post entity. Consumers resolve the canonical entity and its bound WordPress author rather than maintaining competing settings. Profile cards render social links as labeled rows with each complete URL visible and clickable. `EntityFieldInventoryRenderer` lets hosts place the complete WordPress/ACF inventory outside the selector while using the same resolved entity. No primary entity is a supported configuration. See `docs/entity-sources.md` and test with `tests/entity-sources.php`.
 
 ## Field Structures
 

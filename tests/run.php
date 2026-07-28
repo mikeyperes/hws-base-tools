@@ -224,6 +224,7 @@ expect_true(
 );
 $primary_entity_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/PrimaryEntityRenderer.php' );
 $entity_profile_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/EntityProfileCardRenderer.php' );
+$entity_inventory_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/EntityFieldInventoryRenderer.php' );
 expect_true(
     ! str_contains( $primary_entity_renderer, 'hpc-primary-save' )
     && str_contains( $primary_entity_renderer, "document.addEventListener('hexa-search-selected'" )
@@ -236,6 +237,12 @@ expect_true(
     && str_contains( $entity_profile_renderer, 'esc_html( $url )' )
     && str_contains( $primary_entity_renderer, '.hpc-entity-socials>div' ),
     'primary author social links use Core rows with complete visible URLs'
+);
+expect_true(
+    str_contains( $primary_entity_source, "'show_field_inventory' => false" )
+    && str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'EntityFieldInventoryRenderer' )
+    && str_contains( $entity_inventory_renderer, 'All available WordPress and ACF fields' ),
+    'primary author field inventory is rendered by Core in Custom Post Types instead of Website & Primary Entity'
 );
 expect_true(
     str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), "hexa_plugin_core_register_integration_tests" )
@@ -251,6 +258,7 @@ expect_true(
 expect_true(
     str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'ContentTypeRenderer' )
     && str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'AcfFieldGroupRenderer' )
+    && str_contains( source( 'src/AdminDashboard/ContentTypesTab.php' ), 'EntityFieldInventoryRenderer' )
     && str_contains( source( 'src/AcfFields/SharedAcfStructures.php' ), "'legacy_option'" ),
     'CPT and ACF controls use the generic Core UI while retaining legacy option state'
 );
@@ -332,7 +340,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.2', 'HWS bundles Hexa WordPress Plugin Core 1.1.2' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.3', 'HWS bundles Hexa WordPress Plugin Core 1.1.3' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
