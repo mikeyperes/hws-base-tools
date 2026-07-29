@@ -87,6 +87,8 @@ Version 1.1.7 adds `MediaGalleryDetailsRenderer`, a host-neutral collapsed image
 
 Version 1.1.8 makes media URL copying fall back to the synchronous browser copy path when an exposed Clipboard API rejects the write.
 
+Version 1.1.9 adds a reusable ACF gallery-details module with live native-gallery synchronization, context-aware AJAX removal, larger previews, and separate image-data and URL clipboard actions.
+
 ## Schema Tools
 
 The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, normalize independently detectable graph nodes with `SchemaGraph::standalone_nodes()`, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.
@@ -108,7 +110,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `DatabaseCleanup`: guarded provider-backed cleanup sessions, per-task cleanup, per-table optimization, pre/post provider state restoration, and live AJAX progress.
 - `EntitySources`: optional canonical website/entity selection, derived semantic types, legacy migration, user/post resolution, complete author/profile cards, attached-author extraction, field inspection, and reusable admin UI.
-- `FieldStructures`: reusable ACF group registration and settings panels plus displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
+- `FieldStructures`: reusable ACF group registration and settings panels, a generic live ACF gallery-details module, plus displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.
 - `FrontendForms`: canonical public field schemas plus WordPress-safe WYSIWYG normalization and plain-text projection.
 - `FaqSets`: shared FAQ set sanitizing, item normalization, primary-set resolution, safe answer links, FAQPage schema, and reusable list or accordion output.
 - `GettingStartedChecklist`: reusable plugin startup/onboarding checklist UI, collapsible parent steps, typed step/subtask registration, guarded AJAX execution, sequential subtask processing, request metadata payloads, spinner/check/X states, callback result normalization, reusable destructive sample runner, deleted-post/deleted-file reports, image preview report assets, and collapsed dark technical activity logs.

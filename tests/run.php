@@ -433,7 +433,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.8', 'HWS bundles Hexa WordPress Plugin Core 1.1.8' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.9', 'HWS bundles Hexa WordPress Plugin Core 1.1.9' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -583,9 +583,14 @@ expect_true( ! file_exists( $root . '/src/AcfFields/legacy-migrations.php' ), 'u
 expect_true( ! file_exists( $root . '/delete-snippet-acf-migration-structures.php' ), 'legacy profile migration loader is removed' );
 expect_true(
     str_contains( $profile_gallery_details, "FIELD_KEY = 'field_hws_user_profile_2025_photos'" )
-    && str_contains( $profile_gallery_details, 'MediaGalleryDetailsRenderer::render' )
-    && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new UserProfileGalleryDetails()' ),
-    'HWS binds its canonical Photos field to the shared selectable Core gallery-details renderer'
+    && str_contains( $profile_gallery_details, 'AcfGalleryDetailsModule' )
+    && str_contains( $profile_gallery_details, "'preview_pixels'     => 112" )
+    && str_contains( $profile_gallery_details, "'allow_remove'       => true" )
+    && str_contains( $profile_gallery_details, "'live_refresh'       => true" )
+    && ! str_contains( $profile_gallery_details, 'add_action(' )
+    && ! str_contains( $profile_gallery_details, 'update_field(' )
+    && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'UserProfileGalleryDetails::module()' ),
+    'HWS configures its Photos field through the generic live Core ACF gallery module'
 );
 
 $plugin_policy_source = source( 'src/PluginPolicy/legacy-plugin-checks.php' );

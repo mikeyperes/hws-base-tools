@@ -18,6 +18,7 @@
       "@php tests/shared-content-types-unit.php",
       "@php tests/plugin-policy-unit.php",
       "@php tests/user-profile-2025-migration-unit.php",
+      "@php tests/user-profile-gallery-details-unit.php",
       "@php tests/run.php",
       "@php lib/hexa-wordpress-plugin-core/tests/package-integrity.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-registry.php",
@@ -27,7 +28,9 @@
       "@php lib/hexa-wordpress-plugin-core/tests/search-display-renderer.php",
       "@php lib/hexa-wordpress-plugin-core/tests/search-query-engine.php",
       "@php lib/hexa-wordpress-plugin-core/tests/site-structure-lazy-workspace.php",
-      "@php lib/hexa-wordpress-plugin-core/tests/snippet-metadata-renderer.php"
+      "@php lib/hexa-wordpress-plugin-core/tests/snippet-metadata-renderer.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/media-gallery-details.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/acf-gallery-details-module.php"
     ]
   },
   "config": {

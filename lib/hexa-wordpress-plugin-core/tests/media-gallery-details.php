@@ -18,6 +18,10 @@ function sanitize_html_class( mixed $value ): string {
     return preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $value ) ?: '';
 }
 
+function sanitize_key( mixed $value ): string {
+    return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $value ) ) ?: '';
+}
+
 function wp_attachment_is_image( int $attachment_id ): bool {
     return in_array( $attachment_id, [ 101, 202 ], true );
 }
@@ -81,7 +85,17 @@ $html = MediaGalleryDetailsRenderer::render(
         (object) [ 'ID' => 101 ],
         999,
     ],
-    [ 'persist_key' => 'test-gallery-details' ]
+    [
+        'persist_key'   => 'test-gallery-details',
+        'allow_remove'  => true,
+        'live_refresh'  => true,
+        'ajax_url'      => 'https://example.test/wp-admin/admin-ajax.php',
+        'ajax_action'   => 'test_gallery_action',
+        'nonce'         => 'test-nonce',
+        'context'       => 'user_44',
+        'field_key'     => 'field_test_gallery',
+        'preview_pixels'=> 112,
+    ]
 );
 
 $checks = [
@@ -101,15 +115,28 @@ $checks = [
         && str_contains( $html, 'target="_blank" rel="noopener noreferrer"' )
         && str_contains( $html, '2400 x 1600 px' )
         && str_contains( $html, 'user-select:text' ),
-    'Every URL uses the shared dynamic clipboard button.' => str_contains( $html, 'data-hpc-dynamic-button' )
-        && str_contains( $html, 'data-working-label="Copy to clipboard"' )
+    'Every size has separate dynamic image and URL clipboard buttons.' => str_contains( $html, 'data-hpc-dynamic-button' )
+        && str_contains( $html, 'data-working-label="Copying image..."' )
+        && str_contains( $html, 'data-working-label="Copying URL..."' )
+        && str_contains( $html, 'data-hpc-gallery-copy-image="https://example.test/uploads/photo-101.jpg"' )
         && str_contains( $html, 'data-hpc-gallery-copy="https://example.test/uploads/photo-101.jpg"' )
         && str_contains( $html, "HexaWpCoreDynamicButton" )
+        && str_contains( $html, "new ClipboardItem({'image/png':pending})" )
         && str_contains( $html, 'catch(function(){return legacyCopy(value)})' ),
     'Images can be selected individually or all at once.' => str_contains( $html, 'value="101" data-hpc-gallery-select' )
         && str_contains( $html, 'value="202" data-hpc-gallery-select' )
         && str_contains( $html, 'data-hpc-gallery-select-all' )
         && str_contains( $html, "selected.length+' selected'" ),
+    'Large previews and removal controls use stable generic UI.' => str_contains( $html, '--hpc-media-gallery-preview-size:112px' )
+        && str_contains( $html, 'data-hpc-gallery-remove="101"' )
+        && str_contains( $html, 'Remove from this gallery. The Media Library attachment will not be deleted.' ),
+    'Native ACF gallery mutations request immediate Core refreshes.' => str_contains( $html, 'data-hpc-gallery-live-refresh="1"' )
+        && str_contains( $html, 'new MutationObserver' )
+        && str_contains( $html, "scheduleRefresh(root)" )
+        && str_contains( $html, "request(root,'refresh'" )
+        && str_contains( $html, "document.addEventListener('DOMContentLoaded'" )
+        && str_contains( $html, "window.acf.addAction('append'" )
+        && strpos( $html, 'data-hpc-media-gallery-details' ) < strpos( $html, 'window.hexaCoreMediaGalleryDetailsReady' ),
 ];
 
 foreach ( $checks as $message => $passed ) {
@@ -127,4 +154,4 @@ foreach ( [ 'hws_', 'smpi-', 'blockeditorial', 'herforward' ] as $host_term ) {
     }
 }
 
-echo "PASS: Media gallery details are selectable, size-complete, copyable with fallback, and host-neutral.\n";
+echo "PASS: Media gallery details are live, removable, image/URL-copyable, size-complete, and host-neutral.\n";

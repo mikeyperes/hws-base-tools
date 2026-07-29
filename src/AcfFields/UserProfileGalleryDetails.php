@@ -4,30 +4,23 @@ declare( strict_types=1 );
 
 namespace HWS\BaseTools\AcfFields;
 
-use Hexa\PluginCore\CoreContracts\ModuleInterface;
-use Hexa\PluginCore\WpAdminComponents\MediaGalleryDetailsRenderer;
+use Hexa\PluginCore\FieldStructures\AcfGalleryDetailsModule;
 
 defined( 'ABSPATH' ) || exit;
 
-final class UserProfileGalleryDetails implements ModuleInterface {
+final class UserProfileGalleryDetails {
     public const FIELD_KEY = 'field_hws_user_profile_2025_photos';
 
-    public function register(): void {
-        add_action( 'acf/render_field/key=' . self::FIELD_KEY, [ $this, 'render' ] );
-    }
-
-    /** @param array<string,mixed> $field */
-    public function render( array $field ): void {
-        $value = $field['value'] ?? [];
-        if ( ! is_array( $value ) ) {
-            $value = [];
-        }
-
-        echo MediaGalleryDetailsRenderer::render(
-            $value,
+    public static function module(): AcfGalleryDetailsModule {
+        return new AcfGalleryDetailsModule(
             [
-                'title'       => 'Details',
-                'persist_key' => 'hws-user-profile-photos-details',
+                'field_key'          => self::FIELD_KEY,
+                'title'              => 'Details',
+                'persist_key'        => 'hws-user-profile-photos-details',
+                'preview_pixels'     => 112,
+                'preview_image_size' => 'medium',
+                'allow_remove'       => true,
+                'live_refresh'       => true,
             ]
         );
     }

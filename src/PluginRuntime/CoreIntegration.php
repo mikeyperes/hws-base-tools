@@ -56,7 +56,7 @@ final class CoreIntegration {
             ->add_module( new BrandTemplateFeature() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )
-            ->add_module( new UserProfileGalleryDetails() )
+            ->add_module( UserProfileGalleryDetails::module() )
             ->add_module( PrimaryEntityIntegration::module() )
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             ->add_module(

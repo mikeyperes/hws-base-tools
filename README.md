@@ -96,7 +96,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.1.8 |
+| Hexa WP Core bundle | 1.1.9 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -115,6 +115,17 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 11.2.12
+
+- Rebuilt the Photos gallery Details panel through the generic Hexa WP Core ACF gallery module.
+- Added immediate Details refresh after native ACF add, remove, and reorder changes, including unsaved selections.
+- Added larger previews, separate image-data and URL clipboard actions, and gallery-only deletion that preserves Media Library attachments.
+- Updated the bundled Hexa WP Core package to 1.1.9.
+
+### 11.2.11
+
+- Scoped podcast plugin recommendations to Podcast Website installs.
 
 ### 11.2.10
 

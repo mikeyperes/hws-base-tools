@@ -87,7 +87,27 @@ Use `CoreUi::toggle()` for checkbox-style toggles. Core clips the hidden checkbo
 
 Use `CoreUi::detail_card()` for nested expandable/collapsible subcards inside a parent tool section. It is meant for descriptions, rule explanations, scan-location lists, and other supporting details that should not dominate the page on load.
 
-Use `MediaGalleryDetailsRenderer::render()` when a host-owned WordPress or ACF image gallery needs a collapsed details panel. Core lists the full URL and every generated image size, provides selectable media rows, opens URL links in a new tab, and uses `DynamicButton` for per-URL clipboard feedback. The host owns field registration and passes the saved gallery value into the renderer.
+Use `MediaGalleryDetailsRenderer::render()` for a host-neutral gallery inspector outside ACF. Core renders a large stable preview, every generated image size, selectable rows, external URLs, separate image-data and URL clipboard actions, and optional dynamic removal controls.
+
+Use `FieldStructures\AcfGalleryDetailsModule` when the source is an ACF gallery field. The host supplies only its field key and presentation settings. Core owns the field hook, context resolution, permissions, nonces, AJAX refresh/removal, gallery-only persistence, and immediate synchronization after native ACF add, remove, or reorder operations.
+
+```php
+use Hexa\PluginCore\FieldStructures\AcfGalleryDetailsModule;
+
+$bootstrap->add_module(
+    new AcfGalleryDetailsModule(
+        [
+            'field_key'          => 'field_host_gallery',
+            'title'              => 'Details',
+            'persist_key'        => 'host-gallery-details',
+            'preview_pixels'     => 112,
+            'preview_image_size' => 'medium',
+            'allow_remove'       => true,
+            'live_refresh'       => true,
+        ]
+    )
+);
+```
 
 Use CoreUi::collection_filter() for a client-side search control above a repeated card collection. Give every top-level item a dedicated class through the CoreUi::collapsible() class argument; do not target every nested Core section.
 
