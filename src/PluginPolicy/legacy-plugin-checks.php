@@ -55,9 +55,10 @@ function hws_get_hexa_plugin_catalog(): array {
         ],
         'smp-core-podcast-integration' => [
             'name'        => 'SMP Core Podcast Integration',
-            'plugin_file' => 'smp-core-podcast-integration/smp-core-podcast-integration.php',
+            'plugin_file' => 'smp-core-podcast-integration/initialization.php',
             'repo'        => 'mikeyperes/smp-core-podcast-integration',
             'description' => 'Podcast integration tools for SMP core workflows.',
+            'site_types'  => [ 'podcast_website' ],
         ],
         'smp-verified-profiles' => [
             'name'        => 'SMP Verified Profiles',
@@ -80,12 +81,35 @@ function hws_get_hexa_plugin_catalog(): array {
     ];
 }
 
-function hws_get_additional_hws_plugins(): array {
-    return hws_get_hexa_plugin_catalog();
+function hws_hexa_plugin_is_compatible( array $plugin, ?string $site_type = null ): bool {
+    $allowed_site_types = array_values(
+        array_filter(
+            array_map( 'sanitize_key', (array) ( $plugin['site_types'] ?? [] ) )
+        )
+    );
+
+    if ( [] === $allowed_site_types ) {
+        return true;
+    }
+
+    $site_type = null === $site_type ? hws_get_site_type() : hws_sanitize_site_type( $site_type );
+
+    return '' !== $site_type && in_array( $site_type, $allowed_site_types, true );
 }
 
-function hws_get_additional_hws_plugin( string $slug ): ?array {
-    $plugins = hws_get_additional_hws_plugins();
+function hws_get_compatible_hexa_plugin_catalog( ?string $site_type = null ): array {
+    return array_filter(
+        hws_get_hexa_plugin_catalog(),
+        static fn( array $plugin ): bool => hws_hexa_plugin_is_compatible( $plugin, $site_type )
+    );
+}
+
+function hws_get_additional_hws_plugins( ?string $site_type = null ): array {
+    return hws_get_compatible_hexa_plugin_catalog( $site_type );
+}
+
+function hws_get_additional_hws_plugin( string $slug, ?string $site_type = null ): ?array {
+    $plugins = hws_get_additional_hws_plugins( $site_type );
 
     return $plugins[ sanitize_key( $slug ) ] ?? null;
 }
@@ -492,11 +516,22 @@ function hws_get_monitored_plugin_definitions(): array {
     return $definitions;
 }
 
-function hws_get_hws_plugin_library_definitions(): array {
+function hws_get_hws_plugin_library_definitions( ?string $site_type = null ): array {
     $definitions = [];
 
-    foreach ( hws_get_additional_hws_plugins() as $slug => $plugin ) {
+    foreach ( hws_get_hexa_plugin_catalog() as $slug => $plugin ) {
         $slug          = sanitize_key( (string) $slug );
+        $compatible    = hws_hexa_plugin_is_compatible( $plugin, $site_type );
+        $notes         = (string) ( $plugin['description'] ?? '' );
+
+        if ( ! $compatible ) {
+            $allowed_labels = array_map(
+                static fn( string $allowed ): string => hws_get_site_type_label( $allowed ),
+                (array) ( $plugin['site_types'] ?? [] )
+            );
+            $notes .= ' Incompatible with this website type. Allowed only for: ' . implode( ', ', $allowed_labels ) . '.';
+        }
+
         $definitions[] = [
             'id'            => $slug,
             'name'          => (string) ( $plugin['name'] ?? $slug ),
@@ -508,14 +543,23 @@ function hws_get_hws_plugin_library_definitions(): array {
             'download_url'  => 'https://github.com/' . (string) ( $plugin['repo'] ?? '' ),
             'download_label'=> 'Open GitHub',
             'required'      => false,
-            'recommended'   => true,
-            'checks'        => [
-                'installed'   => true,
-                'active'      => true,
-                'up_to_date'  => false,
-                'auto_update' => false,
-            ],
-            'notes'         => (string) ( $plugin['description'] ?? '' ),
+            'recommended'   => $compatible,
+            'should_not_contain' => ! $compatible,
+            'checks'        => $compatible
+                ? [
+                    'installed'   => true,
+                    'active'      => true,
+                    'up_to_date'  => false,
+                    'auto_update' => false,
+                ]
+                : [
+                    'installed'     => false,
+                    'active'        => false,
+                    'up_to_date'    => false,
+                    'auto_update'   => false,
+                    'not_installed' => true,
+                ],
+            'notes'         => $notes,
         ];
     }
 
@@ -540,7 +584,7 @@ function hws_register_hexa_plugin_recommendation_providers(): void {
 
     $registered = true;
 
-    foreach ( hws_get_hexa_plugin_catalog() as $slug => $plugin ) {
+    foreach ( hws_get_compatible_hexa_plugin_catalog() as $slug => $plugin ) {
         PluginRecommendationRegistry::register_hexa_plugin(
             [
                 'id'          => (string) $slug,
@@ -639,6 +683,8 @@ function hws_get_hws_plugin_library_renderer_args(): array {
         'persist_key'      => 'hws-plugin-library',
         'open'             => true,
         'show_install_all' => true,
+        'hide_compliant_forbidden' => true,
+        'show_unwanted'    => true,
         'columns'          => [
             'auto_update' => false,
             'version'     => true,

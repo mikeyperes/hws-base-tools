@@ -16,6 +16,7 @@
       "@php tests/mail-authentication-unit.php",
       "@php tests/brand-templates-unit.php",
       "@php tests/shared-content-types-unit.php",
+      "@php tests/plugin-policy-unit.php",
       "@php tests/user-profile-2025-migration-unit.php",
       "@php tests/run.php",
       "@php lib/hexa-wordpress-plugin-core/tests/package-integrity.php",
