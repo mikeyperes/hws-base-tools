@@ -164,6 +164,28 @@ expect_true(
     && $registry->implementation_files_for_ajax_action( 'hws_mail_authentication_run_test' ) === [ 'settings-dashboard-mail-authentication.php' ],
     'Mail Authentication tab and AJAX action load the focused adapter'
 );
+expect_true(
+    $registry->implementation_files_for_tab( 'overview' ) === [
+        'settings-dashboard-site-profile.php',
+        'settings-dashboard-check-plugins.php',
+        'settings-dashboard-backups.php',
+    ],
+    'Overview does not load Cleanup or log-maintenance controllers'
+);
+
+$dashboard_assets_source = source( 'src/AdminDashboard/DashboardAssets.php' );
+expect_true(
+    str_contains( $dashboard_assets_source, "private const MEDIA_TABS = [ 'brand-assets', 'footer-text' ]" )
+    && str_contains( $dashboard_assets_source, "private const EDITOR_TABS = [ 'footer-text' ]" )
+    && str_contains( $dashboard_assets_source, "in_array( \$tab, self::MEDIA_TABS, true )" )
+    && str_contains( $dashboard_assets_source, "in_array( \$tab, self::EDITOR_TABS, true )" ),
+    'media and editor dependencies are scoped to tabs that use them'
+);
+expect_true(
+    ! str_contains( source( 'src/AdminDashboard/legacy-dashboard.php' ), "strpos( \$hook, 'hws-core-tools' )" )
+    && str_contains( $dashboard_assets_source, "event.stopImmediatePropagation()" ),
+    'asset-heavy tabs use a full navigation without a duplicate global media enqueue'
+);
 
 $mail_auth_source = source( 'src/MailAuthentication/Smtp2goAuthenticationService.php' );
 $mail_admin_source = source( 'src/MailAuthentication/MailAuthenticationAdmin.php' );

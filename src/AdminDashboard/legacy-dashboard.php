@@ -386,14 +386,6 @@ function add_wp_admin_settings_page() {
     );
 }
 
-// — Enqueue WP media uploader scripts on our settings page (for favicon upload)
-add_action( 'admin_enqueue_scripts', function( $hook ) {
-    if ( strpos( $hook, 'hws-core-tools' ) !== false ) {
-        wp_enqueue_media();
-    }
-});
-
-
 /**
  * Register AJAX handlers
  */

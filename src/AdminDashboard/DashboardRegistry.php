@@ -181,8 +181,6 @@ final class DashboardRegistry {
             'settings-dashboard-site-profile.php',
             'settings-dashboard-check-plugins.php',
             'settings-dashboard-backups.php',
-            'settings-dashboard-log-delete-cron.php',
-            'settings-dashboard-cleanup.php',
         ] ) );
         $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [ 'settings-dashboard-getting-started.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );

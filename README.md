@@ -116,6 +116,12 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 12.0.0
+
+- Scope WordPress media and editor dependencies to the HWS tabs that use them.
+- Preserve asset-heavy tab behavior with explicit full-page navigation.
+- Stop loading Cleanup and log-maintenance controllers on Overview requests.
+
 ### 11.2.13
 
 - Added Site Kit by Google to the required and recommended WordPress.org plugin policy with direct AJAX install-and-activate support.
