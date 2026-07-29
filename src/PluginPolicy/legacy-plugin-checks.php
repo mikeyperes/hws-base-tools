@@ -413,6 +413,14 @@ function hws_get_monitored_plugins() {
             'category'    => 'essential',
             'pro'         => false,
         ],
+        'google-site-kit/google-site-kit.php' => [
+            'name'        => 'Site Kit by Google',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://wordpress.org/plugins/google-site-kit/',
+            'category'    => 'essential',
+            'pro'         => false,
+        ],
 
         // === OPTIONAL ===
         'wp-optimize/wp-optimize.php' => [

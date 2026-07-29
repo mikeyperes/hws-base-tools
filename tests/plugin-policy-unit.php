@@ -52,6 +52,24 @@ require_once dirname( __DIR__ ) . '/src/PluginPolicy/legacy-plugin-checks.php';
 
 $podcast_slug = 'smp-core-podcast-integration';
 $catalog = hws_base_tools\hws_get_hexa_plugin_catalog();
+$site_kit_definition = policy_definition(
+    hws_base_tools\hws_get_monitored_plugin_definitions(),
+    'google-site-kit-google-site-kit.php'
+);
+
+expect_policy(
+    ( $site_kit_definition['plugin_file'] ?? '' ) === 'google-site-kit/google-site-kit.php'
+    && ( $site_kit_definition['wp_org_slug'] ?? '' ) === 'google-site-kit'
+    && ( $site_kit_definition['download_url'] ?? '' ) === 'https://wordpress.org/plugins/google-site-kit/',
+    'Google Site Kit uses the exact WordPress.org package and plugin entry file'
+);
+expect_policy(
+    true === ( $site_kit_definition['required'] ?? false )
+    && true === ( $site_kit_definition['recommended'] ?? false )
+    && true === ( $site_kit_definition['checks']['installed'] ?? false )
+    && true === ( $site_kit_definition['checks']['active'] ?? false ),
+    'Google Site Kit is required, recommended, installed, and active policy'
+);
 
 expect_policy(
     ( $catalog[ $podcast_slug ]['plugin_file'] ?? '' ) === 'smp-core-podcast-integration/initialization.php',

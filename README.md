@@ -116,6 +116,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.13
+
+- Added Site Kit by Google to the required and recommended WordPress.org plugin policy with direct AJAX install-and-activate support.
+
 ### 11.2.12
 
 - Rebuilt the Photos gallery Details panel through the generic Hexa WP Core ACF gallery module.
