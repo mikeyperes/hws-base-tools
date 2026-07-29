@@ -79,9 +79,15 @@ Version 1.1.3 separates the complete WordPress/ACF entity field inventory into a
 
 Version 1.1.4 adds an opt-in unconfigured website-type state, an intentional empty primary-entity presentation, and reliable hidden-state styling for empty Smart Search selections.
 
+Version 1.1.5 adds fault-tolerant schema URL normalization and reports invalid schema URLs without breaking page output or scans.
+
+Version 1.1.6 adds reusable standalone schema-node normalization so host plugins can keep every top-level JSON-LD entity independently detectable while preserving typed author, publisher, copyright-holder, and image summaries.
+
+Version 1.1.7 adds `MediaGalleryDetailsRenderer`, a host-neutral collapsed image-details panel with selectable attachments, full and generated-size URLs, new-tab links, and shared dynamic clipboard buttons.
+
 ## Schema Tools
 
-The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.
+The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, normalize independently detectable graph nodes with `SchemaGraph::standalone_nodes()`, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.
 
 Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`, or plugin-specific namespaces inside this package. Consuming plugins may have their own namespaces, but this shared package always stays under `Hexa\PluginCore`.
 
@@ -114,15 +120,15 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `SnippetRegistry`: shared snippet definitions, option toggles, test rules, related snippets, related shortcodes, basic README rendering, generic AJAX handlers, and the canonical snippets table UI.
 - `ShortcodeRegistry`: shortcode definition registry, dashboard display renderer, examples, live output, and test runner contracts.
 - `SiteStructure`: reusable critical page blueprint management, assigned page storage, WordPress navigation menu creation, custom menu-item creation, add-all-assigned-pages actions, menu structure attachment, and page-to-menu-item tools.
-- `SchemaDetection`: reusable JSON-LD URL scans, source detection, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
-- `SchemaTools`: shared schema-document normalization, graph-node deduplication, JSON-LD rendering, and one-shot WordPress output injection while host plugins retain their schema builders.
+- `SchemaDetection`: reusable JSON-LD URL scans, source detection, semantic property validation, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
+- `SchemaTools`: shared schema-document normalization, typed HTTP(S) URL guards, fail-closed URL-property sanitization, graph-node deduplication, JSON-LD rendering, and one-shot WordPress output injection while host plugins retain their schema builders.
 - `SearchDisplay`: five reusable front-end WordPress search-form templates with shared markup, CSS, and accessible interactions.
 - `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, selected post types and sources, one-query-only SQL hooks, and guarded JetEngine search-template bridging.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `SystemEnvironment`: safe constants, INI, shell wrappers, size parsing, CPU/memory detection, and byte formatting.
 - `Taxonomies`: reusable taxonomy definitions, callback-backed registration, and shared reference UI for host-owned editorial taxonomies.
 - `WpAdminUiCleanup`: shared admin UI cleanup definitions, AJAX toggles, target-screen CSS/JS, postbox hide/collapse behavior, and footer filters.
-- `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, collapsible sections, color controls, font-family controls, and scoped CSS override editors and references.
+- `WpAdminComponents`: shared visual primitives such as cards, subcards, buttons, pills, tooltips, collapsible sections, selectable media gallery details, color controls, font-family controls, and scoped CSS override editors and references.
 - `WpAdminAjax`: WordPress admin-AJAX nonce, capability, request parsing, action registration, and handler guards.
 - `WpAdminTabs`: admin tab definitions, registry, host hook integration, and the automatic Hexa core documentation tab.
 - `WpConfigFile`: safe `wp-config.php` constant and `ini_set()` reads/writes with validation and rollback backup handling.
@@ -788,7 +794,7 @@ The sidebar is expanded by default, uses a 214px desktop rail, collapses to an i
 
 ## Schema Detection
 
-`Hexa\PluginCore\SchemaDetection\SchemaPageScanner` fetches public URLs and extracts JSON-LD schema blocks into structured payloads. `Hexa\PluginCore\SchemaDetection\SchemaScanRenderer` renders those payloads as a dark admin report with source labels, duplicate-type conflict warnings, invalid JSON rows, and FAQPage validation. Host plugins keep their own expectations and pass those expected rows into the renderer. See `docs/schema-detection.md`.
+`Hexa\PluginCore\SchemaDetection\SchemaPageScanner` fetches public URLs and extracts JSON-LD schema blocks into structured payloads. It also uses `SchemaGraph::validation_issues()` so malformed URL-property values fail even when the JSON itself is valid. `Hexa\PluginCore\SchemaDetection\SchemaScanRenderer` renders those payloads as a dark admin report with source labels, semantic property paths, duplicate-type conflict warnings, invalid JSON rows, and FAQPage validation. Host plugins keep their own expectations and pass those expected rows into the renderer. See `docs/schema-detection.md`.
 
 ```php
 echo ( new \Hexa\PluginCore\SchemaDetection\SchemaScanRenderer() )->renderReport( [ $scan ], [ "title" => "Schema Detection Results" ] );

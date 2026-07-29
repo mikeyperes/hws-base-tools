@@ -62,7 +62,7 @@ The package version is stored in the root `VERSION` file. Root `bootstrap.php` s
 | `src/Taxonomies/` | `Hexa\PluginCore\Taxonomies` | Reusable taxonomy definitions, callback-backed registration, and reference UI. |
 | `src/Typography/` | `Hexa\PluginCore\Typography` | Prefix-scoped typography-preservation setting keys, defaults, values, and preview-state classes. |
 | `src/WpAdminAjax/` | `Hexa\PluginCore\WpAdminAjax` | WordPress admin-AJAX nonce, capability, request parsing, action registration, and callback guards. |
-| `src/WpAdminComponents/` | `Hexa\PluginCore\WpAdminComponents` | Shared UI primitives: cards, subcards, buttons, pills, tooltips, collapsibles, color/font controls, and scoped CSS override references. |
+| `src/WpAdminComponents/` | `Hexa\PluginCore\WpAdminComponents` | Shared UI primitives: cards, subcards, buttons, pills, tooltips, collapsibles, selectable media gallery details, color/font controls, and scoped CSS override references. |
 | `src/WpAdminTabs/` | `Hexa\PluginCore\WpAdminTabs` | Admin tab definitions, registries, rendering contracts, and the automatic core tab. |
 | `src/WpConfigFile/` | `Hexa\PluginCore\WpConfigFile` | Safe wp-config.php constant and ini_set reads/writes with validation and rollback backup handling. |
 | `src/WpCronTasks/` | `Hexa\PluginCore\WpCronTasks` | WP-Cron interval registration, scheduling, unscheduling, event inspection, and health status payloads. |

@@ -424,6 +424,10 @@ function hws_get_red_flag_plugins() {
             'name'   => 'Duplicator',
             'reason' => 'Often left installed after migration - remove when done',
         ],
+        'jet-engine/jet-engine.php' => [
+            'name'   => 'JetEngine',
+            'reason' => 'Not recommended for Hexa sites - remove to avoid overlapping content-type, field, and query systems',
+        ],
     ];
 }
 

@@ -22,11 +22,11 @@ final class PrimaryEntityIntegration {
             [
                 'entity_option' => 'hws_primary_entity', 'site_type_option' => 'hws_site_type',
                 'site_types' => [
-                    'news_outlet' => 'News Outlet', 'personal_website' => 'Personal Website',
+                    'news_outlet' => 'News Outlet', 'podcast_website' => 'Podcast Website', 'personal_website' => 'Personal Website',
                     'company_website' => 'Company Website', 'ecommerce_website' => 'e-Commerce Website', 'other' => 'Other',
                 ],
                 'site_entity_types' => [
-                    'news_outlet' => 'publication', 'personal_website' => 'person',
+                    'news_outlet' => 'publication', 'podcast_website' => 'publication', 'personal_website' => 'person',
                     'company_website' => 'organization', 'ecommerce_website' => 'organization', 'other' => 'person',
                 ],
                 'allow_entity_type_selection' => false, 'allow_empty_site_type' => true,
@@ -71,7 +71,7 @@ final class PrimaryEntityIntegration {
         return [
             [ 'label' => 'SFPF Person Profile', 'description' => 'Consumes a Person website author and keeps its founder-to-Organization relationship inside SFPF.', 'active' => static fn( array $entity ): bool => 'person' === $entity['entity_type'] && self::plugin_active( 'sfpf-person-profile-integration' ) ],
             [ 'label' => 'SMC Organization Profile', 'description' => 'Consumes an Organization website author while Organization records remain owned by SMC.', 'active' => static fn( array $entity ): bool => 'organization' === $entity['entity_type'] && self::plugin_active( 'smc-organization-profile-integration' ) ],
-            [ 'label' => 'SMP Publication', 'description' => 'Consumes a News Outlet author as the publication identity.', 'active' => static fn( array $entity ): bool => 'publication' === $entity['entity_type'] && self::plugin_active( 'smp-publication-integration' ) ],
+            [ 'label' => 'SMP Publication', 'description' => 'Consumes a News Outlet or Podcast Website author as the publication identity.', 'active' => static fn( array $entity ): bool => 'publication' === $entity['entity_type'] && self::plugin_active( 'smp-publication-integration' ) ],
         ];
     }
 

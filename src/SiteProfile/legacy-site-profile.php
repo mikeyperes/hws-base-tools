@@ -9,6 +9,7 @@ const HWS_SITE_TYPE_OPTION = 'hws_site_type';
 function hws_site_type_options(): array {
     return [
         'news_outlet'       => 'News Outlet',
+        'podcast_website'   => 'Podcast Website',
         'personal_website'  => 'Personal Website',
         'company_website'   => 'Company Website',
         'ecommerce_website' => 'e-Commerce Website',

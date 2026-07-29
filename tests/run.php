@@ -274,10 +274,11 @@ expect_true(
     str_contains( $primary_entity_source, "'personal_website' => 'person'" )
     && str_contains( $primary_entity_source, "'company_website' => 'organization'" )
     && str_contains( $primary_entity_source, "'news_outlet' => 'publication'" )
+    && str_contains( $primary_entity_source, "'podcast_website' => 'publication'" )
     && str_contains( $primary_entity_source, "'allow_entity_type_selection' => false" )
     && str_contains( $primary_entity_source, "'allow_empty_site_type' => true" )
     && str_contains( $primary_entity_source, "'site_type_placeholder' => 'Select website type'" ),
-    'HWS derives a read-only semantic type from website type'
+    'HWS derives a read-only semantic type from website type, including Podcast Website'
 );
 $primary_entity_renderer = source( 'lib/hexa-wordpress-plugin-core/src/EntitySources/PrimaryEntityRenderer.php' );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
@@ -432,7 +433,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.4', 'HWS bundles Hexa WordPress Plugin Core 1.1.4' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.1.7', 'HWS bundles Hexa WordPress Plugin Core 1.1.7' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -478,8 +479,9 @@ expect_true(
 );
 expect_true(
     str_contains( $site_profile_source, "get_option( HWS_SITE_TYPE_OPTION, '' )" )
+    && str_contains( $site_profile_source, "'podcast_website'   => 'Podcast Website'" )
     && str_contains( $site_profile_source, "?? 'Not selected'" ),
-    'new websites keep their website type empty while existing saved classifications remain valid'
+    'new websites stay unclassified while Podcast Website and existing saved classifications remain valid'
 );
 expect_true(
     str_contains( $legacy_snippets_source, "FeatureValueResolver::text( \$snippet['info'] ?? '' )" ),
@@ -559,6 +561,7 @@ expect_true( ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'hws_enabl
 
 $profile_fields = source( 'src/AcfFields/user-profile-2025.php' );
 $profile_migration = source( 'src/AcfFields/UserProfile2025Migration.php' );
+$profile_gallery_details = source( 'src/AcfFields/UserProfileGalleryDetails.php' );
 expect_true( str_contains( $profile_fields, "'title' => 'User Profile Fields (2025)'" ), 'canonical 2025 user profile group has an explicit title' );
 expect_true( str_contains( $profile_fields, "'name' => 'wellfound'" ), 'canonical profile URLs retain Wellfound separately from The Org' );
 expect_true(
@@ -578,6 +581,19 @@ expect_true( str_contains( $profile_migration, 'acf_remove_local_field_group' ),
 expect_true( ! str_contains( $profile_fields, "'key' => 'group_590d64c31db0a'" ), 'deprecated Profile field definition is removed from HWS' );
 expect_true( ! file_exists( $root . '/src/AcfFields/legacy-migrations.php' ), 'unsafe legacy profile migration UI is removed' );
 expect_true( ! file_exists( $root . '/delete-snippet-acf-migration-structures.php' ), 'legacy profile migration loader is removed' );
+expect_true(
+    str_contains( $profile_gallery_details, "FIELD_KEY = 'field_hws_user_profile_2025_photos'" )
+    && str_contains( $profile_gallery_details, 'MediaGalleryDetailsRenderer::render' )
+    && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new UserProfileGalleryDetails()' ),
+    'HWS binds its canonical Photos field to the shared selectable Core gallery-details renderer'
+);
+
+$plugin_policy_source = source( 'src/PluginPolicy/legacy-plugin-checks.php' );
+expect_true(
+    str_contains( $plugin_policy_source, "'jet-engine/jet-engine.php'" )
+    && str_contains( $plugin_policy_source, "'name'   => 'JetEngine'" ),
+    'JetEngine is explicitly listed as a red-flag plugin'
+);
 
 $root_implementation_files = [];
 foreach ( glob( $root . '/*.php' ) ?: [] as $root_php_file ) {

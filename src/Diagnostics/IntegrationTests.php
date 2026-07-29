@@ -24,6 +24,7 @@ final class IntegrationTests {
                     'company_website' => 'organization',
                     'ecommerce_website' => 'organization',
                     'news_outlet' => 'publication',
+                    'podcast_website' => 'publication',
                 ];
                 $mapping_errors = [];
                 foreach ( $mapping as $site_type => $entity_type ) {
@@ -35,7 +36,7 @@ final class IntegrationTests {
                 return [
                     'passed' => $passed,
                     'summary' => $passed ? 'HWS exposes one optional WordPress author and derives semantic type from website type.' : 'HWS entity ownership or website-type mapping is invalid.',
-                    'expected' => 'One user source; Personal=Person, Company/e-Commerce=Organization, News=Publication',
+                    'expected' => 'One user source; Personal=Person, Company/e-Commerce=Organization, News/Podcast=Publication',
                     'actual' => count( $sources ) . ' source(s); ' . ( $mapping_errors ? implode( '; ', $mapping_errors ) : 'mapping valid' ),
                     'details' => [ 'sources' => array_keys( $sources ) ],
                 ];

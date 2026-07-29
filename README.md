@@ -6,7 +6,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 HWS Base Tools is the canonical owner of:
 
-- Website classification: News Outlet, Personal Website, Company Website, e-Commerce Website, or Other.
+- Website classification: News Outlet, Podcast Website, Personal Website, Company Website, e-Commerce Website, or Other.
 - The optional primary entity selection consumed by profile and publication plugins.
 - Shared custom post types: `organization`, `team-member`, `testimonial`, and `services`.
 - Brand assets, common shortcodes, site checks, maintenance tools, and WordPress admin cleanup.
@@ -96,7 +96,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.1.4 |
+| Hexa WP Core bundle | 1.1.7 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -115,6 +115,13 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 11.2.9
+
+- Added Podcast Website to the canonical website types and mapped it to the publication entity contract.
+- Added JetEngine to the explicit red-flag plugin policy.
+- Added a selectable Core-powered Details panel below the HWS Photos gallery with full and generated-size URLs, new-tab links, and dynamic clipboard buttons.
+- Updated the bundled Hexa WP Core package to 1.1.7.
 
 ### 11.2.8
 

@@ -12,6 +12,8 @@ Composer package: hexa/plugin-core
 Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
+
+Current release: 1.1.6
 ```
 
 Do not rename these.
@@ -84,6 +86,8 @@ Use `CoreUi::collapsible()` for expandable cards. The shared component owns the 
 Use `CoreUi::toggle()` for checkbox-style toggles. Core clips the hidden checkbox input to a 1px focusable control so the input never creates horizontal page overflow.
 
 Use `CoreUi::detail_card()` for nested expandable/collapsible subcards inside a parent tool section. It is meant for descriptions, rule explanations, scan-location lists, and other supporting details that should not dominate the page on load.
+
+Use `MediaGalleryDetailsRenderer::render()` when a host-owned WordPress or ACF image gallery needs a collapsed details panel. Core lists the full URL and every generated image size, provides selectable media rows, opens URL links in a new tab, and uses `DynamicButton` for per-URL clipboard feedback. The host owns field registration and passes the saved gallery value into the renderer.
 
 Use CoreUi::collection_filter() for a client-side search control above a repeated card collection. Give every top-level item a dedicated class through the CoreUi::collapsible() class argument; do not target every nested Core section.
 
@@ -869,7 +873,9 @@ Namespace: Hexa\PluginCore\SchemaTools
 
 Classes: SchemaGraph, SchemaDocumentRenderer, SchemaInjector, SchemaDashboardRenderer.
 
-Host plugins build their own schema objects and hand the result to Core for graph cleanup, duplicate-node merging, safe JSON-LD rendering, and one-shot hook output. Do not move domain-specific Person, Organization, Publication, Profile, or Article mappings into Core. See `docs/schema-tools.md` and test with `tests/schema-document.php`.
+`SchemaGraph::web_url()` rejects wrong-shaped field values and returns only HTTP(S) URLs. Hosts should continue to later field sources when it returns an empty string. `SchemaGraph::sanitize_urls()` is the final fail-closed guard for URL-range properties, while `SchemaGraph::validation_issues()` exposes semantic property paths for tests and reports. `SchemaGraph::standalone_nodes()` converts reference-only objects to identifier URL values while preserving detached typed summaries for author, publisher, copyright-holder, and image properties, allowing every top-level graph node to remain independently detectable. Valid URL lists, `Role` values for `url`, and structured policy nodes are preserved.
+
+Host plugins build their own schema objects and hand the result to Core for graph cleanup, duplicate-node merging, safe JSON-LD rendering, and one-shot hook output. Do not move domain-specific Person, Organization, Publication, Profile, or Article mappings into Core. See `docs/schema-tools.md` and `docs/schema-standalone-nodes.md`; test with `tests/schema-document.php` and `tests/schema-standalone-nodes.php`.
 
 ## Taxonomies
 
@@ -1503,6 +1509,8 @@ Primary classes:
 SchemaPageScanner
 SchemaScanRenderer
 ```
+
+The scanner reports syntactically invalid JSON separately from semantic property failures. Each semantic issue includes its JSON-LD block number and property path, preventing nonempty arrays or unrelated settings groups from passing URL checks.
 
 ```php
 use Hexa\PluginCore\SchemaDetection\SchemaPageScanner;
