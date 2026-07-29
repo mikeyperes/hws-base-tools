@@ -219,8 +219,7 @@ final class MediaGalleryDetailsRenderer {
         (function(){
             if(window.hexaCoreMediaGalleryDetailsReady)return;
             window.hexaCoreMediaGalleryDetailsReady=true;
-            function copyText(value){
-                if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(value);
+            function legacyCopy(value){
                 return new Promise(function(resolve,reject){
                     var input=document.createElement('textarea');
                     input.value=value;input.setAttribute('readonly','');input.style.position='fixed';input.style.opacity='0';
@@ -228,6 +227,12 @@ final class MediaGalleryDetailsRenderer {
                     try{document.execCommand('copy')?resolve():reject(new Error('Copy command failed.'))}catch(error){reject(error)}
                     document.body.removeChild(input);
                 });
+            }
+            function copyText(value){
+                if(navigator.clipboard&&window.isSecureContext){
+                    return navigator.clipboard.writeText(value).catch(function(){return legacyCopy(value)});
+                }
+                return legacyCopy(value);
             }
             function updateSelection(root){
                 if(!root)return;

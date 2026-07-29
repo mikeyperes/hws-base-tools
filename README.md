@@ -96,7 +96,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.1.7 |
+| Hexa WP Core bundle | 1.1.8 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -116,12 +116,16 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 11.2.10
+
+- Updated the Core gallery clipboard action to fall back cleanly when a browser exposes but rejects the modern Clipboard API.
+
 ### 11.2.9
 
 - Added Podcast Website to the canonical website types and mapped it to the publication entity contract.
 - Added JetEngine to the explicit red-flag plugin policy.
 - Added a selectable Core-powered Details panel below the HWS Photos gallery with full and generated-size URLs, new-tab links, and dynamic clipboard buttons.
-- Updated the bundled Hexa WP Core package to 1.1.7.
+- Updated the bundled Hexa WP Core package to 1.1.8.
 
 ### 11.2.8
 

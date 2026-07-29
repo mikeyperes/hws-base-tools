@@ -85,6 +85,8 @@ Version 1.1.6 adds reusable standalone schema-node normalization so host plugins
 
 Version 1.1.7 adds `MediaGalleryDetailsRenderer`, a host-neutral collapsed image-details panel with selectable attachments, full and generated-size URLs, new-tab links, and shared dynamic clipboard buttons.
 
+Version 1.1.8 makes media URL copying fall back to the synchronous browser copy path when an exposed Clipboard API rejects the write.
+
 ## Schema Tools
 
 The 1.x line includes reusable schema graph helpers and a generic schema dashboard renderer. Host plugins can build their own schema objects, normalize independently detectable graph nodes with `SchemaGraph::standalone_nodes()`, expose debug JSON, show ideal-vs-actual graph examples, provide validator links, render collapsed shortcode cards, and pass plugin-specific schema action panels through HexaWP Core instead of duplicating dashboard UI.

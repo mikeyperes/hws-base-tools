@@ -95,7 +95,8 @@ $checks = [
     'Media is selectable and URLs open in a new tab.' => str_contains( $html, 'data-hpc-gallery-select' )
         && str_contains( $html, 'target="_blank" rel="noopener noreferrer"' ),
     'Clipboard control is a Hexa Core dynamic button.' => str_contains( $html, 'data-hpc-dynamic-button' )
-        && str_contains( $html, 'data-working-label="Copy to clipboard"' ),
+        && str_contains( $html, 'data-working-label="Copy to clipboard"' )
+        && str_contains( $html, 'catch(function(){return legacyCopy(value)})' ),
 ];
 
 foreach ( $checks as $message => $passed ) {

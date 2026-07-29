@@ -104,7 +104,8 @@ $checks = [
     'Every URL uses the shared dynamic clipboard button.' => str_contains( $html, 'data-hpc-dynamic-button' )
         && str_contains( $html, 'data-working-label="Copy to clipboard"' )
         && str_contains( $html, 'data-hpc-gallery-copy="https://example.test/uploads/photo-101.jpg"' )
-        && str_contains( $html, "HexaWpCoreDynamicButton" ),
+        && str_contains( $html, "HexaWpCoreDynamicButton" )
+        && str_contains( $html, 'catch(function(){return legacyCopy(value)})' ),
     'Images can be selected individually or all at once.' => str_contains( $html, 'value="101" data-hpc-gallery-select' )
         && str_contains( $html, 'value="202" data-hpc-gallery-select' )
         && str_contains( $html, 'data-hpc-gallery-select-all' )
@@ -126,4 +127,4 @@ foreach ( [ 'hws_', 'smpi-', 'blockeditorial', 'herforward' ] as $host_term ) {
     }
 }
 
-echo "PASS: Media gallery details are selectable, size-complete, copyable, and host-neutral.\n";
+echo "PASS: Media gallery details are selectable, size-complete, copyable with fallback, and host-neutral.\n";
