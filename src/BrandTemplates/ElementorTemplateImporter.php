@@ -9,6 +9,7 @@ use HWS\BaseTools\PluginRuntime\PluginMetadata;
 defined( 'ABSPATH' ) || exit;
 
 final class ElementorTemplateImporter {
+    private const TEMPLATE_SCAN_BATCH_SIZE = 100;
     public const META_CONTEXT = '_hws_brand_template_context';
     public const META_CONTENT_HASH = '_hws_brand_template_content_hash';
     public const META_VERSION = '_hws_brand_template_version';
@@ -312,31 +313,52 @@ final class ElementorTemplateImporter {
         }
 
         $conflicts = [];
-        $ids = get_posts(
-            [
-                'post_type'        => 'elementor_library',
-                'post_status'      => 'publish',
-                'posts_per_page'   => -1,
-                'fields'           => 'ids',
-                'suppress_filters' => true,
-            ]
-        );
-        foreach ( $ids as $id ) {
-            $id = (int) $id;
-            if ( $id === $ignore_post_id ) {
-                continue;
+        foreach ( self::published_template_id_batches() as $ids ) {
+            foreach ( $ids as $id ) {
+                $id = (int) $id;
+                if ( $id === $ignore_post_id ) {
+                    continue;
+                }
+                $conditions = get_post_meta( $id, '_elementor_conditions', true );
+                if ( ! is_array( $conditions ) || ! in_array( (string) $definition['condition'], $conditions, true ) ) {
+                    continue;
+                }
+                $conflicts[] = [
+                    'template_id'    => $id,
+                    'template_title' => get_the_title( $id ),
+                    'edit_url'       => self::editor_url( $id ),
+                ];
             }
-            $conditions = get_post_meta( $id, '_elementor_conditions', true );
-            if ( ! is_array( $conditions ) || ! in_array( (string) $definition['condition'], $conditions, true ) ) {
-                continue;
-            }
-            $conflicts[] = [
-                'template_id'    => $id,
-                'template_title' => get_the_title( $id ),
-                'edit_url'       => self::editor_url( $id ),
-            ];
         }
         return $conflicts;
+    }
+
+    /** @return \Generator<int,list<int>> */
+    private static function published_template_id_batches(): \Generator {
+        $page = 1;
+        do {
+            $ids = get_posts(
+                [
+                    'post_type'              => 'elementor_library',
+                    'post_status'            => 'publish',
+                    'posts_per_page'         => self::TEMPLATE_SCAN_BATCH_SIZE,
+                    'paged'                  => $page,
+                    'orderby'                => 'ID',
+                    'order'                  => 'ASC',
+                    'fields'                 => 'ids',
+                    'no_found_rows'          => true,
+                    'suppress_filters'       => true,
+                    'update_post_meta_cache' => false,
+                    'update_post_term_cache' => false,
+                ]
+            );
+            if ( ! $ids ) {
+                return;
+            }
+
+            yield array_map( 'intval', $ids );
+            ++$page;
+        } while ( self::TEMPLATE_SCAN_BATCH_SIZE === count( $ids ) );
     }
 
     public static function has_active_elementor_document( string $context ): bool {

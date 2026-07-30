@@ -59,6 +59,10 @@ $styles = TeamMemberDirectory::styles();
 team_expect( str_contains( $styles, '@media(max-width:600px)' ), 'team templates include a mobile breakpoint' );
 team_expect( str_contains( $styles, 'object-fit:cover' ), 'team images preserve their aspect ratio without skewing' );
 team_expect( TeamMemberDirectory::SHORTCODE === 'hws_team_members', 'shortcode is owned and prefixed by HWS' );
+team_expect( 24 === TeamMemberDirectory::normalize_limit( -1 ), 'unlimited team-member requests fall back to the bounded default' );
+team_expect( 24 === TeamMemberDirectory::normalize_limit( 'invalid' ), 'invalid team-member limits fall back to the bounded default' );
+team_expect( 100 === TeamMemberDirectory::normalize_limit( 500 ), 'oversized team-member limits are capped' );
+team_expect( 12 === TeamMemberDirectory::normalize_limit( '12' ), 'smaller explicit team-member limits are preserved' );
 
 if ( $failures ) {
     exit( 1 );

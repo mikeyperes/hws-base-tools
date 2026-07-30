@@ -58,6 +58,7 @@ src/SiteProfile/         HWS website-type policy
 src/SiteStructure/       HWS page and menu policy
 src/UiCleanup/           HWS wp-admin cleanup definitions and adapters
 src/Security/            HWS secret storage and remote-action policy
+src/QueryCompatibility/  guarded third-party query-hook adapters
 src/LegacyCompatibility/ temporary procedural adapters only
 ```
 
@@ -132,6 +133,11 @@ Cron task mechanics               Hexa\PluginCore\WpCronTasks
 
 HWS callbacks supply labels, option keys, capabilities, nonces, selectors,
 plugin lists, and business rules through Core configuration objects.
+
+Third-party query-hook compatibility follows
+[`docs/query-hook-compatibility.md`](query-hook-compatibility.md). Host adapters
+must use selected-Core `QuerySafety\QueryEligibility`; vendor code is never
+edited in place.
 
 ## Generic-Code Decision Rule
 

@@ -6,12 +6,54 @@ namespace HWS\BaseTools\Diagnostics;
 
 use Hexa\PluginCore\IntegrationTests\TestRegistry;
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
+use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
 use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 
 defined( 'ABSPATH' ) || exit;
 
 final class IntegrationTests {
     public static function register( TestRegistry $registry ): void {
+        $registry->register(
+            'hws.query-hook-compatibility',
+            'Third-party query hooks are narrowly guarded',
+            static function(): array {
+                $audit = QueryHookCompatibility::audit();
+                $status = $audit['status'];
+                $callbacks = $audit['callbacks'];
+                $ptt_state = (string) ( $status['post_type_transfer']['state'] ?? 'missing' );
+                $echo_state = (string) ( $status['echo_rss']['state'] ?? 'missing' );
+                $elementor_state = (string) ( $status['elementor_search']['state'] ?? 'missing' );
+
+                $ptt_counts_valid = 'guarded' === $ptt_state
+                    ? 0 === $callbacks['ptt_parse_vendor_all']
+                        && 1 === $callbacks['ptt_parse_guard']
+                        && 0 === $callbacks['ptt_query_vendor_all']
+                        && 1 === $callbacks['ptt_query_guard']
+                        && 1 === $callbacks['ptt_widget_filter']
+                        && 1 === $callbacks['ptt_query_loop_filter']
+                    : 'inactive' === $ptt_state
+                        && 0 === $callbacks['ptt_parse_vendor_all']
+                        && 0 === $callbacks['ptt_parse_guard']
+                        && 0 === $callbacks['ptt_query_vendor_all']
+                        && 0 === $callbacks['ptt_query_guard'];
+                $echo_counts_valid = 'guarded' === $echo_state
+                    ? 0 === $callbacks['echo_vendor_closure'] && 1 === $callbacks['echo_taxonomy_guard']
+                    : 'inactive' === $echo_state
+                        && 0 === $callbacks['echo_vendor_closure'] && 0 === $callbacks['echo_taxonomy_guard'];
+                $passed = $ptt_counts_valid && $echo_counts_valid
+                    && 'capped' === $elementor_state && 1 === $callbacks['elementor_search_cap'];
+
+                return [
+                    'passed'   => $passed,
+                    'summary'  => $passed ? 'Query compatibility guards and callback counts are exact.' : 'A query-hook vendor signature, state, or callback count requires review.',
+                    'expected' => 'PTT guarded/inactive; Echo guarded/inactive; Elementor cap exactly once',
+                    'actual'   => 'PTT=' . $ptt_state . '; Echo=' . $echo_state . '; Elementor=' . $elementor_state,
+                    'details'  => [ 'status' => $status, 'callbacks' => $callbacks ],
+                ];
+            },
+            [ 'group' => 'HWS Base Tools', 'host' => 'hws-base-tools', 'description' => 'Detects vendor source drift, unsafe broad callbacks, missing guards, and duplicate query hooks.' ]
+        );
+
         $registry->register(
             'hws.primary-entity-contract',
             'HWS primary entity ownership is author-only',

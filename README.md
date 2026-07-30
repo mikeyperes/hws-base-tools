@@ -96,7 +96,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.1.9 |
+| Hexa WP Core bundle | 1.2.0 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -115,6 +115,14 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 12.1.0
+
+- Added fail-closed, source-validated query-hook adapters for Post Type Transfer 1.6 and Echo RSS Feed Post Generator 5.5.1.2 without editing vendor plugins.
+- Capped validated Elementor Pro enhanced-search main queries at a filterable default of 100 while preserving ordinary, smaller, secondary, suppressed, and background queries.
+- Skipped Post Type Transfer meta joins when no visibility rules exist, with a bounded cached presence check and complete metadata invalidation.
+- Removed HWS-owned unlimited query defaults and changed complete administrative scans to fixed-size batches.
+- Updated the bundled Hexa WP Core package to 1.2.0 and its shared frontend query eligibility contract.
 
 ### 12.0.0
 

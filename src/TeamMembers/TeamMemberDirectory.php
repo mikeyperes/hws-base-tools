@@ -10,6 +10,8 @@ final class TeamMemberDirectory {
     public const SHORTCODE = 'hws_team_members';
     public const POST_TYPE = 'team-member';
     public const DEFAULT_STYLE = 'portrait_grid';
+    public const DEFAULT_LIMIT = 24;
+    public const MAX_LIMIT = 100;
 
     public function register(): void {
         add_shortcode( self::SHORTCODE, [ $this, 'render_shortcode' ] );
@@ -34,7 +36,7 @@ final class TeamMemberDirectory {
                 'style'         => (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ),
                 'featured_only' => '0',
                 'category'      => '',
-                'limit'         => '-1',
+                'limit'         => (string) self::DEFAULT_LIMIT,
                 'columns'       => '3',
                 'show_excerpt'  => '1',
                 'link_profiles' => '1',
@@ -46,10 +48,7 @@ final class TeamMemberDirectory {
         );
 
         $style = self::normalize_style( (string) $atts['style'] );
-        $limit = (int) $atts['limit'];
-        if ( -1 !== $limit ) {
-            $limit = max( 1, min( 100, $limit ) );
-        }
+        $limit = self::normalize_limit( $atts['limit'] );
 
         $order = 'DESC' === strtoupper( (string) $atts['order'] ) ? 'DESC' : 'ASC';
         $orderby = sanitize_key( (string) $atts['orderby'] );
@@ -135,6 +134,16 @@ final class TeamMemberDirectory {
         return array_key_exists( $style, self::template_options() ) ? $style : self::DEFAULT_STYLE;
     }
 
+    public static function normalize_limit( mixed $limit ): int {
+        if ( ! is_int( $limit ) && ! ( is_string( $limit ) && preg_match( '/^-?[0-9]+$/D', $limit ) ) ) {
+            return self::DEFAULT_LIMIT;
+        }
+
+        $limit = (int) $limit;
+
+        return $limit > 0 ? min( self::MAX_LIMIT, $limit ) : self::DEFAULT_LIMIT;
+    }
+
     public static function selected_style(): string {
         return self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) );
     }
@@ -172,18 +181,21 @@ final class TeamMemberDirectory {
         $featured = 0;
 
         if ( $post_type_active ) {
-            $featured_ids = get_posts(
+            $featured_query = new \WP_Query(
                 [
-                    'post_type'      => self::POST_TYPE,
-                    'post_status'    => 'publish',
-                    'posts_per_page' => -1,
-                    'fields'         => 'ids',
-                    'no_found_rows'  => true,
-                    'meta_key'       => 'featured',
-                    'meta_value'     => '1',
+                    'post_type'              => self::POST_TYPE,
+                    'post_status'            => 'publish',
+                    'posts_per_page'         => 1,
+                    'fields'                 => 'ids',
+                    'no_found_rows'          => false,
+                    'suppress_filters'       => true,
+                    'update_post_meta_cache' => false,
+                    'update_post_term_cache' => false,
+                    'meta_key'               => 'featured',
+                    'meta_value'             => '1',
                 ]
             );
-            $featured = count( $featured_ids );
+            $featured = max( 0, (int) $featured_query->found_posts );
         }
 
         return [

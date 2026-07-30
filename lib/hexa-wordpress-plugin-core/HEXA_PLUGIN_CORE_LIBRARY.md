@@ -13,7 +13,7 @@ Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
 
-Current release: 1.1.6
+Current release: 1.2.0
 ```
 
 Do not rename these.
@@ -46,6 +46,7 @@ src/ObjectCache/        Hexa\PluginCore\ObjectCache
 src/PluginChecks/       Hexa\PluginCore\PluginChecks
 src/PluginProvisioning/ Hexa\PluginCore\PluginProvisioning
 src/PluginUpdates/      Hexa\PluginCore\PluginUpdates
+src/QuerySafety/        Hexa\PluginCore\QuerySafety
 src/SnippetRegistry/    Hexa\PluginCore\SnippetRegistry
 src/ShortcodeRegistry/  Hexa\PluginCore\ShortcodeRegistry
 src/SiteStructure/      Hexa\PluginCore\SiteStructure
@@ -63,6 +64,31 @@ src/WpAdminComponents/  Hexa\PluginCore\WpAdminComponents
 src/WpAdminTabs/        Hexa\PluginCore\WpAdminTabs
 src/WpConfigFile/       Hexa\PluginCore\WpConfigFile
 src/WpCronTasks/        Hexa\PluginCore\WpCronTasks
+```
+
+## Query Safety
+
+`CoreBootstrap::boot()` automatically registers `QuerySafety\StaticFrontPageQueryGuard`. It captures the exact configured static front-page main query at the earliest numeric `parse_query` priority, before any `pre_get_posts` callback can mutate it, then repairs later `page_id`, `p`, or `post_type` mutations at the latest numeric `pre_get_posts` priority. Repairs emit `hexa_plugin_core_static_front_page_query_repaired` with the query and changed variables. The compatibility filter `hexa_plugin_core_should_protect_static_front_page_query` can disable repair for an exact query; same-priority callbacks registered later can still follow the guard.
+
+The final repair is defense in depth. Every host callback that pairs query mutation with a SQL filter must first call `QueryEligibility::allows_main_filtered_frontend_query()` or `allows_main_or_explicit_filtered_frontend_query()`. Any callback that can mutate a home/front-page query must then call `StaticFrontPageQueryGuard::is_static_front_page_main_query()` before reading settings, resolving providers, setting query variables, or attaching SQL filters. Secondary loops require a private host marker with strict allowed values; global conditional functions never authorize a secondary query.
+
+```php
+use Hexa\PluginCore\QuerySafety\QueryEligibility;
+use Hexa\PluginCore\QuerySafety\StaticFrontPageQueryGuard;
+
+public function prepare_query( \WP_Query $query ): void {
+    if ( ! QueryEligibility::allows_main_or_explicit_filtered_frontend_query(
+        $query,
+        'example_query_context',
+        [ 'home', 'author' ]
+    )
+        || StaticFrontPageQueryGuard::is_static_front_page_main_query( $query )
+    ) {
+        return;
+    }
+
+    // Continue with the host's exact context and marker checks.
+}
 ```
 
 ## Public Brand And Form Primitives
@@ -819,7 +845,7 @@ Supported behavior:
 - public post-type selection, result count from 0 to 100, and relevance/newest/oldest/title ordering
 - `shortcode` scope through a hidden marker, or deliberate `all` public-search scope
 
-Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, unmarked nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state, binds `posts_search` to one exact `WP_Query` object, and removes the temporary filter immediately after that object reaches it. `JetEngineSearchAdapter` can explicitly mark a posts grid created by a search-results template; archive grids and unrelated requests stay untouched. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
+Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, unmarked nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state and records weak exact-object state consumed by one idempotently registered `posts_search` dispatcher. Duplicate preparation replaces state instead of stacking callbacks, and abandoned queries are not retained. `JetEngineSearchAdapter` can explicitly mark a posts grid created by a search-results template; archive grids and unrelated requests stay untouched. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
 
 Do not copy this into host `pre_get_posts` callbacks. Do not use it for suggestions: `SmartSearch` remains the separate AJAX typeahead/content-picker system. Full protocol: `docs/search-query.md`.
 

@@ -49,6 +49,7 @@ The package version is stored in the root `VERSION` file. Root `bootstrap.php` s
 | `src/ObjectCache/` | `Hexa\PluginCore\ObjectCache` | Object-cache provider status and activation adapters. |
 | `src/PluginProvisioning/` | `Hexa\PluginCore\PluginProvisioning` | Plugin discovery, status checks, WordPress.org installs, GitHub ZIP installs, folder normalization, and activation. |
 | `src/PluginUpdates/` | `Hexa\PluginCore\PluginUpdates` | Host plugin GitHub version checks, update transients, zip downloads, and updater panels. |
+| `src/QuerySafety/` | `Hexa\PluginCore\QuerySafety` | Filter/request eligibility checks plus exact static-front-page invariant capture and repair. |
 | `src/SnippetRegistry/` | `Hexa\PluginCore\SnippetRegistry` | Snippet definitions, option toggles, test rules, related snippet internals, related shortcodes, basic README rendering, and AJAX handlers. |
 | `src/ShortcodeRegistry/` | `Hexa\PluginCore\ShortcodeRegistry` | Shortcode definitions, registries, dashboard display rows, examples, live output, and testing. |
 | `src/SiteStructure/` | `Hexa\PluginCore\SiteStructure` | Critical page blueprints, callback-backed assigned page storage, starter templates, page details, WordPress navigation menu creation, custom menu items, add-all-pages actions, menu structure attachment, and page-to-menu-item tools. |

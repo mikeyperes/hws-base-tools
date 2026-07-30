@@ -1,5 +1,6 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\QuerySafety\QueryEligibility;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,7 +40,10 @@ function enable_syndtd_feed_limit(): void {
 }
 
 function hws_force_syndtd_feed_items( $query ): void {
-    if ( is_admin() || ! $query instanceof \WP_Query || ! $query->is_main_query() || ! $query->is_feed() ) {
+    if ( ! $query instanceof \WP_Query
+        || ! QueryEligibility::allows_main_filtered_frontend_query( $query )
+        || ! $query->is_feed()
+    ) {
         return;
     }
 

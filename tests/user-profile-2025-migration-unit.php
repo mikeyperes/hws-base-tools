@@ -47,6 +47,7 @@ $write_log = [];
 $hooks = [];
 $removed_groups = [];
 $options = [];
+$get_users_calls = [];
 
 function add_action( string $hook, callable $callback, int $priority = 10 ): void {
     $GLOBALS['hooks'][] = [ $hook, $callback, $priority ];
@@ -57,6 +58,7 @@ function get_option( string $key, mixed $default = false ): mixed {
 }
 
 function get_users( array $args = [] ): array {
+    $GLOBALS['get_users_calls'][] = $args;
     return $GLOBALS['users'];
 }
 
@@ -188,6 +190,15 @@ $expect( 'field_hws_user_profile_2025_profile_type' === ( $migrated['_what_best_
 $expect( ! isset( $migrated['facebook_url'], $migrated['job_title'], $migrated['settings'], $migrated['socials'] ), 'migrated deprecated metadata is removed' );
 $expect( '101' === ( $migrated['profile_photo'] ?? '' ), 'primary profile photo remains available under its compatibility field name' );
 $expect( isset( $migrated['location'], $migrated['additional'], $migrated['photos'] ), 'canonical same-name content is retained' );
+$batch_report = UserProfile2025Migration::migrate_all( true, false );
+$expect(
+    2 === $batch_report['users_scanned']
+        && 100 === ( $get_users_calls[0]['number'] ?? 0 )
+        && 0 === ( $get_users_calls[0]['offset'] ?? -1 )
+        && 'ID' === ( $get_users_calls[0]['orderby'] ?? '' )
+        && false === ( $get_users_calls[0]['count_total'] ?? null ),
+    'full profile migration scans every user through a bounded deterministic batch'
+);
 
 if ( $failures ) {
     exit( 1 );

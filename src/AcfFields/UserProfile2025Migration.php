@@ -8,6 +8,7 @@ namespace HWS\BaseTools\AcfFields;
  * Consolidates deprecated user-profile ACF data into the HWS 2025 fields.
  */
 final class UserProfile2025Migration {
+    private const USER_BATCH_SIZE = 100;
     public const PROFILE_OPTION = 'register_user_custom_fields_2025';
     public const ADDITIONAL_OPTION = 'register_user_custom_fields_additional_2025';
 
@@ -131,27 +132,41 @@ final class UserProfile2025Migration {
             return $summary;
         }
 
-        foreach ( get_users( [ 'fields' => 'ID' ] ) as $user_id ) {
-            $report = self::migrate_user( (int) $user_id, $dry_run, $delete_legacy );
-            ++$summary['users_scanned'];
+        $offset = 0;
+        do {
+            $user_ids = get_users(
+                [
+                    'fields'      => 'ID',
+                    'number'      => self::USER_BATCH_SIZE,
+                    'offset'      => $offset,
+                    'orderby'     => 'ID',
+                    'order'       => 'ASC',
+                    'count_total' => false,
+                ]
+            );
+            foreach ( $user_ids as $user_id ) {
+                $report = self::migrate_user( (int) $user_id, $dry_run, $delete_legacy );
+                ++$summary['users_scanned'];
 
-            if ( $report['changed'] ) {
-                ++$summary['users_changed'];
-            }
+                if ( $report['changed'] ) {
+                    ++$summary['users_changed'];
+                }
 
-            foreach ( [ 'urls_written', 'subtitles_written', 'direct_fields_written', 'legacy_keys_deleted' ] as $key ) {
-                $summary[ $key ] += $report[ $key ];
-            }
+                foreach ( [ 'urls_written', 'subtitles_written', 'direct_fields_written', 'legacy_keys_deleted' ] as $key ) {
+                    $summary[ $key ] += $report[ $key ];
+                }
 
-            foreach ( $report['conflicts'] as $conflict ) {
-                $conflict['user_id'] = (int) $user_id;
-                $summary['conflicts'][] = $conflict;
-            }
+                foreach ( $report['conflicts'] as $conflict ) {
+                    $conflict['user_id'] = (int) $user_id;
+                    $summary['conflicts'][] = $conflict;
+                }
 
-            foreach ( $report['errors'] as $error ) {
-                $summary['errors'][] = 'User ' . (int) $user_id . ': ' . $error;
+                foreach ( $report['errors'] as $error ) {
+                    $summary['errors'][] = 'User ' . (int) $user_id . ': ' . $error;
+                }
             }
-        }
+            $offset += count( $user_ids );
+        } while ( self::USER_BATCH_SIZE === count( $user_ids ) );
 
         return $summary;
     }
