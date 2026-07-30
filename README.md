@@ -116,6 +116,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 12.1.1
+
+- Treat duplicate Post Type Transfer callbacks at unexpected hook priorities as critical drift and quarantine every broad query callback.
+
 ### 12.1.0
 
 - Added fail-closed, source-validated query-hook adapters for Post Type Transfer 1.6 and Echo RSS Feed Post Generator 5.5.1.2 without editing vendor plugins.

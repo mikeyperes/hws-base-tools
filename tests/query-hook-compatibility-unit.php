@@ -295,7 +295,8 @@ hws_test_expect(
     'PTT main-query callbacks are replaced one-for-one'
 );
 hws_test_expect(
-    1 === $counts['ptt_widget_filter'] && 1 === $counts['ptt_query_loop_filter'],
+    1 === $counts['ptt_widget_filter'] && 1 === $counts['ptt_widget_filter_all']
+        && 1 === $counts['ptt_query_loop_filter'] && 1 === $counts['ptt_query_loop_filter_all'],
     'PTT dedicated secondary-query filters remain exactly once'
 );
 hws_test_expect(
@@ -438,6 +439,34 @@ hws_test_expect(
     'PTT quarantine leaves dedicated secondary filters untouched'
 );
 hws_test_expect( 'guarded' === $duplicate_audit['status']['echo_rss']['state'], 'Echo still reconciles when PTT fails closed' );
+
+foreach ( [
+    'parse_query'  => [ 'fix_queried_object', 11 ],
+    'pre_get_posts' => [ 'filter_queries', 100 ],
+] as $duplicate_hook => [ $duplicate_method, $duplicate_priority ] ) {
+    hws_test_reset_runtime();
+    [ $off_priority_ptt ] = hws_test_register_vendor_hooks();
+    add_action( $duplicate_hook, [ $off_priority_ptt, $duplicate_method ], $duplicate_priority );
+    ( new QueryHookCompatibility() )->register();
+    do_action( 'wp_loaded' );
+    $off_priority_audit = QueryHookCompatibility::audit();
+    hws_test_expect(
+        'quarantined' === $off_priority_audit['status']['post_type_transfer']['state'],
+        "off-priority {$duplicate_hook} PTT duplicate is critically quarantined"
+    );
+    hws_test_expect(
+        0 === $off_priority_audit['callbacks']['ptt_parse_vendor_all']
+            && 0 === $off_priority_audit['callbacks']['ptt_query_vendor_all']
+            && 0 === $off_priority_audit['callbacks']['ptt_parse_guard']
+            && 0 === $off_priority_audit['callbacks']['ptt_query_guard'],
+        "off-priority {$duplicate_hook} drift leaves no broad PTT callback active"
+    );
+    hws_test_expect(
+        1 === $off_priority_audit['callbacks']['ptt_widget_filter_all']
+            && 1 === $off_priority_audit['callbacks']['ptt_query_loop_filter_all'],
+        "off-priority {$duplicate_hook} quarantine preserves dedicated PTT filters"
+    );
+}
 
 $eligibility_source = (string) file_get_contents( dirname( __DIR__ ) . '/lib/hexa-wordpress-plugin-core/src/QuerySafety/QueryEligibility.php' );
 hws_test_expect(

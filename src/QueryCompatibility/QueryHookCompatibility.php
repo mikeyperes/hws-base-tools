@@ -132,7 +132,9 @@ final class QueryHookCompatibility implements ModuleInterface {
                 'ptt_query_vendor_all'  => self::count_object_callback( 'pre_get_posts', self::PTT_CLASS, 'filter_queries', null ),
                 'ptt_query_guard'       => self::count_callback( 'pre_get_posts', [ self::class, 'guarded_ptt_filter_queries' ], 99 ),
                 'ptt_widget_filter'     => self::count_object_callback( 'widget_posts_args', self::PTT_CLASS, 'filter_recent_posts_widget', 10 ),
+                'ptt_widget_filter_all' => self::count_object_callback( 'widget_posts_args', self::PTT_CLASS, 'filter_recent_posts_widget', null ),
                 'ptt_query_loop_filter' => self::count_object_callback( 'query_loop_block_query_vars', self::PTT_CLASS, 'filter_query_loop_block', 10 ),
+                'ptt_query_loop_filter_all' => self::count_object_callback( 'query_loop_block_query_vars', self::PTT_CLASS, 'filter_query_loop_block', null ),
                 'echo_vendor_closure'   => count( self::echo_source_callbacks() ),
                 'echo_taxonomy_guard'   => self::count_callback( 'pre_get_posts', [ self::class, 'guard_echo_source_taxonomy' ], 10 ),
                 'elementor_search_cap'  => self::count_callback( 'pre_get_posts', [ self::class, 'cap_elementor_search_results' ], self::ELEMENTOR_SEARCH_CAP_PRIORITY ),
@@ -152,14 +154,20 @@ final class QueryHookCompatibility implements ModuleInterface {
         }
 
         $parse_callbacks = self::find_object_callbacks( 'parse_query', self::PTT_CLASS, 'fix_queried_object', 10 );
+        $all_parse_callbacks = self::find_object_callbacks( 'parse_query', self::PTT_CLASS, 'fix_queried_object', null );
         $query_callbacks = self::find_object_callbacks( 'pre_get_posts', self::PTT_CLASS, 'filter_queries', 99 );
+        $all_query_callbacks = self::find_object_callbacks( 'pre_get_posts', self::PTT_CLASS, 'filter_queries', null );
         $widget_callbacks = self::find_object_callbacks( 'widget_posts_args', self::PTT_CLASS, 'filter_recent_posts_widget', 10 );
+        $all_widget_callbacks = self::find_object_callbacks( 'widget_posts_args', self::PTT_CLASS, 'filter_recent_posts_widget', null );
         $loop_callbacks = self::find_object_callbacks( 'query_loop_block_query_vars', self::PTT_CLASS, 'filter_query_loop_block', 10 );
+        $all_loop_callbacks = self::find_object_callbacks( 'query_loop_block_query_vars', self::PTT_CLASS, 'filter_query_loop_block', null );
 
         if ( 1 !== count( $parse_callbacks ) || 1 !== count( $query_callbacks )
             || 1 !== count( $widget_callbacks ) || 1 !== count( $loop_callbacks )
+            || 1 !== count( $all_parse_callbacks ) || 1 !== count( $all_query_callbacks )
+            || 1 !== count( $all_widget_callbacks ) || 1 !== count( $all_loop_callbacks )
         ) {
-            self::quarantine_ptt_callbacks( 'Expected one visibility callback on each documented Post Type Transfer hook.' );
+            self::quarantine_ptt_callbacks( 'Expected exactly one visibility callback at the documented priority on each Post Type Transfer hook.' );
             return;
         }
 
@@ -188,9 +196,10 @@ final class QueryHookCompatibility implements ModuleInterface {
         add_action( 'pre_get_posts', [ self::class, 'guarded_ptt_filter_queries' ], 99 );
 
         $audit = self::audit()['callbacks'];
-        $valid = 0 === $audit['ptt_parse_vendor'] && 1 === $audit['ptt_parse_guard']
-            && 0 === $audit['ptt_query_vendor'] && 1 === $audit['ptt_query_guard']
-            && 1 === $audit['ptt_widget_filter'] && 1 === $audit['ptt_query_loop_filter'];
+        $valid = 0 === $audit['ptt_parse_vendor_all'] && 1 === $audit['ptt_parse_guard']
+            && 0 === $audit['ptt_query_vendor_all'] && 1 === $audit['ptt_query_guard']
+            && 1 === $audit['ptt_widget_filter'] && 1 === $audit['ptt_widget_filter_all']
+            && 1 === $audit['ptt_query_loop_filter'] && 1 === $audit['ptt_query_loop_filter_all'];
         if ( ! $valid ) {
             remove_action( 'parse_query', [ self::class, 'guarded_ptt_fix_queried_object' ], 10 );
             remove_action( 'pre_get_posts', [ self::class, 'guarded_ptt_filter_queries' ], 99 );

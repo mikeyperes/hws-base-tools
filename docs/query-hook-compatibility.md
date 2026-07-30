@@ -18,6 +18,8 @@ or database work.
 
 The adapter requires one `PTT_Post_Visibility` object and validates its source
 path, public one-argument method signatures, priorities, and object identity.
+Every documented callback must exist exactly once across all hook priorities;
+an additional callback at an unexpected priority is treated as vendor drift.
 It removes only:
 
 - `parse_query` priority 10: `fix_queried_object`

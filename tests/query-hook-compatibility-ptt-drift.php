@@ -92,7 +92,9 @@ $passed = 'quarantined' === $audit['status']['post_type_transfer']['state']
     && 0 === $callbacks['ptt_parse_guard']
     && 0 === $callbacks['ptt_query_guard']
     && 1 === $callbacks['ptt_widget_filter']
+    && 1 === $callbacks['ptt_widget_filter_all']
     && 1 === $callbacks['ptt_query_loop_filter']
+    && 1 === $callbacks['ptt_query_loop_filter_all']
     && 1 === count( $GLOBALS['hws_critical_events'] );
 
 if ( ! $passed ) {

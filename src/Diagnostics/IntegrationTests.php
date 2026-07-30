@@ -30,7 +30,9 @@ final class IntegrationTests {
                         && 0 === $callbacks['ptt_query_vendor_all']
                         && 1 === $callbacks['ptt_query_guard']
                         && 1 === $callbacks['ptt_widget_filter']
+                        && 1 === $callbacks['ptt_widget_filter_all']
                         && 1 === $callbacks['ptt_query_loop_filter']
+                        && 1 === $callbacks['ptt_query_loop_filter_all']
                     : 'inactive' === $ptt_state
                         && 0 === $callbacks['ptt_parse_vendor_all']
                         && 0 === $callbacks['ptt_parse_guard']
