@@ -455,7 +455,7 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '1.2.0', 'HWS bundles Hexa WordPress Plugin Core 1.2.0' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.2', 'HWS bundles Hexa WordPress Plugin Core 2.1.2' );
 expect_true(
     str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -592,10 +592,18 @@ expect_true(
     && str_contains( $profile_fields, "'type' => 'url'" ),
     'canonical profile URLs include a dedicated Wikidata URL field'
 );
+expect_true(
+    1 === preg_match(
+        "/'key' => 'field_684348705db23'.*?'label' => 'Threads URL'.*?'name' => 'threads'.*?'type' => 'url'.*?'placeholder' => 'https:\\/\\/www\\.threads\\.net\\/@username'/s",
+        $profile_fields
+    ),
+    'canonical 2025 profile URLs include the existing Threads field as a validated URL'
+);
 expect_true( str_contains( $profile_fields, "'name'              => 'what_best_describe_you'" ), 'canonical 2025 fields retain publication profile classification' );
 expect_true( str_contains( $profile_fields, "'name'              => 'team_member'" ), 'canonical 2025 fields retain the team-member compatibility flag' );
 expect_true( str_contains( $profile_migration, "'wellfound'  => [ 'well_found_url', 'wellfound_url' ]" ), 'legacy Wellfound values map to the canonical Wellfound field' );
 expect_true( str_contains( $profile_migration, "'wikidata'   => [ 'wikidata_url', 'profiles_wikidata' ]" ), 'legacy Wikidata values map to the canonical Wikidata field' );
+expect_true( str_contains( $profile_migration, "'threads'    => [ 'threads_url' ]" ), 'legacy Threads values map to the canonical Threads URL field' );
 expect_true( str_contains( $profile_migration, "'group_590d64c31db0a'" ), 'deprecated Profile group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_6419bc02b6e93'" ), 'deprecated Author group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_65a8b18d98147'" ), 'superseded User - Admin group is covered by canonical migration' );

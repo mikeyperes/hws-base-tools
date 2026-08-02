@@ -771,24 +771,20 @@ function hws_user_profile_2025_group(): array {
                         'append' => '',
                     ),
 
-                    // — Threads
+                    // — Threads URL
                     array(
                         'key' => 'field_684348705db23',
-                        'label' => 'Threads',
+                        'label' => 'Threads URL',
                         'name' => 'threads',
                         'aria-label' => '',
-                        'type' => 'text',
+                        'type' => 'url',
                         // — Both company and founder shortcodes documented
                         'instructions' => 'Shortcode: <code>[company id="url_threads"]</code> or <code>[founder id="url_threads"]</code>',
                         'required' => 0,
                         'conditional_logic' => 0,
                         'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),
                         'default_value' => '',
-                        'maxlength' => '',
-                        'allow_in_bindings' => 0,
-                        'placeholder' => '',
-                        'prepend' => '',
-                        'append' => '',
+                        'placeholder' => 'https://www.threads.net/@username',
                     ),
 
                     // — CrunchBase

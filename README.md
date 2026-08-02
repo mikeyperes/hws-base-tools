@@ -96,7 +96,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 1.2.0 |
+| Hexa WP Core bundle | 2.1.2 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -115,6 +115,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 12.1.2
+
+- Preserved the canonical 2025 Threads field key while making it an explicit `Threads URL` field with URL validation, legacy-value migration coverage, and shortcode compatibility.
+- Updated the bundled Hexa WP Core package to 2.1.2.
 
 ### 12.1.1
 
