@@ -230,6 +230,7 @@ function hws_getting_started_quick_setup_subtasks(): array {
     $callback = __NAMESPACE__ . '\\hws_getting_started_run_quick_setup_task';
 
     return [
+        hws_getting_started_quick_setup_task_definition( 'install_essential_plugins', 'Install Missing Required Plugins', 'setup_action', 'Uses the shared Hexa WP Core plugin provisioner to install and activate every installable required plugin before dependent setup actions run.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'regenerate_favicon_ico', 'Generate PNG + ICO', 'setup_action', 'Uses the same letter favicon generator as Brand Assets, purges the existing physical /favicon.ico file, creates a fresh PNG Site Icon, and regenerates the ICO.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'disable_debug_settings', 'Disable Debug Settings', 'config_mutation', 'Sets WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG to false through the existing wp-config writer.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'set_memory_limit', 'Set WP Memory Limit', 'config_mutation', 'Sets WP_MEMORY_LIMIT to 4096M through the existing wp-config writer.', $callback ),
@@ -246,7 +247,6 @@ function hws_getting_started_quick_setup_subtasks(): array {
         hws_getting_started_quick_setup_task_definition( 'activate_litespeed_cache', 'Activate LiteSpeed Cache', 'setup_action', 'Activates LiteSpeed Cache when installed.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'activate_wordfence', 'Activate Wordfence', 'setup_action', 'Activates Wordfence when installed.', $callback ),
         hws_getting_started_quick_setup_task_definition( 'enable_recommended_snippets', 'Enable Recommended Snippets', 'feature_toggle', 'Uses the existing Going Live Checklist snippet list and enables each recommended snippet option.', $callback ),
-        hws_getting_started_quick_setup_task_definition( 'install_essential_plugins', 'Install Essential Plugins', 'setup_action', 'Uses the existing monitored plugin list and installs or activates essential plugins when possible.', $callback ),
         hws_getting_started_quick_setup_task_definition(
             'apply_wordfence_alert_email',
             'Set Wordfence Alert Email',
@@ -1761,116 +1761,87 @@ function hws_getting_started_activate_plugin_task( string $plugin_path, string $
  * @return array<string,mixed>
  */
 function hws_getting_started_install_essential_plugins_task(): array {
-    if ( ! function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugins' ) ) {
-        return hws_getting_started_quick_setup_result( false, 'Monitored plugin list is not available.', 'error' );
+    if ( ! function_exists( __NAMESPACE__ . '\\hws_get_monitored_plugin_definitions' ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Required plugin policy is not available.', 'error' );
     }
 
-    if ( ! function_exists( 'is_plugin_active' ) && defined( 'ABSPATH' ) ) {
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    if ( function_exists( 'current_user_can' ) && ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) ) {
+        return hws_getting_started_quick_setup_result( false, 'Current user cannot install and activate plugins.', 'error' );
     }
-    require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-    require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
 
-	    $activated = 0;
-	    $installed = 0;
-	    $skipped   = 0;
-	    $failed    = [];
-	    $rows      = [];
+    $activated = 0;
+    $installed = 0;
+    $already   = 0;
+    $skipped   = 0;
+    $failed    = [];
+    $rows      = [];
 
-	    foreach ( hws_get_monitored_plugins() as $plugin_path => $info ) {
-	        if ( ( $info['category'] ?? '' ) !== 'essential' ) {
-	            continue;
-	        }
+    foreach ( hws_get_monitored_plugin_definitions() as $definition_config ) {
+        if ( empty( $definition_config['required'] ) || ! empty( $definition_config['should_not_contain'] ) ) {
+            continue;
+        }
 
-	        $name = (string) ( $info['name'] ?? $plugin_path );
-	        $before_installed = file_exists( WP_PLUGIN_DIR . '/' . $plugin_path );
-	        $before_active    = $before_installed && is_plugin_active( $plugin_path );
-	        $action_result    = '';
-	        if ( ! empty( $info['pro'] ) ) {
-	            $skipped++;
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, $before_installed, $before_active, 'Skipped because this is marked as a pro/manual plugin.' );
-	            continue;
-	        }
+        $definition = PluginCheckDefinition::from_array( $definition_config );
+        $before     = PluginCheckService::status( $definition );
 
-	        if ( is_plugin_active( $plugin_path ) ) {
-	            $skipped++;
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, $before_installed, true, 'No change needed; plugin was already active.' );
-	            continue;
-	        }
+        if ( empty( $before['installed'] ) && in_array( $definition->source, [ 'manual', 'pro' ], true ) ) {
+            $skipped++;
+            $rows[] = hws_getting_started_essential_plugin_report_row( $definition->name, $definition->plugin_file, false, false, false, false, 'Manual installation required; automatic provisioning is unavailable for this package.' );
+            continue;
+        }
 
-	        if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ) ) {
-	            $result = activate_plugin( $plugin_path );
-	            if ( is_wp_error( $result ) ) {
-	                $failed[] = $name . ': ' . $result->get_error_message();
-	                $action_result = 'Activation failed: ' . $result->get_error_message();
-	            } else {
-	                $activated++;
-	                $action_result = 'Activated installed plugin.';
-	            }
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), $action_result );
-	            continue;
-	        }
+        $result = hws_getting_started_ensure_plugin_state( $definition );
+        $after  = PluginCheckService::status( $definition );
 
-	        if ( ( $info['download'] ?? 'manual' ) === 'manual' ) {
-	            $skipped++;
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, false, false, 'Skipped because this plugin requires manual installation.' );
-	            continue;
-	        }
+        if ( is_wp_error( $result ) ) {
+            $failed[] = $definition->name . ': ' . $result->get_error_message();
+            $rows[]   = hws_getting_started_essential_plugin_report_row( $definition->name, $definition->plugin_file, ! empty( $before['installed'] ), ! empty( $before['active'] ), ! empty( $after['installed'] ), ! empty( $after['active'] ), 'Failed: ' . $result->get_error_message() );
+            continue;
+        }
 
-	        $slug = basename( dirname( $plugin_path ) );
-	        $api  = plugins_api( 'plugin_information', [ 'slug' => $slug, 'fields' => [ 'sections' => false ] ] );
-	        if ( is_wp_error( $api ) ) {
-	            $failed[] = $name . ': repository lookup failed';
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), 'WordPress.org lookup failed.' );
-	            continue;
-	        }
+        $requires_active = ! empty( $definition->checks['active'] );
+        $state_satisfied = ! empty( $after['installed'] ) && ( $requires_active ? ! empty( $after['active'] ) : empty( $after['active'] ) );
 
-	        $upgrader = new \Plugin_Upgrader( new \WP_Ajax_Upgrader_Skin() );
-	        $result   = $upgrader->install( $api->download_link );
-	        if ( ! $result || is_wp_error( $result ) ) {
-	            $failed[] = $name . ': install failed';
-	            $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), 'Install failed from WordPress.org.' );
-	            continue;
-	        }
+        if ( ! $state_satisfied ) {
+            $failed[] = $definition->name . ': required plugin state was not reached.';
+        } elseif ( empty( $before['installed'] ) ) {
+            $installed++;
+        } elseif ( $requires_active && empty( $before['active'] ) ) {
+            $activated++;
+        } else {
+            $already++;
+        }
 
-	        $activate_result = activate_plugin( $plugin_path );
-	        if ( is_wp_error( $activate_result ) ) {
-	            $failed[] = $name . ': activation failed after install';
-	            $action_result = 'Installed from WordPress.org, but activation failed.';
-	        } else {
-	            $installed++;
-	            $action_result = 'Installed from WordPress.org and activated.';
-	        }
-	        $rows[] = hws_getting_started_essential_plugin_report_row( $name, $plugin_path, $before_installed, $before_active, file_exists( WP_PLUGIN_DIR . '/' . $plugin_path ), is_plugin_active( $plugin_path ), $action_result );
-	    }
+        $rows[] = hws_getting_started_essential_plugin_report_row( $definition->name, $definition->plugin_file, ! empty( $before['installed'] ), ! empty( $before['active'] ), ! empty( $after['installed'] ), ! empty( $after['active'] ), (string) ( $result['message'] ?? 'Processed through Hexa WP Core.' ) );
+    }
 
-	    $success = [] === $failed;
-	    return hws_getting_started_quick_setup_result(
-	        $success,
-        $success ? 'Essential plugin setup completed.' : 'Essential plugin setup completed with failures.',
+    $success = [] === $failed;
+    return hws_getting_started_quick_setup_result(
+        $success,
+        $success ? 'Required plugin setup completed.' : 'Required plugin setup completed with failures.',
         $success ? 'success' : 'warning',
         [
-	            'installed' => $installed,
-	            'activated' => $activated,
-	            'skipped'   => $skipped,
-	            'failed'    => $failed,
-	        ],
-	        [
-	            hws_getting_started_before_after_report(
-	                'essential_plugin_setup',
-	                'Essential Plugin Setup',
-	                $rows,
-	                count( $rows ) . ' essential plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' checked.',
-	                'This report reads each essential plugin file and active state before the action, installs or activates where allowed, then reads the plugin state again afterward.',
-	                [
-	                    [ 'label' => 'Before', 'value' => count( array_filter( $rows, static fn( array $row ): bool => str_contains( (string) ( $row['before'] ?? '' ), 'Active' ) ) ) . ' plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' active before action.' ],
-	                    [ 'label' => 'Action Taken', 'value' => $installed . ' installed, ' . $activated . ' activated, ' . $skipped . ' skipped.' ],
-	                    [ 'label' => 'Verified After', 'value' => count( array_filter( $rows, static fn( array $row ): bool => str_contains( (string) ( $row['after'] ?? '' ), 'Active' ) ) ) . ' plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' active after action.' ],
-	                ]
-	            ),
-	        ]
-	    );
+            'installed' => $installed,
+            'activated' => $activated,
+            'already'   => $already,
+            'skipped'   => $skipped,
+            'failed'    => $failed,
+        ],
+        [
+            hws_getting_started_before_after_report(
+                'essential_plugin_setup',
+                'Required Plugin Setup',
+                $rows,
+                count( $rows ) . ' required plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' checked.',
+                'This report uses the shared Hexa WP Core plugin status and provisioning services to install or activate required plugins, then verifies their final state.',
+                [
+                    [ 'label' => 'Before', 'value' => count( array_filter( $rows, static fn( array $row ): bool => str_contains( (string) ( $row['before'] ?? '' ), 'Active' ) ) ) . ' required plugin' . ( 1 === count( $rows ) ? '' : 's' ) . ' active before action.' ],
+                    [ 'label' => 'Action Taken', 'value' => $installed . ' installed, ' . $activated . ' activated, ' . $already . ' already satisfied, ' . $skipped . ' manual.' ],
+                    [ 'label' => 'Verified After', 'value' => [] === $failed ? 'Every automatically provisioned required plugin reached its configured state.' : count( $failed ) . ' required plugin issue' . ( 1 === count( $failed ) ? '' : 's' ) . ' remains.' ],
+                ]
+            ),
+        ]
+    );
 }
 
 function hws_getting_started_essential_plugin_report_row( string $name, string $plugin_path, bool $before_installed, bool $before_active, bool $after_installed, bool $after_active, string $action_result ): array {

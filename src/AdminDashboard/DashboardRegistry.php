@@ -182,7 +182,10 @@ final class DashboardRegistry {
             'settings-dashboard-check-plugins.php',
             'settings-dashboard-backups.php',
         ] ) );
-        $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [ 'settings-dashboard-getting-started.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', 'hws_base_tools\\display_settings_getting_started_checklist', [
+            'settings-dashboard-check-plugins.php',
+            'settings-dashboard-getting-started.php',
+        ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
         $this->add( new DashboardModuleDefinition( 'brand-templates', 'Brand Templates', [ \HWS\BaseTools\BrandTemplates\BrandTemplatesAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'pages', 'Pages', 'hws_base_tools\\display_settings_pages', [ 'settings-dashboard-pages.php' ] ) );
@@ -280,7 +283,7 @@ final class DashboardRegistry {
             'hws_litespeed_redis_'               => [ 'settings-dashboard-cleanup.php' ],
             'hws_menu_tools_'                    => [ 'settings-dashboard-menu-tools.php' ],
             'hws_pages_'                         => [ 'settings-dashboard-pages.php' ],
-            'hws_getting_started_'               => [ 'settings-dashboard-getting-started.php' ],
+            'hws_getting_started_'               => [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-getting-started.php' ],
             'hws_mail_authentication_'            => [ 'settings-dashboard-mail-authentication.php' ],
             'hws_update_center'                  => [ 'settings-dashboard-update-center.php' ],
             'hws_toggle_update_urls'             => [ 'settings-dashboard-update-center.php' ],

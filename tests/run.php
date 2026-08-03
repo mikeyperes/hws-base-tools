@@ -109,6 +109,11 @@ expect_true(
     && $registry->implementation_files_for_ajax_action( 'hws_unrecommended_plugins_delete' ) === [ 'settings-dashboard-check-plugins.php' ],
     'plugin inventory AJAX actions load their controller module before dispatch'
 );
+expect_true(
+    $registry->implementation_files_for_tab( 'quick-start' ) === [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-getting-started.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_getting_started_checklist_run_item' ) === [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-getting-started.php' ],
+    'Quick Start loads plugin policy before checklist rendering and AJAX dispatch'
+);
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
 foreach ( $groups as $group ) {
@@ -446,6 +451,22 @@ expect_true(
     str_contains( $getting_started_source, "'show_search'          => true" )
     && str_contains( $getting_started_source, "'search_label'         => 'Search Quick Start'" ),
     'Quick Start enables the reusable Hexa Core checklist search'
+);
+$required_plugin_task_offset = strpos( $getting_started_source, "hws_getting_started_quick_setup_task_definition( 'install_essential_plugins'" );
+$favicon_task_offset         = strpos( $getting_started_source, "hws_getting_started_quick_setup_task_definition( 'regenerate_favicon_ico'" );
+preg_match( '/function hws_getting_started_install_essential_plugins_task\(\): array \{(?<body>.*?)\n\}\n\nfunction hws_getting_started_essential_plugin_report_row/s', $getting_started_source, $required_plugin_installer_match );
+$required_plugin_installer = (string) ( $required_plugin_installer_match['body'] ?? '' );
+expect_true(
+    false !== $required_plugin_task_offset
+    && false !== $favicon_task_offset
+    && $required_plugin_task_offset < $favicon_task_offset,
+    'Quick Start installs missing required plugins before plugin-dependent setup actions'
+);
+expect_true(
+    str_contains( $required_plugin_installer, 'hws_get_monitored_plugin_definitions()' )
+    && str_contains( $required_plugin_installer, 'hws_getting_started_ensure_plugin_state( $definition )' )
+    && ! str_contains( $required_plugin_installer, 'Plugin_Upgrader' ),
+    'Quick Start provisions required plugins through the shared Hexa WP Core path'
 );
 $feature_catalog_source = source( 'src/FeatureCatalog/legacy-features.php' );
 expect_true(

@@ -116,6 +116,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 12.1.3
+
+- Made Quick Start load the plugin policy it consumes and install or activate missing required plugins through the shared Hexa WP Core provisioner before plugin-dependent setup actions run.
+
 ### 12.1.2
 
 - Preserved the canonical 2025 Threads field key while making it an explicit `Threads URL` field with URL validation, legacy-value migration coverage, and shortcode compatibility.
