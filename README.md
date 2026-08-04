@@ -117,6 +117,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 12.1.6
+
+- Prefilled Quick Start's required Wordfence and SMTP email fields from their configured values or the current administrator so Quick Run is not disabled by blank launch-contact inputs.
+
 ### 12.1.5
 
 - Updated the bundled Hexa WP Core package to 2.1.3 so Quick Start distinguishes a selected template from a completed load and gives the Load Template button visible loading, success, and failure feedback.

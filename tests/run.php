@@ -468,6 +468,13 @@ expect_true(
     && ! str_contains( $required_plugin_installer, 'Plugin_Upgrader' ),
     'Quick Start provisions required plugins through the shared Hexa WP Core path'
 );
+expect_true(
+    str_contains( $getting_started_source, "'value'       => hws_getting_started_default_wordfence_alert_email()" )
+    && str_contains( $getting_started_source, "'value'       => hws_getting_started_default_smtp_from_email()" )
+    && str_contains( $getting_started_source, 'return $configured[0] ?? hws_getting_started_default_mail_test_recipient();' )
+    && str_contains( $getting_started_source, 'return is_email( $configured ) ? $configured : hws_getting_started_default_mail_test_recipient();' ),
+    'Quick Start prefills editable launch-email inputs from configured values or the current administrator'
+);
 $feature_catalog_source = source( 'src/FeatureCatalog/legacy-features.php' );
 expect_true(
     str_contains( $feature_catalog_source, 'CoreUi::collapsible(' )
