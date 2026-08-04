@@ -9,6 +9,7 @@ use HWS\BaseTools\PluginRuntime\RequestContext;
 use HWS\BaseTools\PluginRuntime\CoreIntegration;
 use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\FrontendContent\FeatureLoader;
+use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 
@@ -691,6 +692,15 @@ function get_snippets($type = "")
     $snippet_non_admin = [
     // ★ RECOMMENDED
     TeamMemberFeature::definition(),
+    [
+        'id'               => ReadingProgress::FEATURE_OPTION,
+        'name'             => 'Reading Progress Bar',
+        'description'      => 'Shows a configurable fixed reading-progress indicator at the top of selected public pages.',
+        'info'             => 'Choose the display scope, one of five visual designs, and a color through the shared Hexa WP Core picker. Existing SMP Publication Integration settings migrate automatically once.',
+        'function'         => 'enable_reading_progress_bar',
+        'scope_admin_only' => false,
+        'code_example'     => 'No shortcode needed. Configure it in HWS Base Tools → Features.',
+    ],
     [
         'id' => 'enable_elementor_social_icon_cleanup',
         'name' => 'Elementor Social Icons Cleanup',

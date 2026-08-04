@@ -15,6 +15,7 @@ use HWS\BaseTools\ContentTypes\SharedContentTypes;
 use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 use HWS\BaseTools\Diagnostics\IntegrationTests;
 use HWS\BaseTools\BrandTemplates\BrandTemplateFeature;
+use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
 
 final class CoreIntegration {
@@ -56,6 +57,7 @@ final class CoreIntegration {
             ->add_module( new DashboardAssets() )
             ->add_module( new QueryHookCompatibility() )
             ->add_module( new BrandTemplateFeature() )
+            ->add_module( new ReadingProgress() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )
             ->add_module( UserProfileGalleryDetails::module() )

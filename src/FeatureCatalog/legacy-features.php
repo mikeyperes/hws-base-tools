@@ -1,8 +1,10 @@
 <?php namespace hws_base_tools;
 
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
+use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
+use Hexa\PluginCore\WpAdminComponents\ColorControl;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,6 +79,7 @@ function hws_get_all_dashboard_features(): array {
         'enable_current_year_shortcode',
         'enable_lowercase_upload_filenames',
         'enable_footer_text_auto_injection',
+        ReadingProgress::FEATURE_OPTION,
         TeamMemberDirectory::FEATURE_OPTION,
     ];
 
@@ -119,6 +122,11 @@ function hws_render_feature_settings( array $feature ): void {
         return;
     }
 
+    if ( ReadingProgress::FEATURE_OPTION === $feature_id ) {
+        hws_render_reading_progress_settings();
+        return;
+    }
+
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
         echo '<p class="hws-feature-muted">No custom ACF or option adjustments needed.</p>';
         return;
@@ -136,6 +144,83 @@ function hws_render_feature_settings( array $feature ): void {
         </label>
         <button type="button" class="button hws-feature-save-settings" data-feature-id="<?php echo esc_attr( $feature_id ); ?>">Save Settings</button>
         <span class="hws-feature-setting-status" aria-live="polite"></span>
+    </div>
+    <?php
+}
+
+function hws_render_reading_progress_settings(): void {
+    $settings = ReadingProgress::settings();
+    $variables = '--hws-reading-progress-color:' . $settings['color'] . ';';
+    ?>
+    <div
+        class="hws-reading-progress-settings"
+        data-feature-settings="<?php echo esc_attr( ReadingProgress::FEATURE_OPTION ); ?>"
+        data-hpc-color-preview-scope-root
+        style="<?php echo esc_attr( $variables ); ?>"
+    >
+        <style>
+            <?php echo ReadingProgress::preview_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            .hws-reading-progress-settings{display:grid;gap:16px}
+            .hws-reading-progress-settings>label{display:grid;gap:5px;max-width:420px}
+            .hws-reading-progress-settings>label>span{font-size:12px;font-weight:700}
+            .hws-reading-progress-style-list{display:grid;gap:10px}
+            .hws-reading-progress-style-option{background:#fff;border:1px solid #d8dee8;border-radius:8px;cursor:pointer;display:block;padding:12px}
+            .hws-reading-progress-style-option.is-selected{border-color:#3157d5;box-shadow:inset 0 0 0 1px #3157d5}
+            .hws-reading-progress-style-heading{align-items:flex-start;display:flex;gap:9px;margin-bottom:8px}
+            .hws-reading-progress-style-heading input{margin-top:2px}
+            .hws-reading-progress-style-heading small{color:#64748b;display:block;margin-top:3px}
+            .hws-reading-progress-settings .hpc-color-control{background:#f8fafc;border:1px solid #d8dee8;border-radius:8px;padding:12px}
+            .hws-reading-progress-settings-actions{align-items:center;display:flex;gap:10px;flex-wrap:wrap}
+        </style>
+
+        <label>
+            <span>Display scope</span>
+            <select data-hws-feature-field="scope">
+                <?php foreach ( ReadingProgress::scopes() as $scope => $config ) : ?>
+                    <option value="<?php echo esc_attr( $scope ); ?>" <?php selected( $settings['scope'], $scope ); ?>><?php echo esc_html( $config['label'] ); ?> — <?php echo esc_html( $config['description'] ); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+
+        <div>
+            <strong>Progress design</strong>
+            <div class="hws-reading-progress-style-list">
+                <?php foreach ( ReadingProgress::designs() as $style => $design ) : ?>
+                    <label class="hws-reading-progress-style-option <?php echo $settings['style'] === $style ? 'is-selected' : ''; ?>">
+                        <span class="hws-reading-progress-style-heading">
+                            <input type="radio" name="hws_reading_progress_style" value="<?php echo esc_attr( $style ); ?>" data-hws-feature-field="style" <?php checked( $settings['style'], $style ); ?>>
+                            <span><strong><?php echo esc_html( $design['label'] ); ?></strong><small><?php echo esc_html( $design['description'] ); ?></small></span>
+                        </span>
+                        <?php echo ReadingProgress::preview_html( $style ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <?php
+        echo ColorControl::render(
+            [
+                'key'               => ReadingProgress::COLOR_OPTION,
+                'label'             => 'Progress color',
+                'description'       => 'Choose the color used by every reading-progress design.',
+                'value'             => $settings['color'],
+                'default'           => ReadingProgress::DEFAULT_COLOR,
+                'allow_inherit'     => false,
+                'import_brand'      => true,
+                'import_label'      => 'Use HWS primary',
+                'preview_variables' => [
+                    '--hws-reading-progress-color' => 'color',
+                    '--hws-reading-progress-soft'  => 'rgba:0.18',
+                    '--hws-reading-progress-glow'  => 'rgba:0.55',
+                ],
+            ]
+        ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        ?>
+
+        <div class="hws-reading-progress-settings-actions">
+            <button type="button" class="button button-primary hws-feature-save-settings" data-feature-id="<?php echo esc_attr( ReadingProgress::FEATURE_OPTION ); ?>">Save Settings</button>
+            <span class="hws-feature-setting-status" aria-live="polite"></span>
+        </div>
     </div>
     <?php
 }
@@ -379,7 +464,10 @@ function hws_output_feature_card_scripts(): void {
                 nonce: hwsNonce,
                 feature_id: featureId,
                 tag: $settings.find('[data-hws-feature-field="tag"]').val() || '',
-                limit: $settings.find('[data-hws-feature-field="limit"]').val() || ''
+                limit: $settings.find('[data-hws-feature-field="limit"]').val() || '',
+                scope: $settings.find('[data-hws-feature-field="scope"]').val() || '',
+                style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
+                color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || ''
             };
 
             $button.prop('disabled', true);
@@ -398,6 +486,11 @@ function hws_output_feature_card_scripts(): void {
             }).always(function() {
                 $button.prop('disabled', false);
             });
+        });
+
+        $(document).off('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]').on('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]', function() {
+            $(this).closest('.hws-reading-progress-style-list').find('.hws-reading-progress-style-option').removeClass('is-selected');
+            $(this).closest('.hws-reading-progress-style-option').addClass('is-selected');
         });
 
         $(document).off('click.hwsFeatureTest', '.hws-feature-run-test').on('click.hwsFeatureTest', '.hws-feature-run-test', function() {
@@ -528,6 +621,18 @@ function ajax_hws_feature_save_settings(): void {
         wp_send_json_success( $saved );
     }
 
+    if ( ReadingProgress::FEATURE_OPTION === $feature_id ) {
+        $saved = ReadingProgress::save_settings(
+            [
+                'scope' => isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : '',
+                'style' => isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '',
+                'color' => isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '',
+            ]
+        );
+        hws_add_feature_activity( $feature_id, 'Updated reading progress scope, design, and color.' );
+        wp_send_json_success( $saved );
+    }
+
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
         wp_send_json_error( [ 'message' => 'No custom settings exist for this feature.' ] );
     }
@@ -579,6 +684,15 @@ function hws_run_feature_test( string $feature_id ): array {
     switch ( $feature_id ) {
         case TeamMemberDirectory::FEATURE_OPTION:
             return TeamMemberFeature::test_report();
+
+        case ReadingProgress::FEATURE_OPTION:
+            $settings = ReadingProgress::settings();
+            return [
+                'passed'  => true,
+                'message' => 'The HWS reading progress runtime is enabled with normalized settings.',
+                'proof'   => 'Scope ' . $settings['scope'] . '; design ' . $settings['style'] . '; color ' . $settings['color'] . '.',
+                'ran_at'  => $ran_at,
+            ];
 
         case 'disable_non_admin_admin_bar':
             return [

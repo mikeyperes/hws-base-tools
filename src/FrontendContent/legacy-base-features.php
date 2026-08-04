@@ -1,6 +1,7 @@
 <?php namespace hws_base_tools;
 
 use Hexa\PluginCore\QuerySafety\QueryEligibility;
+use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -70,4 +71,8 @@ function enable_lowercase_upload_filenames(): void {
 
 function enable_team_member_directory_templates(): void {
     ( new TeamMemberDirectory() )->register();
+}
+
+function enable_reading_progress_bar(): void {
+    ReadingProgress::activate();
 }
