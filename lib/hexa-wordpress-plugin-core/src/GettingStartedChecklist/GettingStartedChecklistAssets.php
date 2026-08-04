@@ -14,6 +14,7 @@ final class GettingStartedChecklistAssets {
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker label span{color:#243044;font-size:12px;font-weight:900;text-transform:uppercase}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker select{background:#fff;border:1px solid #cbd6e2;border-radius:6px;box-shadow:none;color:#111827;font-size:13px;min-height:34px;padding:5px 30px 5px 10px}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-status{background:#eaf8ef;border:1px solid #ccefd7;border-radius:999px;color:var(--hpc-green);font-size:11px;font-weight:900;line-height:1;padding:7px 9px}
+            #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-status[data-state="selected"]{background:#eef2ff;border-color:#c7d4ff;color:var(--hpc-blue)}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-template-picker small{color:var(--hpc-muted);display:block;flex-basis:100%;font-size:11px;line-height:1.35}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-list{background:#fff;border:1px solid var(--hpc-line);border-radius:8px;display:block;margin:0 0 16px;overflow:hidden}
             #<?php echo esc_attr( $root_id ); ?> .hpc-gsc-step{background:#fff;border:0;border-top:1px solid var(--hpc-line);border-radius:0;overflow:hidden}
@@ -270,13 +271,18 @@ final class GettingStartedChecklistAssets {
             function templateSelect(){ return root.querySelector('[data-gsc-template-select]'); }
             function templateList(){ return root.querySelector('[data-gsc-list]'); }
             function templateSource(templateId){ return root.querySelector('template[data-gsc-template-source="' + css(templateId) + '"]'); }
+            function templateLoadButton(){ return root.querySelector('[data-gsc-load-template]'); }
             function currentTemplateId(){ return root.dataset.currentTemplateId || root.dataset.defaultTemplateId || 'default'; }
             function updateTemplateStatus(){
                 var select = templateSelect();
                 var status = root.querySelector('[data-gsc-template-status]');
                 var description = root.querySelector('[data-gsc-template-description]');
                 var option = select ? select.options[select.selectedIndex] : null;
-                if (status && option) status.textContent = option.textContent + ' loaded';
+                var isLoaded = option && option.value === currentTemplateId();
+                if (status && option) {
+                    status.textContent = option.textContent + (isLoaded ? ' loaded' : ' selected — click Load Template');
+                    status.dataset.state = isLoaded ? 'loaded' : 'selected';
+                }
                 if (description && option) description.textContent = option.dataset.description || '';
             }
             function loadTemplate(templateId){
@@ -581,7 +587,12 @@ final class GettingStartedChecklistAssets {
                 if (loadTemplateButton) {
                     event.preventDefault();
                     var select = templateSelect();
-                    loadTemplate(select ? select.value : root.dataset.defaultTemplateId || 'default');
+                    dynamicStart(loadTemplateButton, 'Loading...');
+                    if (loadTemplate(select ? select.value : root.dataset.defaultTemplateId || 'default')) {
+                        dynamicSuccess(loadTemplateButton, 'Template Loaded');
+                    } else {
+                        dynamicError(loadTemplateButton, 'Load Failed');
+                    }
                     return;
                 }
                 var runAllButton = event.target.closest('[data-gsc-run-all]');
@@ -629,6 +640,7 @@ final class GettingStartedChecklistAssets {
             });
             root.addEventListener('change', function(event){
                 if (!event.target.closest('[data-gsc-template-select]')) return;
+                dynamicReset(templateLoadButton());
                 updateTemplateStatus();
             });
             root.addEventListener('click', function(event){

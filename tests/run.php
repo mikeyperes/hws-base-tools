@@ -476,13 +476,22 @@ expect_true(
     'Every HWS feature renders through a default-collapsed Hexa Core component'
 );
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.2', 'HWS bundles Hexa WordPress Plugin Core 2.1.2' );
+$core_checklist_assets_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistAssets.php' );
+$core_checklist_renderer_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.3', 'HWS bundles Hexa WordPress Plugin Core 2.1.3' );
 expect_true(
-    str_contains( source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' ), 'data-gsc-filter-item' )
+    str_contains( $core_checklist_renderer_source, 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
     && str_contains( $core_ui_source, '[data-hpc-filter-hidden="1"]{display:none!important}' )
     && str_contains( $core_ui_source, '.hpc-section-title{min-width:0;overflow-wrap:anywhere;white-space:normal}' ),
     'Bundled Core checklist search visibly hides nested nonmatches, refreshes after template changes, and wraps narrow titles'
+);
+expect_true(
+    str_contains( $core_checklist_renderer_source, "'success_label' => 'Template Loaded'" )
+    && str_contains( $core_checklist_assets_source, "option.value === currentTemplateId()" )
+    && str_contains( $core_checklist_assets_source, "' selected — click Load Template'" )
+    && str_contains( $core_checklist_assets_source, "dynamicSuccess(loadTemplateButton, 'Template Loaded')" ),
+    'Bundled Core template picker distinguishes selection from a completed load and visibly confirms the button action'
 );
 expect_true(
     str_contains( $core_ui_source, '.hpc-host-rail{align-self:start' )

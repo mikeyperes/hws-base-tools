@@ -120,8 +120,20 @@ final class GettingStartedChecklistRenderer {
                     <?php endforeach; ?>
                 </select>
             </label>
-            <button type="button" class="hpc-button secondary" data-gsc-load-template><?php echo esc_html( $this->config->template_load_label() ); ?></button>
-            <span class="hpc-gsc-template-status" data-gsc-template-status><?php echo esc_html( $current instanceof GettingStartedChecklistTemplate ? $current->label . ' loaded' : 'Template ready' ); ?></span>
+            <?php
+            echo DynamicButton::render(
+                [
+                    'label'         => $this->config->template_load_label(),
+                    'working_label' => 'Loading...',
+                    'success_label' => 'Template Loaded',
+                    'error_label'   => 'Load Failed',
+                    'class'         => 'hpc-button secondary',
+                    'render_assets' => false,
+                    'attrs'         => [ 'data-gsc-load-template' => true ],
+                ]
+            ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>
+            <span class="hpc-gsc-template-status" data-gsc-template-status data-state="loaded"><?php echo esc_html( $current instanceof GettingStartedChecklistTemplate ? $current->label . ' loaded' : 'Template ready' ); ?></span>
             <?php if ( $current instanceof GettingStartedChecklistTemplate && '' !== $current->description ) : ?>
                 <small data-gsc-template-description><?php echo esc_html( $current->description ); ?></small>
             <?php else : ?>
