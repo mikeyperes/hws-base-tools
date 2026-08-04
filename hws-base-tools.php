@@ -4,7 +4,7 @@ Plugin Name: Hexa Web Systems - Website Base Tool
 Description: Basic tools for optimization, performance, and debugging on Hexa-based web systems.
 Author: Michael Peres
 Plugin URI: https://github.com/mikeyperes/hws-base-tools
-Version: 12.1.6
+Version: 12.1.7
 Requires at least: 6.0
 Requires PHP: 8.1
 Text Domain: hws-base-tools

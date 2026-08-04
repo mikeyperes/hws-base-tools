@@ -468,13 +468,6 @@ expect_true(
     && ! str_contains( $required_plugin_installer, 'Plugin_Upgrader' ),
     'Quick Start provisions required plugins through the shared Hexa WP Core path'
 );
-expect_true(
-    str_contains( $getting_started_source, "'value'       => hws_getting_started_default_wordfence_alert_email()" )
-    && str_contains( $getting_started_source, "'value'       => hws_getting_started_default_smtp_from_email()" )
-    && str_contains( $getting_started_source, 'return $configured[0] ?? hws_getting_started_default_mail_test_recipient();' )
-    && str_contains( $getting_started_source, 'return is_email( $configured ) ? $configured : hws_getting_started_default_mail_test_recipient();' ),
-    'Quick Start prefills editable launch-email inputs from configured values or the current administrator'
-);
 $feature_catalog_source = source( 'src/FeatureCatalog/legacy-features.php' );
 expect_true(
     str_contains( $feature_catalog_source, 'CoreUi::collapsible(' )
@@ -485,7 +478,7 @@ expect_true(
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
 $core_checklist_assets_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistAssets.php' );
 $core_checklist_renderer_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.3', 'HWS bundles Hexa WordPress Plugin Core 2.1.3' );
+expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.4', 'HWS bundles Hexa WordPress Plugin Core 2.1.4' );
 expect_true(
     str_contains( $core_checklist_renderer_source, 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -499,6 +492,13 @@ expect_true(
     && str_contains( $core_checklist_assets_source, "' selected — click Load Template'" )
     && str_contains( $core_checklist_assets_source, "dynamicSuccess(loadTemplateButton, 'Template Loaded')" ),
     'Bundled Core template picker distinguishes selection from a completed load and visibly confirms the button action'
+);
+expect_true(
+    str_contains( $core_checklist_assets_source, 'setButtonBlocked(stepButton, rowInputMessages(stepRow, false));' )
+    && str_contains( $core_checklist_assets_source, 'setButtonBlocked(runAllButton, []);' )
+    && str_contains( $core_checklist_assets_source, "if (!validateRowInputs(stepRow, true))" )
+    && ! str_contains( $core_checklist_assets_source, 'rowAndChildrenInputMessages' ),
+    'Bundled Core keeps Quick Start runnable so its first subtask can provision missing required plugins'
 );
 expect_true(
     str_contains( $core_ui_source, '.hpc-host-rail{align-self:start' )

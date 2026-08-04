@@ -136,6 +136,11 @@ $checks = [
         && str_contains( $checklist_source, "dynamicStart(loadTemplateButton, 'Loading...')" )
         && str_contains( $checklist_source, "dynamicSuccess(loadTemplateButton, 'Template Loaded')" )
         && str_contains( $checklist_source, "dynamicError(loadTemplateButton, 'Load Failed')" ),
+    'Keeps parent and full checklist runs available when only child tasks need input.' => str_contains( $checklist_source, 'setButtonBlocked(stepButton, rowInputMessages(stepRow, false));' )
+        && str_contains( $checklist_source, 'setButtonBlocked(runAllButton, []);' )
+        && str_contains( $checklist_source, "if (!validateRowInputs(stepRow, true))" )
+        && ! str_contains( $checklist_source, 'rowAndChildrenInputMessages' )
+        && ! str_contains( $checklist_source, 'rowAndChildrenInputsValid' ),
 ];
 
 foreach ( $checks as $message => $passed ) {

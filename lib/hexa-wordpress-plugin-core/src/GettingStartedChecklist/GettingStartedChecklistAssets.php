@@ -341,15 +341,6 @@ final class GettingStartedChecklistAssets {
             function validateRowInputs(row, showErrors){
                 return rowInputMessages(row, showErrors).length === 0;
             }
-            function rowAndChildrenInputMessages(stepRow, showErrors){
-                var messages = rowInputMessages(stepRow, showErrors);
-                var card = stepRow ? root.querySelector('[data-gsc-step-card][data-step-id="' + css(stepRow.dataset.stepId || '') + '"]') : null;
-                var childRows = card ? Array.prototype.slice.call(card.querySelectorAll('[data-gsc-subtask-row]')) : [];
-                childRows.forEach(function(childRow){
-                    messages = messages.concat(rowInputMessages(childRow, showErrors));
-                });
-                return messages;
-            }
             function disabledReason(messages){
                 messages = (messages || []).filter(Boolean);
                 if (!messages.length) return '';
@@ -357,6 +348,7 @@ final class GettingStartedChecklistAssets {
             }
             function setButtonBlocked(button, messages){
                 if (!button) return;
+                if (button.classList.contains('is-loading')) return;
                 var reason = disabledReason(messages);
                 button.disabled = !!reason;
                 setDisabledReason(button, reason);
@@ -368,9 +360,6 @@ final class GettingStartedChecklistAssets {
                 });
                 return values;
             }
-            function rowAndChildrenInputsValid(stepRow, showErrors){
-                return rowAndChildrenInputMessages(stepRow, showErrors).length === 0;
-            }
             function refreshInputState(){
                 root.querySelectorAll('[data-gsc-item]').forEach(function(row){
                     var rowMessages = rowInputMessages(row, false);
@@ -379,16 +368,10 @@ final class GettingStartedChecklistAssets {
                 });
                 root.querySelectorAll('[data-gsc-step-row]').forEach(function(stepRow){
                     var stepButton = stepRow.querySelector('[data-gsc-run-step]');
-                    setButtonBlocked(stepButton, rowAndChildrenInputMessages(stepRow, false));
+                    setButtonBlocked(stepButton, rowInputMessages(stepRow, false));
                 });
                 var runAllButton = root.querySelector('[data-gsc-run-all]');
-                if (runAllButton) {
-                    var allMessages = [];
-                    root.querySelectorAll('[data-gsc-step-row]').forEach(function(stepRow){
-                        allMessages = allMessages.concat(rowAndChildrenInputMessages(stepRow, false));
-                    });
-                    setButtonBlocked(runAllButton, allMessages);
-                }
+                setButtonBlocked(runAllButton, []);
             }
             function postItem(stepId, subtaskId, inputs){
                 var body = new URLSearchParams();
@@ -525,9 +508,9 @@ final class GettingStartedChecklistAssets {
                 var stepId = stepRow.dataset.stepId || '';
                 var card = root.querySelector('[data-gsc-step-card][data-step-id="' + css(stepId) + '"]');
                 var subtasks = card ? Array.prototype.slice.call(card.querySelectorAll('[data-gsc-subtask-row]')) : [];
-                if (!rowAndChildrenInputsValid(stepRow, true)) {
+                if (!validateRowInputs(stepRow, true)) {
                     setRowState(stepRow, 'failed', 'Needs Input');
-                    addLog({level:'error', message:'Required input missing or invalid for this step.', context:{step_id:stepId}});
+                    addLog({level:'error', message:'Required parent-step input missing or invalid.', context:{step_id:stepId}});
                     refreshInputState();
                     return false;
                 }
@@ -607,9 +590,9 @@ final class GettingStartedChecklistAssets {
                     event.stopPropagation();
                     dynamicStart(runStepButton, 'Running...');
                     var stepRow = root.querySelector('[data-gsc-step-row][data-step-id="' + css(runStepButton.dataset.stepId || '') + '"]');
-                    if (!rowAndChildrenInputsValid(stepRow, true)) {
+                    if (!validateRowInputs(stepRow, true)) {
                         setRowState(stepRow, 'failed', 'Needs Input');
-                        addLog({level:'error', message:'Required input missing or invalid for this step.', context:{step_id:runStepButton.dataset.stepId || ''}});
+                        addLog({level:'error', message:'Required parent-step input missing or invalid.', context:{step_id:runStepButton.dataset.stepId || ''}});
                         refreshInputState();
                         dynamicError(runStepButton, 'Needs Input');
                         return;

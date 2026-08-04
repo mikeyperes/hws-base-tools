@@ -259,7 +259,6 @@ function hws_getting_started_quick_setup_subtasks(): array {
                     'label'       => 'Wordfence alert email',
                     'type'        => 'email',
                     'required'    => true,
-                    'value'       => hws_getting_started_default_wordfence_alert_email(),
                     'placeholder' => '',
                     'description' => 'This value is sent only to the Wordfence alert email task.',
                 ],
@@ -277,7 +276,6 @@ function hws_getting_started_quick_setup_subtasks(): array {
                     'label'       => 'SMTP from email',
                     'type'        => 'email',
                     'required'    => true,
-                    'value'       => hws_getting_started_default_smtp_from_email(),
                     'placeholder' => '',
                     'description' => 'This value is sent only to the WP Mail SMTP from email task. Authentication still requires the selected mailer credentials.',
                 ],
@@ -313,18 +311,6 @@ function hws_getting_started_default_mail_test_recipient(): string {
 
     $admin_email = sanitize_email( (string) get_option( 'admin_email', '' ) );
     return is_email( $admin_email ) ? $admin_email : '';
-}
-
-function hws_getting_started_default_wordfence_alert_email(): string {
-    $configured = hws_getting_started_email_list_from_value( hws_getting_started_read_wordfence_alert_email() );
-
-    return $configured[0] ?? hws_getting_started_default_mail_test_recipient();
-}
-
-function hws_getting_started_default_smtp_from_email(): string {
-    $configured = hws_getting_started_read_wp_mail_smtp_from_email();
-
-    return is_email( $configured ) ? $configured : hws_getting_started_default_mail_test_recipient();
 }
 
 /**
