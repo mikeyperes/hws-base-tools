@@ -12,10 +12,14 @@ defined( 'ABSPATH' ) || exit;
 final class ReadingProgress implements ModuleInterface {
     public const FEATURE_OPTION = 'enable_reading_progress_bar';
     public const SCOPE_OPTION = 'hws_reading_progress_scope';
+    public const ENTIRE_SITE_OPTION = 'hws_reading_progress_entire_site';
+    public const FRONT_PAGE_OPTION = 'hws_reading_progress_front_page';
+    public const POST_TYPES_OPTION = 'hws_reading_progress_post_types';
     public const STYLE_OPTION = 'hws_reading_progress_style';
     public const COLOR_OPTION = 'hws_reading_progress_color';
     public const MIGRATION_OPTION = 'hws_reading_progress_smp_migration';
     public const DEFAULT_SCOPE = 'posts';
+    public const DEFAULT_POST_TYPES = [ 'post' ];
     public const DEFAULT_STYLE = 'thin';
     public const DEFAULT_COLOR = '#00ff41';
     public const SMP_OWNER_REMOVED_VERSION = '1.0.24';
@@ -79,7 +83,55 @@ final class ReadingProgress implements ModuleInterface {
                 'label'       => 'Sitewide',
                 'description' => 'Show the progress bar throughout the public frontend.',
             ],
+            'selected' => [
+                'label'       => 'Selected content',
+                'description' => 'Show the progress bar on the selected public content types and optional front page.',
+            ],
         ];
+    }
+
+    /** @return array<string,array{label:string,description:string}> */
+    public static function post_type_choices(): array {
+        $choices = [];
+        $objects = function_exists( 'get_post_types' )
+            ? get_post_types( [ 'public' => true ], 'objects' )
+            : [];
+
+        if ( is_array( $objects ) ) {
+            foreach ( $objects as $key => $object ) {
+                $post_type = sanitize_key( is_string( $key ) ? $key : (string) ( $object->name ?? '' ) );
+                if ( '' === $post_type || 'attachment' === $post_type ) {
+                    continue;
+                }
+
+                $label = (string) ( $object->labels->name ?? $object->label ?? $post_type );
+                $single = (string) ( $object->labels->singular_name ?? $label );
+                $choices[ $post_type ] = [
+                    'label'       => $label,
+                    'description' => 'Every public single ' . strtolower( $single ) . '.',
+                ];
+            }
+        }
+
+        foreach ( [
+            'post' => [ 'label' => 'Posts', 'description' => 'Every public single post.' ],
+            'page' => [ 'label' => 'Pages', 'description' => 'Every public single page.' ],
+        ] as $post_type => $fallback ) {
+            if ( ! isset( $choices[ $post_type ] ) ) {
+                $choices[ $post_type ] = $fallback;
+            }
+        }
+
+        $ordered = [];
+        foreach ( [ 'post', 'page' ] as $post_type ) {
+            if ( isset( $choices[ $post_type ] ) ) {
+                $ordered[ $post_type ] = $choices[ $post_type ];
+                unset( $choices[ $post_type ] );
+            }
+        }
+        uasort( $choices, static fn( array $left, array $right ): int => strnatcasecmp( $left['label'], $right['label'] ) );
+
+        return $ordered + $choices;
     }
 
     public static function normalize_scope( string $scope ): string {
@@ -94,30 +146,76 @@ final class ReadingProgress implements ModuleInterface {
         return array_key_exists( $style, self::designs() ) ? $style : self::DEFAULT_STYLE;
     }
 
+    /** @return list<string> */
+    public static function normalize_post_types( mixed $post_types ): array {
+        $post_types = is_array( $post_types ) ? $post_types : [ $post_types ];
+        $allowed = array_keys( self::post_type_choices() );
+        $normalized = [];
+
+        foreach ( $post_types as $post_type ) {
+            $post_type = sanitize_key( (string) $post_type );
+            if ( '' !== $post_type && in_array( $post_type, $allowed, true ) && ! in_array( $post_type, $normalized, true ) ) {
+                $normalized[] = $post_type;
+            }
+        }
+
+        return $normalized;
+    }
+
     public static function normalize_color( string $color ): string {
         $color = sanitize_hex_color( $color );
 
         return is_string( $color ) && '' !== $color ? strtolower( $color ) : self::DEFAULT_COLOR;
     }
 
-    /** @return array{scope:string,style:string,color:string} */
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string} */
     public static function settings(): array {
+        $legacy_scope = self::normalize_scope( (string) get_option( self::SCOPE_OPTION, self::DEFAULT_SCOPE ) );
+        $missing = '__hws_reading_progress_missing__';
+        $entire_site = get_option( self::ENTIRE_SITE_OPTION, $missing );
+        $front_page = get_option( self::FRONT_PAGE_OPTION, $missing );
+        $post_types = get_option( self::POST_TYPES_OPTION, $missing );
+
+        $entire_site = $missing === $entire_site ? 'sitewide' === $legacy_scope : self::normalize_boolean( $entire_site );
+        $front_page = $missing === $front_page ? 'posts_front_page' === $legacy_scope : self::normalize_boolean( $front_page );
+        $post_types = $missing === $post_types ? self::DEFAULT_POST_TYPES : self::normalize_post_types( $post_types );
+
         return [
-            'scope' => self::normalize_scope( (string) get_option( self::SCOPE_OPTION, self::DEFAULT_SCOPE ) ),
-            'style' => self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) ),
-            'color' => self::normalize_color( (string) get_option( self::COLOR_OPTION, self::DEFAULT_COLOR ) ),
+            'scope'       => self::scope_from_targets( $entire_site, $front_page, $post_types ),
+            'entire_site' => $entire_site,
+            'front_page'  => $front_page,
+            'post_types'  => $post_types,
+            'style'       => self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) ),
+            'color'       => self::normalize_color( (string) get_option( self::COLOR_OPTION, self::DEFAULT_COLOR ) ),
         ];
     }
 
-    /** @return array{scope:string,style:string,color:string} */
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string} */
     public static function save_settings( array $settings ): array {
+        $legacy_scope = self::normalize_scope( (string) ( $settings['scope'] ?? self::DEFAULT_SCOPE ) );
+        $entire_site = array_key_exists( 'entire_site', $settings )
+            ? self::normalize_boolean( $settings['entire_site'] )
+            : 'sitewide' === $legacy_scope;
+        $front_page = array_key_exists( 'front_page', $settings )
+            ? self::normalize_boolean( $settings['front_page'] )
+            : 'posts_front_page' === $legacy_scope;
+        $post_types = array_key_exists( 'post_types', $settings )
+            ? self::normalize_post_types( $settings['post_types'] )
+            : self::DEFAULT_POST_TYPES;
+
         $normalized = [
-            'scope' => self::normalize_scope( (string) ( $settings['scope'] ?? self::DEFAULT_SCOPE ) ),
-            'style' => self::normalize_style( (string) ( $settings['style'] ?? self::DEFAULT_STYLE ) ),
-            'color' => self::normalize_color( (string) ( $settings['color'] ?? self::DEFAULT_COLOR ) ),
+            'scope'       => self::scope_from_targets( $entire_site, $front_page, $post_types ),
+            'entire_site' => $entire_site,
+            'front_page'  => $front_page,
+            'post_types'  => $post_types,
+            'style'       => self::normalize_style( (string) ( $settings['style'] ?? self::DEFAULT_STYLE ) ),
+            'color'       => self::normalize_color( (string) ( $settings['color'] ?? self::DEFAULT_COLOR ) ),
         ];
 
         update_option( self::SCOPE_OPTION, $normalized['scope'], false );
+        update_option( self::ENTIRE_SITE_OPTION, $normalized['entire_site'], false );
+        update_option( self::FRONT_PAGE_OPTION, $normalized['front_page'], false );
+        update_option( self::POST_TYPES_OPTION, $normalized['post_types'], false );
         update_option( self::STYLE_OPTION, $normalized['style'], false );
         update_option( self::COLOR_OPTION, $normalized['color'], false );
 
@@ -161,6 +259,32 @@ final class ReadingProgress implements ModuleInterface {
         }
 
         return is_singular( 'post' );
+    }
+
+    /** @param array{entire_site?:mixed,front_page?:mixed,post_types?:mixed} $settings */
+    public static function targets_match_current_request( array $settings ): bool {
+        if ( self::normalize_boolean( $settings['entire_site'] ?? false ) ) {
+            return true;
+        }
+        if ( self::normalize_boolean( $settings['front_page'] ?? false ) && is_front_page() ) {
+            return true;
+        }
+
+        $post_types = self::normalize_post_types( $settings['post_types'] ?? [] );
+
+        return [] !== $post_types && is_singular( $post_types );
+    }
+
+    /** @param list<string> $post_types */
+    public static function scope_from_targets( bool $entire_site, bool $front_page, array $post_types ): string {
+        if ( $entire_site ) {
+            return 'sitewide';
+        }
+        if ( [ 'post' ] === $post_types ) {
+            return $front_page ? 'posts_front_page' : 'posts';
+        }
+
+        return 'selected';
     }
 
     public static function preview_html( string $style ): string {
@@ -250,7 +374,7 @@ final class ReadingProgress implements ModuleInterface {
             return false;
         }
 
-        return self::scope_matches_current_request( self::settings()['scope'] );
+        return self::targets_match_current_request( self::settings() );
     }
 
     private static function legacy_smp_will_render(): bool {
@@ -298,6 +422,10 @@ final class ReadingProgress implements ModuleInterface {
         if ( $sentinel === get_option( $option, $sentinel ) ) {
             update_option( $option, $value, false );
         }
+    }
+
+    private static function normalize_boolean( mixed $value ): bool {
+        return true === $value || 1 === $value || in_array( strtolower( trim( (string) $value ) ), [ '1', 'true', 'yes', 'on' ], true );
     }
 
     private static function frontend_css(): string {

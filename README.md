@@ -41,7 +41,7 @@ The HWS dashboard includes:
 - Plugins, themes, updates, backups, cleanup, and system checks.
 - Brand Assets, Footer Text, UI Cleanup, and Site Structure tools.
 - Sitemaps, Search Display, Search Behavior, Features, and Shortcodes.
-- A generic reading-progress feature with public display scope, five visual designs, live previews, and the shared Hexa WP Core color picker.
+- A generic reading-progress feature with an entire-site override, front-page and public post-type targeting, five visual designs, live previews, and the shared Hexa WP Core color picker.
 - Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
 
 Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational actions report progress without requiring full page refreshes.
@@ -116,6 +116,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 12.1.8
+
+- Added an entire-site reading-progress toggle that disables narrower targeting while active, plus independent front-page and dynamically discovered public post-type choices for every single item in selected types.
 
 ### 12.1.7
 

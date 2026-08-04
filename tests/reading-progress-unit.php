@@ -5,7 +5,7 @@ declare( strict_types=1 );
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
 $GLOBALS['hws_reading_progress_options'] = [];
-$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => false, 'singular_post' => false ];
+$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => false, 'post_type' => '' ];
 
 function get_option( string $key, mixed $default = false ): mixed {
     return array_key_exists( $key, $GLOBALS['hws_reading_progress_options'] )
@@ -40,8 +40,43 @@ function is_front_page(): bool {
     return (bool) $GLOBALS['hws_reading_progress_context']['front_page'];
 }
 
-function is_singular( string $post_type = '' ): bool {
-    return 'post' === $post_type && (bool) $GLOBALS['hws_reading_progress_context']['singular_post'];
+function is_singular( string|array $post_type = '' ): bool {
+    $current = (string) $GLOBALS['hws_reading_progress_context']['post_type'];
+    if ( '' === $current ) {
+        return false;
+    }
+    if ( '' === $post_type ) {
+        return true;
+    }
+
+    return is_array( $post_type ) ? in_array( $current, $post_type, true ) : $current === $post_type;
+}
+
+function get_post_types( array $args = [], string $output = 'names' ): array {
+    $types = [
+        'post' => (object) [
+            'name' => 'post',
+            'label' => 'Posts',
+            'labels' => (object) [ 'name' => 'Posts', 'singular_name' => 'Post' ],
+        ],
+        'page' => (object) [
+            'name' => 'page',
+            'label' => 'Pages',
+            'labels' => (object) [ 'name' => 'Pages', 'singular_name' => 'Page' ],
+        ],
+        'book' => (object) [
+            'name' => 'book',
+            'label' => 'Books',
+            'labels' => (object) [ 'name' => 'Books', 'singular_name' => 'Book' ],
+        ],
+        'attachment' => (object) [
+            'name' => 'attachment',
+            'label' => 'Media',
+            'labels' => (object) [ 'name' => 'Media', 'singular_name' => 'Attachment' ],
+        ],
+    ];
+
+    return 'objects' === $output ? $types : array_keys( $types );
 }
 
 require dirname( __DIR__ ) . '/lib/hexa-wordpress-plugin-core/src/CoreContracts/ModuleInterface.php';
@@ -63,12 +98,33 @@ reading_progress_expect(
 reading_progress_expect( 'thin' === ReadingProgress::normalize_style( 'invalid' ), 'invalid styles fall back to Thin' );
 reading_progress_expect( '#00ff41' === ReadingProgress::normalize_color( 'invalid' ), 'invalid colors fall back to green' );
 reading_progress_expect( '#a1b2c3' === ReadingProgress::normalize_color( '#A1B2C3' ), 'colors normalize consistently' );
+reading_progress_expect(
+    [ 'post', 'page', 'book' ] === array_keys( ReadingProgress::post_type_choices() ),
+    'every public post type is selectable while attachments stay excluded'
+);
+reading_progress_expect(
+    [ 'book', 'page' ] === ReadingProgress::normalize_post_types( [ 'book', 'invalid', 'page', 'book' ] ),
+    'selected content types normalize against public choices'
+);
 
-$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => false, 'singular_post' => true ];
+$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => false, 'post_type' => 'post' ];
 reading_progress_expect( ReadingProgress::scope_matches_current_request( 'posts' ), 'post scope matches single posts' );
-$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => true, 'singular_post' => false ];
+$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => true, 'post_type' => '' ];
 reading_progress_expect( ReadingProgress::scope_matches_current_request( 'posts_front_page' ), 'front-page scope matches the front page' );
 reading_progress_expect( ! ReadingProgress::scope_matches_current_request( 'posts' ), 'post-only scope excludes the front page' );
+$GLOBALS['hws_reading_progress_context'] = [ 'front_page' => false, 'post_type' => 'book' ];
+reading_progress_expect(
+    ReadingProgress::targets_match_current_request( [ 'entire_site' => false, 'front_page' => false, 'post_types' => [ 'book' ] ] ),
+    'a selected custom post type matches every single item in that type'
+);
+reading_progress_expect(
+    ! ReadingProgress::targets_match_current_request( [ 'entire_site' => false, 'front_page' => false, 'post_types' => [ 'page' ] ] ),
+    'unselected custom post types stay excluded'
+);
+reading_progress_expect(
+    ReadingProgress::targets_match_current_request( [ 'entire_site' => true, 'front_page' => false, 'post_types' => [] ] ),
+    'entire-site targeting overrides narrower choices'
+);
 
 $GLOBALS['hws_reading_progress_options']['smpi_settings'] = [
     'reading_progress_enabled' => true,
@@ -94,8 +150,28 @@ reading_progress_expect( false === get_option( ReadingProgress::FEATURE_OPTION )
 
 $saved = ReadingProgress::save_settings( [ 'scope' => 'sitewide', 'style' => 'segmented', 'color' => '#A1B2C3' ] );
 reading_progress_expect(
-    [ 'scope' => 'sitewide', 'style' => 'segmented', 'color' => '#a1b2c3' ] === $saved,
+    [
+        'scope'       => 'sitewide',
+        'entire_site' => true,
+        'front_page'  => false,
+        'post_types'  => [ 'post' ],
+        'style'       => 'segmented',
+        'color'       => '#a1b2c3',
+    ] === $saved,
     'supported settings save in normalized form'
+);
+$saved = ReadingProgress::save_settings(
+    [
+        'entire_site' => false,
+        'front_page'  => true,
+        'post_types'  => [ 'page', 'book', 'not-public' ],
+        'style'       => 'thin',
+        'color'       => '#00ff41',
+    ]
+);
+reading_progress_expect(
+    'selected' === $saved['scope'] && true === $saved['front_page'] && [ 'page', 'book' ] === $saved['post_types'],
+    'specific front-page and public content-type targets save independently'
 );
 
 $preview_css = ReadingProgress::preview_css();
@@ -116,8 +192,11 @@ reading_progress_expect(
 reading_progress_expect(
     str_contains( $feature_ui, 'ColorControl::render(' )
         && str_contains( $feature_ui, "'--hws-reading-progress-color' => 'color'" )
-        && str_contains( $feature_ui, 'ReadingProgress::preview_html' ),
-    'Features UI uses the Hexa Core color control and live visual previews'
+        && str_contains( $feature_ui, 'ReadingProgress::preview_html' )
+        && str_contains( $feature_ui, 'data-hws-feature-field="entire_site"' )
+        && str_contains( $feature_ui, 'data-hws-feature-field="post_types"' )
+        && str_contains( $feature_ui, "prop('disabled', entireSite)" ),
+    'Features UI uses the Core color control, live previews, sitewide override, and per-CPT choices'
 );
 
 echo "PASS: HWS owns reading progress settings, migration, previews, Core color control, and frontend runtime.\n";

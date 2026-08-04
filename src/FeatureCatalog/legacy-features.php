@@ -150,6 +150,7 @@ function hws_render_feature_settings( array $feature ): void {
 
 function hws_render_reading_progress_settings(): void {
     $settings = ReadingProgress::settings();
+    $post_type_choices = ReadingProgress::post_type_choices();
     $variables = '--hws-reading-progress-color:' . $settings['color'] . ';';
     ?>
     <div
@@ -161,8 +162,15 @@ function hws_render_reading_progress_settings(): void {
         <style>
             <?php echo ReadingProgress::preview_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             .hws-reading-progress-settings{display:grid;gap:16px}
-            .hws-reading-progress-settings>label{display:grid;gap:5px;max-width:420px}
-            .hws-reading-progress-settings>label>span{font-size:12px;font-weight:700}
+            .hws-reading-progress-entire-site{align-items:flex-start;background:#f8fafc;border:1px solid #d8dee8;border-radius:8px;display:flex;gap:10px;padding:12px}
+            .hws-reading-progress-entire-site input{margin-top:2px}
+            .hws-reading-progress-entire-site small,.hws-reading-progress-target-option small{color:#64748b;display:block;margin-top:3px}
+            .hws-reading-progress-targets{border:1px solid #d8dee8;border-radius:8px;display:grid;gap:10px;margin:0;padding:12px;transition:opacity .15s ease}
+            .hws-reading-progress-targets legend{font-weight:700;padding:0 5px}
+            .hws-reading-progress-targets.is-disabled{background:#f1f5f9;opacity:.52}
+            .hws-reading-progress-target-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+            .hws-reading-progress-target-option{align-items:flex-start;background:#fff;border:1px solid #e2e8f0;border-radius:6px;display:flex;gap:9px;padding:10px}
+            .hws-reading-progress-target-option input{margin-top:2px}
             .hws-reading-progress-style-list{display:grid;gap:10px}
             .hws-reading-progress-style-option{background:#fff;border:1px solid #d8dee8;border-radius:8px;cursor:pointer;display:block;padding:12px}
             .hws-reading-progress-style-option.is-selected{border-color:#3157d5;box-shadow:inset 0 0 0 1px #3157d5}
@@ -173,14 +181,31 @@ function hws_render_reading_progress_settings(): void {
             .hws-reading-progress-settings-actions{align-items:center;display:flex;gap:10px;flex-wrap:wrap}
         </style>
 
-        <label>
-            <span>Display scope</span>
-            <select data-hws-feature-field="scope">
-                <?php foreach ( ReadingProgress::scopes() as $scope => $config ) : ?>
-                    <option value="<?php echo esc_attr( $scope ); ?>" <?php selected( $settings['scope'], $scope ); ?>><?php echo esc_html( $config['label'] ); ?> — <?php echo esc_html( $config['description'] ); ?></option>
-                <?php endforeach; ?>
-            </select>
+        <label class="hws-reading-progress-entire-site">
+            <input type="checkbox" data-hws-feature-field="entire_site" <?php checked( $settings['entire_site'] ); ?>>
+            <span><strong>Load on the entire site</strong><small>Show the progress bar on every public frontend route. Turning this on overrides and disables the page and content-type choices below.</small></span>
         </label>
+
+        <fieldset
+            class="hws-reading-progress-targets <?php echo $settings['entire_site'] ? 'is-disabled' : ''; ?>"
+            data-hws-reading-progress-targets
+            <?php disabled( $settings['entire_site'] ); ?>
+        >
+            <legend>Specific pages and single content</legend>
+            <p class="description">Used only when “Load on the entire site” is off. Choose the front page and every public single item by content type.</p>
+            <div class="hws-reading-progress-target-grid">
+                <label class="hws-reading-progress-target-option">
+                    <input type="checkbox" data-hws-feature-field="front_page" <?php checked( $settings['front_page'] ); ?>>
+                    <span><strong>Front page</strong><small>The configured public homepage.</small></span>
+                </label>
+                <?php foreach ( $post_type_choices as $post_type => $choice ) : ?>
+                    <label class="hws-reading-progress-target-option">
+                        <input type="checkbox" value="<?php echo esc_attr( $post_type ); ?>" data-hws-feature-field="post_types" <?php checked( in_array( $post_type, $settings['post_types'], true ) ); ?>>
+                        <span><strong><?php echo esc_html( $choice['label'] ); ?></strong><small><?php echo esc_html( $choice['description'] ); ?></small></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </fieldset>
 
         <div>
             <strong>Progress design</strong>
@@ -465,7 +490,9 @@ function hws_output_feature_card_scripts(): void {
                 feature_id: featureId,
                 tag: $settings.find('[data-hws-feature-field="tag"]').val() || '',
                 limit: $settings.find('[data-hws-feature-field="limit"]').val() || '',
-                scope: $settings.find('[data-hws-feature-field="scope"]').val() || '',
+                entire_site: $settings.find('[data-hws-feature-field="entire_site"]').is(':checked') ? '1' : '0',
+                front_page: $settings.find('[data-hws-feature-field="front_page"]').is(':checked') ? '1' : '0',
+                post_types: $settings.find('[data-hws-feature-field="post_types"]:checked').map(function() { return this.value; }).get(),
                 style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
                 color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || ''
             };
@@ -491,6 +518,20 @@ function hws_output_feature_card_scripts(): void {
         $(document).off('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]').on('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]', function() {
             $(this).closest('.hws-reading-progress-style-list').find('.hws-reading-progress-style-option').removeClass('is-selected');
             $(this).closest('.hws-reading-progress-style-option').addClass('is-selected');
+        });
+
+        function syncReadingProgressTargets($settings) {
+            var entireSite = $settings.find('[data-hws-feature-field="entire_site"]').is(':checked');
+            var $targets = $settings.find('[data-hws-reading-progress-targets]');
+            $targets.prop('disabled', entireSite).toggleClass('is-disabled', entireSite).attr('aria-disabled', entireSite ? 'true' : 'false');
+        }
+
+        $(document).off('change.hwsReadingProgressSitewide', '[data-hws-feature-field="entire_site"]').on('change.hwsReadingProgressSitewide', '[data-hws-feature-field="entire_site"]', function() {
+            syncReadingProgressTargets($(this).closest('.hws-reading-progress-settings'));
+        });
+
+        $('.hws-reading-progress-settings').each(function() {
+            syncReadingProgressTargets($(this));
         });
 
         $(document).off('click.hwsFeatureTest', '.hws-feature-run-test').on('click.hwsFeatureTest', '.hws-feature-run-test', function() {
@@ -622,14 +663,17 @@ function ajax_hws_feature_save_settings(): void {
     }
 
     if ( ReadingProgress::FEATURE_OPTION === $feature_id ) {
+        $post_types = isset( $_POST['post_types'] ) ? (array) wp_unslash( $_POST['post_types'] ) : [];
         $saved = ReadingProgress::save_settings(
             [
-                'scope' => isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : '',
-                'style' => isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '',
-                'color' => isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '',
+                'entire_site' => ! empty( $_POST['entire_site'] ),
+                'front_page'  => ! empty( $_POST['front_page'] ),
+                'post_types'  => array_map( 'sanitize_key', $post_types ),
+                'style'       => isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '',
+                'color'       => isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '',
             ]
         );
-        hws_add_feature_activity( $feature_id, 'Updated reading progress scope, design, and color.' );
+        hws_add_feature_activity( $feature_id, 'Updated reading progress targeting, design, and color.' );
         wp_send_json_success( $saved );
     }
 
@@ -687,10 +731,13 @@ function hws_run_feature_test( string $feature_id ): array {
 
         case ReadingProgress::FEATURE_OPTION:
             $settings = ReadingProgress::settings();
+            $targets = $settings['entire_site']
+                ? 'entire site'
+                : ( $settings['front_page'] ? 'front page; ' : '' ) . 'single types ' . implode( ', ', $settings['post_types'] );
             return [
                 'passed'  => true,
                 'message' => 'The HWS reading progress runtime is enabled with normalized settings.',
-                'proof'   => 'Scope ' . $settings['scope'] . '; design ' . $settings['style'] . '; color ' . $settings['color'] . '.',
+                'proof'   => 'Targets ' . $targets . '; design ' . $settings['style'] . '; color ' . $settings['color'] . '.',
                 'ran_at'  => $ran_at,
             ];
 
