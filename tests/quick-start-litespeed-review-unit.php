@@ -101,6 +101,11 @@ launch_expect( str_contains( $bootstrap, '$wp_filesystem->move( $target, $backup
 launch_expect( str_contains( $bootstrap, 'HWS_BOOTSTRAP_SECRET' ) && ! preg_match( '/(?i)(secret|token|key)\s*[=:]\s*[\"\'][A-Za-z0-9+\/=_-]{24,}/', $bootstrap ), 'bootstrap secret is injected and never embedded in source' );
 launch_expect( str_contains( $bootstrap, '/releases/latest' ) && str_contains( $bootstrap, '/archive/refs/tags/' ) && ! str_contains( $bootstrap, '/archive/refs/heads/' ), 'bootstrap installs only an immutable published GitHub release' );
 launch_expect( str_contains( $bootstrap, 'hws_bootstrap_release_version_mismatch' ) && str_contains( $bootstrap, 'hws_bootstrap_core_integrity_failed' ) && str_contains( $bootstrap, 'TOKEN_PARSE' ), 'bootstrap verifies release version, bundled Core hash, and PHP syntax before replacement' );
+launch_expect(
+    preg_match( '/clear_plugin_discovery_cache\(\);\s*\$activated\s*=\s*activate_plugin\(\s*PLUGIN\s*\);/', $bootstrap ) === 1
+    && str_contains( $bootstrap, "wp_cache_delete( 'plugins', 'plugins' )" ),
+    'bootstrap invalidates stale plugin discovery before activating a fresh install'
+);
 launch_expect( str_contains( $bootstrap, 'register_pending_health_check' ) && str_contains( $bootstrap, 'complete_pending_health_check' ) && str_contains( $bootstrap, 'restore_previous_install' ), 'bootstrap retains rollback state through a next-request health check' );
 launch_expect( str_contains( $bootstrap, "ACTION . '|GET|'" ) && str_contains( $bootstrap, 'canonical_home_url()' ), 'signed bootstrap requests are bound to the exact site path, action, and GET method' );
 $deployment = (string) file_get_contents( $root . '/src/BootstrapInstaller/BootstrapLoaderDeployment.php' );

@@ -2,7 +2,7 @@
 /*
 Plugin Name: HWS Base Tools Bootstrap Loader
 Description: Securely installs or updates HWS Base Tools from its canonical GitHub release.
-Version: 2.0.0
+Version: 2.0.1
 Author: Hexa Web Systems
 */
 
@@ -179,6 +179,10 @@ function install_latest(): array|\WP_Error {
         return $installed_validation;
     }
 
+    // Another plugin may have populated get_plugins() before this MU loader
+    // copied a fresh install into place. Clear that request-local/persistent
+    // discovery cache so activate_plugin() validates the files just installed.
+    clear_plugin_discovery_cache();
     $activated = activate_plugin( PLUGIN );
     if ( is_wp_error( $activated ) ) {
         restore_previous_install( $target, $backup, $had_existing, $activation_state );
@@ -496,6 +500,15 @@ function restore_previous_install( string $target, string $backup, bool $had_exi
     if ( $had_existing && $wp_filesystem->is_dir( $backup ) ) {
         $wp_filesystem->move( $backup, $target, false );
     }
+    clear_plugin_discovery_cache();
+}
+
+function clear_plugin_discovery_cache(): void {
+    if ( function_exists( 'wp_clean_plugins_cache' ) ) {
+        wp_clean_plugins_cache( false );
+        return;
+    }
+    wp_cache_delete( 'plugins', 'plugins' );
 }
 
 function prepare_wordpress_filesystem(): void {

@@ -10,7 +10,7 @@ final class PluginMetadata {
     public const MAIN_FILE = 'hws-base-tools.php';
     public const GITHUB_REPOSITORY = 'mikeyperes/hws-base-tools';
     public const GITHUB_BRANCH = 'main';
-    public const VERSION = '13.0.0';
+    public const VERSION = '13.0.1';
     public const REQUIRES_WORDPRESS = '6.0';
     public const REQUIRES_PHP = '8.1';
     public const TESTED_WORDPRESS = '7.0';
