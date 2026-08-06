@@ -126,6 +126,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.0.2
+
+- Makes the HWS discussion policy authoritative over importers and other content writers: closed comment or ping defaults are enforced on every post insert/update at final priority and on frontend availability checks, while explicitly enabled discussion remains untouched.
+
 ### 13.0.1
 
 - Invalidates stale WordPress plugin discovery before activating a fresh bootstrap install and after rollback, preventing `no_plugin_header` errors when `get_plugins()` was populated earlier in the request. The MU bootstrap loader is now version 2.0.1.

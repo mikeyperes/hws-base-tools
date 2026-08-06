@@ -285,6 +285,15 @@ expect_true(
     && ! str_contains( $shared_content_types, "KNOWLEDGE_BASE" ),
     'HWS owns Organization, Testimonial, Team Member, and Services while SMP owns Knowledge Base'
 );
+$discussion_policy = source( 'src/FrontendContent/DiscussionPolicy.php' );
+expect_true(
+    str_contains( $discussion_policy, "add_filter( 'wp_insert_post_data'" )
+    && str_contains( $discussion_policy, "add_filter( 'comments_open'" )
+    && str_contains( $discussion_policy, "add_filter( 'pings_open'" )
+    && str_contains( $discussion_policy, 'PHP_INT_MAX' )
+    && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new DiscussionPolicy()' ),
+    'HWS discussion policy has final precedence over later content writers and frontend checks'
+);
 expect_true(
     str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'SharedContentTypes::registry()' )
     && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'SharedAcfStructures::registry()' )

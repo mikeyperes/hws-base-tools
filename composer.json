@@ -22,6 +22,7 @@
       "@php tests/brand-templates-unit.php",
       "@php tests/shared-content-types-unit.php",
       "@php tests/team-member-directory-unit.php",
+      "@php tests/discussion-policy-unit.php",
       "@php tests/reading-progress-unit.php",
       "@php tests/plugin-policy-unit.php",
       "@php tests/user-profile-2025-migration-unit.php",
