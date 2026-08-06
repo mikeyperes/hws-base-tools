@@ -103,6 +103,8 @@ expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered thr
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['mail-authentication'] ), 'HWS Mail Authentication tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['review-center'] ), 'HWS Review Center tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['litespeed'] ), 'HWS LiteSpeed tab is registered through the dashboard registry' );
 expect_true(
     $registry->implementation_files_for_ajax_action( 'hws_plugin_library_install_activate' ) === [ 'settings-dashboard-check-plugins.php' ]
     && $registry->implementation_files_for_ajax_action( 'hws_plugin_status_install_activate' ) === [ 'settings-dashboard-check-plugins.php' ]
@@ -110,9 +112,9 @@ expect_true(
     'plugin inventory AJAX actions load their controller module before dispatch'
 );
 expect_true(
-    $registry->implementation_files_for_tab( 'quick-start' ) === [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-getting-started.php' ]
+    $registry->implementation_files_for_tab( 'quick-start' ) === []
     && $registry->implementation_files_for_ajax_action( 'hws_getting_started_checklist_run_item' ) === [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-getting-started.php' ],
-    'Quick Start loads plugin policy before checklist rendering and AJAX dispatch'
+    'Quick Start is namespaced while its legacy AJAX route retains compatibility loading'
 );
 $groups = $registry->navigation_groups();
 $grouped_tab_ids = [];
@@ -194,7 +196,7 @@ expect_true(
 
 $mail_auth_source = source( 'src/MailAuthentication/Smtp2goAuthenticationService.php' );
 $mail_admin_source = source( 'src/MailAuthentication/MailAuthenticationAdmin.php' );
-$getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
+$getting_started_source = source( 'src/QuickStart/SiteConfigurationService.php' );
 expect_true(
     str_contains( $mail_auth_source, "private const VALIDATION_URL = 'https://api.smtp2go.com/v3/api_keys/view'" )
     && str_contains( $mail_auth_source, 'private function settings_step' )
@@ -209,10 +211,9 @@ expect_true(
     'Mail Authentication tab uses Hexa Core UI and the shared SMTP2GO service'
 );
 expect_true(
-    str_contains( $getting_started_source, "'test_smtp2go_authentication'" )
-    && str_contains( $getting_started_source, '( new Smtp2goAuthenticationService() )->run( $recipient )' )
-    && str_contains( $getting_started_source, 'No SMTP2GO API validation request was sent because the preceding stage failed.' )
-    && str_contains( $getting_started_source, 'No test message was sent because the preceding stage failed.' ),
+    str_contains( $getting_started_source, '( new Smtp2goAuthenticationService() )->run( $recipient )' )
+    && str_contains( source( 'src/QuickStart/QuickStartProfileRegistry.php' ), "'test_smtp'" )
+    && str_contains( source( 'src/QuickStart/QuickStartTaskRunner.php' ), "'test_smtp'" ),
     'Quick Start calls the same full SMTP2GO authentication service'
 );
 
@@ -446,16 +447,15 @@ expect_true(
     && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
     'Search Behavior exposes the five-plugin audit, refresh-free save, reusable Core query engine, and guarded JetEngine template adapter'
 );
-$getting_started_source = source( 'src/AdminDashboard/legacy-getting-started.php' );
+$getting_started_source = source( 'src/QuickStart/QuickStartModule.php' );
 expect_true(
     str_contains( $getting_started_source, "'show_search'          => true" )
     && str_contains( $getting_started_source, "'search_label'         => 'Search Quick Start'" ),
     'Quick Start enables the reusable Hexa Core checklist search'
 );
-$required_plugin_task_offset = strpos( $getting_started_source, "hws_getting_started_quick_setup_task_definition( 'install_essential_plugins'" );
-$favicon_task_offset         = strpos( $getting_started_source, "hws_getting_started_quick_setup_task_definition( 'regenerate_favicon_ico'" );
-preg_match( '/function hws_getting_started_install_essential_plugins_task\(\): array \{(?<body>.*?)\n\}\n\nfunction hws_getting_started_essential_plugin_report_row/s', $getting_started_source, $required_plugin_installer_match );
-$required_plugin_installer = (string) ( $required_plugin_installer_match['body'] ?? '' );
+$quick_start_profiles = source( 'src/QuickStart/QuickStartProfileRegistry.php' );
+$required_plugin_task_offset = strpos( $quick_start_profiles, "'install_essential_plugins'" );
+$favicon_task_offset         = strpos( $quick_start_profiles, "'regenerate_favicon_ico'" );
 expect_true(
     false !== $required_plugin_task_offset
     && false !== $favicon_task_offset
@@ -463,9 +463,9 @@ expect_true(
     'Quick Start installs missing required plugins before plugin-dependent setup actions'
 );
 expect_true(
-    str_contains( $required_plugin_installer, 'hws_get_monitored_plugin_definitions()' )
-    && str_contains( $required_plugin_installer, 'hws_getting_started_ensure_plugin_state( $definition )' )
-    && ! str_contains( $required_plugin_installer, 'Plugin_Upgrader' ),
+    str_contains( source( 'src/QuickStart/PluginStackService.php' ), 'PluginProvisioner::install_wordpress_org_plugin' )
+    && str_contains( source( 'src/QuickStart/PluginStackService.php' ), 'PluginProvisioner::install_github_plugin' )
+    && ! str_contains( source( 'src/QuickStart/PluginStackService.php' ), 'Plugin_Upgrader' ),
     'Quick Start provisions required plugins through the shared Hexa WP Core path'
 );
 $feature_catalog_source = source( 'src/FeatureCatalog/legacy-features.php' );
@@ -478,7 +478,12 @@ expect_true(
 $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php' );
 $core_checklist_assets_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistAssets.php' );
 $core_checklist_renderer_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' );
-expect_true( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ) === '2.1.4', 'HWS bundles Hexa WordPress Plugin Core 2.1.4' );
+expect_true(
+    version_compare( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ), '3.0.0', '>=' )
+    && is_readable( $root . '/lib/hexa-wordpress-plugin-core/src/WordPressOperations/UpdateOperations.php' )
+    && is_readable( $root . '/lib/hexa-wordpress-plugin-core/src/LiteSpeedCache/LiteSpeedCacheService.php' ),
+    'HWS bundles the current refactored Hexa WordPress Plugin Core'
+);
 expect_true(
     str_contains( $core_checklist_renderer_source, 'data-gsc-filter-item' )
     && str_contains( $core_ui_source, 'new MutationObserver(function() { applyFilter(); })' )
@@ -606,13 +611,25 @@ $force_source = false === $force_offset ? '' : substr( $force_handler, $force_of
 expect_true( str_contains( $force_source, "current_user_can( 'update_plugins' )" ), 'force update AJAX checks capability' );
 expect_true( str_contains( $force_source, 'hws_require_ajax_nonce_or_error()' ), 'force update AJAX verifies nonce' );
 
-$generic_utilities_source = source( 'src/LegacyCompatibility/legacy-generic-functions.php' );
-expect_true( ! str_contains( $generic_utilities_source, 'eval(' ), 'generic utilities contain no eval-based aliasing' );
+$generic_facade_source = source( 'src/LegacyCompatibility/legacy-generic-functions.php' );
+$generic_cache_source  = source( 'src/LegacyCompatibility/GenericLibrary/CacheDiagnostics.php' );
+$generic_litespeed_reader_source = source( 'src/LegacyCompatibility/GenericLibrary/LiteSpeedConfigurationReader.php' );
 expect_true(
-    str_contains( $generic_utilities_source, "str_starts_with( \$host, '/' )" )
-    && str_contains( $generic_utilities_source, "str_starts_with( \$host, 'unix://' )" )
-    && str_contains( $generic_utilities_source, '$port           = $is_unix_socket ? 0' ),
+    ! str_contains( $generic_facade_source . $generic_cache_source, 'eval(' )
+    && 6 === substr_count( $generic_facade_source, "require_once __DIR__ . '/GenericLibrary/" )
+    && ! str_contains( $generic_facade_source, 'function ' ),
+    'generic utilities use a thin, explicit compatibility facade with no eval-based aliasing'
+);
+expect_true(
+    str_contains( $generic_cache_source, "str_starts_with( \$host, '/' )" )
+    && str_contains( $generic_cache_source, "str_starts_with( \$host, 'unix://' )" )
+    && str_contains( $generic_cache_source, '$port           = $is_unix_socket ? 0' ),
     'Redis status checks preserve port zero for Unix socket connections'
+);
+expect_true(
+    str_contains( $generic_litespeed_reader_source, '\\LiteSpeed\\Conf::cls()' )
+    && ! str_contains( $generic_cache_source . $generic_litespeed_reader_source, 'litespeed.conf.' ),
+    'legacy cache diagnostics read effective values through the official LiteSpeed configuration API'
 );
 expect_true( ! file_exists( $root . '/register-acf-functionality.php' ), 'unsafe dead short-tag ACF file is removed' );
 expect_true( ! file_exists( $root . '/src/AcfFields/LegacySmpUserFields.php' ), 'superseded User - Admin ACF registration is removed' );

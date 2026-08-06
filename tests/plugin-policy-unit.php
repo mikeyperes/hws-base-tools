@@ -52,9 +52,16 @@ require_once dirname( __DIR__ ) . '/src/PluginPolicy/legacy-plugin-checks.php';
 
 $podcast_slug = 'smp-core-podcast-integration';
 $catalog = hws_base_tools\hws_get_hexa_plugin_catalog();
+$monitored = hws_base_tools\hws_get_monitored_plugins();
 $site_kit_definition = policy_definition(
     hws_base_tools\hws_get_monitored_plugin_definitions(),
     'google-site-kit-google-site-kit.php'
+);
+
+expect_policy(
+    'optional' === ( $monitored['wp-sweep/wp-sweep.php']['category'] ?? '' )
+    && 'inactive' === ( $monitored['wp-sweep/wp-sweep.php']['should_be'] ?? '' ),
+    'temporary WP-Sweep cleanup tooling stays out of the Quick Start required stack'
 );
 
 expect_policy(

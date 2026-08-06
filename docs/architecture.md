@@ -51,6 +51,10 @@ src/ContentTypes/        HWS-owned shared WordPress content types
 src/AcfFields/           HWS\BaseTools\AcfFields
 src/BrandAssets/         HWS site identity and legacy brand adapters
 src/PluginPolicy/        HWS required/optional plugin policy
+src/QuickStart/          HWS launch profiles and task adapters
+src/ReviewCenter/        explicitly reviewed, individual cleanup policy
+src/LiteSpeed/           HWS LiteSpeed profiles and checklist/task orchestration
+src/BootstrapInstaller/  deployment of the secure GitHub bootstrap loader
 src/SystemHealth/        HWS environment and health presentation
 src/Maintenance/         HWS schedules and cleanup adapters
 src/SitemapTools/        HWS sitemap policy and controls
@@ -129,6 +133,10 @@ Content and backup cleanup         Hexa\PluginCore\ContentCleanup
 Environment probes                Hexa\PluginCore\SystemEnvironment
 wp-config access                   Hexa\PluginCore\WpConfigFile
 Cron task mechanics               Hexa\PluginCore\WpCronTasks
+Persistent real-time checklists   Hexa\PluginCore\GettingStartedChecklist
+WordPress update/baseline actions Hexa\PluginCore\WordPressOperations
+LiteSpeed profiles and auditing   Hexa\PluginCore\LiteSpeedCache
+Field value normalization         Hexa\PluginCore\DataNormalization
 ```
 
 HWS callbacks supply labels, option keys, capabilities, nonces, selectors,
@@ -170,6 +178,10 @@ domain that describes what it does.
 
 - Every mutation requires an explicit capability and nonce check.
 - Public GET mutation routes remain disabled by default.
+- The bootstrap installer accepts either a logged-in administrator nonce or a
+  short-lived, one-use HMAC URL whose secret is injected by the server.
+- Bootstrap and Wordfence fleet secrets are never committed, logged, returned
+  by AJAX, or copied from another WordPress site.
 - Legacy remote actions require `HWS_ALLOW_LEGACY_REMOTE_ACTIONS`.
 - Secret comparisons use `hash_equals`.
 - Secrets are stored through `Security\SecretStore` and never rendered into the
@@ -192,6 +204,8 @@ Before release:
    overlay controls, native `/?s=` submission, term mode, word-matching mode,
    content source, and shortcode-only query scope.
 9. Confirm no PHP notices, page errors, or browser console errors.
+10. Verify Quick Start, Review Center, and LiteSpeed state after a reload and
+    confirm destructive or mail-sending tasks never participate in a batch.
 
 Browser proof must use the exact visible UI path. A direct helper invocation is
 not proof that an operator workflow works.
@@ -203,6 +217,14 @@ continues. Their folder is their ownership boundary; the prefix is not
 permission to put unrelated functions together. When changing one, extract
 new reusable logic into a class first and leave the procedural function as an
 adapter.
+
+`LegacyCompatibility/legacy-generic-functions.php` is only the compatibility
+facade for the historical `hws_base_tools\*` utility surface. Its adapters are
+grouped by responsibility in `LegacyCompatibility/GenericLibrary/generic-*.php`;
+PSR-4 implementations in that folder use
+`HWS\BaseTools\LegacyCompatibility\GenericLibrary`. Cache diagnostics read
+effective LiteSpeed values through LiteSpeed's `Conf` API and never inspect
+`litespeed.conf.*` option rows directly.
 
 The remaining large procedural surfaces are the dashboard workspace, brand
 asset compatibility shortcodes, Quick Start callbacks, Footer Text settings,

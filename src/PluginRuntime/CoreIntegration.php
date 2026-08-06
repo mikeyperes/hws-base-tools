@@ -17,6 +17,9 @@ use HWS\BaseTools\Diagnostics\IntegrationTests;
 use HWS\BaseTools\BrandTemplates\BrandTemplateFeature;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
+use HWS\BaseTools\QuickStart\QuickStartModule;
+use HWS\BaseTools\ReviewCenter\ReviewCenterModule;
+use HWS\BaseTools\LiteSpeed\LiteSpeedModule;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -55,6 +58,9 @@ final class CoreIntegration {
         self::$bootstrap
             ->add_module( new LegacyEventBridge() )
             ->add_module( new DashboardAssets() )
+            ->add_module( new QuickStartModule() )
+            ->add_module( new ReviewCenterModule() )
+            ->add_module( new LiteSpeedModule() )
             ->add_module( new QueryHookCompatibility() )
             ->add_module( new BrandTemplateFeature() )
             ->add_module( new ReadingProgress() )

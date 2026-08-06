@@ -407,10 +407,10 @@ function hws_get_monitored_plugins() {
         ],
         'wp-sweep/wp-sweep.php' => [
             'name'        => 'WP-Sweep',
-            'should_be'   => 'active',
+            'should_be'   => 'inactive',
             'auto_update' => true,
             'download'    => 'https://wordpress.org/plugins/wp-sweep/',
-            'category'    => 'essential',
+            'category'    => 'optional',
             'pro'         => false,
         ],
         'google-site-kit/google-site-kit.php' => [

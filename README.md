@@ -28,6 +28,8 @@ Reusable cross-plugin behavior comes from the bundled Hexa WordPress Plugin Core
 - Canonical entity resolution and attached-user field inspection.
 - FAQ normalization/rendering and schema document utilities.
 - Plugin/Core update reporting, provisioning, cleanup, search, and system utilities.
+- Persistent real-time checklists, WordPress operations, LiteSpeed setting
+  profiles, and reusable field-value normalization.
 
 See [docs/architecture.md](docs/architecture.md) and [HEXA_PLUGIN_CORE_LIBRARY.md](HEXA_PLUGIN_CORE_LIBRARY.md).
 
@@ -35,7 +37,12 @@ See [docs/architecture.md](docs/architecture.md) and [HEXA_PLUGIN_CORE_LIBRARY.m
 
 The HWS dashboard includes:
 
-- Overview and Quick Start readiness checks.
+- A profile-driven Quick Start master checklist with individual and safe batch
+  execution, resume/retry state, rollback snapshots, and before/after reporting.
+- A separate Review Center for deletion candidates that must be approved one at
+  a time, including complete comment removal.
+- A dedicated LiteSpeed checklist with Compatibility, Safe Baseline, Editorial,
+  and Aggressive Test-First profiles.
 - Website and Primary Entity settings.
 - Custom Post Types and ACF structure controls.
 - Plugins, themes, updates, backups, cleanup, and system checks.
@@ -45,6 +52,8 @@ The HWS dashboard includes:
 - Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
 
 Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational actions report progress without requiring full page refreshes.
+
+See [Quick Start and Review Center](docs/quick-start.md), [LiteSpeed Profiles](docs/litespeed.md), and the [HWS Bootstrap URL](docs/bootstrap-installer.md).
 
 ## Brand Templates
 
@@ -97,13 +106,13 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 2.1.4 |
+| Hexa WP Core bundle | 3.0.0 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
 ## Installation
 
-Install the repository as `wp-content/plugins/hws-base-tools`, activate `hws-base-tools.php`, and open **Settings > HWS Core Tools**. Existing installs activated through `initialization.php` are migrated by the compatibility bootstrap.
+Install the repository as `wp-content/plugins/hws-base-tools`, activate `hws-base-tools.php`, and open **Settings > HWS Core Tools**. Existing installs activated through `initialization.php` are migrated by the compatibility bootstrap. Prepared sites can also use the secure administrator bootstrap URL documented above to download the canonical GitHub package without a manual ZIP workflow.
 
 ## Development
 
@@ -116,6 +125,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.0.0
+
+- Coordinated major release for the expanded HWS operations, provisioning, review, security, and Quick Start infrastructure, synchronized with Hexa WordPress Plugin Core 3.0.0.
 
 ### 12.1.8
 
