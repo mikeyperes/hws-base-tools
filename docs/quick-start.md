@@ -20,10 +20,10 @@ continues, but any failed mutation stops all later tasks.
    bootstrap loader.
 2. Audit WordPress, PHP, identity, and permalinks.
 3. synchronize Hexa WP Core across every registered host plugin.
-4. Install current WordPress, plugin, and theme updates, then enable future
-   automatic updates.
-5. Provision and verify the required plugin stack.
-6. Set WordPress memory to `4096M`, disable production debug output, close all
+4. Install current WordPress, plugin, and theme updates.
+5. Provision the required plugin stack, then enable future automatic updates
+   for the complete installed inventory and verify the stack.
+6. Set both WordPress front-end and admin memory to `4096M`, disable production debug output, close all
    comments and pings, hard-repair permalinks, and audit the real-cron handoff.
 7. Apply brand and admin defaults.
 8. Provision LiteSpeed, apply the selected profile, and verify it.

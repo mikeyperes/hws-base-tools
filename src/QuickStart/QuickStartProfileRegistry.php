@@ -71,7 +71,6 @@ final class QuickStartProfileRegistry {
                     self::task( 'update_wordpress', 'Update WordPress core now', 'setup_action', 'Installs the currently offered WordPress core update and verifies the resulting version.', 'Update', $context ),
                     self::task( 'update_plugins', 'Update all plugins now', 'setup_action', 'Installs every currently offered plugin update, including GitHub-backed Hexa plugins.', 'Update', $context ),
                     self::task( 'update_themes', 'Update all themes now', 'setup_action', 'Installs every currently offered theme update.', 'Update', $context ),
-                    self::task( 'enable_auto_updates', 'Enable future automatic updates', 'config_mutation', 'Enables all WordPress core, plugin, and theme auto-updates after current updates finish.', 'Apply', $context ),
                 ]
             ),
             self::group(
@@ -80,6 +79,7 @@ final class QuickStartProfileRegistry {
                 'Install and activate the HWS-required plugin stack for this site profile.',
                 [
                     self::task( 'install_essential_plugins', 'Install and activate required plugins', 'setup_action', 'Uses the shared provisioner and the selected HWS site profile. Paid plugins remain review items when no licensed package is available.', 'Install', $context ),
+                    self::task( 'enable_auto_updates', 'Enable future automatic updates', 'config_mutation', 'Enables all WordPress core, plugin, and theme auto-updates after the required stack is installed.', 'Apply', $context ),
                     self::task( 'verify_plugin_stack', 'Verify plugin stack', 'status_check', 'Reports missing, inactive, outdated, or conflicting plugins after provisioning.', 'Verify', $context ),
                 ]
             ),
@@ -88,7 +88,7 @@ final class QuickStartProfileRegistry {
                 '4. WordPress Baseline',
                 'Apply the WordPress-owned launch settings that are safe to automate from a plugin.',
                 [
-                    self::task( 'set_memory_limit', 'Set WordPress memory to 4 GB', 'config_mutation', 'Sets WP_MEMORY_LIMIT to exactly 4096M and verifies the file value.', 'Apply', $context ),
+                    self::task( 'set_memory_limit', 'Set WordPress memory to 4 GB', 'config_mutation', 'Sets both WP_MEMORY_LIMIT and WP_MAX_MEMORY_LIMIT to exactly 4096M and verifies the file values.', 'Apply', $context ),
                     self::task( 'disable_debug_settings', 'Disable production debug output', 'config_mutation', 'Disables WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG.', 'Apply', $context ),
                     self::task( 'disable_comments_pings', 'Disable all comments and pings', 'config_mutation', 'Closes future discussion and all existing post comment and ping statuses. Existing comments are handled separately in Review Center.', 'Apply', $context ),
                     self::task( 'repair_permalinks', 'Hard-repair permalinks', 'setup_action', 'Preserves the chosen permalink structure, rebuilds rewrite rules, and verifies a live inner page.', 'Repair', $context ),

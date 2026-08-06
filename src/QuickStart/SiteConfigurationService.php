@@ -8,7 +8,18 @@ use HWS\BaseTools\MailAuthentication\Smtp2goAuthenticationService;
 final class SiteConfigurationService {
     /** @return array<string,mixed> */
     public function set_memory_limit(): array {
-        return $this->write_constants( [ 'WP_MEMORY_LIMIT' => '4096M' ], 'WP_MEMORY_LIMIT', '4096M', 'WordPress memory set to exactly 4096M.' );
+        $expected = [ 'WP_MEMORY_LIMIT' => '4096M', 'WP_MAX_MEMORY_LIMIT' => '4096M' ];
+        $result   = WpConfigFile::modify_constants( $expected );
+        $actual   = [];
+        foreach ( array_keys( $expected ) as $constant ) {
+            $actual[ $constant ] = $this->file_constant( $constant );
+        }
+        $verified = ! empty( $result['status'] ) && $expected === $actual;
+        return [
+            'success' => $verified,
+            'message' => $verified ? 'WordPress front-end and admin memory are set to exactly 4096M.' : (string) ( $result['message'] ?? 'WordPress memory constants did not verify.' ),
+            'data'    => [ 'expected' => $expected, 'actual' => $actual, 'writer' => $result ],
+        ];
     }
 
     /** @return array<string,mixed> */

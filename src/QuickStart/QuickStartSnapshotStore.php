@@ -30,7 +30,7 @@ final class QuickStartSnapshotStore {
             $snapshot['options'][ $option ] = $this->read_option_state( $option );
         }
 
-        foreach ( [ 'WP_MEMORY_LIMIT', 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG', 'WP_AUTO_UPDATE_CORE', 'DISABLE_WP_CRON' ] as $constant ) {
+        foreach ( [ 'WP_MEMORY_LIMIT', 'WP_MAX_MEMORY_LIMIT', 'WP_DEBUG', 'WP_DEBUG_DISPLAY', 'WP_DEBUG_LOG', 'WP_AUTO_UPDATE_CORE', 'DISABLE_WP_CRON' ] as $constant ) {
             $snapshot['constants'][ $constant ] = defined( $constant ) ? constant( $constant ) : null;
         }
 

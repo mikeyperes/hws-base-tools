@@ -126,6 +126,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.0.4
+
+- Completes required-plugin provisioning before enabling automatic updates, verifies both WordPress memory constants at `4096M`, and captures `WP_MAX_MEMORY_LIMIT` in rollback snapshots.
+
 ### 13.0.3
 
 - Separates LiteSpeed Redis configuration from next-request verification, fails closed for foreign object-cache drop-ins, and accepts an explicit UTC offset of zero during Quick Start identity checks. Synchronized the bundled Hexa WP Core to 3.0.1.
