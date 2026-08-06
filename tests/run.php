@@ -282,8 +282,10 @@ expect_true(
     && str_contains( $shared_content_types, "public const TESTIMONIAL = 'testimonial'" )
     && str_contains( $shared_content_types, "public const TEAM_MEMBER = 'team-member'" )
     && str_contains( $shared_content_types, "public const SERVICES = 'services'" )
+    && ! str_contains( $shared_content_types, "self::definition( self::ORGANIZATION" )
+    && ! str_contains( $shared_content_types, "self::ORGANIZATION => 'smp_enable_cpt_organization'" )
     && ! str_contains( $shared_content_types, "KNOWLEDGE_BASE" ),
-    'HWS owns Organization, Testimonial, Team Member, and Services while SMP owns Knowledge Base'
+    'HWS retains the Organization key for compatibility without owning its registration'
 );
 $discussion_policy = source( 'src/FrontendContent/DiscussionPolicy.php' );
 expect_true(

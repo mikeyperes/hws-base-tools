@@ -10,13 +10,16 @@ use Hexa\PluginCore\ContentTypes\ContentTypeRegistry;
 defined( 'ABSPATH' ) || exit;
 
 final class SharedContentTypes {
+    /**
+     * @deprecated Organization is registered by SFPF Person Profile Integration.
+     *             The constant remains for integrations that reference the key.
+     */
     public const ORGANIZATION = 'organization';
     public const TESTIMONIAL = 'testimonial';
     public const TEAM_MEMBER = 'team-member';
     public const SERVICES = 'services';
 
     private const OPTIONS = [
-        self::ORGANIZATION => 'smp_enable_cpt_organization',
         self::TESTIMONIAL  => 'enable_cpt_testimonial',
         self::TEAM_MEMBER  => 'smp_enable_cpt_teammember',
         self::SERVICES     => 'hws_enable_cpt_services',
@@ -115,11 +118,6 @@ final class SharedContentTypes {
     /** @return array<int,array<string,mixed>> */
     private static function core_definitions(): array {
         return [
-            self::definition( self::ORGANIZATION, 'Organization', 'Organizations', 'organization', 'Organization records shared with the SMC Organization Profile plugin.', [
-                'menu_icon' => 'dashicons-building', 'menu_position' => 21,
-                'supports' => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],
-                'has_archive' => 'organizations', 'rewrite' => [ 'with_front' => false ],
-            ] ),
             self::definition( self::TEAM_MEMBER, 'Team Member', 'Team Members', 'team-member', 'Reusable team and leadership profiles.', [
                 'menu_icon' => 'dashicons-groups', 'menu_position' => 23,
                 'supports' => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],

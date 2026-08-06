@@ -8,12 +8,12 @@ HWS Base Tools is the canonical owner of:
 
 - Website classification: News Outlet, Podcast Website, Personal Website, Company Website, e-Commerce Website, or Other.
 - The optional primary entity selection consumed by profile and publication plugins.
-- Shared custom post types: `organization`, `team-member`, `testimonial`, and `services`.
+- Shared custom post types: `team-member`, `testimonial`, and `services`.
 - Brand assets, common shortcodes, site checks, maintenance tools, and WordPress admin cleanup.
 
 The primary entity is optional. Sites that do not need a canonical person, organization, publication, or verified profile continue to work without one.
 
-HWS does not own publication-specific Knowledge Base or Resources post types. SMP Publication Integration owns those structures.
+HWS does not own the `organization` post type or its fields; SFPF Person Profile Integration owns those structures. HWS also leaves publication-specific Knowledge Base and Resources post types to SMP Publication Integration.
 
 ## Architecture
 
@@ -125,6 +125,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.1.0
+
+- Transfers Organization CPT and field ownership to SFPF Person Profile Integration while retaining the immutable post-type key for compatibility and preventing duplicate registration.
 
 ### 13.0.4
 

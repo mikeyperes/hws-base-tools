@@ -60,8 +60,8 @@ $expect = static function ( bool $condition, string $message ) use ( &$failures 
 
 $definitions = SharedContentTypes::definitions();
 $expect(
-    array_keys( $definitions ) === [ 'organization', 'team-member', 'testimonial', 'services' ],
-    'registry owns Organization, Team Member, Testimonial, and Services while publication content types remain in SMP'
+    array_keys( $definitions ) === [ 'team-member', 'testimonial', 'services' ],
+    'registry owns Team Member, Testimonial, and Services while Organization remains external'
 );
 
 foreach ( $definitions as $post_type => $definition ) {
@@ -82,11 +82,11 @@ $expect( in_array( 'wp_ajax_hws_save_content_type', array_column( $hooks, 0 ), t
 SharedContentTypes::register_enabled();
 $expect( [] === $registered, 'disabled types do not register' );
 
-$expect( SharedContentTypes::enable( SharedContentTypes::ORGANIZATION ), 'organization option can be enabled' );
-$expect( SharedContentTypes::enable( SharedContentTypes::ORGANIZATION ), 'enabling a selected type is idempotent' );
+$expect( ! SharedContentTypes::enable( SharedContentTypes::ORGANIZATION ), 'external organization type cannot be enabled by HWS' );
+$expect( null === SharedContentTypes::option_for( SharedContentTypes::ORGANIZATION ), 'HWS no longer maps the legacy Organization option' );
 SharedContentTypes::register_enabled();
-$expect( isset( $registered['organization'] ), 'enabled organization registers' );
-$expect( ! isset( $registered['testimonial'], $registered['team-member'], $registered['services'] ), 'unselected shared types remain disabled' );
+$expect( ! isset( $registered['organization'] ), 'HWS never registers Organization' );
+$expect( ! isset( $registered['testimonial'], $registered['team-member'], $registered['services'] ), 'unselected HWS types remain disabled' );
 
 $expect( SharedContentTypes::enable( SharedContentTypes::SERVICES ), 'services option can be enabled' );
 SharedContentTypes::register_enabled();
@@ -94,8 +94,8 @@ $expect( isset( $registered['services'] ), 'enabled services registers' );
 $expect( false === $definitions['services']['has_archive'], 'services preserves the static landing page' );
 
 $count = count( $registered );
-$expect( SharedContentTypes::register_type( SharedContentTypes::ORGANIZATION ), 'an already registered content type remains available' );
-$expect( $count === count( $registered ), 'duplicate registration does not mutate the registry' );
+$expect( ! SharedContentTypes::register_type( SharedContentTypes::ORGANIZATION ), 'legacy Organization requests remain non-registering' );
+$expect( $count === count( $registered ), 'external Organization requests do not mutate the registry' );
 $expect( ! SharedContentTypes::register_type( 'unknown' ), 'unknown content types are rejected' );
 
 if ( $failures ) {

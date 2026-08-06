@@ -70,7 +70,7 @@ final class PrimaryEntityIntegration {
     public static function consumers(): array {
         return [
             [ 'label' => 'SFPF Person Profile', 'description' => 'Consumes a Person website author and keeps its founder-to-Organization relationship inside SFPF.', 'active' => static fn( array $entity ): bool => 'person' === $entity['entity_type'] && self::plugin_active( 'sfpf-person-profile-integration' ) ],
-            [ 'label' => 'SMC Organization Profile', 'description' => 'Consumes an Organization website author while Organization records remain owned by SMC.', 'active' => static fn( array $entity ): bool => 'organization' === $entity['entity_type'] && self::plugin_active( 'smc-organization-profile-integration' ) ],
+            [ 'label' => 'SFPF Organization Profile', 'description' => 'Consumes an Organization website author while Organization records remain owned by SFPF.', 'active' => static fn( array $entity ): bool => 'organization' === $entity['entity_type'] && self::plugin_active( 'sfpf-person-profile-integration' ) ],
             [ 'label' => 'SMP Publication', 'description' => 'Consumes a News Outlet or Podcast Website author as the publication identity.', 'active' => static fn( array $entity ): bool => 'publication' === $entity['entity_type'] && self::plugin_active( 'smp-publication-integration' ) ],
         ];
     }
