@@ -19,6 +19,12 @@ and assigns a zero TTL to HTTP 500 responses. Environment checks report server
 support and Redis availability before related settings are applied. Operators
 can audit or apply groups individually, or execute the safe batch in order.
 
+Redis configuration and activation verification are separate checklist tasks.
+Configuration uses LiteSpeed's official save API and managed drop-in; the next
+request verifies that WordPress loaded that drop-in, connected to Redis, and
+passed a cache set/get/delete round trip. Foreign object-cache drop-ins fail
+closed instead of being reported as active.
+
 Core profile application batches writable differences into LiteSpeed's normal
 `update_confs()` save cycle, which performs LiteSpeed's type normalization,
 purge decisions, cron work, generated-file updates, and cloud synchronization.

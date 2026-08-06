@@ -164,11 +164,13 @@ final class QuickStartTaskRunner {
         $siteurl  = (string) get_option( 'siteurl', '' );
         $title    = trim( (string) get_option( 'blogname', '' ) );
         $email    = sanitize_email( (string) get_option( 'admin_email', '' ) );
-        $timezone = (string) get_option( 'timezone_string', '' );
-        $offset   = (float) get_option( 'gmt_offset', 0 );
+        $timezone      = (string) get_option( 'timezone_string', '' );
+        $offset_setting = get_option( 'gmt_offset', null );
+        $offset         = is_numeric( $offset_setting ) ? (float) $offset_setting : 0.0;
+        $timezone_valid = self::timezone_is_valid( $timezone, $offset_setting );
         $public   = '1' === (string) get_option( 'blog_public', '1' );
         $https    = str_starts_with( $home, 'https://' ) && str_starts_with( $siteurl, 'https://' );
-        $valid    = '' !== $title && '' !== $email && $https && $public && ( '' !== $timezone || 0.0 !== $offset );
+        $valid    = '' !== $title && '' !== $email && $https && $public && $timezone_valid;
 
         return self::result(
             $valid,
@@ -179,11 +181,23 @@ final class QuickStartTaskRunner {
                 'title_set'       => '' !== $title,
                 'admin_email_set' => '' !== $email,
                 'timezone'        => '' !== $timezone ? $timezone : 'UTC' . ( $offset >= 0 ? '+' : '' ) . $offset,
+                'timezone_valid'  => $timezone_valid,
                 'search_indexing' => $public,
                 'https'           => $https,
                 'environment'     => function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production',
             ]
         );
+    }
+
+    private static function timezone_is_valid( string $timezone, mixed $offset_setting ): bool {
+        if ( '' !== trim( $timezone ) ) {
+            return true;
+        }
+        if ( ! is_numeric( $offset_setting ) ) {
+            return false;
+        }
+        $offset = (float) $offset_setting;
+        return $offset >= -14.0 && $offset <= 14.0;
     }
 
     /** @return array<string,mixed> */

@@ -488,7 +488,7 @@ $core_ui_source = source( 'lib/hexa-wordpress-plugin-core/src/WpAdminComponents/
 $core_checklist_assets_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistAssets.php' );
 $core_checklist_renderer_source = source( 'lib/hexa-wordpress-plugin-core/src/GettingStartedChecklist/GettingStartedChecklistRenderer.php' );
 expect_true(
-    version_compare( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ), '3.0.0', '>=' )
+    version_compare( trim( source( 'lib/hexa-wordpress-plugin-core/VERSION' ) ), '3.0.1', '>=' )
     && is_readable( $root . '/lib/hexa-wordpress-plugin-core/src/WordPressOperations/UpdateOperations.php' )
     && is_readable( $root . '/lib/hexa-wordpress-plugin-core/src/LiteSpeedCache/LiteSpeedCacheService.php' ),
     'HWS bundles the current refactored Hexa WordPress Plugin Core'

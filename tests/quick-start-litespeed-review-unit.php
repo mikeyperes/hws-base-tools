@@ -50,6 +50,9 @@ launch_expect(
     && str_contains( $quick_runner, "'limits_available_to_wordpress' => false" ),
     'runtime preflight audits WordPress-visible CloudLinux/PHP settings and marks LVE quotas server-only'
 );
+$timezone_validator = new ReflectionMethod( HWS\BaseTools\QuickStart\QuickStartTaskRunner::class, 'timezone_is_valid' );
+launch_expect( true === $timezone_validator->invoke( null, '', 0 ), 'site identity accepts explicit UTC offset zero as a valid timezone' );
+launch_expect( false === $timezone_validator->invoke( null, '', null ), 'site identity still rejects a genuinely missing timezone setting' );
 
 $review = HWS\BaseTools\ReviewCenter\ReviewCenterModule::config();
 $review_steps = $review->template_steps( 'review' );

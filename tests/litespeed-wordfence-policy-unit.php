@@ -218,6 +218,11 @@ policy_expect(
     && ! is_file( $root . '/src/LiteSpeed/LiteSpeedConfigurationService.php' ),
     'HWS keeps profiles and orchestration while Core owns the generic LiteSpeed engine and official Conf adapter'
 );
+$safe_checklist = LiteSpeedProfileRegistry::checklist_templates()['safe_baseline']['steps'];
+$object_cache_group = array_values( array_filter( $safe_checklist, static fn( array $group ): bool => 'object_cache' === $group['id'] ) )[0];
+$object_cache_tasks = array_column( $object_cache_group['subtasks'], null, 'id' );
+policy_expect( isset( $object_cache_tasks['configure_redis'], $object_cache_tasks['verify_redis'] ), 'Redis configuration and next-request verification are separate real-time checklist tasks' );
+policy_expect( str_contains( $task_source, "'verify_redis'       => self::verify_redis()" ), 'the generic LiteSpeed task runner dispatches the Redis verification task' );
 
 $GLOBALS['policy_http_responses'] = [
     [ 'status' => 200, 'headers' => [ 'x-litespeed-cache' => 'miss' ] ],

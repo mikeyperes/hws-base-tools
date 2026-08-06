@@ -93,7 +93,8 @@ final class LiteSpeedProfileRegistry {
                 self::task( 'apply_media', 'Apply media settings', 'config_mutation', 'Applies lazy loading without deleting original images or enabling cloud image processing.', 'Apply', $profile_id, [ 'settings_group' => 'media' ] ),
             ] ),
             self::group( 'object_cache', '6. Object Cache', 'Use Redis only when the server and WordPress object-cache path verify it is available.', [
-                self::task( 'configure_redis', 'Configure Redis when available', 'setup_action', 'Detects Redis before changing LiteSpeed object-cache settings, then verifies a WordPress cache write/read/delete cycle.', 'Configure', $profile_id ),
+                self::task( 'configure_redis', 'Configure Redis when available', 'setup_action', 'Detects Redis, saves settings through LiteSpeed, and creates its managed object-cache drop-in.', 'Configure', $profile_id ),
+                self::task( 'verify_redis', 'Verify Redis on a new request', 'status_check', 'Confirms LiteSpeed owns the loaded drop-in, Redis connects, WordPress uses external object cache, and a cache round trip succeeds.', 'Verify', $profile_id ),
             ] ),
             self::group( 'crawler', '7. Crawler & CDN', 'Keep high-risk server-load and external-service features explicit.', [
                 self::task( 'apply_crawler', 'Apply crawler policy', 'config_mutation', 'Disables the crawler on shared hosting profiles. CDN and Cloudflare credentials remain untouched.', 'Apply', $profile_id, [ 'settings_group' => 'crawler' ] ),

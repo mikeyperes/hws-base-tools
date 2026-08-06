@@ -28,6 +28,7 @@ final class LiteSpeedTaskRunner {
             'apply_media',
             'apply_crawler'      => self::apply_profile( $profile, $group ),
             'configure_redis'    => self::configure_redis(),
+            'verify_redis'       => self::verify_redis(),
             'audit'              => self::audit_profile( $profile ),
             'purge'              => self::purge(),
             'verify'             => self::verify_profile( $profile, true ),
@@ -167,8 +168,30 @@ final class LiteSpeedTaskRunner {
 
         return self::result(
             ! empty( $applied['success'] ),
-            ! empty( $applied['success'] ) ? 'Redis object cache was configured and verified.' : (string) ( $applied['message'] ?? 'Redis object cache did not verify.' ),
-            [ 'before' => $before, 'after' => $after, 'log' => (array) ( $applied['log'] ?? [] ) ]
+            (string) ( $applied['message'] ?? ( ! empty( $applied['success'] ) ? 'Redis object cache was configured.' : 'Redis object cache did not configure.' ) ),
+            [
+                'before'               => $before,
+                'after'                => $after,
+                'configured'           => ! empty( $applied['configured'] ),
+                'active'               => ! empty( $applied['active'] ),
+                'requires_new_request' => ! empty( $applied['requires_new_request'] ),
+                'log'                  => (array) ( $applied['log'] ?? [] ),
+            ]
+        );
+    }
+
+    /** @return array<string,mixed> */
+    public static function verify_redis(): array {
+        self::load_cleanup_service();
+        if ( ! function_exists( '\hws_base_tools\hws_litespeed_redis_service' ) ) {
+            return self::result( false, 'The HWS LiteSpeed Redis adapter is unavailable.' );
+        }
+
+        $status = \hws_base_tools\hws_litespeed_redis_service()->status();
+        return self::result(
+            ! empty( $status['active'] ),
+            (string) ( $status['message'] ?? 'LiteSpeed Redis verification did not return a status.' ),
+            $status
         );
     }
 
