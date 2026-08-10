@@ -126,6 +126,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.1.1
+
+- Adds reusable notable quote entries to the Testimonial ACF fields as a textarea repeater.
+
 ### 13.1.0
 
 - Transfers Organization CPT and field ownership to SFPF Person Profile Integration while retaining the immutable post-type key for compatibility and preventing duplicate registration.

@@ -45,6 +45,7 @@ HexaPluginCorePackageRegistry::resolve();
 $hooks = [];
 
 require_once dirname( __DIR__ ) . '/src/ContentTypes/SharedContentTypes.php';
+require_once dirname( __DIR__ ) . '/src/AcfFields/LegacySmp/register-acf-testimonial.php';
 
 use HWS\BaseTools\ContentTypes\SharedContentTypes;
 
@@ -62,6 +63,17 @@ $definitions = SharedContentTypes::definitions();
 $expect(
     array_keys( $definitions ) === [ 'team-member', 'testimonial', 'services' ],
     'registry owns Team Member, Testimonial, and Services while Organization remains external'
+);
+
+$testimonial_group = \hws_base_tools\enable_acf_testimonial();
+$testimonial_fields = array_column( $testimonial_group['fields'] ?? [], null, 'name' );
+$notable_quotes = $testimonial_fields['notable_quotes'] ?? [];
+$quote_fields = array_column( $notable_quotes['sub_fields'] ?? [], null, 'name' );
+$expect(
+    'repeater' === ( $notable_quotes['type'] ?? '' )
+        && 'Add Quote' === ( $notable_quotes['button_label'] ?? '' )
+        && 'textarea' === ( $quote_fields['quote']['type'] ?? '' ),
+    'Testimonial fields include a Notable Quotes repeater with one textarea per quote'
 );
 
 foreach ( $definitions as $post_type => $definition ) {
