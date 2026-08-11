@@ -25,6 +25,7 @@ final class ArticleImageModule implements ModuleInterface {
         add_filter( 'wp_get_attachment_image_attributes', [ HeroImagePolicy::class, 'attributes' ], 120, 3 );
         add_filter( 'litespeed_media_lazy_img_excludes', [ HeroImagePolicy::class, 'litespeed_url_exclusions' ], 120 );
         add_filter( 'litespeed_media_lazy_img_cls_excludes', [ HeroImagePolicy::class, 'litespeed_class_exclusions' ], 120 );
+        add_action( 'template_redirect', [ HeroImagePolicy::class, 'start_output_buffer' ], PHP_INT_MAX );
 
         RankMathIntegration::register();
         RankMathSitemapCache::register();

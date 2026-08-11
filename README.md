@@ -128,6 +128,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.3
+
+- Rewrites a theme-authored raw featured image in the initial singular article HTML so it uses the same 1200px landscape family as metadata and carries crawlable `src`, `srcset`, `sizes`, dimensions, descriptive alt text, eager loading, and high fetch priority.
+
 ### 13.2.2
 
 - Generates exact 1200px article crops from landscape sources whose shorter edge needs controlled upscaling, rejects undersized derivative metadata instead of marking an incomplete image family as complete, and reruns backfill with targeted article and sitemap cache refreshes.

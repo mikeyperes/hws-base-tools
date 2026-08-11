@@ -47,6 +47,15 @@ function wp_get_attachment_image_src( int $attachment_id, string $size ): array|
     return $article_image_src[ $attachment_id ][ $size ] ?? false;
 }
 
+function wp_get_attachment_image_srcset( int $attachment_id, string $size ): string|false {
+    unset( $attachment_id, $size );
+    return 'https://example.com/uploads/story-1200x675.webp 1200w';
+}
+
+function wp_parse_url( string $url, int $component = -1 ): mixed {
+    return parse_url( $url, $component );
+}
+
 function get_post_meta( int $post_id, string $key, bool $single = false ): mixed {
     global $article_image_alt;
     unset( $single );
@@ -200,6 +209,7 @@ $article_image_metadata[ $attachment_id ] = [
         'hws-article-16x9' => [ 'file' => 'story-1200x675.webp', 'width' => 1200, 'height' => 675, 'mime-type' => 'image/webp' ],
         'hws-article-4x3'  => [ 'file' => 'story-1200x900.webp', 'width' => 1200, 'height' => 900, 'mime-type' => 'image/webp' ],
         'hws-article-1x1'  => [ 'file' => 'story-1200x1200.webp', 'width' => 1200, 'height' => 1200, 'mime-type' => 'image/webp' ],
+        'medium_large'     => [ 'file' => 'story-768x512.webp', 'width' => 768, 'height' => 512, 'mime-type' => 'image/webp' ],
     ],
 ];
 $article_image_src[ $attachment_id ] = [
@@ -275,8 +285,24 @@ article_image_expect(
     'high' === $hero['fetchpriority']
     && 'eager' === $hero['loading']
     && '1' === $hero['data-no-lazy']
+    && 'https://example.com/uploads/story-1200x675.webp' === $hero['src']
+    && '1200' === $hero['width']
+    && '675' === $hero['height']
+    && str_contains( $hero['srcset'], '1200w' )
     && str_contains( $hero['class'], 'skip-lazy' ),
-    'the native featured image receives priority and explicit lazy-load exclusion attributes'
+    'the native featured image uses the preferred family plus responsive, dimensional, priority, and lazy-load exclusion attributes'
+);
+
+$raw_hero_html = '<figure><img class="theme-hero" src="https://example.com/uploads/story-768x512.webp" alt="Accurate image description"></figure>';
+$filtered_hero_html = HeroImagePolicy::filter_html( $raw_hero_html );
+article_image_expect(
+    str_contains( $filtered_hero_html, 'src="https://example.com/uploads/story-1200x675.webp"' )
+    && str_contains( $filtered_hero_html, 'srcset="https://example.com/uploads/story-1200x675.webp 1200w"' )
+    && str_contains( $filtered_hero_html, 'width="1200"' )
+    && str_contains( $filtered_hero_html, 'height="675"' )
+    && str_contains( $filtered_hero_html, 'fetchpriority="high"' )
+    && str_contains( $filtered_hero_html, 'loading="eager"' ),
+    'a theme-authored raw hero image is corrected in the initial HTML response'
 );
 
 $url_exclusions = HeroImagePolicy::litespeed_url_exclusions( [] );
