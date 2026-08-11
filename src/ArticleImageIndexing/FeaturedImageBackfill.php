@@ -11,7 +11,7 @@ final class FeaturedImageBackfill {
     public const EVENT          = 'hws_base_tools_article_image_backfill_batch';
     public const VERSION_OPTION = 'hws_article_image_backfill_version';
     public const CURSOR_OPTION  = 'hws_article_image_backfill_page';
-    public const VERSION        = '1';
+    public const VERSION        = '2';
     private const BATCH_SIZE    = 10;
 
     public static function register(): void {
@@ -59,16 +59,29 @@ final class FeaturedImageBackfill {
             ]
         );
 
-        $attachment_ids = [];
+        $posts_by_attachment = [];
         foreach ( (array) $query->posts as $post_id ) {
             $attachment_id = (int) get_post_thumbnail_id( (int) $post_id );
             if ( $attachment_id > 0 ) {
-                $attachment_ids[] = $attachment_id;
+                $posts_by_attachment[ $attachment_id ][] = (int) $post_id;
             }
         }
 
-        foreach ( array_unique( $attachment_ids ) as $attachment_id ) {
-            ImageFamily::ensure( $attachment_id );
+        foreach ( $posts_by_attachment as $attachment_id => $post_ids ) {
+            $result = ImageFamily::ensure( (int) $attachment_id );
+            if ( empty( $result['generated'] ) ) {
+                continue;
+            }
+
+            foreach ( array_unique( $post_ids ) as $post_id ) {
+                do_action( 'litespeed_purge_post', $post_id );
+                do_action( 'litespeed_purge_url', get_permalink( $post_id ) );
+
+                if ( defined( 'RANK_MATH_VERSION' ) || class_exists( '\\RankMath\\Plugin' ) ) {
+                    RankMathSitemapCache::evict_for_post( $post_id );
+                    RankMathSitemapCache::schedule_refresh( $post_id );
+                }
+            }
         }
 
         if ( $page < (int) $query->max_num_pages ) {

@@ -83,7 +83,13 @@ final class ImageFamily {
             return $result;
         }
 
-        $generated = $editor->multi_resize( $missing );
+        add_filter( 'image_resize_dimensions', [ self::class, 'exact_crop_dimensions' ], PHP_INT_MAX, 6 );
+        try {
+            $generated = $editor->multi_resize( $missing );
+        } finally {
+            remove_filter( 'image_resize_dimensions', [ self::class, 'exact_crop_dimensions' ], PHP_INT_MAX );
+        }
+
         if ( ! is_array( $generated ) ) {
             $generated = [];
         }
@@ -94,6 +100,14 @@ final class ImageFamily {
 
         foreach ( $generated as $name => $size_metadata ) {
             if ( ! isset( $missing[ $name ] ) || ! is_array( $size_metadata ) || empty( $size_metadata['file'] ) ) {
+                continue;
+            }
+
+            $definition = $missing[ $name ];
+            if (
+                (int) ( $size_metadata['width'] ?? 0 ) !== $definition['width']
+                || (int) ( $size_metadata['height'] ?? 0 ) !== $definition['height']
+            ) {
                 continue;
             }
 
@@ -114,6 +128,55 @@ final class ImageFamily {
         }
 
         return $result;
+    }
+
+    /**
+     * Return exact center-crop dimensions for the HWS image family.
+     *
+     * WordPress normally caps hard crops at the source dimensions. Article
+     * sources are often high-resolution landscapes whose shorter edge is
+     * below 1200px, so that behavior silently creates a 1058px square while
+     * labelling the requested sub-size as generated. This callback is attached
+     * only while HWS creates its three fixed crops and permits the final resize
+     * to 1200px without changing the source aspect ratio.
+     *
+     * @param mixed      $output Existing preempted dimensions, if any.
+     * @param int        $orig_w Original width.
+     * @param int        $orig_h Original height.
+     * @param int        $dest_w Requested width.
+     * @param int        $dest_h Requested height.
+     * @param bool|array $crop   Crop mode and optional alignment.
+     * @return mixed
+     */
+    public static function exact_crop_dimensions( $output, int $orig_w, int $orig_h, int $dest_w, int $dest_h, $crop ) {
+        $requested = false;
+        foreach ( self::definitions() as $definition ) {
+            if ( $dest_w === $definition['width'] && $dest_h === $definition['height'] ) {
+                $requested = true;
+                break;
+            }
+        }
+
+        if ( ! $requested || ! $crop || $orig_w < 1 || $orig_h < 1 || $dest_w < 1 || $dest_h < 1 ) {
+            return $output;
+        }
+
+        $source_ratio = $orig_w / $orig_h;
+        $target_ratio = $dest_w / $dest_h;
+
+        if ( $source_ratio > $target_ratio ) {
+            $crop_h = $orig_h;
+            $crop_w = min( $orig_w, (int) round( $orig_h * $target_ratio ) );
+        } else {
+            $crop_w = $orig_w;
+            $crop_h = min( $orig_h, (int) round( $orig_w / $target_ratio ) );
+        }
+
+        $position = is_array( $crop ) && 2 === count( $crop ) ? array_values( $crop ) : [ 'center', 'center' ];
+        $source_x = self::crop_offset( $orig_w, $crop_w, (string) $position[0] );
+        $source_y = self::crop_offset( $orig_h, $crop_h, (string) $position[1] );
+
+        return [ 0, 0, $source_x, $source_y, $dest_w, $dest_h, $crop_w, $crop_h ];
     }
 
     /**
@@ -243,6 +306,8 @@ final class ImageFamily {
             $stored = $metadata['sizes'][ $name ] ?? null;
             $exists = is_array( $stored )
                 && ! empty( $stored['file'] )
+                && (int) ( $stored['width'] ?? 0 ) === $definition['width']
+                && (int) ( $stored['height'] ?? 0 ) === $definition['height']
                 && is_readable( $base_dir . '/' . basename( (string) $stored['file'] ) );
 
             if ( ! $exists ) {
@@ -251,5 +316,17 @@ final class ImageFamily {
         }
 
         return $missing;
+    }
+
+    private static function crop_offset( int $original, int $cropped, string $position ): int {
+        if ( 'left' === $position || 'top' === $position ) {
+            return 0;
+        }
+
+        if ( 'right' === $position || 'bottom' === $position ) {
+            return max( 0, $original - $cropped );
+        }
+
+        return max( 0, (int) floor( ( $original - $cropped ) / 2 ) );
     }
 }

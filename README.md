@@ -128,6 +128,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.2
+
+- Generates exact 1200px article crops from landscape sources whose shorter edge needs controlled upscaling, rejects undersized derivative metadata instead of marking an incomplete image family as complete, and reruns backfill with targeted article and sitemap cache refreshes.
+
 ### 13.2.1
 
 - Adds the `[hws_testimonial_quote]` shortcode for rendering numbered notable quotes from the current or specified Testimonial, with ACF and raw-meta fallback support.

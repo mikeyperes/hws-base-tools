@@ -186,6 +186,12 @@ article_image_expect(
     'the plugin registers one fixed 16:9, 4:3, and 1:1 article image family'
 );
 
+$square_dimensions = ImageFamily::exact_crop_dimensions( null, 1880, 1058, 1200, 1200, true );
+article_image_expect(
+    [ 0, 0, 411, 0, 1200, 1200, 1058, 1058 ] === $square_dimensions,
+    'a landscape source receives an exact centered 1200px square crop even when its shorter edge needs modest upscaling'
+);
+
 $attachment_id = 501;
 $article_image_metadata[ $attachment_id ] = [
     'width'  => 1880,
@@ -204,6 +210,24 @@ $article_image_src[ $attachment_id ] = [
 $article_image_alt[ $attachment_id ]   = 'Accurate image description';
 $article_image_files[ $attachment_id ] = '/uploads/story.webp';
 $article_image_thumbnails[91]          = $attachment_id;
+
+$undersized_attachment_id = 502;
+$article_image_files[ $undersized_attachment_id ] = __FILE__;
+$undersized_metadata = [
+    'width'  => 1880,
+    'height' => 1058,
+    'sizes'  => [
+        'hws-article-16x9' => [ 'file' => basename( __FILE__ ), 'width' => 1200, 'height' => 675 ],
+        'hws-article-4x3'  => [ 'file' => basename( __FILE__ ), 'width' => 1200, 'height' => 900 ],
+        'hws-article-1x1'  => [ 'file' => basename( __FILE__ ), 'width' => 1058, 'height' => 1058 ],
+    ],
+];
+$missing_method = ( new ReflectionClass( ImageFamily::class ) )->getMethod( 'missing_definitions' );
+$missing_sizes  = $missing_method->invoke( null, $undersized_attachment_id, $undersized_metadata );
+article_image_expect(
+    [ 'hws-article-1x1' ] === array_keys( $missing_sizes ),
+    'an undersized stored crop remains missing instead of being reported as complete'
+);
 
 $objects = ImageFamily::schema_objects( $attachment_id );
 article_image_expect(
@@ -296,6 +320,14 @@ $source = implode(
 article_image_expect(
     ! preg_match( '/gritdaily|blocktelegraph|hexaprwire|\/home\//i', $source ),
     'the shared plugin implementation contains no site names, hostnames, account paths, or per-site branches'
+);
+
+$backfill_source = (string) file_get_contents( dirname( __DIR__ ) . '/src/ArticleImageIndexing/FeaturedImageBackfill.php' );
+article_image_expect(
+    str_contains( $backfill_source, "public const VERSION        = '2';" )
+    && str_contains( $backfill_source, "do_action( 'litespeed_purge_post', \$post_id )" )
+    && str_contains( $backfill_source, 'RankMathSitemapCache::schedule_refresh( $post_id )' ),
+    'the revised backfill reprocesses prior crops and refreshes affected article and sitemap caches'
 );
 
 echo "\n{$passes} passed, " . count( $failures ) . " failed.\n";
