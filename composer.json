@@ -13,6 +13,7 @@
   },
   "scripts": {
     "test": [
+      "@php tests/article-image-indexing-unit.php",
       "@php tests/quick-start-litespeed-review-unit.php",
       "@php tests/bootstrap-fleet-seeder.php",
       "@php tests/litespeed-wordfence-policy-unit.php",

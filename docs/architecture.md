@@ -47,6 +47,7 @@ src/PluginRuntime/       HWS\BaseTools\PluginRuntime
 src/AdminDashboard/      HWS\BaseTools\AdminDashboard
 src/FeatureCatalog/      HWS\BaseTools\FeatureCatalog
 src/FrontendContent/     HWS\BaseTools\FrontendContent
+src/ArticleImageIndexing/ HWS site-wide article image crops, provider adapters, and targeted sitemap invalidation
 src/ContentTypes/        HWS-owned shared WordPress content types
 src/AcfFields/           HWS\BaseTools\AcfFields
 src/BrandAssets/         HWS site identity and legacy brand adapters
