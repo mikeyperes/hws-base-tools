@@ -5,6 +5,7 @@ namespace HWS\BaseTools\FeatureCatalog;
 use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
 use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
+use HWS\BaseTools\Testimonials\TestimonialQuoteShortcode;
 
 final class ShortcodeCatalog {
     public static function render(): void {
@@ -45,6 +46,21 @@ final class ShortcodeCatalog {
                     [ 'label' => 'Editorial list', 'shortcode' => '[hws_team_members style="editorial_list"]', 'parameters' => [ 'style' => 'editorial_list' ] ],
                     [ 'label' => 'Compact directory', 'shortcode' => '[hws_team_members style="compact_directory"]', 'parameters' => [ 'style' => 'compact_directory' ] ],
                     [ 'label' => 'Featured Team Members', 'shortcode' => '[hws_team_members featured_only="1" limit="6"]', 'parameters' => [ 'featured_only' => 1, 'limit' => 6 ] ],
+                ],
+            ],
+            [
+                'id' => TestimonialQuoteShortcode::SHORTCODE,
+                'label' => 'Testimonial Notable Quote',
+                'shortcode' => '[hws_testimonial_quote]',
+                'description' => 'Returns one notable quote as plain text from the current Testimonial or a specified Testimonial ID.',
+                'test_method' => 'Render the shortcode on a Testimonial and confirm number selects the matching Notable Quotes row.',
+                'source' => 'src/Testimonials/TestimonialQuoteShortcode.php',
+                'provider' => 'HWS Base Tools',
+                'parameters' => [ 'id' => 0, 'number' => 1 ],
+                'examples' => [
+                    [ 'label' => 'First quote from current Testimonial', 'shortcode' => '[hws_testimonial_quote]', 'parameters' => [] ],
+                    [ 'label' => 'Second quote from current Testimonial', 'shortcode' => '[hws_testimonial_quote number="2"]', 'parameters' => [ 'number' => 2 ] ],
+                    [ 'label' => 'Quote from a specific Testimonial', 'shortcode' => '[hws_testimonial_quote id="123" number="1"]', 'parameters' => [ 'id' => 123, 'number' => 1 ] ],
                 ],
             ],
             [

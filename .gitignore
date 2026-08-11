@@ -1,0 +1,3 @@
+# Local PHP runtime artifacts created by the test/server environment.
+.ea-php-cli.cache
+error_log

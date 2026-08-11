@@ -276,6 +276,11 @@ expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),
     'HWS Shortcodes catalog documents the owned Team Member shortcode'
 );
+expect_true(
+    str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_testimonial_quote]'" )
+    && str_contains( source( 'shortcodes.php' ), 'TestimonialQuoteShortcode::register()' ),
+    'HWS registers and documents the Testimonial Notable Quote shortcode'
+);
 $shared_content_types = source( 'src/ContentTypes/SharedContentTypes.php' );
 expect_true(
     str_contains( $shared_content_types, "public const ORGANIZATION = 'organization'" )
