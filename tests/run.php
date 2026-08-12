@@ -2,6 +2,8 @@
 
 declare( strict_types=1 );
 
+defined( 'ABSPATH' ) || define( 'ABSPATH', dirname( __DIR__ ) . '/' );
+
 $root = dirname( __DIR__ );
 $failures = [];
 $passes = 0;
@@ -76,6 +78,9 @@ require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchTerm
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryEngine.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/JetEngineSearchAdapter.php';
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
+require_once $root . '/src/BrandAssets/HighlightColorResolver.php';
+require_once $root . '/src/PageLayoutStyling/PageLayoutSettings.php';
+require_once $root . '/src/MaintenanceMode/MaintenanceSettings.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
 require_once $root . '/src/FeatureCatalog/FeatureValueResolver.php';
@@ -102,6 +107,8 @@ expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legac
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['page-layout-styling'] ), 'Page Layout Styling has a dedicated dashboard tab' );
+expect_true( isset( $tabs['maintenance-mode'] ), 'full-site Maintenance Mode has a dedicated dashboard tab' );
 expect_true( isset( $tabs['mail-authentication'] ), 'HWS Mail Authentication tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['review-center'] ), 'HWS Review Center tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['litespeed'] ), 'HWS LiteSpeed tab is registered through the dashboard registry' );
@@ -131,10 +138,134 @@ expect_true(
     'grouped sidebar assigns every HWS tab exactly once'
 );
 expect_true( count( $groups ) === 6 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use six clear sidebar groups' );
+$operations_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Operations' === ( $group['label'] ?? '' ) ) );
+expect_true(
+    1 === count( $operations_groups ) && in_array( 'maintenance-mode', $operations_groups[0]['tabs'] ?? [], true ),
+    'Maintenance Mode has one canonical location in the Operations sidebar group'
+);
 $site_brand_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Site & Brand' === ( $group['label'] ?? '' ) ) );
 expect_true(
-    1 === count( $site_brand_groups ) && in_array( 'brand-templates', $site_brand_groups[0]['tabs'] ?? [], true ),
-    'Brand Templates has one canonical location in the Site & Brand sidebar group'
+    1 === count( $site_brand_groups )
+    && in_array( 'page-layout-styling', $site_brand_groups[0]['tabs'] ?? [], true )
+    && in_array( 'brand-templates', $site_brand_groups[0]['tabs'] ?? [], true ),
+    'Page Layout Styling and Brand Templates have canonical locations in the Site & Brand sidebar group'
+);
+$layout_definitions = HWS\BaseTools\PageLayoutStyling\PageLayoutSettings::definitions();
+expect_true(
+    7 === count( $layout_definitions )
+    && 'Minimalist' === ( $layout_definitions['minimalist']['label'] ?? '' )
+    && isset( $layout_definitions['none'] ),
+    'Page Layout Styling exposes six visual designs plus No Style with Minimalist first'
+);
+expect_true(
+    'minimalist' === HWS\BaseTools\PageLayoutStyling\PageLayoutSettings::normalize( 'not-a-design' )
+    && 'none' === HWS\BaseTools\PageLayoutStyling\PageLayoutSettings::normalize( 'none' ),
+    'Page Layout Styling normalizes invalid values to Minimalist and accepts No Style'
+);
+$maintenance_templates = HWS\BaseTools\MaintenanceMode\MaintenanceSettings::templates();
+$maintenance_admin_source = source( 'src/MaintenanceMode/MaintenanceModeAdmin.php' );
+$maintenance_feature_source = source( 'src/MaintenanceMode/MaintenanceModeFeature.php' );
+$maintenance_operations_source = source( 'src/MaintenanceMode/MaintenanceModeOperations.php' );
+expect_true(
+    5 === count( $maintenance_templates )
+    && 'Focused' === ( $maintenance_templates['focused']['label'] ?? '' )
+    && isset( $maintenance_templates['editorial'], $maintenance_templates['blueprint'], $maintenance_templates['aurora'], $maintenance_templates['minimal'] ),
+    'Maintenance Mode provides five named full-page designs'
+);
+expect_true(
+    str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new MaintenanceModeFeature()' )
+    && str_contains( $maintenance_feature_source, "add_action( 'template_redirect'" )
+    && str_contains( $maintenance_feature_source, "status_header( 503 )" )
+    && str_contains( $maintenance_feature_source, "header( 'Retry-After: 3600' )" )
+    && str_contains( $maintenance_feature_source, "add_filter( 'rest_pre_dispatch'" )
+    && str_contains( $maintenance_feature_source, "add_filter( 'rest_request_before_callbacks'" )
+    && str_contains( $maintenance_feature_source, "add_filter( 'xmlrpc_enabled'" ),
+    'Maintenance Mode boots through Core and protects public HTML, REST, and XML-RPC with a proper 503 response'
+);
+expect_true(
+    str_contains( $maintenance_admin_source, 'srcdoc=' )
+    && str_contains( $maintenance_admin_source, 'MaintenanceTemplateRenderer::document( $template )' )
+    && str_contains( $maintenance_admin_source, 'View exact front-end code' )
+    && str_contains( $maintenance_admin_source, 'Complete HTTP response document' )
+    && str_contains( $maintenance_admin_source, 'navigator.clipboard.writeText' ),
+    'Maintenance previews and backend code views use the exact front-end response document'
+);
+expect_true(
+    str_contains( $maintenance_admin_source, "['prepare','Validate'],['state','Save state'],['permalinks','Permalinks'],['cache','Clear caches'],['verify','Verify']" )
+    && str_contains( $maintenance_operations_source, "flush_rewrite_rules( true )" )
+    && str_contains( $maintenance_operations_source, "do_action( 'litespeed_purge_all' )" )
+    && str_contains( $maintenance_operations_source, "MaintenanceSettings::TRANSITION_OPTION" ),
+    'Maintenance enable and disable flows run a persisted real-time validation, state, permalink, cache, and verification checklist'
+);
+expect_true(
+    HWS\BaseTools\BrandAssets\HighlightColorResolver::uses_legacy_defaults( null, null )
+    && HWS\BaseTools\BrandAssets\HighlightColorResolver::uses_legacy_defaults( '#facc15', '#111827' )
+    && ! HWS\BaseTools\BrandAssets\HighlightColorResolver::uses_legacy_defaults( '#124578', '#fefefe' ),
+    'highlight resolver distinguishes legacy yellow defaults from genuine custom colors'
+);
+expect_true(
+    '#ffffff' === HWS\BaseTools\BrandAssets\HighlightColorResolver::contrast_text( '#923131' )
+    && '#000000' === HWS\BaseTools\BrandAssets\HighlightColorResolver::contrast_text( '#f7df72' ),
+    'highlight resolver selects readable white text for dark colors and black text for light colors'
+);
+$page_layout_admin_source = source( 'src/PageLayoutStyling/PageLayoutAdmin.php' );
+$page_layout_feature_source = source( 'src/PageLayoutStyling/PageLayoutFeature.php' );
+$page_layout_css = source( 'assets/frontend/page-layout-styling.css' );
+expect_true(
+    str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new PageLayoutFeature()' )
+    && str_contains( $page_layout_feature_source, "'builder' !== (string) get_post_meta" )
+    && str_contains( $page_layout_feature_source, "'default' !== \$template" ),
+    'Page Layout Styling boots through Core and excludes Elementor-built and custom-template pages'
+);
+expect_true(
+    str_contains( $page_layout_admin_source, 'PageLayoutDiscovery::current()' )
+    && str_contains( $page_layout_admin_source, 'Default Page Template structure &amp; CSS' )
+    && str_contains( $page_layout_admin_source, '<details class="hws-pla-tech">' ),
+    'Page Layout Styling shows discovered template code and collapsible technical details'
+);
+expect_true(
+    str_contains( $page_layout_admin_source, 'Default Page Content Styling' )
+    && str_contains( $page_layout_admin_source, 'Default Page content style' )
+    && str_contains( $page_layout_admin_source, 'Build a Stronger Digital Presence' )
+    && str_contains( $page_layout_admin_source, 'What this style includes' )
+    && str_contains( $page_layout_admin_source, 'Good content should feel clear, useful, and easy to explore.' )
+    && str_contains( $page_layout_admin_source, 'Explore the guide' )
+    && ! str_contains( $page_layout_admin_source, '<span class="hws-pla-sheet"><em></em><b></b>' ),
+    'Default Page content chooser uses a real, readable content example instead of abstract wireframe bars'
+);
+expect_true(
+    str_contains( $page_layout_admin_source, 'Default Page Template structure &amp; CSS' )
+    && str_contains( $page_layout_admin_source, 'data-hws-copy="hws-pla-template-code"' )
+    && str_contains( $page_layout_admin_source, 'data-hws-copy="hws-pla-css-code"' )
+    && str_contains( $page_layout_admin_source, 'Copy structure' )
+    && str_contains( $page_layout_admin_source, 'Copy CSS' )
+    && str_contains( $page_layout_admin_source, "navigator.clipboard.writeText" )
+    && str_contains( $page_layout_admin_source, ".catch(fallback)" )
+    && str_contains( $page_layout_admin_source, "document.execCommand('copy')" )
+    && str_contains( $page_layout_admin_source, "echo apply_filters( 'the_content', get_the_content() );" )
+    && str_contains( $page_layout_admin_source, 'Technical selectors and renderer details' ),
+    'Default Page template structure and CSS are visible code views with working copy controls'
+);
+expect_true(
+    str_contains( $page_layout_css, 'body.hws-page-layout-style-minimalist #content.site-main' )
+    && str_contains( $page_layout_css, 'body.hws-page-layout-style-editorial #content.site-main' )
+    && str_contains( $page_layout_css, 'body.hws-page-layout-style-modern-card #content.site-main' )
+    && str_contains( $page_layout_css, 'body.hws-page-layout-style-bold-accent #content.site-main' )
+    && str_contains( $page_layout_css, 'body.hws-page-layout-style-soft-canvas #content.site-main' )
+    && str_contains( $page_layout_css, 'body.hws-page-layout-style-classic-serif #content.site-main' ),
+    'all six Page designs have distinct scoped frontend CSS'
+);
+expect_true(
+    str_contains( source( 'src/PageLayoutStyling/PageLayoutDiscovery.php' ), "'theme-post-content' === ( \$element['widgetType'] ?? '' )" )
+    && str_contains( source( 'src/PageLayoutStyling/PageLayoutDiscovery.php' ), "echo\\s+apply_filters\\(\\s*'the_content'" )
+    && str_contains( $page_layout_css, '.elementor-location-single .elementor-element.elementor-widget-theme-post-content' )
+    && str_contains( $page_layout_feature_source, "wp_style_is( 'elementor-frontend', 'registered' )" ),
+    'Page Layout Styling discovers and targets the active Elementor Theme Builder Post Content renderer'
+);
+expect_true(
+    str_contains( source( 'src/BrandAssets/legacy-brand-functions.php' ), 'HighlightColorResolver::active_elementor_primary()' )
+    && str_contains( source( 'src/BrandAssets/legacy-brand-functions.php' ), 'HighlightColorResolver::contrast_text( $background )' ),
+    'legacy/default highlight output follows Elementor Primary with automatic contrast text'
 );
 $security_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Security' === ( $group['label'] ?? '' ) ) );
 expect_true(

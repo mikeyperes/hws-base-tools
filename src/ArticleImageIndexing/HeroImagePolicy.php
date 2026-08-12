@@ -179,7 +179,7 @@ final class HeroImagePolicy {
             $attributes['width']  = (string) $landscape['width'];
             $attributes['height'] = (string) $landscape['height'];
 
-            if ( '' === trim( (string) ( $attributes['alt'] ?? '' ) ) && '' !== $landscape['alt'] ) {
+            if ( '' !== $landscape['alt'] ) {
                 $attributes['alt'] = $landscape['alt'];
             }
         }

@@ -51,6 +51,8 @@ The HWS dashboard includes:
 - Sitemaps, Search Display, Search Behavior, Features, and Shortcodes.
 - A generic reading-progress feature with an entire-site override, front-page and public post-type targeting, five visual designs, live previews, and the shared Hexa WP Core color picker.
 - Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
+- Default Page Content styling with six exact visual designs, an explicit No Style option, and an inspectable template/CSS view.
+- Full Site Maintenance Mode with five exact response templates, administrator bypass, proper public 503/Retry-After/noindex handling, REST/XML-RPC protection, and a live enable/disable checklist.
 
 Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational actions report progress without requiring full page refreshes.
 
@@ -127,6 +129,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.4
+
+- Uses the attachment's descriptive alt text on the crawlable hero and verifies Google News sitemaps only when the saved module and active Rank Math Pro runtime both make that endpoint applicable.
+- Adds Default Page Content styling with six exact visual designs, No Style, and code views for the active default renderer.
+- Adds Full Site Maintenance Mode with five exact HTML/CSS templates, an administrator bypass, 503/Retry-After/noindex responses, REST/XML-RPC protection, and persisted permalink, cache, and verification steps.
 
 ### 13.2.3
 

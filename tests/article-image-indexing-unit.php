@@ -280,7 +280,7 @@ article_image_expect(
     'an explicitly selected different social attachment remains untouched'
 );
 
-$hero = HeroImagePolicy::attributes( [ 'class' => 'attachment-large' ], (object) [ 'ID' => $attachment_id ], 'large' );
+$hero = HeroImagePolicy::attributes( [ 'class' => 'attachment-large', 'alt' => 'Generic article title' ], (object) [ 'ID' => $attachment_id ], 'large' );
 article_image_expect(
     'high' === $hero['fetchpriority']
     && 'eager' === $hero['loading']
@@ -288,6 +288,7 @@ article_image_expect(
     && 'https://example.com/uploads/story-1200x675.webp' === $hero['src']
     && '1200' === $hero['width']
     && '675' === $hero['height']
+    && 'Accurate image description' === $hero['alt']
     && str_contains( $hero['srcset'], '1200w' )
     && str_contains( $hero['class'], 'skip-lazy' ),
     'the native featured image uses the preferred family plus responsive, dimensional, priority, and lazy-load exclusion attributes'
@@ -334,6 +335,18 @@ $article_image_options['rank-math-options-titles'] = [
 article_image_expect(
     [ 'post', 'news' ] === ArticleImageModule::eligible_post_types(),
     'coverage is plugin-wide but remains limited to standard posts and dynamically declared Article post types'
+);
+
+$article_image_options['rank_math_modules'] = [ 'sitemap', 'news-sitemap' ];
+$news_enabled_method = ( new ReflectionClass( RankMathSitemapCache::class ) )->getMethod( 'news_sitemap_enabled' );
+article_image_expect(
+    false === $news_enabled_method->invoke( null ),
+    'a stale News Sitemap option is not treated as active without the running Rank Math Pro provider'
+);
+define( 'RANK_MATH_PRO_VERSION', '3.0.118' );
+article_image_expect(
+    true === $news_enabled_method->invoke( null ),
+    'News Sitemap verification activates when both its saved module and Rank Math Pro runtime are present'
 );
 
 $source = implode(

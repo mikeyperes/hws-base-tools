@@ -73,9 +73,9 @@ final class DashboardRegistry {
         $groups = [];
         $definitions = [
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
-            'Site & Brand' => [ 'brand-assets', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
+            'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'plugins', 'litespeed', 'system-checks', 'mail-authentication', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'maintenance-mode', 'plugins', 'litespeed', 'system-checks', 'mail-authentication', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -185,6 +185,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'quick-start', 'Quick Start', [ \HWS\BaseTools\QuickStart\QuickStartModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'review-center', 'Review Center', [ \HWS\BaseTools\ReviewCenter\ReviewCenterModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
+        $this->add( new DashboardModuleDefinition( 'page-layout-styling', 'Default Page Content', [ \HWS\BaseTools\PageLayoutStyling\PageLayoutAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-templates', 'Brand Templates', [ \HWS\BaseTools\BrandTemplates\BrandTemplatesAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'pages', 'Pages', 'hws_base_tools\\display_settings_pages', [ 'settings-dashboard-pages.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'features', 'Features', 'hws_base_tools\\display_settings_features', [
@@ -193,6 +194,7 @@ final class DashboardRegistry {
         ] ) );
         $this->add( new DashboardModuleDefinition( 'search', 'Search', 'hws_base_tools\\render_tab_search', [ 'settings-dashboard-search.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'shortcodes', 'Shortcodes', [ \HWS\BaseTools\FeatureCatalog\ShortcodeCatalog::class, 'render' ] ) );
+        $this->add( new DashboardModuleDefinition( 'maintenance-mode', 'Maintenance Mode', [ \HWS\BaseTools\MaintenanceMode\MaintenanceModeAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'litespeed', 'LiteSpeed', [ \HWS\BaseTools\LiteSpeed\LiteSpeedModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );

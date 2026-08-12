@@ -52,12 +52,12 @@ final class BrandTemplatesAdmin {
                     <?php endforeach; ?>
                 </div>
                 <h3>Content Element Styles</h3>
-                <p>These scoped styles improve ordinary headings, lists, links, quotes, images, captions, and tables without changing the Elementor Kit.</p>
+                <p>Single Post content styling remains here. Default Page presentation now has a dedicated visual chooser.</p>
                 <div class="hpc-toggle-list">
                     <div class="hpc-toggle-row">
                         <div>
-                            <?php echo CoreUi::toggle( 'settings[page_content_styles_enabled]', ! empty( $settings['page_content_styles_enabled'] ), 'Default Page content styles', [ 'id' => 'hws-page-content-styles' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                            <p class="hpc-small">Applies only on WordPress Pages when explicitly enabled.</p>
+                            <a class="hpc-button secondary" href="<?php echo esc_url( add_query_arg( [ 'page' => PluginMetadata::ADMIN_PAGE_SLUG, 'tab' => 'page-layout-styling' ], admin_url( 'options-general.php' ) ) ); ?>">Open Page Layout Styling</a>
+                            <p class="hpc-small">Choose Minimalist, five additional designs, or No Style without affecting Elementor pages.</p>
                         </div>
                     </div>
                     <div class="hpc-toggle-row">

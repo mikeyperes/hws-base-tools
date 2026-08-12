@@ -3153,8 +3153,12 @@ function hws_get_brand_colors_payload(): array {
     $default_secondary  = function_exists( __NAMESPACE__ . '\\hws_get_elementor_color_by_id' ) ? hws_get_elementor_color_by_id( 'secondary' ) : '';
     $default_primary    = $default_primary ?: '#000000';
     $default_secondary  = $default_secondary ?: '#ffffff';
-    $default_background = '#facc15';
-    $default_text       = '#111827';
+    $default_background = class_exists( \HWS\BaseTools\BrandAssets\HighlightColorResolver::class )
+        ? \HWS\BaseTools\BrandAssets\HighlightColorResolver::active_elementor_primary()
+        : ( $default_primary ?: '#000000' );
+    $default_text       = class_exists( \HWS\BaseTools\BrandAssets\HighlightColorResolver::class )
+        ? \HWS\BaseTools\BrandAssets\HighlightColorResolver::contrast_text( $default_background )
+        : '#ffffff';
     $primary_color      = sanitize_hex_color( (string) get_option( 'hws_brand_primary_color', $default_primary ) );
     $secondary_color    = sanitize_hex_color( (string) get_option( 'hws_brand_secondary_color', $default_secondary ) );
     $background_color   = function_exists( __NAMESPACE__ . '\\hws_get_brand_highlight_background_color' )
@@ -3189,6 +3193,11 @@ function hws_get_brand_colors_payload(): array {
         'highlight_enabled'          => $enabled,
         'highlight_background_color' => $background_color,
         'highlight_text_color'       => $text_color,
+        'highlight_source'           => class_exists( \HWS\BaseTools\BrandAssets\HighlightColorResolver::class )
+            && \HWS\BaseTools\BrandAssets\HighlightColorResolver::uses_legacy_defaults(
+                get_option( 'hws_brand_highlight_background_color', null ),
+                get_option( 'hws_brand_highlight_text_color', null )
+            ) ? 'elementor_primary' : 'custom',
         'options'                    => [
             'primary'    => 'hws_brand_primary_color',
             'secondary'  => 'hws_brand_secondary_color',
@@ -3420,15 +3429,15 @@ function render_brand_colors_panel() {
 	            <div style="display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;max-width:100%;">
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                     <strong style="display:block;font-size:14px;margin-bottom:6px;">Site highlight override</strong>
-                    <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Controls browser text selection and HWS highlight output with separate background and text colors.</p>
+                    <p style="margin:0 0 12px;color:#646970;font-size:12.5px;">Controls browser text selection and HWS highlight output. Legacy defaults now follow Elementor Primary and automatically use readable black or white text; saved custom colors remain unchanged.</p>
                     <label class="hws-brand-toggle" style="margin-bottom:14px;">
                         <input type="checkbox" id="hws-highlight-enabled" <?php checked( $colors['highlight_enabled'] ); ?>>
                         <span class="hws-brand-toggle-track" aria-hidden="true"></span>
                         Enable highlight color override
                     </label>
                     <div style="display:grid;gap:12px;">
-                        <?php echo hws_render_brand_color_control( 'highlight_background_color', 'Highlight background color', $colors['highlight_background_color'], 'hws-highlight-background-color', 'hws-highlight-background-control', 'hws-highlight-background-color-hex', '#facc15' ); ?>
-                        <?php echo hws_render_brand_color_control( 'highlight_text_color', 'Highlight text color', $colors['highlight_text_color'], 'hws-highlight-text-color', 'hws-highlight-text-control', 'hws-highlight-text-color-hex', '#111827' ); ?>
+                        <?php echo hws_render_brand_color_control( 'highlight_background_color', 'Highlight background color', $colors['highlight_background_color'], 'hws-highlight-background-color', 'hws-highlight-background-control', 'hws-highlight-background-color-hex', $colors['highlight_background_color'] ); ?>
+                        <?php echo hws_render_brand_color_control( 'highlight_text_color', 'Highlight text color', $colors['highlight_text_color'], 'hws-highlight-text-color', 'hws-highlight-text-control', 'hws-highlight-text-color-hex', $colors['highlight_text_color'] ); ?>
                     </div>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;">
                         <button type="button" id="hws-save-brand-colors" class="button button-primary">Save Brand Colors</button>

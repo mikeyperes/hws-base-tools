@@ -248,7 +248,8 @@ final class RankMathSitemapCache {
             $modules = maybe_unserialize( $modules );
         }
 
-        return in_array( 'news-sitemap', (array) $modules, true );
+        return defined( 'RANK_MATH_PRO_VERSION' )
+            && in_array( 'news-sitemap', (array) $modules, true );
     }
 
     private static function news_sitemap_includes( string $post_type ): bool {

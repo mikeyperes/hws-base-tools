@@ -1,6 +1,8 @@
 <?php
 namespace hws_base_tools;
 
+use HWS\BaseTools\BrandAssets\HighlightColorResolver;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -162,18 +164,37 @@ function hws_site_page_template_html( string $type, array $definition ): string 
 }
 
 function hws_get_brand_highlight_background_color(): string {
-	$legacy_background = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_text_color', '#facc15' ) );
-	$background        = sanitize_hex_color( (string) get_option( 'hws_brand_highlight_background_color', $legacy_background ?: '#facc15' ) );
+	$background_raw = get_option( 'hws_brand_highlight_background_color', null );
+	$text_raw       = get_option( 'hws_brand_highlight_text_color', null );
 
-	return $background ?: '#facc15';
+	if ( HighlightColorResolver::uses_legacy_defaults( $background_raw, $text_raw ) ) {
+		return HighlightColorResolver::active_elementor_primary();
+	}
+
+	$background = sanitize_hex_color( (string) $background_raw );
+	if ( $background ) {
+		return strtolower( $background );
+	}
+
+	$legacy_custom_background = sanitize_hex_color( (string) $text_raw );
+	return $legacy_custom_background ? strtolower( $legacy_custom_background ) : HighlightColorResolver::active_elementor_primary();
 }
 
 function hws_get_brand_highlight_text_color(): string {
-	$has_background_option = get_option( 'hws_brand_highlight_background_color', null ) !== null;
-	$default_text          = $has_background_option ? (string) get_option( 'hws_brand_highlight_text_color', '#111827' ) : '#111827';
-	$text                  = sanitize_hex_color( $default_text );
+	$background_raw = get_option( 'hws_brand_highlight_background_color', null );
+	$text_raw       = get_option( 'hws_brand_highlight_text_color', null );
+	$background     = hws_get_brand_highlight_background_color();
 
-	return $text ?: '#111827';
+	if ( HighlightColorResolver::uses_legacy_defaults( $background_raw, $text_raw ) ) {
+		return HighlightColorResolver::contrast_text( $background );
+	}
+
+	$text = sanitize_hex_color( (string) $text_raw );
+	if ( null !== $background_raw && $text ) {
+		return strtolower( $text );
+	}
+
+	return HighlightColorResolver::contrast_text( $background );
 }
 
 function hws_is_brand_highlight_enabled(): bool {

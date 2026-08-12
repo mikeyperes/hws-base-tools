@@ -15,6 +15,8 @@ use HWS\BaseTools\ContentTypes\SharedContentTypes;
 use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 use HWS\BaseTools\Diagnostics\IntegrationTests;
 use HWS\BaseTools\BrandTemplates\BrandTemplateFeature;
+use HWS\BaseTools\PageLayoutStyling\PageLayoutFeature;
+use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\DiscussionPolicy;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
@@ -65,6 +67,8 @@ final class CoreIntegration {
             ->add_module( new LiteSpeedModule() )
             ->add_module( new QueryHookCompatibility() )
             ->add_module( new BrandTemplateFeature() )
+            ->add_module( new PageLayoutFeature() )
+            ->add_module( new MaintenanceModeFeature() )
             ->add_module( new DiscussionPolicy() )
             ->add_module( new ReadingProgress() )
             ->add_module( new ArticleImageModule() )

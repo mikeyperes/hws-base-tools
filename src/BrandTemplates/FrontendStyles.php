@@ -29,9 +29,6 @@ final class FrontendStyles {
      *  @return string[]
      */
     public static function body_classes( array $classes ): array {
-        if ( is_page() && BrandTemplateSettings::enabled( 'page_content_styles_enabled' ) ) {
-            $classes[] = 'hws-page-content-styles';
-        }
         if ( is_singular( 'post' ) && BrandTemplateSettings::enabled( 'single_content_styles_enabled' ) ) {
             $classes[] = 'hws-single-content-styles';
         }
@@ -45,7 +42,6 @@ final class FrontendStyles {
 
     private static function should_enqueue(): bool {
         return '' !== TemplateLoader::selected_context()
-            || ( is_page() && BrandTemplateSettings::enabled( 'page_content_styles_enabled' ) )
             || ( is_singular( 'post' ) && BrandTemplateSettings::enabled( 'single_content_styles_enabled' ) );
     }
 
