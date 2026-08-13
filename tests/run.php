@@ -97,6 +97,10 @@ expect_true( str_contains( $header, 'Requires PHP: ' . $metadata::REQUIRES_PHP )
 expect_true( substr_count( source( 'initialization.php' ), "\n" ) < 30, 'legacy initialization entry stays thin' );
 expect_true( str_contains( $header, "require_once \$hexa_plugin_core_root . '/bootstrap.php'" ), 'canonical entry registers the shared Core package runtime' );
 expect_true( ! str_contains( $header, 'Hexa\\PluginCore\\' ), 'canonical entry does not load a Core class before package selection' );
+expect_true(
+    ! str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'ArticleImageModule' ),
+    'automatic fixed-ratio article image generation and front-end rewriting stay disabled'
+);
 
 $registry = HWS\BaseTools\AdminDashboard\DashboardRegistry::instance();
 $tabs = $registry->navigation_tabs();

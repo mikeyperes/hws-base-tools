@@ -9,7 +9,6 @@ HWS Base Tools is the canonical owner of:
 - Website classification: News Outlet, Podcast Website, Personal Website, Company Website, e-Commerce Website, or Other.
 - The optional primary entity selection consumed by profile and publication plugins.
 - Shared custom post types: `team-member`, `testimonial`, and `services`.
-- Site-wide article image crops, crawlable featured-image policy, SEO-provider adapters, and targeted sitemap invalidation.
 - Brand assets, common shortcodes, site checks, maintenance tools, and WordPress admin cleanup.
 
 The primary entity is optional. Sites that do not need a canonical person, organization, publication, or verified profile continue to work without one.
@@ -129,6 +128,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.5
+
+- Reverses the automatic article-image policy introduced in 13.2.0: HWS Base Tools no longer generates fixed-ratio featured-image crops, backfills existing media, rewrites front-end image sources or dimensions, or overrides Rank Math schema, social, robots, and sitemap image output.
+- Restores full control of featured-image presentation and SEO image selection to WordPress, the active theme or builder, and the configured SEO provider.
 
 ### 13.2.4
 
