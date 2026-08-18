@@ -10,6 +10,7 @@ HWS Base Tools is the canonical owner of:
 - The optional primary entity selection consumed by profile and publication plugins.
 - Shared custom post types: `team-member`, `testimonial`, and `services`.
 - Brand assets, common shortcodes, site checks, maintenance tools, and WordPress admin cleanup.
+- The Assets ACF group provides separate Brand and Banners galleries under HWS Website & Primary Entity settings.
 
 The primary entity is optional. Sites that do not need a canonical person, organization, publication, or verified profile continue to work without one.
 
@@ -128,6 +129,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.7
+
+- Renames the shared ACF group to Assets, keeps the existing Brand gallery key and field name stable, and adds the Banners gallery.
+- Updates the shared Hexa WP Core registry display and adds automated ACF structure coverage.
 
 ### 13.2.6
 

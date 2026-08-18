@@ -30,6 +30,7 @@
       "@php tests/plugin-policy-unit.php",
       "@php tests/user-profile-2025-migration-unit.php",
       "@php tests/user-profile-gallery-details-unit.php",
+      "@php tests/assets-acf-structure-unit.php",
       "@php tests/query-hook-compatibility-unit.php",
       "@php tests/query-hook-compatibility-ptt-drift.php",
       "@php tests/query-hook-inventory-static.php",

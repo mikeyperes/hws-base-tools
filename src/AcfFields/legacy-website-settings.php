@@ -3,10 +3,40 @@
 function hws_get_brand_assets_gallery_acf_field(): array {
     return array(
         'key'               => 'field_hws_brand_assets_gallery',
-        'label'             => 'Brand Assets Gallery',
+        'label'             => 'Brand',
         'name'              => 'brand_assets_gallery',
         'type'              => 'gallery',
-        'instructions'      => "Shared brand image gallery. Managed from HWS Base Tools → Brand Assets.<br>Shortcode: <code>[brand_asset_gallery]</code> or <code>[site_gallery]</code>",
+        'instructions'      => "Reusable brand identity images, including logos, marks, and approved brand graphics.<br>Shortcode: <code>[brand_asset_gallery]</code> or <code>[site_gallery]</code>",
+        'required'          => 0,
+        'conditional_logic' => 0,
+        'wrapper'           => array(
+            'width' => '',
+            'class' => '',
+            'id'    => '',
+        ),
+        'return_format'     => 'id',
+        'library'           => 'all',
+        'min'               => '',
+        'max'               => '',
+        'min_width'         => '',
+        'min_height'        => '',
+        'min_size'          => '',
+        'max_width'         => '',
+        'max_height'        => '',
+        'max_size'          => '',
+        'mime_types'        => 'jpg,jpeg,png,gif,webp,svg',
+        'insert'            => 'append',
+        'preview_size'      => 'thumbnail',
+    );
+}
+
+function hws_get_banners_gallery_acf_field(): array {
+    return array(
+        'key'               => 'field_hws_banners_gallery',
+        'label'             => 'Banners',
+        'name'              => 'banners',
+        'type'              => 'gallery',
+        'instructions'      => 'Finished website banners, promotional graphics, and rendered presentation slides.',
         'required'          => 0,
         'conditional_logic' => 0,
         'wrapper'           => array(
@@ -33,9 +63,10 @@ function hws_get_brand_assets_gallery_acf_field(): array {
 function hws_brand_assets_gallery_acf_group(): array {
     return array(
         'key'                   => 'group_hws_brand_assets_gallery',
-        'title'                 => 'HWS Brand Assets',
+        'title'                 => 'Assets',
         'fields'                => array(
             hws_get_brand_assets_gallery_acf_field(),
+            hws_get_banners_gallery_acf_field(),
         ),
         'location'              => array(
             array(

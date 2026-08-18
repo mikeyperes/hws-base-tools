@@ -41,13 +41,13 @@ final class SharedAcfStructures {
         return [
             self::definition(
                 'brand-assets',
-                'Brand Assets Gallery',
+                'Assets',
                 'group_hws_brand_assets_gallery',
                 '',
                 true,
                 'hws_base_tools\\hws_brand_assets_gallery_acf_group',
                 'HWS Website & Primary Entity settings',
-                [ 'Shared Brand Assets Gallery' ]
+                [ 'Brand — Gallery', 'Banners — Gallery' ]
             ),
             self::definition(
                 'website-settings',
