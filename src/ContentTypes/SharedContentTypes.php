@@ -141,7 +141,7 @@ final class SharedContentTypes {
                     'id' => 'testimonial-fields', 'label' => 'Testimonial Fields', 'group_key' => 'group_64c2177b44137',
                     'description' => 'Testimonial attribution and reusable display metadata.',
                     'definition' => static fn(): array => \hws_base_tools\enable_acf_testimonial(),
-                    'fields' => [ 'Testimonial attribution', 'Display metadata', 'Notable Quotes repeater' ], 'dependencies' => [ 'Advanced Custom Fields Pro' ],
+                    'fields' => [ 'Testimonial attribution', 'Display metadata', 'Quotes repeater' ], 'dependencies' => [ 'Advanced Custom Fields Pro' ],
                     'legacy_option' => 'enable_acf_testimonial',
                     'enabled_default' => (bool) get_option( 'enable_acf_testimonial', false ),
                 ],

@@ -6,7 +6,7 @@ define( 'ABSPATH', __DIR__ );
 
 $registered_shortcodes = [];
 $current_post_id = 41;
-$post_types = [ 41 => 'testimonial', 73 => 'testimonial', 99 => 'post' ];
+$post_types = [ 41 => 'testimonial', 73 => 'testimonial', 74 => 'testimonial', 99 => 'post' ];
 $acf_quotes = [
     41 => [
         [ 'quote' => 'The first notable quote.' ],
@@ -15,7 +15,8 @@ $acf_quotes = [
     73 => false,
 ];
 $post_meta = [
-    73 => [ 'notable_quotes_0_quote' => 'A stored fallback quote.' ],
+    73 => [ 'quotes_0_quote' => 'A stored canonical quote.' ],
+    74 => [ 'notable_quotes_0_quote' => 'A retained legacy quote.' ],
 ];
 $failures = [];
 $passes = 0;
@@ -57,7 +58,7 @@ function get_post_type( int $post_id ): string|false {
 
 function get_field( string $field, int $post_id ): mixed {
     global $acf_quotes;
-    return 'notable_quotes' === $field ? ( $acf_quotes[ $post_id ] ?? false ) : false;
+    return 'quotes' === $field ? ( $acf_quotes[ $post_id ] ?? false ) : false;
 }
 
 function get_post_meta( int $post_id, string $key, bool $single = false ): mixed {
@@ -92,8 +93,12 @@ testimonial_quote_expect(
     'number selects a repeater row and output is plain text'
 );
 testimonial_quote_expect(
-    'A stored fallback quote.' === TestimonialQuoteShortcode::render( [ 'id' => '73' ] ),
-    'specific Testimonial IDs work and raw ACF repeater meta provides a fallback'
+    'A stored canonical quote.' === TestimonialQuoteShortcode::render( [ 'id' => '73' ] ),
+    'specific Testimonial IDs work with canonical raw ACF repeater metadata'
+);
+testimonial_quote_expect(
+    'A retained legacy quote.' === TestimonialQuoteShortcode::render( [ 'id' => '74' ] ),
+    'legacy notable_quotes metadata remains readable during migration compatibility'
 );
 testimonial_quote_expect(
     '' === TestimonialQuoteShortcode::render( [ 'id' => '99' ] ),

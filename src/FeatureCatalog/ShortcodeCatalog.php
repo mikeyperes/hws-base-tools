@@ -50,10 +50,10 @@ final class ShortcodeCatalog {
             ],
             [
                 'id' => TestimonialQuoteShortcode::SHORTCODE,
-                'label' => 'Testimonial Notable Quote',
+                'label' => 'Testimonial Quote',
                 'shortcode' => '[hws_testimonial_quote]',
-                'description' => 'Returns one notable quote as plain text from the current Testimonial or a specified Testimonial ID.',
-                'test_method' => 'Render the shortcode on a Testimonial and confirm number selects the matching Notable Quotes row.',
+                'description' => 'Returns one quote as plain text from the current Testimonial or a specified Testimonial ID.',
+                'test_method' => 'Render the shortcode on a Testimonial and confirm number selects the matching Quotes row.',
                 'source' => 'src/Testimonials/TestimonialQuoteShortcode.php',
                 'provider' => 'HWS Base Tools',
                 'parameters' => [ 'id' => 0, 'number' => 1 ],

@@ -96,7 +96,7 @@ Each type and field structure is closed by default in the dashboard and includes
 | `[site_logo key="logo" size="medium"]` | Render a configured brand image. |
 | `[site_logo key="logo_text" width="180"]` | Constrain a logo without changing its aspect ratio. |
 | `[team_members]` | Render the HWS Team Member directory. |
-| `[hws_testimonial_quote]` | Return a notable quote from the current or specified Testimonial. |
+| `[hws_testimonial_quote]` | Return a quote from the current or specified Testimonial. |
 | `[website_content id="..."]` | Read a configured Website Settings value. |
 | `[website_url]` | Return the site URL. |
 | `[current_year]` | Return the current year. |
@@ -128,6 +128,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.6
+
+- Adds a canonical `quotes` repeater with quote text, source URL, and attribution/tagline fields to Testimonial and User - Additional ACF groups.
+- Migrates Testimonial `notable_quotes` rows non-destructively, keeps legacy metadata available, and makes the testimonial quote shortcode prefer canonical rows with a legacy fallback.
 
 ### 13.2.5
 

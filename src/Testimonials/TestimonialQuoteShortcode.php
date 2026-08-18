@@ -37,17 +37,27 @@ final class TestimonialQuoteShortcode {
         $quote = '';
 
         if ( function_exists( 'get_field' ) ) {
-            $quotes = get_field( 'notable_quotes', $post_id );
-            $row = is_array( $quotes ) ? ( $quotes[ $index ] ?? null ) : null;
-            if ( is_array( $row ) && is_scalar( $row['quote'] ?? null ) ) {
-                $quote = (string) $row['quote'];
+            foreach ( [ 'quotes', 'notable_quotes' ] as $field_name ) {
+                $quotes = get_field( $field_name, $post_id );
+                $row = is_array( $quotes ) ? ( $quotes[ $index ] ?? null ) : null;
+                if ( is_array( $row ) && is_scalar( $row['quote'] ?? null ) ) {
+                    $quote = (string) $row['quote'];
+                }
+                if ( '' !== trim( $quote ) ) {
+                    break;
+                }
             }
         }
 
         if ( '' === trim( $quote ) ) {
-            $raw_quote = get_post_meta( $post_id, 'notable_quotes_' . $index . '_quote', true );
-            if ( is_scalar( $raw_quote ) ) {
-                $quote = (string) $raw_quote;
+            foreach ( [ 'quotes', 'notable_quotes' ] as $field_name ) {
+                $raw_quote = get_post_meta( $post_id, $field_name . '_' . $index . '_quote', true );
+                if ( is_scalar( $raw_quote ) ) {
+                    $quote = (string) $raw_quote;
+                }
+                if ( '' !== trim( $quote ) ) {
+                    break;
+                }
             }
         }
 

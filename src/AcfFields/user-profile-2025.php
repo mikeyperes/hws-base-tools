@@ -249,6 +249,12 @@ function hws_user_additional_fields_group(): array {
                 'library'           => 'all',
                 'mime_types'        => 'jpg,jpeg,png,webp',
             ),
+            \HWS\BaseTools\AcfFields\QuoteRepeaterDefinition::build(
+                'field_hws_user_additional_quotes',
+                'field_hws_user_additional_quote_text',
+                'field_hws_user_additional_quote_url',
+                'field_hws_user_additional_quote_tagline'
+            ),
             array(
                 'key'               => 'field_hws_additional_muckrack_verified',
                 'label'             => 'MuckRack Verified',

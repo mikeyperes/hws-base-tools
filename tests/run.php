@@ -414,7 +414,7 @@ expect_true(
 expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_testimonial_quote]'" )
     && str_contains( source( 'shortcodes.php' ), 'TestimonialQuoteShortcode::register()' ),
-    'HWS registers and documents the Testimonial Notable Quote shortcode'
+    'HWS registers and documents the Testimonial Quote shortcode'
 );
 $shared_content_types = source( 'src/ContentTypes/SharedContentTypes.php' );
 expect_true(

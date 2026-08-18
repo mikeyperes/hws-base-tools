@@ -45,7 +45,9 @@ HexaPluginCorePackageRegistry::resolve();
 $hooks = [];
 
 require_once dirname( __DIR__ ) . '/src/ContentTypes/SharedContentTypes.php';
+require_once dirname( __DIR__ ) . '/src/AcfFields/QuoteRepeaterDefinition.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/LegacySmp/register-acf-testimonial.php';
+require_once dirname( __DIR__ ) . '/src/AcfFields/user-profile-2025.php';
 
 use HWS\BaseTools\ContentTypes\SharedContentTypes;
 
@@ -67,13 +69,29 @@ $expect(
 
 $testimonial_group = \hws_base_tools\enable_acf_testimonial();
 $testimonial_fields = array_column( $testimonial_group['fields'] ?? [], null, 'name' );
-$notable_quotes = $testimonial_fields['notable_quotes'] ?? [];
-$quote_fields = array_column( $notable_quotes['sub_fields'] ?? [], null, 'name' );
+$quotes = $testimonial_fields['quotes'] ?? [];
+$quote_fields = array_column( $quotes['sub_fields'] ?? [], null, 'name' );
 $expect(
-    'repeater' === ( $notable_quotes['type'] ?? '' )
-        && 'Add Quote' === ( $notable_quotes['button_label'] ?? '' )
-        && 'textarea' === ( $quote_fields['quote']['type'] ?? '' ),
-    'Testimonial fields include a Notable Quotes repeater with one textarea per quote'
+    'repeater' === ( $quotes['type'] ?? '' )
+        && 'Add Quote' === ( $quotes['button_label'] ?? '' )
+        && 'textarea' === ( $quote_fields['quote']['type'] ?? '' )
+        && 'url' === ( $quote_fields['url']['type'] ?? '' )
+        && 'text' === ( $quote_fields['tagline']['type'] ?? '' )
+        && 'Attribution / Tagline' === ( $quote_fields['tagline']['label'] ?? '' ),
+    'Testimonial fields include the canonical Quotes repeater with quote, URL, and attribution/tagline fields'
+);
+
+$user_group = \hws_base_tools\hws_user_additional_fields_group();
+$user_fields = array_column( $user_group['fields'] ?? [], null, 'name' );
+$user_quotes = $user_fields['quotes'] ?? [];
+$user_quote_fields = array_column( $user_quotes['sub_fields'] ?? [], null, 'name' );
+$expect(
+    'repeater' === ( $user_quotes['type'] ?? '' )
+        && [ 'quote', 'url', 'tagline' ] === array_keys( $user_quote_fields )
+        && 'textarea' === ( $user_quote_fields['quote']['type'] ?? '' )
+        && 'url' === ( $user_quote_fields['url']['type'] ?? '' )
+        && 'text' === ( $user_quote_fields['tagline']['type'] ?? '' ),
+    'User - Additional uses the same canonical Quotes repeater structure as Testimonials'
 );
 
 foreach ( $definitions as $post_type => $definition ) {

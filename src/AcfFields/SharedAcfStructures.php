@@ -77,7 +77,7 @@ final class SharedAcfStructures {
                 false,
                 'hws_base_tools\\hws_user_additional_fields_group',
                 'All WordPress user profiles',
-                [ 'Public email', 'Public phone', 'Title', 'Team member', 'Profile type', 'Profile photo', 'Staff writer', 'Muck Rack fields' ]
+                [ 'Public email', 'Public phone', 'Title', 'Team member', 'Profile type', 'Profile photo', 'Quotes repeater', 'Staff writer', 'Muck Rack fields' ]
             ),
             self::definition(
                 'sponsored-posts',
