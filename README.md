@@ -110,7 +110,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 3.0.1 |
+| Hexa WP Core bundle | 3.0.6 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -129,6 +129,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.8
+
+- Preserves an existing WordPress Site Icon or readable root `favicon.ico` during Quick Start, returning `action=preserved` without mutation, and generates the HWS fallback only when neither asset exists.
+- Bundles Hexa WordPress Plugin Core 3.0.6 with native updater activation-scope preservation, cache invalidation, canonical-folder normalization, and explicit restoration verification.
 
 ### 13.2.7
 

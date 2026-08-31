@@ -100,7 +100,7 @@ final class QuickStartProfileRegistry {
                 '5. Site & Brand',
                 'Finish the basic HWS site identity and administration policy.',
                 [
-                    self::task( 'regenerate_favicon_ico', 'Generate Site Icon and favicon.ico', 'setup_action', 'Creates the current HWS letter icon and verifies both the WordPress Site Icon and physical ICO.', 'Generate', $context ),
+                    self::task( 'regenerate_favicon_ico', 'Ensure a favicon exists', 'setup_action', 'Preserves any existing WordPress Site Icon or physical favicon.ico. Generates an HWS letter icon only when neither exists.', 'Check', $context ),
                     self::task( 'enable_recommended_snippets', 'Enable recommended HWS features', 'feature_toggle', 'Enables the maintained Going Live feature set.', 'Enable', $context ),
                     self::task( 'apply_ui_cleanup', 'Apply recommended admin cleanup', 'feature_toggle', 'Enables the recommended HWS WordPress-admin cleanup policy.', 'Apply', $context ),
                 ]

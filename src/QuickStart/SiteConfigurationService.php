@@ -41,17 +41,28 @@ final class SiteConfigurationService {
 
     /** @return array<string,mixed> */
     public function generate_favicon(): array {
+        $path          = ABSPATH . 'favicon.ico';
+        $site_icon_url = function_exists( 'get_site_icon_url' ) ? trim( (string) get_site_icon_url( 512 ) ) : '';
+        $root_exists   = is_file( $path ) && is_readable( $path ) && (int) filesize( $path ) > 0;
+
+        if ( '' !== $site_icon_url || $root_exists ) {
+            return [
+                'success' => true,
+                'message' => 'An existing favicon was found and left unchanged.',
+                'data'    => [
+                    'action'             => 'preserved',
+                    'site_icon_present'  => '' !== $site_icon_url,
+                    'site_icon_url'      => $site_icon_url,
+                    'root_icon_present'  => $root_exists,
+                    'favicon_url'        => $root_exists ? home_url( '/favicon.ico' ) : '',
+                    'favicon_size'       => $root_exists ? (int) filesize( $path ) : 0,
+                ],
+            ];
+        }
+
         $this->load_brand_dependencies();
         if ( ! function_exists( '\hws_base_tools\hws_create_letter_site_icon' ) ) {
             return [ 'success' => false, 'message' => 'The HWS Site Icon generator is unavailable.', 'data' => [] ];
-        }
-
-        $path = ABSPATH . 'favicon.ico';
-        if ( is_file( $path ) ) {
-            wp_delete_file( $path );
-            if ( is_file( $path ) ) {
-                return [ 'success' => false, 'message' => 'The existing root favicon could not be removed.', 'data' => [ 'path' => $path ] ];
-            }
         }
 
         $title  = sanitize_title( (string) get_bloginfo( 'name' ) );
@@ -67,6 +78,7 @@ final class SiteConfigurationService {
             'success' => $success,
             'message' => $success ? 'WordPress Site Icon and root favicon.ico generated and verified.' : 'Favicon generation did not produce both required assets.',
             'data'    => [
+                'action'        => 'generated',
                 'letter'        => $letter,
                 'attachment_id' => $attachment,
                 'icon_url'      => (string) ( $result['icon_url'] ?? '' ),

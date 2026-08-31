@@ -25,7 +25,8 @@ continues, but any failed mutation stops all later tasks.
    for the complete installed inventory and verify the stack.
 6. Set both WordPress front-end and admin memory to `4096M`, disable production debug output, close all
    comments and pings, hard-repair permalinks, and audit the real-cron handoff.
-7. Apply brand and admin defaults.
+7. Preserve an existing favicon, generating an HWS fallback only when none is
+   configured, then apply the remaining brand and admin defaults.
 8. Provision LiteSpeed, apply the selected profile, and verify it.
 9. Configure the Wordfence baseline from server-injected licensing and audit
    SMTP. Sending a test email remains an individual action.

@@ -15,6 +15,7 @@
     "test": [
       "@php tests/article-image-indexing-unit.php",
       "@php tests/quick-start-litespeed-review-unit.php",
+      "@php tests/quick-start-favicon-unit.php",
       "@php tests/bootstrap-fleet-seeder.php",
       "@php tests/litespeed-wordfence-policy-unit.php",
       "@php tests/review-quick-start-safety-unit.php",
@@ -36,6 +37,7 @@
       "@php tests/query-hook-inventory-static.php",
       "@php tests/run.php",
       "@php lib/hexa-wordpress-plugin-core/tests/package-integrity.php",
+      "@php lib/hexa-wordpress-plugin-core/tests/plugin-update-activation.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-registry.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-collision.php",
       "@php lib/hexa-wordpress-plugin-core/tests/core-package-auto-sync.php",
