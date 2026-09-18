@@ -2,6 +2,7 @@
 
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
+use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 use Hexa\PluginCore\WpAdminComponents\ColorControl;
@@ -80,6 +81,7 @@ function hws_get_all_dashboard_features(): array {
         'enable_lowercase_upload_filenames',
         'enable_footer_text_auto_injection',
         ReadingProgress::FEATURE_OPTION,
+        FeaturedImageRequirement::FEATURE_OPTION,
         TeamMemberDirectory::FEATURE_OPTION,
     ];
 
@@ -124,6 +126,11 @@ function hws_render_feature_settings( array $feature ): void {
 
     if ( ReadingProgress::FEATURE_OPTION === $feature_id ) {
         hws_render_reading_progress_settings();
+        return;
+    }
+
+    if ( FeaturedImageRequirement::FEATURE_OPTION === $feature_id ) {
+        FeaturedImageRequirement::render_settings();
         return;
     }
 
@@ -494,7 +501,9 @@ function hws_output_feature_card_scripts(): void {
                 front_page: $settings.find('[data-hws-feature-field="front_page"]').is(':checked') ? '1' : '0',
                 post_types: $settings.find('[data-hws-feature-field="post_types"]:checked').map(function() { return this.value; }).get(),
                 style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
-                color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || ''
+                color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || '',
+                min_width: $settings.find('[data-hws-feature-field="min_width"]').val() || '0',
+                min_height: $settings.find('[data-hws-feature-field="min_height"]').val() || '0'
             };
 
             $button.prop('disabled', true);
@@ -677,6 +686,19 @@ function ajax_hws_feature_save_settings(): void {
         wp_send_json_success( $saved );
     }
 
+    if ( FeaturedImageRequirement::FEATURE_OPTION === $feature_id ) {
+        $post_types = isset( $_POST['post_types'] ) ? (array) wp_unslash( $_POST['post_types'] ) : [];
+        $saved = FeaturedImageRequirement::save_settings(
+            [
+                'post_types' => array_map( 'sanitize_key', $post_types ),
+                'min_width'  => isset( $_POST['min_width'] ) ? (int) $_POST['min_width'] : 0,
+                'min_height' => isset( $_POST['min_height'] ) ? (int) $_POST['min_height'] : 0,
+            ]
+        );
+        hws_add_feature_activity( $feature_id, 'Updated featured image publication requirements.' );
+        wp_send_json_success( $saved );
+    }
+
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
         wp_send_json_error( [ 'message' => 'No custom settings exist for this feature.' ] );
     }
@@ -740,6 +762,9 @@ function hws_run_feature_test( string $feature_id ): array {
                 'proof'   => 'Targets ' . $targets . '; design ' . $settings['style'] . '; color ' . $settings['color'] . '.',
                 'ran_at'  => $ran_at,
             ];
+
+        case FeaturedImageRequirement::FEATURE_OPTION:
+            return FeaturedImageRequirement::test_report();
 
         case 'disable_non_admin_admin_bar':
             return [

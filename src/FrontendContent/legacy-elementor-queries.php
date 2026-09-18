@@ -10,6 +10,12 @@
  *  - featured_team_members   → query_featured_team_members()
  *  - featured_testimonials   → query_featured_testimonials()
  *  - query_featured_posts    → query_featured_posts()
+ *  - hpr_resources           → query_hpr_resources()
+ *  - hpr_publications_featured_new → query_hpr_publications_featured_new()
+ *  - hpr_publications_standard_featured → query_hpr_publications_standard_featured()
+ *  - hpr_updates_internal    → query_hpr_updates_internal()
+ *  - hpr_external_cision     → query_hpr_external_cision()
+ *  - hpr_external_prcom      → query_hpr_external_prcom()
  *
  * Usage in Elementor:
  *  - In a Loop/Grid widget → Query → Advanced → Query ID
@@ -36,6 +42,21 @@ function enable_elementor_queries() {
         'elementor/query/query_featured_posts',
         __NAMESPACE__ . '\\query_featured_posts'
     );
+
+    $query_callbacks = array(
+        'hpr_resources'                      => 'query_hpr_resources',
+        'hpr_publications_featured_new'      => 'query_hpr_publications_featured_new',
+        'hpr_publications_standard_featured' => 'query_hpr_publications_standard_featured',
+        'hpr_updates_internal'               => 'query_hpr_updates_internal',
+        'hpr_external_cision'                => 'query_hpr_external_cision',
+        'hpr_external_prcom'                 => 'query_hpr_external_prcom',
+    );
+
+    foreach ( $query_callbacks as $query_id => $callback ) {
+        add_action( 'elementor/query/' . $query_id, __NAMESPACE__ . '\\' . $callback );
+    }
+
+    add_action( 'elementor/dynamic_tags/register', __NAMESPACE__ . '\\register_hws_elementor_dynamic_tags' );
 }
 
 /**
@@ -140,4 +161,102 @@ function query_featured_posts( $query ) {
 
     // Apply the meta query to the query object.
     $query->set( 'meta_query', $meta_query );
+}
+
+/**
+ * Register HWS text transformations that replace JetEngine callbacks.
+ *
+ * @param object $dynamic_tags Elementor's dynamic tag manager.
+ * @return void
+ */
+function register_hws_elementor_dynamic_tags( $dynamic_tags ) {
+    $class = \HWS\BaseTools\Elementor\TrimmedAcfTextTag::class;
+
+    if ( ! class_exists( $class ) || ! is_object( $dynamic_tags ) || ! method_exists( $dynamic_tags, 'register' ) ) {
+        return;
+    }
+
+    $dynamic_tags->register( new $class() );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_resources( $query ) {
+    $query->set( 'post_type', 'resource' );
+    $query->set( 'post_status', 'publish' );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_publications_featured_new( $query ) {
+    hpr_configure_publication_query(
+        $query,
+        array(
+            array(
+                'key'     => 'new_source',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+            array(
+                'key'     => 'featured',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+        )
+    );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_publications_standard_featured( $query ) {
+    hpr_configure_publication_query(
+        $query,
+        array(
+            array(
+                'key'     => 'product_tier',
+                'value'   => 'standard',
+                'compare' => '=',
+            ),
+            array(
+                'key'     => 'status',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+            array(
+                'key'     => 'featured',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+        )
+    );
+}
+
+/**
+ * @param \WP_Query $query
+ * @param array<int,array<string,string>> $clauses
+ */
+function hpr_configure_publication_query( $query, array $clauses ) {
+    $query->set( 'post_type', 'publication' );
+    $query->set( 'post_status', 'publish' );
+    $query->set( 'meta_query', array_merge( array( 'relation' => 'AND' ), $clauses ) );
+    $query->set( 'order', 'ASC' );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_updates_internal( $query ) {
+    hpr_configure_category_query( $query, 'post', 'internal-announcement' );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_external_cision( $query ) {
+    hpr_configure_category_query( $query, 'press-release', 'pr-news-wire-cision' );
+}
+
+/** @param \WP_Query $query */
+function query_hpr_external_prcom( $query ) {
+    hpr_configure_category_query( $query, 'press-release', 'pr-com' );
+}
+
+/** @param \WP_Query $query */
+function hpr_configure_category_query( $query, string $post_type, string $category_slug ) {
+    $query->set( 'post_type', $post_type );
+    $query->set( 'post_status', 'publish' );
+    $query->set( 'category_name', $category_slug );
 }

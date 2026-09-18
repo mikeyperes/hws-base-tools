@@ -2,6 +2,7 @@
 
 use Hexa\PluginCore\QuerySafety\QueryEligibility;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
+use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -75,4 +76,8 @@ function enable_team_member_directory_templates(): void {
 
 function enable_reading_progress_bar(): void {
     ReadingProgress::activate();
+}
+
+function enable_required_featured_image(): void {
+    FeaturedImageRequirement::activate();
 }

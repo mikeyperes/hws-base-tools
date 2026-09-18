@@ -10,6 +10,7 @@ use HWS\BaseTools\PluginRuntime\CoreIntegration;
 use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\FrontendContent\FeatureLoader;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
+use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 
@@ -624,6 +625,15 @@ function get_snippets($type = "")
     // ─── ADMIN / SETTINGS SNIPPETS ─────────────────────────────────────
     $snippets_admin = [
     [
+        'id'               => FeaturedImageRequirement::FEATURE_OPTION,
+        'name'             => 'Require Featured Image',
+        'description'      => 'Prevents selected content types from publishing until a featured image meeting the configured minimum dimensions is present.',
+        'info'             => 'Choose the covered content types and optional minimum dimensions in HWS Base Tools → Features. Existing settings from the Require Featured Image plugin migrate automatically once.',
+        'function'         => 'enable_required_featured_image',
+        'scope_admin_only' => true,
+        'code_example'     => 'No shortcode needed. Configure it in HWS Base Tools → Features.',
+    ],
+    [
         'id'               => 'enable_acf_source_tracker',
         'name'             => 'ACF Source Tracker',
         'description'      => 'Shows a subtle source header on each ACF field group (registering plugin plus the unique group key) with a faint per-source colour accent, so field origins are trackable. Generic engine; currently active on the user edit/profile screen.',
@@ -794,6 +804,13 @@ function get_snippets($type = "")
             <code>featured_team_members</code> – Filters Team Members CPT where <code>featured = 1</code><br>
             <code>featured_testimonials</code> – Filters Testimonials CPT where <code>featured = 1</code><br>
             <code>query_featured_posts</code> – Filters Posts where <code>featured = 1</code><br>
+            <code>hpr_resources</code> – HexaPR Wire resources<br>
+            <code>hpr_publications_featured_new</code> – New featured publications<br>
+            <code>hpr_publications_standard_featured</code> – Active standard featured publications<br>
+            <code>hpr_updates_internal</code> – Internal announcements<br>
+            <code>hpr_external_cision</code> – Cision press releases<br>
+            <code>hpr_external_prcom</code> – PR.com press releases<br>
+            <strong>Dynamic tag:</strong> <code>HWS Trimmed ACF Text</code><br>
             <em>Usage: Loop Widget → Query → Advanced → Query ID</em>',
         'function' => 'enable_elementor_queries',
         'scope_admin_only' => false

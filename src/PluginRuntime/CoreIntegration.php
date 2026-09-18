@@ -19,6 +19,7 @@ use HWS\BaseTools\PageLayoutStyling\PageLayoutFeature;
 use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\DiscussionPolicy;
+use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
 use HWS\BaseTools\QuickStart\QuickStartModule;
 use HWS\BaseTools\ReviewCenter\ReviewCenterModule;
@@ -69,6 +70,7 @@ final class CoreIntegration {
             ->add_module( new PageLayoutFeature() )
             ->add_module( new MaintenanceModeFeature() )
             ->add_module( new DiscussionPolicy() )
+            ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )

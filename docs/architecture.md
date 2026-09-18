@@ -47,6 +47,8 @@ src/PluginRuntime/       HWS\BaseTools\PluginRuntime
 src/AdminDashboard/      HWS\BaseTools\AdminDashboard
 src/FeatureCatalog/      HWS\BaseTools\FeatureCatalog
 src/FrontendContent/     HWS\BaseTools\FrontendContent
+src/Editorial/           HWS publication requirements and editor enforcement
+src/Elementor/           HWS-owned Elementor dynamic tags used by enabled integrations
 src/ArticleImageIndexing/ HWS site-wide article image crops, provider adapters, and targeted sitemap invalidation
 src/ContentTypes/        HWS-owned shared WordPress content types
 src/AcfFields/           HWS\BaseTools\AcfFields
@@ -95,6 +97,12 @@ that tab is rendered or when one of its mapped AJAX actions runs.
 
 `FrontendContent\FeatureLoader` maps enabled HWS options to frontend behavior.
 Disabled feature files must not load on ordinary frontend requests.
+
+`Editorial\FeaturedImageRequirement` owns the optional publication requirement,
+its editor and REST enforcement, and the one-time migration of compatible
+Require Featured Image settings. Enabled Elementor custom queries are defined in
+`FrontendContent\legacy-elementor-queries.php`; reusable tag behavior lives in
+`Elementor\TrimmedAcfTextTag` and loads only through Elementor's tag registry.
 
 `Maintenance\ScheduledTaskLoader` loads scheduled maintenance implementations
 only for cron and WP-CLI requests. Dashboard requests load a maintenance module
