@@ -811,6 +811,7 @@ function get_snippets($type = "")
             <code>hpr_external_cision</code> – Cision press releases<br>
             <code>hpr_external_prcom</code> – PR.com press releases<br>
             <strong>Dynamic tag:</strong> <code>HWS Trimmed ACF Text</code><br>
+            <strong>Display condition:</strong> <code>hws_request_parameter</code> – matches a scalar GET parameter by comparator and value<br>
             <em>Usage: Loop Widget → Query → Advanced → Query ID</em>',
         'function' => 'enable_elementor_queries',
         'scope_admin_only' => false

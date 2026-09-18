@@ -52,6 +52,7 @@ The HWS dashboard includes:
 - Featured image publication requirements for selected public content types, with optional minimum dimensions and one-time migration from Require Featured Image.
 - A generic reading-progress feature with an entire-site override, front-page and public post-type targeting, five visual designs, live previews, and the shared Hexa WP Core color picker.
 - Elementor query IDs and a configurable trimmed ACF text dynamic tag for native Loop Grid documents.
+- An Elementor Pro display condition for safe GET parameter comparisons, including the `hws_request_parameter` condition used by URL-driven elements.
 - Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
 - Default Page Content styling with six exact visual designs, an explicit No Style option, and an inspectable template/CSS view.
 - Full Site Maintenance Mode with five exact response templates, administrator bypass, proper public 503/Retry-After/noindex handling, REST/XML-RPC protection, and a live enable/disable checklist.
@@ -131,6 +132,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.2.10
+
+- Adds the `hws_request_parameter` Elementor Pro display condition with parameter, comparator, and value controls for native URL-driven element visibility.
 
 ### 13.2.9
 

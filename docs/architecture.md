@@ -102,7 +102,9 @@ Disabled feature files must not load on ordinary frontend requests.
 its editor and REST enforcement, and the one-time migration of compatible
 Require Featured Image settings. Enabled Elementor custom queries are defined in
 `FrontendContent\legacy-elementor-queries.php`; reusable tag behavior lives in
-`Elementor\TrimmedAcfTextTag` and loads only through Elementor's tag registry.
+`Elementor\TrimmedAcfTextTag` and `Elementor\RequestParameterCondition`; the
+condition loads through Elementor Pro's display-condition registry and reads
+only scalar GET parameters.
 
 `Maintenance\ScheduledTaskLoader` loads scheduled maintenance implementations
 only for cron and WP-CLI requests. Dashboard requests load a maintenance module
