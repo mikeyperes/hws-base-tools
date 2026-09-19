@@ -24,6 +24,7 @@ use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
 use HWS\BaseTools\QuickStart\QuickStartModule;
 use HWS\BaseTools\ReviewCenter\ReviewCenterModule;
 use HWS\BaseTools\LiteSpeed\LiteSpeedModule;
+use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -72,6 +73,7 @@ final class CoreIntegration {
             ->add_module( new DiscussionPolicy() )
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
+            ->add_module( new ExternalPublishingModule() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )
             ->add_module( UserProfileGalleryDetails::module() )

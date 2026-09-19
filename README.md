@@ -133,6 +133,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.11
+
+- Adds a default-off External Publishing dashboard control and Application Password-authenticated API for idempotent post creation, readback, updates, and deletion.
+
 ### 13.2.10
 
 - Adds the `hws_request_parameter` Elementor Pro display condition with parameter, comparator, and value controls for native URL-driven element visibility.
