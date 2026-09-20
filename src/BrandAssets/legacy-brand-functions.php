@@ -1739,7 +1739,7 @@ function hws_resolve_founder_user_id(): int {
  * --------------------------------------*/
 
 /**
- * [founder id="title|name|first_name|last_name|email|summary|biography|website|avatar|url_x|<acf_field>|group_subfield"]
+ * [founder id="title|name|first_name|last_name|email|summary|biography|website|avatar|photos|url_x|<acf_field>|group_subfield"]
  *
  * Core WordPress fields:
  *   - title / name      → display_name
@@ -1752,12 +1752,24 @@ function hws_resolve_founder_user_id(): int {
  *
  * ACF fields:
  *   - biography         → ACF biography (with option-level override)
+ *   - photos            → ACF Photos gallery as a responsive image grid
  *   - url_{platform}    → urls group subfield (facebook, linkedin, etc.)
  *   - {any_acf_field}   → Direct ACF field lookup
  *   - {group}_{subfield}→ Nested ACF group field
  */
 function founder_shortcode( $atts ): string {
-	$atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'founder' );
+	$atts = shortcode_atts(
+		[
+			'id'      => 'title',
+			'size'    => 'medium',
+			'output'  => 'grid',
+			'class'   => '',
+			'columns' => 4,
+			'loading' => 'lazy',
+		],
+		$atts,
+		'founder'
+	);
 	$requested = strtolower( trim( (string) $atts['id'] ) );
 
 	if ( ! function_exists( 'get_field' ) ) {
@@ -1819,6 +1831,9 @@ function founder_shortcode( $atts ): string {
 			}
 			$core_url = (string) $userdata->user_url;
 			return $core_url !== '' ? esc_url( $core_url ) : '';
+
+		case 'photos':
+			return hws_render_founder_photos_shortcode( $atts, $user_key );
 	}
 
 	// url_* platforms
@@ -1892,6 +1907,73 @@ function founder_shortcode( $atts ): string {
 	}
 
 	return '';
+}
+
+/**
+ * Render the canonical HWS user-profile Photos gallery.
+ *
+ * Supported attributes: size, output (grid|ids|urls), class, columns, loading.
+ */
+function hws_render_founder_photos_shortcode( array $atts, string $user_key ): string {
+	$photos = get_field( 'field_hws_user_profile_2025_photos', $user_key, false );
+	$ids    = hws_normalize_brand_gallery_ids( $photos );
+
+	if ( empty( $ids ) ) {
+		return '';
+	}
+
+	$size   = hws_get_brand_asset_image_size( (string) ( $atts['size'] ?? 'medium' ) );
+	$output = sanitize_key( (string) ( $atts['output'] ?? 'grid' ) );
+
+	if ( 'ids' === $output ) {
+		return esc_html( implode( ',', $ids ) );
+	}
+
+	if ( 'urls' === $output ) {
+		$urls = [];
+		foreach ( $ids as $id ) {
+			$url = wp_get_attachment_image_url( $id, $size );
+			if ( $url ) {
+				$urls[] = esc_url( $url );
+			}
+		}
+
+		return implode( "\n", $urls );
+	}
+
+	$columns = max( 1, min( 8, (int) ( $atts['columns'] ?? 4 ) ) );
+	$loading = sanitize_key( (string) ( $atts['loading'] ?? 'lazy' ) );
+	$loading = in_array( $loading, [ 'lazy', 'eager' ], true ) ? $loading : 'lazy';
+	$classes = [ 'hws-founder-gallery' ];
+
+	foreach ( preg_split( '/\s+/', trim( (string) ( $atts['class'] ?? '' ) ) ) ?: [] as $class ) {
+		$class = sanitize_html_class( $class );
+		if ( '' !== $class ) {
+			$classes[] = $class;
+		}
+	}
+
+	$html = '<div class="' . esc_attr( implode( ' ', array_unique( $classes ) ) ) . '" style="display:grid;grid-template-columns:repeat(' . $columns . ',minmax(0,1fr));gap:12px;">';
+
+	foreach ( $ids as $id ) {
+		$image = wp_get_attachment_image(
+			$id,
+			$size,
+			false,
+			[
+				'loading' => $loading,
+				'alt'     => get_post_meta( $id, '_wp_attachment_image_alt', true ),
+			]
+		);
+
+		if ( $image ) {
+			$html .= '<figure style="margin:0;">' . $image . '</figure>';
+		}
+	}
+
+	$html .= '</div>';
+
+	return $html;
 }
 
 /**

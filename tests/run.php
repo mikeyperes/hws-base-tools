@@ -789,6 +789,7 @@ expect_true( ! str_contains( source( 'src/AcfFields/AcfModule.php' ), 'hws_enabl
 $profile_fields = source( 'src/AcfFields/user-profile-2025.php' );
 $profile_migration = source( 'src/AcfFields/UserProfile2025Migration.php' );
 $profile_gallery_details = source( 'src/AcfFields/UserProfileGalleryDetails.php' );
+$brand_functions = source( 'src/BrandAssets/legacy-brand-functions.php' );
 expect_true( str_contains( $profile_fields, "'title' => 'User Profile Fields (2025)'" ), 'canonical 2025 user profile group has an explicit title' );
 expect_true( str_contains( $profile_fields, "'name' => 'wellfound'" ), 'canonical profile URLs retain Wellfound separately from The Org' );
 expect_true(
@@ -826,6 +827,14 @@ expect_true(
     && ! str_contains( $profile_gallery_details, 'update_field(' )
     && str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'UserProfileGalleryDetails::module()' ),
     'HWS configures its Photos field through the generic live Core ACF gallery module'
+);
+expect_true(
+    str_contains( $profile_fields, '[founder id="photos"]' )
+    && str_contains( $brand_functions, "case 'photos':" )
+    && str_contains( $brand_functions, "get_field( 'field_hws_user_profile_2025_photos', \$user_key, false )" )
+    && str_contains( $brand_functions, 'function hws_render_founder_photos_shortcode' )
+    && str_contains( $brand_functions, "'hws-founder-gallery'" ),
+    'founder photos shortcode renders the canonical HWS user-profile gallery'
 );
 
 $plugin_policy_source = source( 'src/PluginPolicy/legacy-plugin-checks.php' );

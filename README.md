@@ -133,6 +133,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.12
+
+- Adds the `[founder id="photos"]` shortcode for rendering the canonical HWS user-profile Photos gallery, with grid, URL, and attachment-ID output modes.
+
 ### 13.2.11
 
 - Adds a default-off External Publishing dashboard control and Application Password-authenticated API for idempotent post creation, readback, updates, and deletion.
