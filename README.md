@@ -133,6 +133,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.13
+
+- Adds the collision-free `[hws_profile_photos]` shortcode for the canonical HWS user-profile Photos gallery.
+
 ### 13.2.12
 
 - Adds the `[founder id="photos"]` shortcode for rendering the canonical HWS user-profile Photos gallery, with grid, URL, and attachment-ID output modes.

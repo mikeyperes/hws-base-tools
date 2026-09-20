@@ -39,6 +39,7 @@ function hws_is_website_settings_admin_page(): bool {
 add_shortcode( 'website_url', __NAMESPACE__ . '\\website_url_shortcode' );
 add_shortcode( 'website_content', __NAMESPACE__ . '\\website_content_shortcode' );
 add_shortcode( 'founder', __NAMESPACE__ . '\\founder_shortcode' );
+add_shortcode( 'hws_profile_photos', __NAMESPACE__ . '\\hws_profile_photos_shortcode' );
 add_shortcode( 'company', __NAMESPACE__ . '\\company_shortcode' );
 add_shortcode( 'hws_brand_asset', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
 add_shortcode( 'site_logo', __NAMESPACE__ . '\\hws_brand_asset_shortcode' );
@@ -63,6 +64,7 @@ function hws_render_shortcodes_in_elementor_widget_content( $content, $widget = 
         "[website_url",
         "[website_content",
         "[founder",
+        "[hws_profile_photos",
         "[company",
         "[hws_site_value",
         "[hws_site_page_template",
@@ -1974,6 +1976,40 @@ function hws_render_founder_photos_shortcode( array $atts, string $user_key ): s
 	$html .= '</div>';
 
 	return $html;
+}
+
+/**
+ * [hws_profile_photos] renders the canonical HWS user-profile Photos gallery.
+ *
+ * A dedicated HWS tag avoids collisions with site-specific [founder]
+ * implementations while retaining the founder profile as the default source.
+ */
+function hws_profile_photos_shortcode( $atts ): string {
+	$atts = shortcode_atts(
+		[
+			'user_id' => 0,
+			'size'    => 'medium',
+			'output'  => 'grid',
+			'class'   => '',
+			'columns' => 4,
+			'loading' => 'lazy',
+		],
+		$atts,
+		'hws_profile_photos'
+	);
+
+	if ( ! function_exists( 'get_field' ) ) {
+		return '';
+	}
+
+	$user_id = absint( $atts['user_id'] );
+	if ( $user_id <= 0 ) {
+		$user_id = hws_resolve_founder_user_id();
+	}
+
+	return $user_id > 0
+		? hws_render_founder_photos_shortcode( $atts, 'user_' . $user_id )
+		: '';
 }
 
 /**

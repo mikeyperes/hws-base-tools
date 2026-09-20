@@ -829,12 +829,14 @@ expect_true(
     'HWS configures its Photos field through the generic live Core ACF gallery module'
 );
 expect_true(
-    str_contains( $profile_fields, '[founder id="photos"]' )
+    str_contains( $profile_fields, '[hws_profile_photos]' )
+    && str_contains( $brand_functions, "add_shortcode( 'hws_profile_photos'" )
     && str_contains( $brand_functions, "case 'photos':" )
     && str_contains( $brand_functions, "get_field( 'field_hws_user_profile_2025_photos', \$user_key, false )" )
     && str_contains( $brand_functions, 'function hws_render_founder_photos_shortcode' )
+    && str_contains( $brand_functions, 'function hws_profile_photos_shortcode' )
     && str_contains( $brand_functions, "'hws-founder-gallery'" ),
-    'founder photos shortcode renders the canonical HWS user-profile gallery'
+    'dedicated profile photos shortcode renders the canonical HWS user-profile gallery without founder-tag collisions'
 );
 
 $plugin_policy_source = source( 'src/PluginPolicy/legacy-plugin-checks.php' );
