@@ -4,6 +4,7 @@ use Hexa\PluginCore\QuerySafety\QueryEligibility;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
+use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -80,4 +81,8 @@ function enable_reading_progress_bar(): void {
 
 function enable_required_featured_image(): void {
     FeaturedImageRequirement::activate();
+}
+
+function enable_hws_user_impersonation(): void {
+    UserImpersonationFeature::activate();
 }

@@ -5,6 +5,7 @@ use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
+use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use Hexa\PluginCore\WpAdminComponents\ColorControl;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 
@@ -765,6 +766,9 @@ function hws_run_feature_test( string $feature_id ): array {
 
         case FeaturedImageRequirement::FEATURE_OPTION:
             return FeaturedImageRequirement::test_report();
+
+        case UserImpersonationFeature::FEATURE_OPTION:
+            return UserImpersonationFeature::test_report();
 
         case 'disable_non_admin_admin_bar':
             return [

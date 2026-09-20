@@ -13,6 +13,7 @@ use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
+use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
 /**
  * Legacy bootstrap.
@@ -87,6 +88,12 @@ require_once HWS_BASE_TOOLS_DIR . '/runtime-options.php';
 require_once HWS_BASE_TOOLS_DIR . '/safe-wrappers.php';
 require_once HWS_BASE_TOOLS_DIR . '/src/LegacyCompatibility/runtime-functions.php';
 ScheduledTaskLoader::load_for_request();
+
+// Register request identity switching before another plugin can resolve the
+// current user during plugins_loaded. The structured Core module is idempotent.
+if ( UserImpersonationFeature::enabled() ) {
+    UserImpersonationFeature::activate();
+}
 
 add_action( 'plugins_loaded', [ CoreIntegration::class, 'boot' ], 20 );
 
@@ -624,6 +631,15 @@ function get_snippets($type = "")
 
     // ─── ADMIN / SETTINGS SNIPPETS ─────────────────────────────────────
     $snippets_admin = [
+    [
+        'id'               => UserImpersonationFeature::FEATURE_OPTION,
+        'name'             => 'View As User',
+        'description'      => 'Lets an administrator open an isolated virtual session as any WordPress user without replacing the administrator login in other tabs.',
+        'info'             => 'Default off. Enable it under HWS Core Tools → Features → Admin Features. Only administrators can start or end sessions. A fixed red banner identifies the virtual user and provides an End View As action.',
+        'function'         => 'enable_hws_user_impersonation',
+        'scope_admin_only' => true,
+        'code_example'     => 'Open Users, then select View as beneath any account. The virtual session opens in a new tab.',
+    ],
     [
         'id'               => FeaturedImageRequirement::FEATURE_OPTION,
         'name'             => 'Require Featured Image',
