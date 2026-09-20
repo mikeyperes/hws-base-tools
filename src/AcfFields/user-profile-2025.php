@@ -888,7 +888,7 @@ function hws_user_profile_2025_group(): array {
                 'label' => 'Photos',
                 'name' => 'photos',
                 'type' => 'gallery',
-                'instructions' => 'Profile media retained from the deprecated profile group.<br><strong>Shortcode:</strong> <code>[hws_profile_photos]</code>',
+                'instructions' => 'Canonical public profile gallery.<br><strong>Shortcode:</strong> <code>[founder id="gallery"]</code><br><strong>Compatibility:</strong> <code>[hws_profile_photos]</code>',
                 'required' => 0,
                 'conditional_logic' => 0,
                 'wrapper' => array( 'width' => '', 'class' => '', 'id' => '' ),

@@ -133,6 +133,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.15
+
+- Makes `[founder id="gallery"]` the documented alias for the canonical HWS user-profile Photos gallery while retaining `[founder id="photos"]` and `[hws_profile_photos]` for compatibility.
+
 ### 13.2.14
 
 - Replaces WordPress Application Password authentication on the default-off External Publishing bridge with a dedicated, encrypted, rotatable HMAC credential bound to timestamped, nonce-protected, body-hashed requests.

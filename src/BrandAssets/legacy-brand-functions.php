@@ -1754,7 +1754,7 @@ function hws_resolve_founder_user_id(): int {
  *
  * ACF fields:
  *   - biography         → ACF biography (with option-level override)
- *   - photos            → ACF Photos gallery as a responsive image grid
+ *   - gallery / photos  → ACF Photos gallery as a responsive image grid
  *   - url_{platform}    → urls group subfield (facebook, linkedin, etc.)
  *   - {any_acf_field}   → Direct ACF field lookup
  *   - {group}_{subfield}→ Nested ACF group field
@@ -1834,6 +1834,7 @@ function founder_shortcode( $atts ): string {
 			$core_url = (string) $userdata->user_url;
 			return $core_url !== '' ? esc_url( $core_url ) : '';
 
+		case 'gallery':
 		case 'photos':
 			return hws_render_founder_photos_shortcode( $atts, $user_key );
 	}
