@@ -677,6 +677,21 @@ expect_true( $secret_store->set( 'a-long-test-secret-value' ), 'master secret ca
 expect_true( get_option( 'hws_master_secret_key' ) !== 'a-long-test-secret-value', 'master secret is not stored as plaintext' );
 expect_true( $secret_store->get() === 'a-long-test-secret-value', 'encrypted master secret round-trips' );
 expect_true( ! HWS\BaseTools\Security\RemoteActionPolicy::legacy_get_routes_allowed(), 'legacy remote GET actions default to disabled' );
+$external_publishing_source = source( 'src/ExternalPublishing/ExternalPublishingModule.php' );
+expect_true(
+    str_contains( $external_publishing_source, "hash_hmac( 'sha256'" )
+    && str_contains( $external_publishing_source, "get_header( 'x-hexa-timestamp' )" )
+    && str_contains( $external_publishing_source, "get_header( 'x-hexa-nonce' )" )
+    && str_contains( $external_publishing_source, "get_header( 'x-hexa-content-sha256' )" )
+    && str_contains( $external_publishing_source, 'hash_equals' ),
+    'External Publishing authenticates timestamped, nonce-protected, body-bound HMAC requests'
+);
+expect_true(
+    str_contains( $external_publishing_source, 'new SecretStore( self::SECRET_OPTION )' )
+    && str_contains( $external_publishing_source, 'provision_credentials' )
+    && ! str_contains( $external_publishing_source, 'Application Password' ),
+    'External Publishing stores a dedicated rotatable secret and does not reuse WordPress passwords'
+);
 expect_true(
     HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => static fn() => '<b>Lazy feature details</b>' ) === '<b>Lazy feature details</b>',
     'nested lazy feature metadata resolves to text without Closure conversion'
