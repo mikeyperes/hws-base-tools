@@ -1,5 +1,14 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-002 — Protected users path intercepted author discovery before the bridge
+
+- Severity: High
+- Symptom: HWS Base Tools 13.2.18 was active and advertised author support, but the signed author call still returned `Sorry, you are not allowed to list users.`
+- Impact: HWS Base Tools campaign operations could not pass author resolution on WordPress sites whose security layer protects route paths containing the core users resource.
+- Root cause: The bridge-owned author callback remained behind `/external-publishing/wp/v2/users`. Her Forward rejected that outer route before the registered bridge callback could execute, so direct author enumeration inside the callback was unreachable.
+- Patch: External Publishing now exposes `/external-publishing/authors` with its own HMAC authentication and `list_users` permission callback, returning the same bounded author directory without a protected core users path.
+- Guard: The focused suite requires the dedicated authors route, callback, and capability check. Publish must route HWS author discovery to this endpoint rather than the generic WordPress proxy.
+
 ## HWS-BASE-BUG-001 — Signed publishing bridge could not resolve authors
 
 - Severity: High

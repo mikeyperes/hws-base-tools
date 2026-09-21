@@ -723,6 +723,14 @@ expect_true(
     'External Publishing resolves the bounded author directory without a nested core users request'
 );
 expect_true(
+    str_contains( $external_publishing_source, "'/external-publishing/authors'" )
+    && str_contains( $external_publishing_source, "'callback' => [ \$this, 'list_authors' ]" )
+    && str_contains( $external_publishing_source, "'permission_callback' => [ \$this, 'can_list_authors' ]" )
+    && str_contains( $external_publishing_source, 'public function can_list_authors( \\WP_REST_Request $request )' )
+    && str_contains( $external_publishing_source, "current_user_can( 'list_users' )" ),
+    'External Publishing exposes author discovery on a dedicated signed route that avoids protected core users paths'
+);
+expect_true(
     HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => static fn() => '<b>Lazy feature details</b>' ) === '<b>Lazy feature details</b>',
     'nested lazy feature metadata resolves to text without Closure conversion'
 );

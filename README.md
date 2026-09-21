@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.19
+
+- Adds a dedicated HMAC-authenticated author-directory route so security layers that protect core WordPress users paths cannot intercept campaign author resolution before the bridge callback.
+
 ### 13.2.18
 
 - Makes the signed External Publishing bridge resolve its bounded author directory directly after capability-gated HMAC authentication, avoiding nested WordPress user-route rejection by security layers.

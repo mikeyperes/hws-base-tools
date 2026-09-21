@@ -43,6 +43,9 @@ final class ExternalPublishingModule implements ModuleInterface {
             [ 'methods' => 'POST', 'callback' => [ $this, 'update_post' ], 'permission_callback' => [ $this, 'can_use_post' ] ],
             [ 'methods' => 'DELETE', 'callback' => [ $this, 'delete_post' ], 'permission_callback' => [ $this, 'can_use_post' ] ],
         ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/authors', [
+            'methods' => 'GET', 'callback' => [ $this, 'list_authors' ], 'permission_callback' => [ $this, 'can_list_authors' ],
+        ] );
         register_rest_route( self::NAMESPACE, '/external-publishing/wp/v2/(?P<resource>[A-Za-z0-9_-]+)(?:/(?P<id>\d+))?', [
             'methods' => [ 'GET', 'POST', 'DELETE' ], 'callback' => [ $this, 'proxy_wp_v2' ], 'permission_callback' => [ $this, 'can_use_proxy' ],
         ] );
@@ -199,6 +202,17 @@ final class ExternalPublishingModule implements ModuleInterface {
             : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot access the requested post.', [ 'status' => 403 ] );
     }
 
+    public function can_list_authors( \WP_REST_Request $request ): bool|\WP_Error {
+        $authenticated = $this->authenticate_or_current_user( $request );
+        if ( is_wp_error( $authenticated ) ) {
+            return $authenticated;
+        }
+
+        return current_user_can( 'list_users' )
+            ? true
+            : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot resolve authors.', [ 'status' => 403 ] );
+    }
+
     public function can_use_proxy( \WP_REST_Request $request ): bool|\WP_Error {
         $authenticated = $this->authenticate_or_current_user( $request );
         if ( is_wp_error( $authenticated ) ) {
@@ -267,6 +281,10 @@ final class ExternalPublishingModule implements ModuleInterface {
 
     public function delete_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
         return $this->mutate( $request, 'DELETE', '/wp/v2/posts/' . absint( $request['id'] ), [ 'force' => rest_sanitize_boolean( $request->get_param( 'force' ) ) ] );
+    }
+
+    public function list_authors( \WP_REST_Request $request ): \WP_REST_Response {
+        return $this->proxy_users( $request );
     }
 
     public function proxy_wp_v2( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
