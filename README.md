@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.18
+
+- Makes the signed External Publishing bridge resolve its bounded author directory directly after capability-gated HMAC authentication, avoiding nested WordPress user-route rejection by security layers.
+
 ### 13.2.17
 
 - Expands the default-off External Publishing API into a complete article-delivery bridge with an allowlisted WordPress REST proxy, body-bound HMAC media uploads, owned article metadata, cache purge and article-audio routes, replay-safe mutations, and native Application Password access to the same bounded plugin capabilities.

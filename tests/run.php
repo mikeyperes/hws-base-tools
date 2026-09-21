@@ -715,6 +715,14 @@ expect_true(
     'External Publishing follows the WordPress post-insert callback contract and capability-gates each proxy resource'
 );
 expect_true(
+    str_contains( $external_publishing_source, 'if ( \'users\' === $kind )' )
+    && str_contains( $external_publishing_source, 'private function proxy_users( \\WP_REST_Request $request )' )
+    && str_contains( $external_publishing_source, 'array_filter( get_users( $query )' )
+    && str_contains( $external_publishing_source, "'search_columns'] = [ 'user_login', 'user_nicename', 'user_email', 'display_name' ]" )
+    && ! str_contains( $external_publishing_source, "proxy( 'GET', '/wp/v2/users'" ),
+    'External Publishing resolves the bounded author directory without a nested core users request'
+);
+expect_true(
     HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => static fn() => '<b>Lazy feature details</b>' ) === '<b>Lazy feature details</b>',
     'nested lazy feature metadata resolves to text without Closure conversion'
 );

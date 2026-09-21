@@ -282,6 +282,10 @@ final class ExternalPublishingModule implements ModuleInterface {
         $payload = $this->proxy_payload( $kind, $request );
         $query = $this->proxy_query( $request );
         if ( 'GET' === $method ) {
+            if ( 'users' === $kind ) {
+                return $this->proxy_users( $request );
+            }
+
             return $this->proxy( $method, $route, [], $query );
         }
 
@@ -494,6 +498,53 @@ final class ExternalPublishingModule implements ModuleInterface {
         $subrequest->set_body_params( $body );
         $subrequest->set_query_params( $query );
         return $this->decorate_response( rest_do_request( $subrequest ) );
+    }
+
+    /**
+     * Return the bounded author directory directly after the bridge's signed
+     * request has authenticated an actor with list_users. Some WordPress
+     * security layers reject a nested /wp/v2/users dispatch even though that
+     * actor remains authorized, so the bridge owns this exact read contract.
+     */
+    private function proxy_users( \WP_REST_Request $request ): \WP_REST_Response {
+        $per_page = max( 1, min( 100, absint( $request->get_param( 'per_page' ) ?: 100 ) ) );
+        $page = max( 1, absint( $request->get_param( 'page' ) ?: 1 ) );
+        $query = [
+            'number' => $per_page,
+            'offset' => ( $page - 1 ) * $per_page,
+            'orderby' => 'display_name',
+            'order' => 'ASC',
+        ];
+
+        $include = wp_parse_id_list( $request->get_param( 'include' ) );
+        if ( [] !== $include ) {
+            $query['include'] = $include;
+        }
+
+        $search = sanitize_text_field( (string) $request->get_param( 'search' ) );
+        if ( '' !== $search ) {
+            $query['search'] = '*' . $search . '*';
+            $query['search_columns'] = [ 'user_login', 'user_nicename', 'user_email', 'display_name' ];
+        }
+
+        $authors = array_map(
+            static fn ( \WP_User $user ): array => [
+                'id' => (int) $user->ID,
+                'name' => (string) $user->display_name,
+                'slug' => (string) $user->user_nicename,
+                'email' => (string) $user->user_email,
+                'roles' => array_values( array_map( 'strval', (array) $user->roles ) ),
+            ],
+            array_values( array_filter( get_users( $query ), static fn ( mixed $user ): bool => $user instanceof \WP_User ) )
+        );
+
+        $user_counts = count_users();
+        $total_users = (int) ( $user_counts['total_users'] ?? count( $authors ) );
+        $response = new \WP_REST_Response( $authors, 200 );
+        $response->header( 'X-WP-Total', (string) $total_users );
+        $response->header( 'X-WP-TotalPages', (string) max( 1, (int) ceil( $total_users / $per_page ) ) );
+
+        return $this->decorate_response( $response );
     }
 
     private function decorate_response( \WP_REST_Response $response ): \WP_REST_Response {
