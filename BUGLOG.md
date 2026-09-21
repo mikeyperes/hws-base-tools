@@ -1,5 +1,14 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-003 — Author directory replaced the WordPress login with its nicename
+
+- Severity: High
+- Symptom: The signed author directory returned all 136 Her Forward users, but campaign integrity could not match the configured author even though it was the bridge actor (user ID 9).
+- Impact: HWS Base Tools campaign operation 6871 stopped before generation after authentication and pagination had succeeded.
+- Root cause: The custom route exposed `slug` from `user_nicename` but omitted `user_login`. Her Forward's configured author is the real WordPress login, whose nicename differs.
+- Patch: The already HMAC-authenticated, `list_users`-gated author response now includes `login` from `user_login`; existing ID, display name, nicename, email and role fields remain unchanged.
+- Guard: The focused suite requires the bridge-owned author directory to expose the real login identity. Publish must prefer it while retaining nicename compatibility.
+
 ## HWS-BASE-BUG-002 — Protected users path intercepted author discovery before the bridge
 
 - Severity: High

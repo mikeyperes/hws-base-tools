@@ -718,9 +718,10 @@ expect_true(
     str_contains( $external_publishing_source, 'if ( \'users\' === $kind )' )
     && str_contains( $external_publishing_source, 'private function proxy_users( \\WP_REST_Request $request )' )
     && str_contains( $external_publishing_source, 'array_filter( get_users( $query )' )
+    && str_contains( $external_publishing_source, "'login' => (string) \$user->user_login" )
     && str_contains( $external_publishing_source, "'search_columns'] = [ 'user_login', 'user_nicename', 'user_email', 'display_name' ]" )
     && ! str_contains( $external_publishing_source, "proxy( 'GET', '/wp/v2/users'" ),
-    'External Publishing resolves the bounded author directory without a nested core users request'
+    'External Publishing resolves complete login identities through the bounded author directory without a nested core users request'
 );
 expect_true(
     str_contains( $external_publishing_source, "'/external-publishing/authors'" )

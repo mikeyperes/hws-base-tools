@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.20
+
+- Returns the capability-gated WordPress login alongside each author ID, display name, nicename, email and role so bridge publications preserve the same author identity selected through WP Toolkit.
+
 ### 13.2.19
 
 - Adds a dedicated HMAC-authenticated author-directory route so security layers that protect core WordPress users paths cannot intercept campaign author resolution before the bridge callback.

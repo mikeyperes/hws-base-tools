@@ -548,6 +548,7 @@ final class ExternalPublishingModule implements ModuleInterface {
         $authors = array_map(
             static fn ( \WP_User $user ): array => [
                 'id' => (int) $user->ID,
+                'login' => (string) $user->user_login,
                 'name' => (string) $user->display_name,
                 'slug' => (string) $user->user_nicename,
                 'email' => (string) $user->user_email,
