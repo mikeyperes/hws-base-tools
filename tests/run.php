@@ -689,8 +689,30 @@ expect_true(
 expect_true(
     str_contains( $external_publishing_source, 'new SecretStore( self::SECRET_OPTION )' )
     && str_contains( $external_publishing_source, 'provision_credentials' )
-    && ! str_contains( $external_publishing_source, 'Application Password' ),
+    && ! str_contains( $external_publishing_source, "'Authorization' => 'Basic" )
+    && ! str_contains( $external_publishing_source, 'wp_application_password' ),
     'External Publishing stores a dedicated rotatable secret and does not reuse WordPress passwords'
+);
+expect_true(
+    str_contains( $external_publishing_source, "'/external-publishing/wp/v2/(?P<resource>" )
+    && str_contains( $external_publishing_source, "'/external-publishing/media/upload'" )
+    && str_contains( $external_publishing_source, 'proxy_resource_kind' )
+    && str_contains( $external_publishing_source, 'MAX_UPLOAD_BYTES' ),
+    'External Publishing provides an allowlisted signed WordPress proxy and body-bound media upload route'
+);
+expect_true(
+    str_contains( $external_publishing_source, 'register_external_meta' )
+    && str_contains( $external_publishing_source, 'post_meta_definitions' )
+    && str_contains( $external_publishing_source, 'attachment_meta_definitions' )
+    && str_contains( $external_publishing_source, 'cleanup_rest_faq_rows' ),
+    'External Publishing registers only owned article metadata and removes stale FAQ repeater rows'
+);
+expect_true(
+    str_contains( $external_publishing_source, 'cleanup_rest_faq_rows( \\WP_Post $post, \\WP_REST_Request $request, bool $creating )' )
+    && str_contains( $external_publishing_source, "'users' => 'list_users'" )
+    && str_contains( $external_publishing_source, "'media' => 'upload_files'" )
+    && str_contains( $external_publishing_source, '\'taxonomy\' => \'POST\' === $method ? \'manage_categories\' : \'edit_posts\'' ),
+    'External Publishing follows the WordPress post-insert callback contract and capability-gates each proxy resource'
 );
 expect_true(
     HWS\BaseTools\FeatureCatalog\FeatureValueResolver::text( static fn() => static fn() => '<b>Lazy feature details</b>' ) === '<b>Lazy feature details</b>',

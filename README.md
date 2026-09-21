@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.2.17
+
+- Expands the default-off External Publishing API into a complete article-delivery bridge with an allowlisted WordPress REST proxy, body-bound HMAC media uploads, owned article metadata, cache purge and article-audio routes, replay-safe mutations, and native Application Password access to the same bounded plugin capabilities.
+
 ### 13.2.16
 
 - Adds a default-off administrator-only View As User feature with isolated request-bound sessions, unchanged administrator authentication, user-list and profile actions, a persistent red identity banner, and immediate session revocation.

@@ -21,9 +21,13 @@ final class ExternalPublishingModule implements ModuleInterface {
     private const REPLAY_PREFIX = 'hws_ep_nonce_';
     private const REVEAL_PREFIX = 'hws_ep_reveal_';
     private const MAX_CLOCK_SKEW = 300;
+    private const MAX_UPLOAD_BYTES = 16777216;
+    private const IMAGE_MIME_TYPES = [ 'image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp' ];
 
     public function register(): void {
+        add_action( 'init', [ $this, 'register_external_meta' ], 30 );
         add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+        add_action( 'rest_after_insert_post', [ $this, 'cleanup_rest_faq_rows' ], 20, 3 );
         add_action( 'admin_post_hws_external_publishing_settings', [ self::class, 'save_settings' ] );
     }
 
@@ -39,6 +43,107 @@ final class ExternalPublishingModule implements ModuleInterface {
             [ 'methods' => 'POST', 'callback' => [ $this, 'update_post' ], 'permission_callback' => [ $this, 'can_use_post' ] ],
             [ 'methods' => 'DELETE', 'callback' => [ $this, 'delete_post' ], 'permission_callback' => [ $this, 'can_use_post' ] ],
         ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/wp/v2/(?P<resource>[A-Za-z0-9_-]+)(?:/(?P<id>\d+))?', [
+            'methods' => [ 'GET', 'POST', 'DELETE' ], 'callback' => [ $this, 'proxy_wp_v2' ], 'permission_callback' => [ $this, 'can_use_proxy' ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/media/upload', [
+            'methods' => 'POST', 'callback' => [ $this, 'upload_media' ], 'permission_callback' => [ $this, 'can_upload_media' ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/cache/purge', [
+            'methods' => 'POST', 'callback' => [ $this, 'purge_cache' ], 'permission_callback' => [ $this, 'can_use_collection' ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/article-audio/(?P<id>\d+)', [
+            'methods' => 'POST', 'callback' => [ $this, 'generate_article_audio' ], 'permission_callback' => [ $this, 'can_use_post' ],
+        ] );
+    }
+
+    /**
+     * Expose only the article-delivery metadata that Publish owns. Registering
+     * these exact keys lets both Application Password requests and the HMAC
+     * bridge use the same WordPress REST persistence and readback behavior.
+     */
+    public function register_external_meta(): void {
+        if ( ! self::enabled() ) {
+            return;
+        }
+
+        foreach ( self::post_meta_definitions() as $key => $type ) {
+            $this->register_meta_key( 'post', $key, $type );
+        }
+        foreach ( self::attachment_meta_definitions() as $key => $type ) {
+            $this->register_meta_key( 'attachment', $key, $type );
+        }
+    }
+
+    private function register_meta_key( string $post_type, string $key, string $type ): void {
+        $registered = get_registered_meta_keys( 'post', $post_type );
+        if ( isset( $registered[ $key ] ) ) {
+            return;
+        }
+
+        register_post_meta( $post_type, $key, [
+            'single' => true,
+            'type' => $type,
+            'show_in_rest' => true,
+            'auth_callback' => static function ( bool $allowed, string $meta_key, int $object_id ): bool {
+                return $object_id > 0 && current_user_can( 'edit_post', $object_id );
+            },
+        ] );
+    }
+
+    public function cleanup_rest_faq_rows( \WP_Post $post, \WP_REST_Request $request, bool $creating ): void {
+        if ( ! self::enabled() || ! current_user_can( 'edit_post', $post->ID ) ) {
+            return;
+        }
+        $params = $this->request_params( $request );
+        $meta = is_array( $params['meta'] ?? null ) ? $params['meta'] : [];
+        if ( ! array_key_exists( 'post_faq_items', $meta ) ) {
+            return;
+        }
+
+        $keep = max( 0, min( 5, (int) $meta['post_faq_items'] ) );
+        for ( $index = $keep; $index < 5; $index++ ) {
+            foreach ( [ 'question', 'answer', 'enabled_for_schema' ] as $field ) {
+                $key = 'post_faq_items_' . $index . '_' . $field;
+                delete_post_meta( $post->ID, $key );
+                delete_post_meta( $post->ID, '_' . $key );
+            }
+        }
+    }
+
+    private static function post_meta_definitions(): array {
+        $definitions = [
+            'post_summary' => 'string',
+            '_post_summary' => 'string',
+            'post_faqs' => 'string',
+            '_post_faqs' => 'string',
+            'post_faq_items' => 'string',
+            '_post_faq_items' => 'string',
+            'rank_math_title' => 'string',
+            'rank_math_description' => 'string',
+            'rank_math_focus_keyword' => 'string',
+            'rank_math_seo_score' => 'string',
+        ];
+        foreach ( range( 0, 4 ) as $index ) {
+            foreach ( [ 'question', 'answer', 'enabled_for_schema' ] as $field ) {
+                $key = 'post_faq_items_' . $index . '_' . $field;
+                $definitions[ $key ] = 'string';
+                $definitions[ '_' . $key ] = 'string';
+            }
+        }
+
+        return $definitions;
+    }
+
+    private static function attachment_meta_definitions(): array {
+        return [
+            '_hexa_media_sha256' => 'string',
+            '_hexa_media_source_url' => 'string',
+            '_hexa_media_original_filename' => 'string',
+            '_hexa_media_pipeline' => 'string',
+            '_hexa_upload' => 'boolean',
+            '_hexa_draft_id' => 'integer',
+        ];
     }
 
     public static function enabled(): bool {
@@ -47,8 +152,9 @@ final class ExternalPublishingModule implements ModuleInterface {
 
     public static function provision_credentials( int $actor_id ): array|\WP_Error {
         $actor = get_user_by( 'id', $actor_id );
-        if ( ! $actor || ! user_can( $actor, 'edit_posts' ) ) {
-            return new \WP_Error( 'hws_external_publishing_actor_invalid', 'Select a WordPress user who can edit posts.', [ 'status' => 400 ] );
+        $required = [ 'edit_posts', 'publish_posts', 'upload_files', 'list_users', 'manage_categories' ];
+        if ( ! $actor || array_filter( $required, static fn ( string $capability ): bool => ! user_can( $actor, $capability ) ) ) {
+            return new \WP_Error( 'hws_external_publishing_actor_invalid', 'Select an administrator who can publish posts, upload media, resolve authors, and manage taxonomies.', [ 'status' => 400 ] );
         }
 
         try {
@@ -69,7 +175,7 @@ final class ExternalPublishingModule implements ModuleInterface {
     }
 
     public function can_use_collection( \WP_REST_Request $request ): bool|\WP_Error {
-        $authenticated = $this->authenticate( $request );
+        $authenticated = $this->authenticate_or_current_user( $request );
         if ( is_wp_error( $authenticated ) ) {
             return $authenticated;
         }
@@ -80,7 +186,7 @@ final class ExternalPublishingModule implements ModuleInterface {
     }
 
     public function can_use_post( \WP_REST_Request $request ): bool|\WP_Error {
-        $authenticated = $this->authenticate( $request );
+        $authenticated = $this->authenticate_or_current_user( $request );
         if ( is_wp_error( $authenticated ) ) {
             return $authenticated;
         }
@@ -93,6 +199,38 @@ final class ExternalPublishingModule implements ModuleInterface {
             : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot access the requested post.', [ 'status' => 403 ] );
     }
 
+    public function can_use_proxy( \WP_REST_Request $request ): bool|\WP_Error {
+        $authenticated = $this->authenticate_or_current_user( $request );
+        if ( is_wp_error( $authenticated ) ) {
+            return $authenticated;
+        }
+
+        $resource = sanitize_key( (string) $request['resource'] );
+        $kind = $this->proxy_resource_kind( $resource );
+        $method = strtoupper( $request->get_method() );
+        $capability = match ( $kind ) {
+            'users' => 'list_users',
+            'media' => 'upload_files',
+            'taxonomy' => 'POST' === $method ? 'manage_categories' : 'edit_posts',
+            default => 'edit_posts',
+        };
+
+        return null !== $kind && current_user_can( $capability )
+            ? true
+            : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot access publishing resources.', [ 'status' => 403 ] );
+    }
+
+    public function can_upload_media( \WP_REST_Request $request ): bool|\WP_Error {
+        $authenticated = $this->authenticate_or_current_user( $request );
+        if ( is_wp_error( $authenticated ) ) {
+            return $authenticated;
+        }
+
+        return current_user_can( 'upload_files' )
+            ? true
+            : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot upload files.', [ 'status' => 403 ] );
+    }
+
     public function status(): \WP_REST_Response {
         $user = wp_get_current_user();
 
@@ -102,7 +240,16 @@ final class ExternalPublishingModule implements ModuleInterface {
             'authentication' => 'hmac_sha256',
             'version' => PluginMetadata::VERSION,
             'user' => [ 'id' => (int) $user->ID, 'name' => (string) $user->display_name, 'roles' => array_values( (array) $user->roles ) ],
-            'capabilities' => [ 'create_posts' => current_user_can( 'edit_posts' ), 'publish_posts' => current_user_can( 'publish_posts' ) ],
+            'capabilities' => [
+                'create_posts' => current_user_can( 'edit_posts' ),
+                'publish_posts' => current_user_can( 'publish_posts' ),
+                'upload_media' => current_user_can( 'upload_files' ),
+                'authors' => current_user_can( 'list_users' ),
+                'taxonomies' => current_user_can( 'manage_categories' ),
+                'post_meta' => current_user_can( 'edit_posts' ),
+                'cache_purge' => current_user_can( 'edit_posts' ),
+                'article_audio' => current_user_can( 'edit_posts' ),
+            ],
         ], 200 );
     }
 
@@ -120,6 +267,113 @@ final class ExternalPublishingModule implements ModuleInterface {
 
     public function delete_post( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
         return $this->mutate( $request, 'DELETE', '/wp/v2/posts/' . absint( $request['id'] ), [ 'force' => rest_sanitize_boolean( $request->get_param( 'force' ) ) ] );
+    }
+
+    public function proxy_wp_v2( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+        $resource = sanitize_key( (string) $request['resource'] );
+        $id = absint( $request['id'] );
+        $method = strtoupper( $request->get_method() );
+        $kind = $this->proxy_resource_kind( $resource );
+        if ( null === $kind || ! $this->proxy_method_allowed( $kind, $method, $id ) ) {
+            return new \WP_Error( 'hws_external_publishing_route_forbidden', 'This WordPress REST operation is not available through the publishing bridge.', [ 'status' => 404 ] );
+        }
+
+        $route = '/wp/v2/' . $resource . ( $id > 0 ? '/' . $id : '' );
+        $payload = $this->proxy_payload( $kind, $request );
+        $query = $this->proxy_query( $request );
+        if ( 'GET' === $method ) {
+            return $this->proxy( $method, $route, [], $query );
+        }
+
+        return $this->mutate( $request, $method, $route, $payload, $query );
+    }
+
+    public function upload_media( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+        $body = (string) $request->get_body();
+        $bytes = strlen( $body );
+        $mime = strtolower( trim( (string) $request->get_header( 'content-type' ) ) );
+        $disposition = trim( (string) $request->get_header( 'content-disposition' ) );
+        if ( $bytes <= 0 || $bytes > self::MAX_UPLOAD_BYTES || ! in_array( $mime, self::IMAGE_MIME_TYPES, true ) ) {
+            return new \WP_Error( 'hws_external_publishing_media_invalid', 'The media upload is empty, too large, or has an unsupported image type.', [ 'status' => 400 ] );
+        }
+        if ( 1 !== preg_match( '/^attachment;\s*filename="([A-Za-z0-9._-]{1,190})"$/D', $disposition ) ) {
+            return new \WP_Error( 'hws_external_publishing_media_invalid', 'A safe media filename is required.', [ 'status' => 400 ] );
+        }
+
+        $fingerprint_payload = [
+            'sha256' => hash( 'sha256', $body ),
+            'bytes' => $bytes,
+            'mime' => $mime,
+            'disposition' => $disposition,
+        ];
+
+        return $this->mutate_callback(
+            $request,
+            'POST',
+            '/wp/v2/media',
+            $fingerprint_payload,
+            function () use ( $body, $mime, $disposition ): \WP_REST_Response {
+                $subrequest = new \WP_REST_Request( 'POST', '/wp/v2/media' );
+                $subrequest->set_header( 'Content-Type', $mime );
+                $subrequest->set_header( 'Content-Disposition', $disposition );
+                $subrequest->set_body( $body );
+
+                return $this->decorate_response( rest_do_request( $subrequest ) );
+            }
+        );
+    }
+
+    public function purge_cache( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+        return $this->mutate_callback(
+            $request,
+            'POST',
+            '/hws-base-tools/cache/purge',
+            [],
+            function (): \WP_REST_Response {
+                $purged = [];
+                if ( defined( 'LSCWP_V' ) || class_exists( '\\LiteSpeed\\Purge' ) ) {
+                    do_action( 'litespeed_purge_all' );
+                    $purged[] = 'litespeed';
+                }
+                if ( function_exists( 'wp_cache_clear_cache' ) ) {
+                    wp_cache_clear_cache();
+                    $purged[] = 'wp_cache';
+                }
+                if ( function_exists( 'w3tc_flush_all' ) ) {
+                    w3tc_flush_all();
+                    $purged[] = 'w3tc';
+                }
+                if ( function_exists( 'rocket_clean_domain' ) ) {
+                    rocket_clean_domain();
+                    $purged[] = 'wp_rocket';
+                }
+                wp_cache_flush();
+                $purged[] = 'object_cache';
+
+                return new \WP_REST_Response( [ 'success' => true, 'purged' => array_values( array_unique( $purged ) ), 'hexa_connector' => 'hws_base_tools' ], 200 );
+            }
+        );
+    }
+
+    public function generate_article_audio( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+        $post_id = absint( $request['id'] );
+        $payload = $this->scalar_payload( $request, [ 'force', 'shorten', 'provider', 'profile', 'voice', 'speed' ] );
+
+        return $this->mutate( $request, 'POST', '/smp-tts/v1/posts/' . $post_id . '/generate', $payload );
+    }
+
+    private function authenticate_or_current_user( \WP_REST_Request $request ): bool|\WP_Error {
+        if ( ! self::enabled() ) {
+            return new \WP_Error( 'hws_external_publishing_disabled', 'External publishing is disabled in HWS Base Tools.', [ 'status' => 403 ] );
+        }
+
+        $has_hmac = '' !== trim( (string) $request->get_header( 'x-hexa-key-id' ) )
+            || '' !== trim( (string) $request->get_header( 'x-hexa-signature' ) );
+        if ( ! $has_hmac && get_current_user_id() > 0 ) {
+            return true;
+        }
+
+        return $this->authenticate( $request );
     }
 
     private function authenticate( \WP_REST_Request $request ): bool|\WP_Error {
@@ -155,6 +409,9 @@ final class ExternalPublishingModule implements ModuleInterface {
         $route = '/' . ltrim( (string) $request->get_route(), '/' );
         $canonical = strtoupper( $request->get_method() ) . "\n" . $route . "\n" . $timestamp . "\n" . $nonce . "\n" . $body_hash;
         $secret = ( new SecretStore( self::SECRET_OPTION ) )->get();
+        if ( strlen( $secret ) < 43 || strlen( $secret ) > 256 ) {
+            return new \WP_Error( 'hws_external_publishing_unauthorized', 'External publishing authentication failed.', [ 'status' => 401 ] );
+        }
         $expected = hash_hmac( 'sha256', $canonical, $secret );
         if ( ! hash_equals( $expected, $signature ) ) {
             return new \WP_Error( 'hws_external_publishing_unauthorized', 'External publishing authentication failed.', [ 'status' => 401 ] );
@@ -175,13 +432,23 @@ final class ExternalPublishingModule implements ModuleInterface {
         return true;
     }
 
-    private function mutate( \WP_REST_Request $request, string $method, string $route, array $payload ): \WP_REST_Response|\WP_Error {
+    private function mutate( \WP_REST_Request $request, string $method, string $route, array $payload, array $query = [] ): \WP_REST_Response|\WP_Error {
+        return $this->mutate_callback(
+            $request,
+            $method,
+            $route,
+            [ 'payload' => $payload, 'query' => $query ],
+            fn (): \WP_REST_Response => $this->proxy( $method, $route, $payload, $query )
+        );
+    }
+
+    private function mutate_callback( \WP_REST_Request $request, string $method, string $route, array $fingerprint_payload, callable $callback ): \WP_REST_Response|\WP_Error {
         $operation_id = trim( (string) ( $request->get_header( 'x-hexa-operation-id' ) ?: $request->get_param( 'operation_id' ) ) );
         if ( 1 !== preg_match( '/^[A-Za-z0-9._:-]{16,128}$/', $operation_id ) ) {
             return new \WP_Error( 'hws_operation_id_required', 'A valid X-Hexa-Operation-ID is required for every mutation.', [ 'status' => 400 ] );
         }
         $key = self::OPERATION_PREFIX . hash( 'sha256', $operation_id );
-        $fingerprint = hash( 'sha256', wp_json_encode( [ $method, $route, $payload ] ) );
+        $fingerprint = hash( 'sha256', wp_json_encode( [ $method, $route, $fingerprint_payload ] ) );
         $existing = get_transient( $key );
         if ( is_array( $existing ) ) {
             return $this->replay( $existing, $fingerprint );
@@ -197,7 +464,7 @@ final class ExternalPublishingModule implements ModuleInterface {
             return is_array( $raced ) ? $this->replay( $raced, $fingerprint ) : new \WP_Error( 'hws_operation_in_progress', 'The matching operation is still in progress.', [ 'status' => 409 ] );
         }
         try {
-            $response = $this->proxy( $method, $route, $payload );
+            $response = $callback();
             set_transient( $key, [
                 'state' => 'complete', 'fingerprint' => $fingerprint,
                 'status' => $response->get_status(), 'data' => $response->get_data(),
@@ -226,7 +493,10 @@ final class ExternalPublishingModule implements ModuleInterface {
         $subrequest = new \WP_REST_Request( $method, $route );
         $subrequest->set_body_params( $body );
         $subrequest->set_query_params( $query );
-        $response = rest_do_request( $subrequest );
+        return $this->decorate_response( rest_do_request( $subrequest ) );
+    }
+
+    private function decorate_response( \WP_REST_Response $response ): \WP_REST_Response {
         $data = $response->get_data();
         if ( is_array( $data ) ) {
             $data['hexa_connector'] = 'hws_base_tools';
@@ -234,6 +504,107 @@ final class ExternalPublishingModule implements ModuleInterface {
         }
 
         return $response;
+    }
+
+    private function proxy_resource_kind( string $resource ): ?string {
+        if ( in_array( $resource, [ 'posts', 'media', 'users' ], true ) ) {
+            return $resource;
+        }
+        if ( in_array( $resource, [ 'categories', 'tags' ], true ) ) {
+            return 'taxonomy';
+        }
+        foreach ( get_taxonomies( [ 'show_in_rest' => true ], 'objects' ) as $taxonomy ) {
+            if ( ! is_object( $taxonomy ) || ! in_array( 'post', (array) ( $taxonomy->object_type ?? [] ), true ) ) {
+                continue;
+            }
+            $rest_base = sanitize_key( (string) ( $taxonomy->rest_base ?: $taxonomy->name ) );
+            if ( $resource === $rest_base ) {
+                return 'taxonomy';
+            }
+        }
+
+        return null;
+    }
+
+    private function proxy_method_allowed( string $kind, string $method, int $id ): bool {
+        if ( 'users' === $kind ) {
+            return 'GET' === $method;
+        }
+        if ( 'taxonomy' === $kind ) {
+            return in_array( $method, [ 'GET', 'POST' ], true ) && ( 'POST' !== $method || 0 === $id );
+        }
+        if ( 'posts' === $kind || 'media' === $kind ) {
+            return in_array( $method, [ 'GET', 'POST', 'DELETE' ], true )
+                && ( 'DELETE' !== $method || $id > 0 );
+        }
+
+        return false;
+    }
+
+    private function proxy_payload( string $kind, \WP_REST_Request $request ): array {
+        if ( 'posts' === $kind ) {
+            if ( 'DELETE' === strtoupper( $request->get_method() ) ) {
+                return [ 'force' => rest_sanitize_boolean( $request->get_param( 'force' ) ) ];
+            }
+
+            return $this->post_payload( $request );
+        }
+        if ( 'media' === $kind ) {
+            if ( 'DELETE' === strtoupper( $request->get_method() ) ) {
+                return [ 'force' => rest_sanitize_boolean( $request->get_param( 'force' ) ) ];
+            }
+            $payload = $this->scalar_payload( $request, [ 'title', 'caption', 'description', 'alt_text' ] );
+            $params = $this->request_params( $request );
+            $payload['meta'] = $this->allowed_meta_payload( (array) ( $params['meta'] ?? [] ), self::attachment_meta_definitions() );
+            if ( [] === $payload['meta'] ) {
+                unset( $payload['meta'] );
+            }
+
+            return $payload;
+        }
+        if ( 'taxonomy' === $kind ) {
+            return $this->scalar_payload( $request, [ 'name', 'slug', 'description', 'parent' ] );
+        }
+
+        return [];
+    }
+
+    private function proxy_query( \WP_REST_Request $request ): array {
+        $query = $request->get_query_params();
+        unset( $query['resource'], $query['id'], $query['rest_route'] );
+
+        return $query;
+    }
+
+    private function scalar_payload( \WP_REST_Request $request, array $fields ): array {
+        $params = $this->request_params( $request );
+        $payload = [];
+        foreach ( $fields as $field ) {
+            if ( array_key_exists( $field, $params ) && is_scalar( $params[ $field ] ) ) {
+                $payload[ $field ] = $params[ $field ];
+            }
+        }
+
+        return $payload;
+    }
+
+    private function request_params( \WP_REST_Request $request ): array {
+        $params = $request->get_json_params();
+
+        return is_array( $params ) && [] !== $params ? $params : (array) $request->get_body_params();
+    }
+
+    private function allowed_meta_payload( array $meta, array $definitions ): array {
+        $allowed = [];
+        foreach ( $meta as $key => $value ) {
+            $key = (string) $key;
+            if ( ! isset( $definitions[ $key ] ) || ( ! is_scalar( $value ) && null !== $value ) ) {
+                continue;
+            }
+            $allowed[ $key ] = $value;
+        }
+
+        return $allowed;
     }
 
     private function post_payload( \WP_REST_Request $request ): array {
@@ -262,6 +633,10 @@ final class ExternalPublishingModule implements ModuleInterface {
             if ( array_key_exists( $field, $params ) && is_array( $params[ $field ] ) ) {
                 $payload[ $field ] = array_values( array_unique( array_filter( array_map( 'absint', $params[ $field ] ) ) ) );
             }
+        }
+        $meta = $this->allowed_meta_payload( (array) ( $params['meta'] ?? [] ), self::post_meta_definitions() );
+        if ( [] !== $meta ) {
+            $payload['meta'] = $meta;
         }
 
         return $payload;
