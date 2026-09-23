@@ -2,9 +2,11 @@
 
 namespace HWS\BaseTools\PluginRuntime;
 
+use Hexa\PluginCore\Calendar\CalendarModule;
 use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
 use Hexa\PluginCore\CoreRuntime\PluginContext;
 use Hexa\PluginCore\CoreRuntime\CorePackageRuntime;
+use Hexa\PluginCore\DirectorySearch\DirectorySearchModule;
 use Hexa\PluginCore\WpAdminTabs\CoreTabConfig;
 use Hexa\PluginCore\WpAdminTabs\CoreTabModule;
 use HWS\BaseTools\AdminDashboard\DashboardAssets;
@@ -81,6 +83,9 @@ final class CoreIntegration {
             ->add_module( UserProfileGalleryDetails::module() )
             ->add_module( PrimaryEntityIntegration::module() )
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
+            // Shared public components: any site plugin or snippet registers a profile and places [hexa_directory] or [hexa_calendar].
+            ->add_module( new DirectorySearchModule() )
+            ->add_module( new CalendarModule() )
             ->add_module(
                 new CoreTabModule(
                     new CoreTabConfig(
