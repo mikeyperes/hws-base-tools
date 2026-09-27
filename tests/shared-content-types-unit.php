@@ -44,6 +44,7 @@ hexa_plugin_core_register_package( 'hws-shared-content-types-test', $core_root )
 HexaPluginCorePackageRegistry::resolve();
 $hooks = [];
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once dirname( __DIR__ ) . '/src/ContentTypes/SharedContentTypes.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/QuoteRepeaterDefinition.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/LegacySmp/register-acf-testimonial.php';
@@ -106,7 +107,7 @@ $expect(
     1 === count( $init_hooks ) && 0 === $init_hooks[0][2],
     'registry hooks WordPress init at priority zero'
 );
-$expect( in_array( 'acf/init', array_column( $hooks, 0 ), true ), 'registry owns the ACF registration hook' );
+$expect( str_contains( (string) file_get_contents( dirname( __DIR__ ) . '/lib/hexa-wordpress-plugin-core/src/ContentTypes/ContentTypeRegistry.php' ), 'FieldGroups::ready' ), 'registry registers its field groups through Hexa WP Core Fields (ACF or native)' );
 $expect( in_array( 'wp_ajax_hws_save_content_type', array_column( $hooks, 0 ), true ), 'registry owns the guarded AJAX save hook' );
 
 SharedContentTypes::register_enabled();

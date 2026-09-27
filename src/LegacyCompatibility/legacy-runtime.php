@@ -468,16 +468,15 @@ add_action( 'admin_init', function() {
 // Generic functions import
 if ( ! function_exists( __NAMESPACE__ . '\\hws_is_acf_available' ) ) {
     function hws_is_acf_available() {
-        return function_exists( 'acf' )
-            || function_exists( 'acf_add_local_field_group' )
-            || class_exists( 'ACF' );
+        // Custom fields always work: ACF when active, Hexa WP Core native fields otherwise.
+        return \Hexa\PluginCore\Fields\Field::available();
     }
 }
 
 if ( ! function_exists( __NAMESPACE__ . '\\get_field' ) ) {
     function get_field( ...$args ) {
-        return function_exists( 'get_field' )
-            ? \get_field( ...$args )
+        return \Hexa\PluginCore\Fields\Field::available()
+            ? \Hexa\PluginCore\Fields\Field::get( ...$args )
             : null;
     }
 }
@@ -545,7 +544,7 @@ if ( is_admin() ) {
 }
 
 // ACF-specific registration stays behind ACF's lifecycle hook.
-add_action( 'acf/init', [ AcfModule::class, 'register' ], 5 );
+\Hexa\PluginCore\Fields\Hooks::on( 'init', [ AcfModule::class, 'register' ], 5 );
 
 
 //register_acf_rss();

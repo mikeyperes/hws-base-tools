@@ -102,9 +102,9 @@ final class PrimaryEntityIntegration {
     }
 
     private static function acf_option( array $names ): mixed {
-        if ( ! function_exists( 'get_field' ) ) return null;
+        if ( ! \Hexa\PluginCore\Fields\Field::available() ) return null;
         foreach ( $names as $name ) {
-            $value = get_field( $name, 'option' );
+            $value = \Hexa\PluginCore\Fields\Field::get( $name, 'option' );
             if ( null !== $value && false !== $value && '' !== $value && [] !== $value ) return $value;
         }
         return null;

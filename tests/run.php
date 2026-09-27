@@ -70,6 +70,7 @@ function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
     return $value;
 }
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabDefinition.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabRegistry.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDisplayRenderer.php';
@@ -491,7 +492,7 @@ expect_true(
 $primary_author_image = source( 'src/BrandAssets/PrimaryAuthorImage.php' );
 expect_true(
     str_contains( $primary_author_image, 'PrimaryEntityIntegration::manager()->resolve()' )
-    && str_contains( $primary_author_image, "get_field( 'profile_photo'" )
+    && str_contains( $primary_author_image, "Field::get( 'profile_photo'" )
     && str_contains( $primary_author_image, 'get_avatar_url' )
     && str_contains( $primary_author_image, "'edit_url'" )
     && str_contains( $primary_author_image, "'view_url'" ),
@@ -867,7 +868,7 @@ expect_true( str_contains( $profile_migration, "'threads'    => [ 'threads_url' 
 expect_true( str_contains( $profile_migration, "'group_590d64c31db0a'" ), 'deprecated Profile group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_6419bc02b6e93'" ), 'deprecated Author group is covered by canonical migration' );
 expect_true( str_contains( $profile_migration, "'group_65a8b18d98147'" ), 'superseded User - Admin group is covered by canonical migration' );
-expect_true( str_contains( $profile_migration, 'acf_remove_local_field_group' ), 'deprecated local user-profile groups are suppressed after canonical activation' );
+expect_true( str_contains( $profile_migration, 'FieldGroups::remove' ), 'deprecated local user-profile groups are suppressed after canonical activation' );
 expect_true( ! str_contains( $profile_fields, "'key' => 'group_590d64c31db0a'" ), 'deprecated Profile field definition is removed from HWS' );
 expect_true( ! file_exists( $root . '/src/AcfFields/legacy-migrations.php' ), 'unsafe legacy profile migration UI is removed' );
 expect_true( ! file_exists( $root . '/delete-snippet-acf-migration-structures.php' ), 'legacy profile migration loader is removed' );
@@ -886,7 +887,7 @@ expect_true(
     str_contains( $profile_fields, '[hws_profile_photos]' )
     && str_contains( $brand_functions, "add_shortcode( 'hws_profile_photos'" )
     && str_contains( $brand_functions, "case 'photos':" )
-    && str_contains( $brand_functions, "get_field( 'field_hws_user_profile_2025_photos', \$user_key, false )" )
+    && str_contains( $brand_functions, "Field::get( 'field_hws_user_profile_2025_photos', \$user_key, false )" )
     && str_contains( $brand_functions, 'function hws_render_founder_photos_shortcode' )
     && str_contains( $brand_functions, 'function hws_profile_photos_shortcode' )
     && str_contains( $brand_functions, "'hws-founder-gallery'" ),

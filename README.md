@@ -134,6 +134,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.0
+
+- ACF Pro is no longer required. Every custom field, options page, form and ACF lifecycle hook goes through Hexa WP Core 3.4.2 `Fields`: with ACF active nothing changes; without ACF, Base Tools' fields are stored, formatted and edited natively in ACF's storage layout.
+- Bundles Hexa WP Core 3.4.2.
+
 ### 13.2.22
 
 - Bundles Hexa WP Core 3.2.1: `[hexa_directory]` live search and pagination now work behind web firewalls that block the `dir` URL parameter.

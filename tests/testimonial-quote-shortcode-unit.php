@@ -74,6 +74,7 @@ function esc_html( string $value ): string {
     return htmlspecialchars( $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 }
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once dirname( __DIR__ ) . '/src/Testimonials/TestimonialQuoteShortcode.php';
 
 use HWS\BaseTools\Testimonials\TestimonialQuoteShortcode;

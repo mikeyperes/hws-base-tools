@@ -93,16 +93,16 @@ final class UserProfile2025Migration {
     ];
 
     public static function register(): void {
-        add_action( 'acf/init', [ self::class, 'remove_deprecated_local_groups' ], PHP_INT_MAX );
+        \Hexa\PluginCore\Fields\Hooks::on( 'init', [ self::class, 'remove_deprecated_local_groups' ], PHP_INT_MAX );
     }
 
     public static function remove_deprecated_local_groups(): void {
-        if ( ! get_option( self::PROFILE_OPTION, false ) || ! function_exists( 'acf_remove_local_field_group' ) ) {
+        if ( ! get_option( self::PROFILE_OPTION, false ) || ! \Hexa\PluginCore\Fields\Field::available() ) {
             return;
         }
 
         foreach ( self::DEPRECATED_GROUP_KEYS as $group_key ) {
-            acf_remove_local_field_group( $group_key );
+            \Hexa\PluginCore\Fields\FieldGroups::remove( $group_key );
         }
     }
 
@@ -193,7 +193,7 @@ final class UserProfile2025Migration {
             return $report;
         }
 
-        if ( ! function_exists( 'update_field' ) ) {
+        if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
             $report['errors'][] = 'ACF update_field() is unavailable.';
             return $report;
         }
@@ -649,7 +649,7 @@ final class UserProfile2025Migration {
 
         // ACF returns false when the value is unchanged, even if it refreshed
         // the hidden field-key reference. Verification runs after migration.
-        update_field( $field_key, $value, $post_id );
+        \Hexa\PluginCore\Fields\Field::update( $field_key, $value, $post_id );
     }
 
     private static function field_reference( int $user_id, string $meta_key ): string {
@@ -657,10 +657,10 @@ final class UserProfile2025Migration {
     }
 
     private static function acf_value( string $field_name, string $post_id, int $user_id ): mixed {
-        if ( function_exists( 'get_field' ) ) {
+        if ( \Hexa\PluginCore\Fields\Field::available() ) {
             // ACF group values use field keys in raw mode and field names in
             // formatted mode. Migrations compare against canonical names.
-            $value = get_field( $field_name, $post_id, true );
+            $value = \Hexa\PluginCore\Fields\Field::get( $field_name, $post_id, true );
             if ( false !== $value && null !== $value ) {
                 return $value;
             }

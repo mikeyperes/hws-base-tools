@@ -135,6 +135,7 @@ function acf_remove_local_field_group( string $group_key ): void {
     $GLOBALS['removed_groups'][] = $group_key;
 }
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/UserProfile2025Migration.php';
 
 use HWS\BaseTools\AcfFields\UserProfile2025Migration;
@@ -148,9 +149,10 @@ $expect = static function ( bool $condition, string $message ) use ( &$failures 
 };
 
 UserProfile2025Migration::register();
+$init_registrations = array_values( array_filter( array_merge( $hooks, $GLOBALS['hexa_test_hooks'] ?? [] ), static fn( array $hook ): bool => in_array( $hook[0], [ 'acf/init', 'hexa_fields/init' ], true ) ) );
 $expect(
-    isset( $hooks[0] ) && 'acf/init' === $hooks[0][0] && PHP_INT_MAX === $hooks[0][2],
-    'deprecated local groups are suppressed after all ACF registrations'
+    [] !== $init_registrations && PHP_INT_MAX === $init_registrations[0][2],
+    'deprecated local groups are suppressed after all field-group registrations (ACF or native)'
 );
 
 UserProfile2025Migration::remove_deprecated_local_groups();

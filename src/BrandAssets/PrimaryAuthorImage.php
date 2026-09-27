@@ -21,7 +21,7 @@ final class PrimaryAuthorImage {
             return null;
         }
 
-        $profile_image = function_exists( 'get_field' ) ? get_field( 'profile_photo', 'user_' . $user_id ) : null;
+        $profile_image = \Hexa\PluginCore\Fields\Field::available() ? \Hexa\PluginCore\Fields\Field::get( 'profile_photo', 'user_' . $user_id ) : null;
         $image         = self::normalize_image( $profile_image );
         $source        = '' !== $image['url'] ? 'Profile photo' : '';
 

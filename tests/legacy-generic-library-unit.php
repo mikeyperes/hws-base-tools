@@ -96,6 +96,7 @@ final class FakeRedisClient {
     }
 }
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once $root . '/src/LegacyCompatibility/GenericLibrary/LiteSpeedConfigurationReader.php';
 require_once $root . '/src/LegacyCompatibility/GenericLibrary/CacheDiagnostics.php';
 

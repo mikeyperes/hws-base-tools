@@ -97,7 +97,7 @@ function hws_acf_source_tracker_render(): void {
 		return;
 	}
 
-	if ( ! function_exists( 'acf_get_field_groups' ) || ! function_exists( 'acf_get_fields' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() || ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return;
 	}
 
@@ -234,7 +234,7 @@ function hws_acf_source_tracker_build_payload(): array {
 	$fields_map = array();
 	$groups_map = array();
 
-	$groups = acf_get_field_groups();
+	$groups = \Hexa\PluginCore\Fields\FieldGroups::all();
 	if ( ! is_array( $groups ) ) {
 		return array( 'fields' => $fields_map, 'groups' => $groups_map );
 	}
@@ -249,7 +249,7 @@ function hws_acf_source_tracker_build_payload(): array {
 			continue;
 		}
 
-		$fields = acf_get_fields( $group );
+		$fields = \Hexa\PluginCore\Fields\FieldGroups::fields( $group );
 		if ( ! is_array( $fields ) || empty( $fields ) ) {
 			// Only decorate groups whose fields we can match in the DOM.
 			continue;

@@ -13,13 +13,13 @@ function display_settings_rss_dashboard() { ?>
                 <div style="padding-left: 20px;">
 
                     <!-- RSS feeds for Post Types -->
-                    <?php if (have_rows('rss_post_type', 'option')): ?>
+                    <?php if (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_type', 'option')): ?>
                         <div>
                             <h4 style="color: #0073aa; margin-bottom: 8px;">Post Type RSS Feeds:</h4>
                             <ul style="list-style-type: disc; margin-left: 20px;">
-                                <?php while (have_rows('rss_post_type', 'option')): the_row(); ?>
+                                <?php while (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_type', 'option')): \Hexa\PluginCore\Fields\Field::the_row(); ?>
                                     <?php
-                                        $rss_id = get_sub_field('rss_id');
+                                        $rss_id = \Hexa\PluginCore\Fields\Field::get_sub_field('rss_id');
                                         $rss_url = home_url("/feed/$rss_id");
                                         $random_cache_buster = rand(1000, 9999); // Generate random number for cache busting
                                     ?>
@@ -34,13 +34,13 @@ function display_settings_rss_dashboard() { ?>
                     <?php endif; ?>
 
                     <!-- RSS feeds for Categories -->
-                    <?php if (have_rows('rss_post_category', 'option')): ?>
+                    <?php if (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_category', 'option')): ?>
                         <div style="margin-top: 20px;">
                             <h4 style="color: #0073aa; margin-bottom: 8px;">Category RSS Feeds:</h4>
                             <ul style="list-style-type: disc; margin-left: 20px;">
-                                <?php while (have_rows('rss_post_category', 'option')): the_row(); ?>
+                                <?php while (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_category', 'option')): \Hexa\PluginCore\Fields\Field::the_row(); ?>
                                     <?php
-                                        $rss_id = get_sub_field('rss_id');
+                                        $rss_id = \Hexa\PluginCore\Fields\Field::get_sub_field('rss_id');
                                         $rss_url = home_url("/feed/$rss_id");
                                         $random_cache_buster = rand(1000, 9999); // Generate random number for cache busting
                                     ?>
@@ -90,18 +90,18 @@ register_rss_feeds_from_acf();
 function register_rss_feeds_from_acf() {
 
     // Ensure that ACF options page exists and ACF fields are populated
-    if (!function_exists('have_rows') ) {
+    if (!\Hexa\PluginCore\Fields\Field::available() ) {
         return; // Exit early if ACF is not initialized or fields are missing
     }
 
     //|| !have_rows('rss_post_type', 'option')
 
     // Post Type RSS feeds
-    if (have_rows('rss_post_type', 'option')) {
-        while (have_rows('rss_post_type', 'option')) {
-            the_row();
-            $post_slug = get_sub_field('slug');
-            $rss_id = get_sub_field('rss_id');
+    if (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_type', 'option')) {
+        while (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_type', 'option')) {
+            \Hexa\PluginCore\Fields\Field::the_row();
+            $post_slug = \Hexa\PluginCore\Fields\Field::get_sub_field('slug');
+            $rss_id = \Hexa\PluginCore\Fields\Field::get_sub_field('rss_id');
 
             // Ensure that both slug and RSS ID are available before registering the feed
             if (!empty($post_slug) && !empty($rss_id)) {
@@ -116,11 +116,11 @@ function register_rss_feeds_from_acf() {
     }
 
     // Category Type RSS feeds
-    if (have_rows('rss_post_category', 'option')) {
-        while (have_rows('rss_post_category', 'option')) {
-            the_row();
-            $category_slug = get_sub_field('slug');
-            $rss_id = get_sub_field('rss_id');
+    if (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_category', 'option')) {
+        while (\Hexa\PluginCore\Fields\Field::have_rows('rss_post_category', 'option')) {
+            \Hexa\PluginCore\Fields\Field::the_row();
+            $category_slug = \Hexa\PluginCore\Fields\Field::get_sub_field('slug');
+            $rss_id = \Hexa\PluginCore\Fields\Field::get_sub_field('rss_id');
 
             // Ensure that both category slug and RSS ID are available before registering the feed
             if (!empty($category_slug) && !empty($rss_id)) {

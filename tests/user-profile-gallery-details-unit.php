@@ -84,6 +84,7 @@ function wp_basename( string $path ): string {
 }
 
 $root = dirname( __DIR__ );
+require_once __DIR__ . '/bootstrap-fields.php';
 require $root . '/lib/hexa-wordpress-plugin-core/src/CoreContracts/ModuleInterface.php';
 require $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminComponents/CoreUi.php';
 require $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminComponents/DynamicButton.php';

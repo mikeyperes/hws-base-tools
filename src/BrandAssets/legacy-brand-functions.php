@@ -117,8 +117,8 @@ function hws_site_value_raw( string $field ) {
             $company = do_shortcode( "[company id=name]" );
             return "" !== trim( wp_strip_all_tags( $company ) ) ? $company : get_bloginfo( "name" );
     }
-    if ( function_exists( "get_field" ) ) {
-        $value = get_field( $field, "option" );
+    if ( \Hexa\PluginCore\Fields\Field::available() ) {
+        $value = \Hexa\PluginCore\Fields\Field::get( $field, "option" );
         if ( is_scalar( $value ) ) {
             return $value;
         }
@@ -469,8 +469,8 @@ function hws_get_brand_gallery_ids(): array {
 		return $ids;
 	}
 
-	if ( function_exists( '\\get_field' ) ) {
-		$acf_value = \get_field( 'brand_assets_gallery', 'option', false );
+	if ( \Hexa\PluginCore\Fields\Field::available() ) {
+		$acf_value = \Hexa\PluginCore\Fields\Field::get( 'brand_assets_gallery', 'option', false );
 		$ids       = hws_normalize_brand_gallery_ids( $acf_value );
 	}
 
@@ -481,12 +481,12 @@ function hws_update_brand_gallery_ids( array $ids ): void {
 	$ids = hws_normalize_brand_gallery_ids( $ids );
 	update_option( 'hws_brand_asset_gallery_ids', $ids, false );
 
-	if ( function_exists( '\\update_field' ) ) {
-		\update_field( 'field_hws_brand_assets_gallery', $ids, 'option' );
+	if ( \Hexa\PluginCore\Fields\Field::available() ) {
+		\Hexa\PluginCore\Fields\Field::update( 'field_hws_brand_assets_gallery', $ids, 'option' );
 	}
 }
 
-add_filter( 'acf/update_value/key=field_hws_brand_assets_gallery', function( $value ) {
+\Hexa\PluginCore\Fields\Hooks::on( 'update_value/key=field_hws_brand_assets_gallery', function( $value ) {
 	update_option( 'hws_brand_asset_gallery_ids', hws_normalize_brand_gallery_ids( $value ), false );
 
 	return $value;
@@ -614,8 +614,8 @@ function hws_brand_asset_shortcode( $atts ): string {
  * Hook into ACF’s user‐select field to render extra info.
  */
 function enable_website_settings_functionality() {
-	add_action(
-		'acf/render_field/name=user',
+	\Hexa\PluginCore\Fields\Hooks::on(
+		'render_field/name=user',
 		__NAMESPACE__ . '\\hf_render_user_info_once',
 		10,
 		1
@@ -687,11 +687,11 @@ add_action( 'admin_head', __NAMESPACE__ . '\\hws_website_settings_color_coding_c
  * Get the Website Settings branding group.
  */
 function hws_get_website_branding_settings(): array {
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return [];
 	}
 
-	$branding = get_field( 'branding', 'option' );
+	$branding = \Hexa\PluginCore\Fields\Field::get( 'branding', 'option' );
 
 	return is_array( $branding ) ? $branding : [];
 }
@@ -727,7 +727,7 @@ function hws_sync_branding_favicon_to_site_icon( $post_id ): void {
 		update_option( 'site_icon', $favicon_id );
 	}
 }
-add_action( 'acf/save_post', __NAMESPACE__ . '\\hws_sync_branding_favicon_to_site_icon', 20 );
+\Hexa\PluginCore\Fields\Hooks::on( 'save_post', __NAMESPACE__ . '\\hws_sync_branding_favicon_to_site_icon', 20 );
 
 /**
  * Render fallback favicon tags from Website Settings when WP has no site icon.
@@ -860,7 +860,7 @@ function hf_render_user_info_once( $field ) {
 	echo '</div>';
 
 	// --- New: display ACF "urls" group subfields as clickable links ---
-	$urls = get_field( 'urls', 'user_' . $user_id ) ?: [];
+	$urls = \Hexa\PluginCore\Fields\Field::get( 'urls', 'user_' . $user_id ) ?: [];
 
 	// map sub-field names to human labels
 	$url_fields = [
@@ -940,14 +940,14 @@ function website_url_shortcode( $atts ) {
 	}
 
 	// load Website Settings group (options page)
-	$website = get_field( 'website', 'option' );
+	$website = \Hexa\PluginCore\Fields\Field::get( 'website', 'option' );
 	if ( ! ( is_array( $website ) && ! empty( $website['user']['ID'] ) ) ) {
 		return '';
 	}
 
 	// pull that user’s “urls” repeater/array
 	$user_id   = $website['user']['ID'];
-	$user_urls = get_field( 'urls', 'user_' . $user_id );
+	$user_urls = \Hexa\PluginCore\Fields\Field::get( 'urls', 'user_' . $user_id );
 
 	if ( is_array( $user_urls ) && ! empty( $user_urls[ $key ] ) ) {
 		return esc_url( $user_urls[ $key ] );
@@ -973,7 +973,7 @@ function website_content_shortcode( $atts ) {
 		return '';
 	}
 
-	return get_field( $atts['field'], 'option' ) ?: '';
+	return \Hexa\PluginCore\Fields\Field::get( $atts['field'], 'option' ) ?: '';
 }
 
 
@@ -1005,12 +1005,12 @@ function company_shortcode( $atts ): string {
 	$atts = shortcode_atts( [ 'id' => 'title' ], $atts, 'company' );
 	$requested = strtolower( trim( (string) $atts['id'] ) );
 
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return '';
 	}
 
 	// Resolve company user from options
-	$website = get_field( 'website', 'option' );
+	$website = \Hexa\PluginCore\Fields\Field::get( 'website', 'option' );
 	if ( ! ( is_array( $website ) && ! empty( $website['company']['ID'] ) ) ) {
 		return '';
 	}
@@ -1019,9 +1019,9 @@ function company_shortcode( $atts ): string {
 	$user_key = 'user_' . $user_id;
 
 	// Common data
-	$user_urls = get_field( 'urls', $user_key );       // array of platforms
-	$user_bio  = (string) get_field( 'biography', $user_key );
-	$user_site = (string) get_field( 'website', $user_key );
+	$user_urls = \Hexa\PluginCore\Fields\Field::get( 'urls', $user_key );       // array of platforms
+	$user_bio  = (string) \Hexa\PluginCore\Fields\Field::get( 'biography', $user_key );
+	$user_site = (string) \Hexa\PluginCore\Fields\Field::get( 'website', $user_key );
 
 	// Core WordPress user fields
 	switch ( $requested ) {
@@ -1087,31 +1087,31 @@ function company_shortcode( $atts ): string {
 
 	// Entity type
 	if ( $requested === 'entity_type' ) {
-		$val = get_field( 'entity_type', $user_key );
+		$val = \Hexa\PluginCore\Fields\Field::get( 'entity_type', $user_key );
 		return esc_html( $val ?: 'person' );
 	}
 
 	// Inception date (organization)
 	if ( $requested === 'inception_date' ) {
-		$val = get_field( 'inception_date', $user_key );
+		$val = \Hexa\PluginCore\Fields\Field::get( 'inception_date', $user_key );
 		return esc_html( $val ?: '' );
 	}
 
 	// Headquarters location
 	if ( $requested === 'headquarters_location' ) {
-		$hq = get_field( 'headquarters', $user_key );
+		$hq = \Hexa\PluginCore\Fields\Field::get( 'headquarters', $user_key );
 		return is_array( $hq ) && ! empty( $hq['location'] ) ? esc_html( $hq['location'] ) : '';
 	}
 
 	// Headquarters wiki URL
 	if ( $requested === 'headquarters_wiki' ) {
-		$hq = get_field( 'headquarters', $user_key );
+		$hq = \Hexa\PluginCore\Fields\Field::get( 'headquarters', $user_key );
 		return is_array( $hq ) && ! empty( $hq['wiki_url'] ) ? esc_url( $hq['wiki_url'] ) : '';
 	}
 
 	// ---- Generic ACF resolver for user meta ----
 	// 1) Try direct field on user (e.g., id="some_field")
-	$direct = get_field( $requested, $user_key );
+	$direct = \Hexa\PluginCore\Fields\Field::get( $requested, $user_key );
 	if ( is_string( $direct ) && $direct !== '' ) {
 		// If it looks like a URL, escape as URL; if it's biography-like, allow HTML; else escape text.
 		if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) {
@@ -1131,7 +1131,7 @@ function company_shortcode( $atts ): string {
 		$subkey  = implode( '_', $parts );       // e.g. 'public_email'
 
 		if ( $group && $subkey ) {
-			$group_val = get_field( $group, $user_key ); // should be array
+			$group_val = \Hexa\PluginCore\Fields\Field::get( $group, $user_key ); // should be array
 			if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
 				$val = $group_val[ $subkey ];
 				if ( is_string( $val ) && $val !== '' ) {
@@ -1205,7 +1205,7 @@ add_action('admin_enqueue_scripts', function( $hook ) {
 	wp_enqueue_script('jquery');
 
 	// 3) Load Options → website → company (ACF user field, return_format=array)
-	$website = function_exists('get_field') ? get_field('website', 'option') : null;
+	$website = \Hexa\PluginCore\Fields\Field::available() ? \Hexa\PluginCore\Fields\Field::get('website', 'option') : null;
 	if ( ! is_array($website) || empty($website['company']['ID']) ) {
 		return;
 	}
@@ -1213,7 +1213,7 @@ add_action('admin_enqueue_scripts', function( $hook ) {
 	$user_id = absint($website['company']['ID']);
 
 	// 4) User ACF: urls array in user meta scope
-	$urls = get_field('urls', 'user_' . $user_id);
+	$urls = \Hexa\PluginCore\Fields\Field::get('urls', 'user_' . $user_id);
 	if ( ! is_array($urls) ) {
 		$urls = []; // still render the card without URL rows
 	}
@@ -1471,7 +1471,7 @@ add_action('admin_enqueue_scripts', function( $hook ) {
 	wp_enqueue_script('jquery');
 
 	// 3) Load Options → founder → founder_user (new field name) or user (legacy)
-	$founder = function_exists('get_field') ? get_field('founder', 'option') : null;
+	$founder = \Hexa\PluginCore\Fields\Field::available() ? \Hexa\PluginCore\Fields\Field::get('founder', 'option') : null;
 
 	// Try new field name first, fall back to legacy
 	$user_id = 0;
@@ -1486,7 +1486,7 @@ add_action('admin_enqueue_scripts', function( $hook ) {
 	}
 
 	// 4) User ACF: urls array (from user meta scope)
-	$urls = get_field('urls', 'user_' . $user_id);
+	$urls = \Hexa\PluginCore\Fields\Field::get('urls', 'user_' . $user_id);
 	if ( ! is_array($urls) ) {
 		$urls = []; // still render the card without URL rows
 	}
@@ -1703,12 +1703,12 @@ JS
  *   3) option → website → company (pragmatic fallback)
  */
 function hws_resolve_founder_user_id(): int {
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return 0;
 	}
 
 	// 1) Primary: option → founder → founder_user (new field name)
-	$founder = get_field( 'founder', 'option' );
+	$founder = \Hexa\PluginCore\Fields\Field::get( 'founder', 'option' );
 	if ( is_array( $founder ) && ! empty( $founder['founder_user'] ) ) {
 		$uf = $founder['founder_user'];
 		if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
@@ -1725,7 +1725,7 @@ function hws_resolve_founder_user_id(): int {
 	}
 
 	// 3) Fallback: option → website → company
-	$website = get_field( 'website', 'option' );
+	$website = \Hexa\PluginCore\Fields\Field::get( 'website', 'option' );
 	if ( is_array( $website ) && ! empty( $website['company'] ) ) {
 		$uf = $website['company'];
 		if ( is_array( $uf ) && isset( $uf['ID'] ) ) return (int) $uf['ID'];
@@ -1774,7 +1774,7 @@ function founder_shortcode( $atts ): string {
 	);
 	$requested = strtolower( trim( (string) $atts['id'] ) );
 
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return '';
 	}
 
@@ -1787,14 +1787,14 @@ function founder_shortcode( $atts ): string {
 	$user_key  = 'user_' . $user_id;
 
 	// Option-level founder biography (if populated)
-	$founder_group = get_field( 'founder', 'option' );
+	$founder_group = \Hexa\PluginCore\Fields\Field::get( 'founder', 'option' );
 	$founder_group_bio = ( is_array( $founder_group ) && ! empty( $founder_group['biography'] ) && is_string( $founder_group['biography'] ) )
 		? $founder_group['biography']
 		: '';
 
-	$user_urls = get_field( 'urls',       $user_key );
-	$user_bio  = (string) get_field( 'biography', $user_key );
-	$user_site = (string) get_field( 'website',   $user_key );
+	$user_urls = \Hexa\PluginCore\Fields\Field::get( 'urls',       $user_key );
+	$user_bio  = (string) \Hexa\PluginCore\Fields\Field::get( 'biography', $user_key );
+	$user_site = (string) \Hexa\PluginCore\Fields\Field::get( 'website',   $user_key );
 
 	// Core WordPress user fields
 	switch ( $requested ) {
@@ -1861,30 +1861,30 @@ function founder_shortcode( $atts ): string {
 
 	// Entity type
 	if ( $requested === 'entity_type' ) {
-		$val = get_field( 'entity_type', $user_key );
+		$val = \Hexa\PluginCore\Fields\Field::get( 'entity_type', $user_key );
 		return esc_html( $val ?: 'person' );
 	}
 
 	// Inception date (organization)
 	if ( $requested === 'inception_date' ) {
-		$val = get_field( 'inception_date', $user_key );
+		$val = \Hexa\PluginCore\Fields\Field::get( 'inception_date', $user_key );
 		return esc_html( $val ?: '' );
 	}
 
 	// Headquarters location
 	if ( $requested === 'headquarters_location' ) {
-		$hq = get_field( 'headquarters', $user_key );
+		$hq = \Hexa\PluginCore\Fields\Field::get( 'headquarters', $user_key );
 		return is_array( $hq ) && ! empty( $hq['location'] ) ? esc_html( $hq['location'] ) : '';
 	}
 
 	// Headquarters wiki URL
 	if ( $requested === 'headquarters_wiki' ) {
-		$hq = get_field( 'headquarters', $user_key );
+		$hq = \Hexa\PluginCore\Fields\Field::get( 'headquarters', $user_key );
 		return is_array( $hq ) && ! empty( $hq['wiki_url'] ) ? esc_url( $hq['wiki_url'] ) : '';
 	}
 
 	// Direct user ACF
-	$direct = get_field( $requested, $user_key );
+	$direct = \Hexa\PluginCore\Fields\Field::get( $requested, $user_key );
 	if ( is_string( $direct ) && $direct !== '' ) {
 		if ( filter_var( $direct, FILTER_VALIDATE_URL ) ) return esc_url( $direct );
 		if ( in_array( $requested, [ 'biography', 'bio' ], true ) ) return $direct; // allow HTML
@@ -1897,7 +1897,7 @@ function founder_shortcode( $atts ): string {
 		$group  = array_shift( $parts );
 		$subkey = implode( '_', $parts );
 		if ( $group && $subkey ) {
-			$group_val = get_field( $group, $user_key );
+			$group_val = \Hexa\PluginCore\Fields\Field::get( $group, $user_key );
 			if ( is_array( $group_val ) && isset( $group_val[ $subkey ] ) ) {
 				$val = $group_val[ $subkey ];
 				if ( is_string( $val ) && $val !== '' ) {
@@ -1918,7 +1918,7 @@ function founder_shortcode( $atts ): string {
  * Supported attributes: size, output (grid|ids|urls), class, columns, loading.
  */
 function hws_render_founder_photos_shortcode( array $atts, string $user_key ): string {
-	$photos = get_field( 'field_hws_user_profile_2025_photos', $user_key, false );
+	$photos = \Hexa\PluginCore\Fields\Field::get( 'field_hws_user_profile_2025_photos', $user_key, false );
 	$ids    = hws_normalize_brand_gallery_ids( $photos );
 
 	if ( empty( $ids ) ) {
@@ -1999,7 +1999,7 @@ function hws_profile_photos_shortcode( $atts ): string {
 		'hws_profile_photos'
 	);
 
-	if ( ! function_exists( 'get_field' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return '';
 	}
 
@@ -2030,7 +2030,7 @@ function hws_render_education_shortcode( $atts, $user_key ): string {
 	$index  = isset( $atts['index'] ) ? (int) $atts['index'] : null;
 	$field  = isset( $atts['field'] ) ? sanitize_key( $atts['field'] ) : null;
 
-	$education = get_field( 'education', $user_key );
+	$education = \Hexa\PluginCore\Fields\Field::get( 'education', $user_key );
 
 	if ( empty( $education ) || ! is_array( $education ) ) {
 		return '';
@@ -2159,7 +2159,7 @@ function hws_format_education_entry_html( $entry, $index = 0 ): string {
 function hws_render_sameas_shortcode( $atts, $user_key ): string {
 	$format = isset( $atts['format'] ) ? strtolower( trim( $atts['format'] ) ) : 'text';
 
-	$sameas = get_field( 'sameas', $user_key );
+	$sameas = \Hexa\PluginCore\Fields\Field::get( 'sameas', $user_key );
 
 	if ( empty( $sameas ) || ! is_string( $sameas ) ) {
 		return '';

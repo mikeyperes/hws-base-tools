@@ -45,7 +45,7 @@ function display_acf_structure( $group_keys, $deprecated = false ) {
     // — Return a closure so it's evaluated lazily at render time
     return function() use ( $group_keys, $deprecated ) {
         // — Bail if ACF isn't active
-        if ( ! function_exists( 'acf_get_field_group' ) ) {
+        if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
             return '<em style="color:#999;">ACF not active — cannot display field structure.</em>';
         }
 
@@ -56,7 +56,7 @@ function display_acf_structure( $group_keys, $deprecated = false ) {
             // — Fetch the group object using the correct singular API
             //   acf_get_field_group( $key ) returns the group array or false
             //   (acf_get_field_groups() with a key filter does NOT work reliably)
-            $group = acf_get_field_group( $group_key );
+            $group = \Hexa\PluginCore\Fields\FieldGroups::get_group( $group_key );
             if ( empty( $group ) ) {
                 // — Group not registered — show a helpful fallback instead of nothing
                 $output .= '<div style="border:1px solid #dba617;border-radius:6px;padding:10px;margin-bottom:12px;background:#fff8e5;font-size:12px;color:#6a5400;">'
@@ -81,7 +81,7 @@ function display_acf_structure( $group_keys, $deprecated = false ) {
                      . '</code></div>';
 
             // — Render fields recursively
-            $fields = acf_get_fields( $group_key );
+            $fields = \Hexa\PluginCore\Fields\FieldGroups::fields( $group_key );
             if ( ! empty( $fields ) ) {
                 $output .= hws_render_acf_fields_recursive( $fields, 0 );
             } else {

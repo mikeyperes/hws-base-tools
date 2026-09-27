@@ -161,13 +161,13 @@ function hws_rss_acf_group(): array {
 }
 
 function register_acf_rss(): void {
-	if ( ! function_exists( 'acf_add_options_page' ) ) {
+	if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
 		return;
 	}
 
 
 
-	\acf_add_options_page( array(
+	\Hexa\PluginCore\Fields\OptionsPages::add( array(
 	'page_title' => 'RSS Structures',
 	'menu_slug' => 'rss-structures',
 	'redirect' => false,

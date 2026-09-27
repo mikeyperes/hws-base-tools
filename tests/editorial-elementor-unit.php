@@ -115,6 +115,7 @@ namespace Elementor\Core\DynamicTags {
 }
 
 namespace {
+    require_once __DIR__ . '/bootstrap-fields.php';
     require dirname( __DIR__ ) . '/lib/hexa-wordpress-plugin-core/src/CoreContracts/ModuleInterface.php';
     require dirname( __DIR__ ) . '/src/PluginRuntime/PluginMetadata.php';
     require dirname( __DIR__ ) . '/src/Editorial/FeaturedImageRequirement.php';

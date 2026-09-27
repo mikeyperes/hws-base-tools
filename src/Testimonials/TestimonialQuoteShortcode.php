@@ -36,9 +36,9 @@ final class TestimonialQuoteShortcode {
         $index = $number - 1;
         $quote = '';
 
-        if ( function_exists( 'get_field' ) ) {
+        if ( \Hexa\PluginCore\Fields\Field::available() ) {
             foreach ( [ 'quotes', 'notable_quotes' ] as $field_name ) {
-                $quotes = get_field( $field_name, $post_id );
+                $quotes = \Hexa\PluginCore\Fields\Field::get( $field_name, $post_id );
                 $row = is_array( $quotes ) ? ( $quotes[ $index ] ?? null ) : null;
                 if ( is_array( $row ) && is_scalar( $row['quote'] ?? null ) ) {
                     $quote = (string) $row['quote'];

@@ -74,6 +74,7 @@ function update_field( string $field_key, mixed $value, int $post_id ): bool {
     return true;
 }
 
+require_once __DIR__ . '/bootstrap-fields.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/QuoteRepeaterMigration.php';
 
 use HWS\BaseTools\AcfFields\QuoteRepeaterMigration;

@@ -405,11 +405,11 @@ function hws_get_footer_text_inline_allowed_html(): array {
 function hws_get_footer_text_raw(): string {
     $footer_text = '';
 
-    if ( function_exists( 'get_field' ) ) {
-        $footer_text = get_field( 'website_footer_text', 'option' );
+    if ( \Hexa\PluginCore\Fields\Field::available() ) {
+        $footer_text = \Hexa\PluginCore\Fields\Field::get( 'website_footer_text', 'option' );
 
         if ( empty( $footer_text ) ) {
-            $website_settings = get_field( 'website', 'option' );
+            $website_settings = \Hexa\PluginCore\Fields\Field::get( 'website', 'option' );
 
             if ( is_array( $website_settings ) && ! empty( $website_settings['footer_text'] ) ) {
                 $footer_text = $website_settings['footer_text'];
@@ -427,14 +427,14 @@ function hws_get_footer_text_raw(): string {
 function hws_save_footer_text_raw( string $content ): bool {
     $content = trim( $content );
 
-    if ( function_exists( 'update_field' ) ) {
-        update_field( 'website_footer_text', $content, 'option' );
+    if ( \Hexa\PluginCore\Fields\Field::available() ) {
+        \Hexa\PluginCore\Fields\Field::update( 'website_footer_text', $content, 'option' );
 
         if ( hws_get_footer_text_raw() === $content ) {
             return true;
         }
 
-        update_field( 'field_68420a173f1aa', $content, 'option' );
+        \Hexa\PluginCore\Fields\Field::update( 'field_68420a173f1aa', $content, 'option' );
 
         if ( hws_get_footer_text_raw() === $content ) {
             return true;

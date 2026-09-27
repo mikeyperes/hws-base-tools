@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 add_action( 'wp_ajax_hws_footer_text_save_settings', __NAMESPACE__ . '\\ajax_save_footer_text_settings' );
 add_action( 'wp_ajax_hws_footer_text_save_targeted_injection', __NAMESPACE__ . '\\ajax_save_footer_text_targeted_injection' );
-add_action( 'acf/save_post', __NAMESPACE__ . '\\maybe_purge_footer_text_cache_after_acf_save', 20 );
+\Hexa\PluginCore\Fields\Hooks::on( 'save_post', __NAMESPACE__ . '\\maybe_purge_footer_text_cache_after_acf_save', 20 );
 add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\hws_footer_text_enqueue_editor_assets' );
 
 function hws_footer_text_enqueue_editor_assets(): void {

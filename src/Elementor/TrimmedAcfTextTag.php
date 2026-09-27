@@ -72,8 +72,8 @@ final class TrimmedAcfTextTag extends \Elementor\Core\DynamicTags\Tag {
             return;
         }
 
-        $value = function_exists( 'get_field' )
-            ? get_field( $key, get_the_ID(), false )
+        $value = \Hexa\PluginCore\Fields\Field::available()
+            ? \Hexa\PluginCore\Fields\Field::get( $key, get_the_ID(), false )
             : get_post_meta( get_the_ID(), $key, true );
 
         if ( ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
