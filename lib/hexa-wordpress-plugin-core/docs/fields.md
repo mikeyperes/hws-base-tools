@@ -65,3 +65,7 @@ data moves freely between the two modes. ACF Pro is never a requirement.
 | `function_exists( 'get_field' )` | `Field::available()` |
 
 Run `php bin/migrate-to-fields.php <plugin-root> --dry-run` to preview, then without `--dry-run` to apply the table above. It rewrites calls token by token (comments and strings untouched) and lists what needs a person: calls that run at file load before Core's autoloader exists (move them into a `plugins_loaded` or later callback), ACF plugin detection, and ACF Pro dependency declarations. Remove every "ACF Pro is required" gate and dependency declaration.
+
+## Testing a host plugin
+
+Require `lib/hexa-wordpress-plugin-core/tests/support/fields.php` after the test's own WordPress and ACF stubs. It autoloads the Fields classes and runs them in ACF mode, so `Field::get()` and `FieldGroups::add()` call the test's `get_field()` and `acf_add_local_field_group()` stubs exactly as they call ACF on a live site.

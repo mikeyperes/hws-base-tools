@@ -290,9 +290,19 @@ final class FieldGroups {
             $group
         );
         $group['key'] = (string) $group['key'];
+        if ( '' === $group['key'] && '' !== self::slug( (string) $group['title'] ) ) {
+            $group['key'] = 'group_' . self::slug( (string) $group['title'] ); // As acf_add_local_field_group().
+        }
         $group['fields'] = self::normalize_fields( (array) $group['fields'], $group['key'] );
         $group['active'] = ! isset( $group['active'] ) || (bool) $group['active'];
         return $group;
+    }
+
+    /** acf_slugify( $title, '_' ). */
+    private static function slug( string $title ): string {
+        $slug = str_replace( [ '-', '/', ' ' ], '_', $title );
+        $slug = strtolower( function_exists( 'remove_accents' ) ? remove_accents( $slug ) : $slug );
+        return (string) preg_replace( '/[^a-z0-9_]/', '', $slug );
     }
 
     /**
@@ -309,7 +319,8 @@ final class FieldGroups {
             $field['type'] = (string) ( $field['type'] ?? 'text' );
             $field['key'] = (string) ( $field['key'] ?? '' );
             if ( '' === $field['key'] ) {
-                $field['key'] = 'field_' . substr( md5( $parent . '|' . $field['name'] . '|' . $field['type'] ), 0, 13 );
+                // As acf_add_local_field(): `field_<name>`.
+                $field['key'] = '' !== $field['name'] ? 'field_' . $field['name'] : 'field_' . substr( md5( $parent . '|' . $field['type'] . '|' . count( $normalized ) ), 0, 13 );
             }
             $field['label'] = (string) ( $field['label'] ?? $field['name'] );
             $field['parent'] = $parent;

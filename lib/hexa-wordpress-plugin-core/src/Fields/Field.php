@@ -46,7 +46,7 @@ final class Field {
             return (bool) update_field( $selector, $value, $context );
         }
         $context = Storage::context( $context );
-        [ $field, $name ] = Values::resolve( $selector, $context );
+        [ $field, $name ] = Values::resolve( $selector, $context, false );
         if ( null === $field ) {
             return Storage::update( $context, $selector, $value );
         }
@@ -59,7 +59,8 @@ final class Field {
         }
         $context = Storage::context( $context );
         [ $field, $name ] = Values::resolve( $selector, $context );
-        return null === $field ? Storage::delete( $context, $selector ) : Values::erase( $context, $field, $name );
+        // Like delete_field(): a name with no stored reference is not a field.
+        return null === $field ? false : Values::erase( $context, $field, $name );
     }
 
     /** @return array<string,mixed>|false Equivalent of get_fields(). */

@@ -78,35 +78,55 @@ final class Storage {
         }
     }
 
-    /** @param array{0:string,1:int|string} $context */
-    public static function get( array $context, string $name ): mixed {
+    /**
+     * A stored value, or with $hidden the field-key reference ACF keeps beside
+     * it: `_<name>` meta, or the `_options_<name>` option.
+     *
+     * @param array{0:string,1:int|string} $context
+     */
+    public static function get( array $context, string $name, bool $hidden = false ): mixed {
         [ $type, $id ] = $context;
+        $key = self::key( $context, $name, $hidden );
         if ( 'option' === $type ) {
-            return get_option( $id . '_' . $name, null );
+            return get_option( $key, null );
         }
-        if ( ! metadata_exists( $type, (int) $id, $name ) ) {
+        if ( ! metadata_exists( $type, (int) $id, $key ) ) {
             return null;
         }
-        return get_metadata( $type, (int) $id, $name, true );
+        return get_metadata( $type, (int) $id, $key, true );
     }
 
     /** @param array{0:string,1:int|string} $context */
-    public static function update( array $context, string $name, mixed $value ): bool {
+    public static function update( array $context, string $name, mixed $value, bool $hidden = false ): bool {
         [ $type, $id ] = $context;
+        $key = self::key( $context, $name, $hidden );
         if ( 'option' === $type ) {
-            $option = $id . '_' . $name;
-            return update_option( $option, $value ) || get_option( $option ) === $value;
+            return update_option( $key, $value ) || get_option( $key ) === $value;
         }
-        return false !== update_metadata( $type, (int) $id, $name, $value );
+        return false !== update_metadata( $type, (int) $id, $key, $value );
     }
 
     /** @param array{0:string,1:int|string} $context */
-    public static function delete( array $context, string $name ): bool {
+    public static function delete( array $context, string $name, bool $hidden = false ): bool {
         [ $type, $id ] = $context;
+        $key = self::key( $context, $name, $hidden );
         if ( 'option' === $type ) {
-            return delete_option( $id . '_' . $name );
+            return delete_option( $key );
         }
-        return delete_metadata( $type, (int) $id, $name );
+        return delete_metadata( $type, (int) $id, $key );
+    }
+
+    /**
+     * ACF's storage name (acf_get_metadata): `<id>_<name>` / `_<id>_<name>`
+     * for options, `<name>` / `_<name>` for meta.
+     *
+     * @param array{0:string,1:int|string} $context
+     */
+    private static function key( array $context, string $name, bool $hidden ): string {
+        if ( 'option' === $context[0] ) {
+            return ( $hidden ? '_' : '' ) . $context[1] . '_' . $name;
+        }
+        return ( $hidden ? '_' : '' ) . $name;
     }
 
     /**

@@ -10,20 +10,31 @@ final class Values {
     private const LAYOUT_TYPES = [ 'accordion', 'tab', 'message' ];
 
     /**
-     * Resolve a selector (name or key) to its definition and stored name.
+     * Resolve a selector (name or key) to its definition and stored name, as
+     * acf_maybe_get_field() does: a key resolves directly; a name resolves
+     * through its stored `_name` reference. Reads are strict (a never-saved
+     * name is unknown, so get_field() returns the raw stored value or null);
+     * update_field() is not strict and also matches registered names.
      *
      * @param array{0:string,1:int|string} $context
      * @return array{0:array<string,mixed>|null,1:string}
      */
-    public static function resolve( string $selector, array $context ): array {
-        $field = FieldGroups::get_field( $selector, Storage::acf_id( $context ) );
-        if ( null !== $field ) {
-            return [ $field, str_starts_with( $selector, 'field_' ) ? (string) $field['name'] : $selector ];
+    public static function resolve( string $selector, array $context, bool $strict = true ): array {
+        if ( str_starts_with( $selector, 'field_' ) ) {
+            $field = FieldGroups::get_field( $selector );
+            if ( null !== $field ) {
+                return [ $field, (string) $field['name'] ];
+            }
         }
-        // ACF resolves flattened names (group or repeater sub fields) through the `_name` reference.
-        $reference = Storage::get( $context, '_' . $selector );
+        $reference = Storage::get( $context, $selector, true );
         if ( is_string( $reference ) && str_starts_with( $reference, 'field_' ) ) {
             $field = FieldGroups::get_field( $reference );
+            if ( null !== $field ) {
+                return [ $field, $selector ];
+            }
+        }
+        if ( ! $strict ) {
+            $field = FieldGroups::get_field( $selector, Storage::acf_id( $context ) );
             if ( null !== $field ) {
                 return [ $field, $selector ];
             }
@@ -229,7 +240,7 @@ final class Values {
                 Storage::update( $context, $name, self::storable( $field, $value ) );
         }
         if ( '' !== (string) $field['key'] ) {
-            Storage::update( $context, '_' . $name, (string) $field['key'] );
+            Storage::update( $context, $name, (string) $field['key'], true );
         }
         return true;
     }
@@ -251,7 +262,7 @@ final class Values {
                 self::erase( $context, $sub, $name . '_' . $sub['name'] );
             }
         }
-        Storage::delete( $context, '_' . $name );
+        Storage::delete( $context, $name, true );
         return Storage::delete( $context, $name );
     }
 
