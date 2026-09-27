@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.2
+
+- Bundles Hexa WP Core 3.4.10: without ACF, custom fields now behave exactly as with ACF, including groups built in the ACF admin screen, ACF's location filters, `include_fields` registration and load-safe hooks (verified value-for-value against ACF on hexaprwire.com, herforward.com and jpnmiami.com).
+
 ### 13.3.1
 
 - Bundles Hexa WP Core 3.4.4: without ACF, field reads resolve exactly as ACF resolves them and option field references use ACF's `_options_<name>` storage name.
