@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.4
+
+- Fixed a fatal `Class "Hexa\PluginCore\Fields\Field" not found` on sites whose legacy plugins (for example SMP Core Podcast Integration) include the generic library while plugins load: the ACF form-head check now waits for `init`, after Hexa WP Core resolves.
+
 ### 13.3.3
 
 - Bundles Hexa WP Core 3.6.1 and adds the signed `external-publishing/users/{id}/profile` route (GET reads, POST writes name, bio, fields and photo through Core's user profile route), so Publish's journalist registry manages author profiles over the HWS Base Tools connection. Role, login and password are never changed.
