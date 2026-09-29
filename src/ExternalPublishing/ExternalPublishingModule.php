@@ -27,6 +27,10 @@ final class ExternalPublishingModule implements ModuleInterface {
     public function register(): void {
         add_action( 'init', [ $this, 'register_external_meta' ], 30 );
         add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+        // Core's user profile route; the signed users/{id}/profile route below forwards to it.
+        if ( class_exists( \Hexa\PluginCore\Users\UserProfileBridge::class ) ) {
+            \Hexa\PluginCore\Users\UserProfileBridge::register();
+        }
         add_action( 'rest_after_insert_post', [ $this, 'cleanup_rest_faq_rows' ], 20, 3 );
         add_action( 'admin_post_hws_external_publishing_settings', [ self::class, 'save_settings' ] );
     }
@@ -54,6 +58,10 @@ final class ExternalPublishingModule implements ModuleInterface {
         ] );
         register_rest_route( self::NAMESPACE, '/external-publishing/cache/purge', [
             'methods' => 'POST', 'callback' => [ $this, 'purge_cache' ], 'permission_callback' => [ $this, 'can_use_collection' ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/external-publishing/users/(?P<id>\d+)/profile', [
+            [ 'methods' => 'GET', 'callback' => [ $this, 'read_user_profile' ], 'permission_callback' => [ $this, 'can_edit_user' ] ],
+            [ 'methods' => 'POST', 'callback' => [ $this, 'update_user_profile' ], 'permission_callback' => [ $this, 'can_edit_user' ] ],
         ] );
         register_rest_route( self::NAMESPACE, '/external-publishing/article-audio/(?P<id>\d+)', [
             'methods' => 'POST', 'callback' => [ $this, 'generate_article_audio' ], 'permission_callback' => [ $this, 'can_use_post' ],
@@ -234,6 +242,18 @@ final class ExternalPublishingModule implements ModuleInterface {
             : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot access publishing resources.', [ 'status' => 403 ] );
     }
 
+    public function can_edit_user( \WP_REST_Request $request ): bool|\WP_Error {
+        $authenticated = $this->authenticate_or_current_user( $request );
+        if ( is_wp_error( $authenticated ) ) {
+            return $authenticated;
+        }
+        $user_id = absint( $request['id'] );
+
+        return $user_id > 0 && current_user_can( 'list_users' ) && current_user_can( 'edit_user', $user_id )
+            ? true
+            : new \WP_Error( 'hws_external_publishing_forbidden', 'The configured publishing user cannot edit this author profile.', [ 'status' => 403 ] );
+    }
+
     public function can_upload_media( \WP_REST_Request $request ): bool|\WP_Error {
         $authenticated = $this->authenticate_or_current_user( $request );
         if ( is_wp_error( $authenticated ) ) {
@@ -263,6 +283,7 @@ final class ExternalPublishingModule implements ModuleInterface {
                 'post_meta' => current_user_can( 'edit_posts' ),
                 'cache_purge' => current_user_can( 'edit_posts' ),
                 'article_audio' => current_user_can( 'edit_posts' ),
+                'author_profiles' => current_user_can( 'list_users' ) && current_user_can( 'edit_users' ) && class_exists( \Hexa\PluginCore\Users\UserProfileBridge::class ),
             ],
         ], 200 );
     }
@@ -375,6 +396,22 @@ final class ExternalPublishingModule implements ModuleInterface {
                 return new \WP_REST_Response( [ 'success' => true, 'purged' => array_values( array_unique( $purged ) ), 'hexa_connector' => 'hws_base_tools' ], 200 );
             }
         );
+    }
+
+    /**
+     * Author profiles go through HexaWP Core's user profile route, which never
+     * changes role, login, password or session data.
+     */
+    public function read_user_profile( \WP_REST_Request $request ): \WP_REST_Response {
+        return $this->proxy( 'GET', '/hexa-plugin-core/v1/users/' . absint( $request['id'] ) . '/profile' );
+    }
+
+    public function update_user_profile( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+        $body = $request->get_json_params();
+        $body = is_array( $body ) ? $body : $request->get_body_params();
+        $payload = array_intersect_key( is_array( $body ) ? $body : [], array_flip( [ 'native', 'meta', 'fields', 'avatar' ] ) );
+
+        return $this->mutate( $request, 'POST', '/hexa-plugin-core/v1/users/' . absint( $request['id'] ) . '/profile', $payload );
     }
 
     public function generate_article_audio( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {

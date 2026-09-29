@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.3
+
+- Bundles Hexa WP Core 3.6.1 and adds the signed `external-publishing/users/{id}/profile` route (GET reads, POST writes name, bio, fields and photo through Core's user profile route), so Publish's journalist registry manages author profiles over the HWS Base Tools connection. Role, login and password are never changed.
+
 ### 13.3.2
 
 - Bundles Hexa WP Core 3.4.10: without ACF, custom fields now behave exactly as with ACF, including groups built in the ACF admin screen, ACF's location filters, `include_fields` registration and load-safe hooks (verified value-for-value against ACF on hexaprwire.com, herforward.com and jpnmiami.com).

@@ -680,6 +680,13 @@ expect_true( $secret_store->get() === 'a-long-test-secret-value', 'encrypted mas
 expect_true( ! HWS\BaseTools\Security\RemoteActionPolicy::legacy_get_routes_allowed(), 'legacy remote GET actions default to disabled' );
 $external_publishing_source = source( 'src/ExternalPublishing/ExternalPublishingModule.php' );
 expect_true(
+    str_contains( $external_publishing_source, "'/external-publishing/users/(?P<id>\\d+)/profile'" )
+    && str_contains( $external_publishing_source, 'current_user_can( \'edit_user\', $user_id )' )
+    && str_contains( $external_publishing_source, "array_flip( [ 'native', 'meta', 'fields', 'avatar' ] )" )
+    && str_contains( $external_publishing_source, 'UserProfileBridge::register()' ),
+    'External Publishing forwards signed author profile reads and writes to Core with edit_user checks'
+);
+expect_true(
     str_contains( $external_publishing_source, "hash_hmac( 'sha256'" )
     && str_contains( $external_publishing_source, "get_header( 'x-hexa-timestamp' )" )
     && str_contains( $external_publishing_source, "get_header( 'x-hexa-nonce' )" )
