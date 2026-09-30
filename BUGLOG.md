@@ -1,5 +1,14 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-004 — wp-config writer could emit quote-bearing input as executable PHP
+
+- Severity: Critical
+- Symptom: The shared `WpConfigFile` writer escaped single quotes inside a generated PHP string but did not serialize the value as a PHP literal, so a quote-bearing value could terminate the generated assignment.
+- Impact: Any caller that exposed the writer could turn a configuration update into a persistent PHP-code injection path.
+- Root cause: The writer assembled `ini_set()` and `define()` statements by string interpolation.
+- Patch: Hexa WP Core 3.7.3 uses `var_export()` for names and string values while preserving existing numeric and boolean scalar behavior; the bundle includes an inert syntax and execution regression fixture.
+- Guard: The source-level security proof passes the exact quote-bearing payload through an isolated fixture and confirms the generated file remains valid PHP without executing the marker.
+
 ## HWS-BASE-BUG-003 — Author directory replaced the WordPress login with its nicename
 
 - Severity: High

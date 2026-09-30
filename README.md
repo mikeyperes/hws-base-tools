@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.5
+
+- Bundled Hexa WP Core 3.7.3, which safely serializes administrator-supplied `wp-config.php` INI and constant values as PHP literals and prevents quote-bearing input from escaping generated assignments.
+
 ### 13.3.4
 
 - Fixed a fatal `Class "Hexa\PluginCore\Fields\Field" not found` on sites whose legacy plugins (for example SMP Core Podcast Integration) include the generic library while plugins load: the ACF form-head check now waits for `init`, after Hexa WP Core resolves.

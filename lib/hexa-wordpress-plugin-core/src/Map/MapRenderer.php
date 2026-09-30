@@ -18,6 +18,9 @@ final class MapRenderer {
     /** LiteSpeed Cache tag on every page that renders a public map; purged when map content changes. */
     public const CACHE_TAG = 'hexa_map';
 
+    /** Bumped whenever the cached point shape changes, so older cached payloads are never served. */
+    public const PAYLOAD_VERSION = 2;
+
     private static bool $assets_printed = false;
 
     public function render( string $profile_id ): string {
@@ -68,7 +71,7 @@ final class MapRenderer {
      * @return array{points:array<int,array<string,mixed>>,groups:array<string,int>,list:string}
      */
     public function payload( array $profile ): array {
-        $key    = 'hexa_map_' . md5( $profile['id'] . '|' . $profile['cache_version'] . '|' . MapLocations::generation() );
+        $key    = 'hexa_map_' . md5( self::PAYLOAD_VERSION . '|' . $profile['id'] . '|' . $profile['cache_version'] . '|' . MapLocations::generation() );
         $cached = $profile['cache_ttl'] > 0 && function_exists( 'get_transient' ) ? get_transient( $key ) : false;
         if ( is_array( $cached ) && isset( $cached['points'], $cached['groups'], $cached['list'] ) ) {
             return $cached;
@@ -86,6 +89,7 @@ final class MapRenderer {
                 'g'    => $item['group'],
                 'live' => null !== $profile['highlight'] && (bool) call_user_func( $profile['highlight'], $item['id'], $item['data'] ),
                 'n'    => null !== $profile['next'] ? max( 0, (int) call_user_func( $profile['next'], $item['id'], $item['data'] ) ) : 0,
+                't'    => $item['title'],
                 'h'    => $this->card( $profile, $item ),
             ];
             if ( '' !== $item['group'] ) {
@@ -224,14 +228,14 @@ final class MapRenderer {
 .hmap-groups{display:flex;flex-wrap:wrap;gap:8px}
 .hmap-windows{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%}
 .hmap-windows{align-items:center}
-.hmap-windows__label{margin-right:4px;color:var(--hmap-muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
-.hmap-windows .hmap-chip{min-height:34px;padding:0 12px;font-size:13px}
-.hmap-chip{appearance:none;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--hmap-border);border-radius:999px;background:var(--hmap-surface);color:var(--hmap-text);font:inherit;font-size:14px;line-height:1;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
-.hmap-chip span{color:var(--hmap-muted);font-size:12px}
-.hmap-chip:hover{border-color:var(--hmap-accent)}
-.hmap-chip[aria-pressed=true]{background:var(--hmap-accent);border-color:var(--hmap-accent);color:var(--hmap-accent-fg)}
-.hmap-chip[aria-pressed=true] span{color:inherit;opacity:.75}
-.hmap-chip:focus-visible,.hmap-select:focus-visible{outline:2px solid var(--hmap-accent);outline-offset:2px}
+.hmap-windows__label{margin-right:6px;color:var(--hmap-muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.hmap .hmap-chip,.hmap .hmap-chip:hover,.hmap .hmap-chip:focus,.hmap .hmap-chip:active{appearance:none;display:inline-flex;align-items:center;gap:8px;min-height:38px;margin:0;padding:0 8px 0 14px;border:1px solid var(--hmap-border);border-radius:999px;background:var(--hmap-surface);box-shadow:none;color:var(--hmap-text);font:inherit;font-size:14px;font-weight:500;line-height:1;text-decoration:none;text-transform:none;letter-spacing:0;cursor:pointer;transition:border-color .15s,background-color .15s,color .15s}
+.hmap .hmap-chip:not(:has(span)){padding-right:14px}
+.hmap .hmap-chip:hover{border-color:var(--hmap-accent);background:var(--hmap-surface);color:var(--hmap-text)}
+.hmap .hmap-chip span{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--hmap-muted);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.hmap .hmap-chip[aria-pressed=true],.hmap .hmap-chip[aria-pressed=true]:hover,.hmap .hmap-chip[aria-pressed=true]:focus{border-color:var(--hmap-accent);background:var(--hmap-accent);color:var(--hmap-accent-fg);font-weight:700}
+.hmap .hmap-chip[aria-pressed=true] span{background:rgba(0,0,0,.2);color:var(--hmap-accent-fg)}
+.hmap .hmap-chip:focus-visible,.hmap-select:focus-visible{outline:2px solid var(--hmap-accent);outline-offset:2px}
 .hmap .hmap-select{flex:0 0 auto;width:auto;min-height:40px;max-width:100%;padding:0 34px 0 14px;border:1px solid var(--hmap-border);border-radius:999px;background:var(--hmap-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--hmap-text);font:inherit;font-size:14px;appearance:none;cursor:pointer}
 .hmap-status{margin:0 0 0 auto;color:var(--hmap-muted);font-size:13px;letter-spacing:.04em}
 .hmap-stage{position:relative;height:var(--hmap-height);border:1px solid var(--hmap-border);border-radius:var(--hmap-radius);overflow:hidden;background:var(--hmap-land);box-shadow:0 30px 80px -40px var(--hmap-glow),inset 0 0 0 1px rgba(255,255,255,.02)}
@@ -261,6 +265,10 @@ final class MapRenderer {
 .hmap-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip{border-right-color:var(--hmap-surface)}
 .hmap-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip{border-left-color:var(--hmap-surface)}
 .hmap-popup .maplibregl-popup-close-button{width:32px;height:32px;color:var(--hmap-muted);font-size:20px}
+.hmap-tip,.hmap-tip *{pointer-events:none}
+.hmap-tip{z-index:4}
+.hmap-tip .maplibregl-popup-content{padding:7px 12px;border:1px solid var(--hmap-accent);border-radius:999px;background:var(--hmap-surface);color:var(--hmap-text);box-shadow:0 8px 24px rgba(0,0,0,.5);font:inherit;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap}
+.hmap-tip .maplibregl-popup-tip{display:none}
 .hmap-card{display:grid;gap:8px;font-size:14px;line-height:1.45}
 .hmap-card__kicker{margin:0;color:var(--hmap-accent);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
 .hmap-card__title{margin:0;padding-right:18px;font-size:17px;line-height:1.25}
@@ -375,7 +383,7 @@ CSS;
       map.touchZoomRotate.disableRotation();
       el.hmapMap = map;
       map.addControl(new gl.NavigationControl({ showCompass: false }), 'top-right');
-      var popup = new gl.Popup({ closeButton: true, maxWidth: '300px', offset: 14, className: 'hmap-popup' });
+      var popup = new gl.Popup({ closeButton: true, closeOnClick: false, maxWidth: '300px', offset: 14, anchor: 'bottom', className: 'hmap-popup' });
       map.on('style.load', function () {
         tint(map, t);
         map.addSource('hmap', { type: 'geojson', data: fc(shown), cluster: cfg.cluster, clusterRadius: 44, clusterMaxZoom: 13 });
@@ -393,9 +401,14 @@ CSS;
           paint: { 'circle-color': t.live || t.accent, 'circle-opacity': 0, 'circle-radius': 8 } });
         map.addLayer({ id: 'hmap-point-halo', type: 'circle', source: 'hmap', filter: ['!', ['has', 'point_count']],
           paint: { 'circle-color': t.accent, 'circle-opacity': 0.28, 'circle-radius': 13, 'circle-blur': 0.7 } });
+        var active = ['any', ['boolean', ['feature-state', 'hover'], false], ['boolean', ['feature-state', 'sel'], false]];
         map.addLayer({ id: 'hmap-point', type: 'circle', source: 'hmap', filter: ['!', ['has', 'point_count']],
-          paint: { 'circle-color': ['case', ['==', ['get', 'live'], 1], t.live || t.accent, t.accent], 'circle-radius': 6,
-            'circle-stroke-color': t.land, 'circle-stroke-width': 2.5 } });
+          paint: { 'circle-color': ['case', ['==', ['get', 'live'], 1], t.live || t.accent, t.accent],
+            'circle-radius': ['case', active, 9, 6], 'circle-radius-transition': { duration: 150 },
+            'circle-stroke-color': ['case', active, '#ffffff', t.land], 'circle-stroke-width': ['case', active, 3, 2.5] } });
+        // Invisible, generous target around every pin so a pin is easy to hover and tap.
+        map.addLayer({ id: 'hmap-hit', type: 'circle', source: 'hmap', filter: ['!', ['has', 'point_count']],
+          paint: { 'circle-color': '#000000', 'circle-opacity': 0, 'circle-radius': 22 } });
         if (!reduce) {
           var start = performance.now();
           (function pulse(now) {
@@ -409,23 +422,77 @@ CSS;
         fit(map, shown, cfg.view, false);
         el.classList.add('is-ready');
       });
-      map.on('click', 'hmap-cluster', function (e) {
-        var f = e.features[0];
-        map.getSource('hmap').getClusterExpansionZoom(f.properties.cluster_id).then(function (z) {
-          map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5 });
+      var tip = new gl.Popup({ closeButton: false, closeOnClick: false, offset: 16, className: 'hmap-tip', maxWidth: '280px' });
+      var hoverId = null, selId = null;
+      function mark(id, key, on) {
+        if (id === null || !map.getSource('hmap')) { return; }
+        var s = {}; s[key] = on;
+        map.setFeatureState({ source: 'hmap', id: id }, s);
+      }
+      // The pin or cluster nearest the pointer within the hit radius, so near-misses still select.
+      function nearest(e) {
+        var r = 22, box = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+        var found = map.getLayer('hmap-hit') ? map.queryRenderedFeatures(box, { layers: ['hmap-hit', 'hmap-cluster'] }) : [];
+        var best = null, bestD = Infinity;
+        found.forEach(function (f) {
+          var q = map.project(f.geometry.coordinates), d = Math.pow(q.x - e.point.x, 2) + Math.pow(q.y - e.point.y, 2);
+          if (d < bestD) { bestD = d; best = f; }
         });
-      });
-      map.on('click', 'hmap-point', function (e) {
-        var p = shown[e.features[0].properties.i];
-        if (p) { popup.setLngLat([p.lo, p.la]).setHTML(p.h).addTo(map); }
-      });
-      ['hmap-cluster', 'hmap-point'].forEach(function (id) {
-        map.on('mouseenter', id, function () { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', id, function () { map.getCanvas().style.cursor = ''; });
+        return best;
+      }
+      function hover(f) {
+        var id = f && !f.properties.cluster_id && f.properties.i !== undefined ? f.properties.i : null;
+        map.getCanvas().style.cursor = f ? 'pointer' : '';
+        if (id === hoverId) { return; }
+        mark(hoverId, 'hover', false);
+        hoverId = id;
+        mark(hoverId, 'hover', true);
+        var p = id !== null ? shown[id] : null;
+        if (p && p.t && id !== selId) { tip.setLngLat([p.lo, p.la]).setText(p.t).addTo(map); } else { tip.remove(); }
+      }
+      function openCard(i) {
+        var p = shown[i];
+        if (!p) { return; }
+        tip.remove();
+        var c = map.getContainer(), w = c.clientWidth, h = c.clientHeight;
+        // The card always opens above its pin and never exceeds the map: narrow maps (phones) get a
+        // narrower card, and a card taller than the map scrolls inside itself.
+        popup.setMaxWidth(Math.min(300, w - 24) + 'px').setLngLat([p.lo, p.la]).setHTML(p.h);
+        if (!popup.isOpen()) { popup.addTo(map); }
+        var box = popup.getElement(), body = box.querySelector('.maplibregl-popup-content');
+        if (body) { body.style.maxHeight = Math.max(140, h - 64) + 'px'; body.style.overflowY = 'auto'; }
+        mark(selId, 'sel', false);
+        selId = i;
+        mark(selId, 'sel', true);
+        // Glide just enough that the whole card is inside the map: room above the pin for the card's
+        // height, and room on each side for half its width.
+        var q = map.project([p.lo, p.la]), cw = box.offsetWidth, ch = box.offsetHeight + 16;
+        var tx = cw + 24 >= w ? w / 2 : Math.max(cw / 2 + 12, Math.min(w - cw / 2 - 12, q.x));
+        var ty = Math.max(ch + 12, Math.min(h - 20, q.y));
+        if (Math.abs(tx - q.x) > 1 || Math.abs(ty - q.y) > 1) {
+          map.easeTo({ center: map.unproject([w / 2 + (q.x - tx), h / 2 + (q.y - ty)]), duration: 450 });
+        }
+      }
+      popup.on('close', function () { mark(selId, 'sel', false); selId = null; });
+      map.on('mousemove', function (e) { hover(nearest(e)); });
+      map.getCanvas().addEventListener('mouseleave', function () { hover(null); });
+      map.on('click', function (e) {
+        var f = nearest(e);
+        if (!f) { popup.remove(); return; }
+        if (f.properties.cluster_id !== undefined) {
+          map.getSource('hmap').getClusterExpansionZoom(f.properties.cluster_id).then(function (z) {
+            map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5 });
+          });
+          return;
+        }
+        openCard(f.properties.i);
       });
       function apply() {
         shown = pick();
         popup.remove();
+        tip.remove();
+        if (map.getSource('hmap')) { map.removeFeatureState({ source: 'hmap' }); }
+        hoverId = null; selId = null;
         if (map.getSource('hmap')) { map.getSource('hmap').setData(fc(shown)); }
         Array.prototype.forEach.call(controls, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-hmap-group') === state.g ? 'true' : 'false'); });
         Array.prototype.forEach.call(hourControls, function (b) { b.setAttribute('aria-pressed', +b.getAttribute('data-hmap-hours') === state.h ? 'true' : 'false'); });
