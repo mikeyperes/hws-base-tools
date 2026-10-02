@@ -38,7 +38,6 @@ The package version is stored in the root `VERSION` file. Root `bootstrap.php` s
 | `src/ContentTypes/` | `Hexa\PluginCore\ContentTypes` | Immutable-key CPT definitions, settings, registration, ACF integration, AJAX, and management UI. |
 | `src/CredentialVault/` | `Hexa\PluginCore\CredentialVault` | Encrypted credential/API-key storage, masking, and credential field examples. |
 | `src/DatabaseCleanup/` | `Hexa\PluginCore\DatabaseCleanup` | Provider-backed database cleanup sessions and table optimization. |
-| `src/DraftPreview/` | `Hexa\PluginCore\DraftPreview` | Opt-in public viewing of recent drafts at their own draft URL, uncached and noindexed. |
 | `src/DataNormalization/` | `Hexa\PluginCore\DataNormalization` | Generic scalar, ACF/meta field, and WordPress media normalization. |
 | `src/EntitySources/` | `Hexa\PluginCore\EntitySources` | Optional canonical entity settings, user/post resolution, attached-user extraction, migration, inspection, AJAX, and UI. |
 | `src/FieldStructures/` | `Hexa\PluginCore\FieldStructures` | ACF group registration, toggles, settings panels, AJAX, and reusable field-structure displays. |

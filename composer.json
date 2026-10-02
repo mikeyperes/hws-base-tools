@@ -28,6 +28,7 @@
       "@php tests/quote-repeater-migration-unit.php",
       "@php tests/discussion-policy-unit.php",
       "@php tests/reading-progress-unit.php",
+      "@php tests/public-draft-links-unit.php",
       "@php tests/editorial-elementor-unit.php",
       "@php tests/request-parameter-condition-unit.php",
       "@php tests/plugin-policy-unit.php",
