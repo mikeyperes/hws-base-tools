@@ -374,8 +374,8 @@ function hws_get_login_mask_state_payload(): array {
         'url_rows'          => $url_rows,
         'log_entries'       => array_values( $log ),
         'settings_link'     => $settings_link,
-        'emergency_bypass'  => home_url( '/?hws=bypass' ),
-        'emergency_repair'  => home_url( '/?hws=repair' ),
+        'emergency_bypass'  => $class_ok ? Login_Masking::emergency_url( 'bypass' ) : '',
+        'emergency_repair'  => $class_ok ? Login_Masking::emergency_url( 'repair' ) : '',
     ];
 }
 
@@ -488,13 +488,11 @@ add_action( 'login_init', function() {
     }
 } );
 
-// — Log emergency bypass/repair
+// — Log emergency bypass/repair (only keyed requests actually run)
 add_action( 'init', function() {
-    if ( isset( $_GET['hws'] ) ) {
-        $action = sanitize_key( $_GET['hws'] );
-        if ( in_array( $action, [ 'bypass', 'repair' ], true ) ) {
-            hws_login_log( 'warning', 'Emergency action triggered: ' . $action );
-        }
+    $action = class_exists( __NAMESPACE__ . '\\Login_Masking' ) ? Login_Masking::emergency_action() : '';
+    if ( '' !== $action ) {
+        hws_login_log( 'warning', 'Emergency action triggered: ' . $action );
     }
 }, 0 );
 

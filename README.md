@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.6
+
+- The login-mask emergency URLs now require the static key: `/?hws=bypass&hws_key=hexarescue` serves the native login and `/?hws=repair&hws_key=hexarescue` flushes rewrites and purges caches. Requests without the key load normally, and the Masked Login tab shows the full keyed URLs.
+
 ### 13.3.5
 
 - Bundled Hexa WP Core 3.7.3, which safely serializes administrator-supplied `wp-config.php` INI and constant values as PHP literals and prevents quote-bearing input from escaping generated assignments.

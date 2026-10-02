@@ -23,8 +23,12 @@ const DEFAULT_SLUG = 'hexa-admin';
     const DEFAULT_ALLOWLIST_IPS    = '';      // CSV: "127.0.0.1, 51.81.93.236, 10.0.0.0/8"
     const DEFAULT_WELL_KNOWN       = true;    // serve /.well-known/hws-login.json
 
-    /** Emergency query string: /?hws=bypass or /?hws=repair */
+    /** Emergency query string: /?hws=bypass&hws_key=… or /?hws=repair&hws_key=… */
     const QP_EMERGENCY             = 'hws';
+    const QP_EMERGENCY_KEY         = 'hws_key';
+
+    /** Static emergency key. Hardcoded so it still works when settings are unreadable. */
+    const EMERGENCY_KEY            = 'hexarescue';
 
 
     /* ============================================================
@@ -291,13 +295,35 @@ const DEFAULT_SLUG = 'hexa-admin';
      * ============================================================ */
 
     /**
-     * /?hws=bypass  → serve native wp-login.php immediately
-     * /?hws=repair  → register + flush rewrites, purge caches, redirect to masked login
+     * Returns 'bypass' or 'repair' only when the request also carries the
+     * emergency key; any other request gets '' and is handled normally.
+     */
+    public static function emergency_action(): string {
+        if (empty($_GET[self::QP_EMERGENCY]) || !is_string($_GET[self::QP_EMERGENCY])) return '';
+
+        $action = strtolower(sanitize_text_field(wp_unslash($_GET[self::QP_EMERGENCY])));
+        if (!in_array($action, ['bypass', 'repair'], true)) return '';
+
+        $key = isset($_GET[self::QP_EMERGENCY_KEY]) && is_string($_GET[self::QP_EMERGENCY_KEY])
+            ? (string) wp_unslash($_GET[self::QP_EMERGENCY_KEY])
+            : '';
+
+        return hash_equals(self::EMERGENCY_KEY, $key) ? $action : '';
+    }
+
+    public static function emergency_url(string $action): string {
+        return add_query_arg(
+            [ self::QP_EMERGENCY => $action, self::QP_EMERGENCY_KEY => self::EMERGENCY_KEY ],
+            home_url('/')
+        );
+    }
+
+    /**
+     * /?hws=bypass&hws_key=…  → serve native wp-login.php immediately
+     * /?hws=repair&hws_key=…  → register + flush rewrites, purge caches, redirect to masked login
      */
     public static function maybe_emergency(): void {
-        if (empty($_GET[self::QP_EMERGENCY])) return;
-
-        $action = strtolower(sanitize_text_field((string) $_GET[self::QP_EMERGENCY]));
+        $action = self::emergency_action();
 
         if ($action === 'bypass') {
             self::serve_core_login_now();
@@ -495,7 +521,7 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
         }
 
         // Respect emergency bypass anywhere
-        if (!empty($_GET[self::QP_EMERGENCY]) && strtolower($_GET[self::QP_EMERGENCY]) === 'bypass') {
+        if (self::emergency_action() === 'bypass') {
             return;
         }
 

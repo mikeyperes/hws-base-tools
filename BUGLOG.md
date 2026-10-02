@@ -1,5 +1,14 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-005 — Anyone could trigger the login-mask emergency actions
+
+- Severity: High
+- Symptom: `/?hws=repair` flushed rewrite rules and purged LiteSpeed, object and page caches for any visitor, and `/?hws=bypass` served the native login page past the mask.
+- Impact: Repeated anonymous requests could keep every cache empty and force uncached page generation.
+- Root cause: `Login_Masking::maybe_emergency()` ran on `init` for every request and checked only the `hws` action name.
+- Patch: 13.3.6 requires the hardcoded `hws_key` emergency key. The key lives in source rather than settings, so recovery still works when options are unreadable; the Masked Login tab shows the keyed URLs.
+- Guard: An isolated fixture confirms requests without the key, with a wrong or non-string key, or with an unknown action do nothing, and that the correct key returns the requested action.
+
 ## HWS-BASE-BUG-004 — wp-config writer could emit quote-bearing input as executable PHP
 
 - Severity: Critical
