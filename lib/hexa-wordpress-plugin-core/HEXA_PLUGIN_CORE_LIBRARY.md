@@ -13,7 +13,7 @@ Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
 
-Current release: 3.7.3
+Current release: 3.9.0
 ```
 
 Do not rename these.
@@ -34,6 +34,7 @@ src/ContentTypes/       Hexa\PluginCore\ContentTypes
 src/CredentialVault/    Hexa\PluginCore\CredentialVault
 src/DatabaseCleanup/    Hexa\PluginCore\DatabaseCleanup
 src/DataNormalization/  Hexa\PluginCore\DataNormalization
+src/DraftPreview/       Hexa\PluginCore\DraftPreview
 src/EntitySources/      Hexa\PluginCore\EntitySources
 src/FieldStructures/    Hexa\PluginCore\FieldStructures
 src/FrontendForms/      Hexa\PluginCore\FrontendForms
@@ -1695,6 +1696,8 @@ Host plugins own option names, shortcode names, and any plugin-specific source o
 ### Data Normalization
 
 `Hexa\PluginCore\DataNormalization` contains `ValueNormalizer`, `FieldReader`, and `MediaNormalizer`. The static value API is `present`, `text`, `url`, `email`, `date`, `number`, `rows`, `strings`, `urls`, and `ids`. `FieldReader(int $object_id, string $kind = 'post')` is ACF-first with meta fallback. `MediaNormalizer` exposes `attachment_id`, `image`, `gallery`, and `schema_image`. Hosts retain business mapping and schema construction.
+
+`Hexa\PluginCore\DraftPreview\PublicDraftPreview( int $window = 86400, array $statuses = [ 'draft' ] )` is a `ModuleInterface`. Once registered, a draft dated within the window opens for anyone at its WordPress draft URL (`?p=ID`, `?page_id=ID`, `?post_type=x&p=ID`). It touches only the main singular front-end query of viewable post types, leaves editors on the native preview, swaps in a request-local `publish` copy so the cached post keeps its status, and sends no-cache, LiteSpeed no-cache, and noindex signals. `is_eligible()` and `draft_timestamp()` are public helpers. Hosts own the toggle.
 
 ### ACF Field Factory
 

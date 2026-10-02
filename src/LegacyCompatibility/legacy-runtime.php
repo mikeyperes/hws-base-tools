@@ -11,6 +11,7 @@ use HWS\BaseTools\Security\RemoteActionPolicy;
 use HWS\BaseTools\FrontendContent\FeatureLoader;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
+use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
@@ -717,6 +718,7 @@ function get_snippets($type = "")
     $snippet_non_admin = [
     // ★ RECOMMENDED
     TeamMemberFeature::definition(),
+    PublicDraftPreviewFeature::definition(),
     [
         'id'               => ReadingProgress::FEATURE_OPTION,
         'name'             => 'Reading Progress Bar',

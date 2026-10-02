@@ -959,6 +959,12 @@ expect_true(
 );
 expect_true( is_readable( $root . '/docs/architecture.md' ), 'architecture contract is present' );
 expect_true(
+    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'PublicDraftPreviewFeature::definition()' )
+        && str_contains( source( 'src/FrontendContent/legacy-base-features.php' ), "function enable_public_draft_preview(): void {\n    PublicDraftPreviewFeature::activate();" )
+        && str_contains( source( 'src/Editorial/PublicDraftPreviewFeature.php' ), '( new PublicDraftPreview() )->register();' ),
+    'public draft preview is a default-off feature toggle wired to Core'
+);
+expect_true(
     ! str_contains( source( 'src/Maintenance/legacy-log-cleaner.php' ), "dirname( __FILE__ ) . '/hws-base-tools.php'" ),
     'relocated log cleaner uses the canonical plugin root'
 );

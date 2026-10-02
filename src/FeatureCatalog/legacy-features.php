@@ -3,6 +3,7 @@
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
+use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
@@ -83,6 +84,7 @@ function hws_get_all_dashboard_features(): array {
         'enable_footer_text_auto_injection',
         ReadingProgress::FEATURE_OPTION,
         FeaturedImageRequirement::FEATURE_OPTION,
+        PublicDraftPreviewFeature::FEATURE_OPTION,
         TeamMemberDirectory::FEATURE_OPTION,
     ];
 

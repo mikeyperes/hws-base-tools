@@ -39,6 +39,7 @@ hexa-wordpress-plugin-core/
     CredentialVault/    -> Hexa\PluginCore\CredentialVault
     DatabaseCleanup/    -> Hexa\PluginCore\DatabaseCleanup
     DataNormalization/  -> Hexa\PluginCore\DataNormalization
+    DraftPreview/       -> Hexa\PluginCore\DraftPreview
     EntitySources/      -> Hexa\PluginCore\EntitySources
     FieldStructures/    -> Hexa\PluginCore\FieldStructures
     FrontendForms/      -> Hexa\PluginCore\FrontendForms
@@ -107,6 +108,12 @@ Version 3.0.0 establishes the coordinated major release for the expanded Core da
 Version 3.2.1 renames the DirectorySearch URL-owner parameter from `dir` to `hds` (the old name is still read), because common web firewalls such as ModSecurity/Imunify360 reject any request carrying `dir=`, which broke live search and pagination.
 
 Version 3.7.2 keeps every `Map` item card fully inside the map, including on phones: the card always opens above its pin, its width and height are capped to the map (taller content scrolls inside the card), and the map glides just enough to fit the whole card. Before, a card opened near the bottom of a small map could run off the map.
+
+Version 3.9.0 adds `Hexa\PluginCore\DraftPreview\PublicDraftPreview`, an opt-in module that shows a draft dated within the last 24 hours to anyone at its own WordPress draft URL (`?p=ID`) without logging in. The view is uncached, noindexed, and closed to comments, and the cached post keeps its draft status. Docs: `docs/public-draft-preview.md`.
+
+Version 3.8.1 closes the item lightbox cleanly on a quick close and reopen: unlocking page scroll, clearing the dialog, and returning focus now happen as the dialog closes instead of in the later close event.
+
+Version 3.8.0 adds one `link_behavior` setting to the `Calendar` and `Map` components: `page` (follow the link, the default), `new_tab`, or `lightbox`, which shows the linked post in an in-page dialog (`ItemLink`, `ItemLightbox`, `GET /wp-json/hexa-plugin-core/v1/lightbox/{component}/{profile}/{post}`), so visitors can click through a calendar or a map without leaving the page. Docs: `docs/item-link.md`.
 
 Version 3.7.3 serializes `wp-config.php` INI and constant values with PHP literals, preventing quote-bearing input from escaping the generated assignment while preserving numeric and boolean scalar behavior.
 
@@ -200,6 +207,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `ContentTypes`: immutable WordPress post-type keys with reusable registration, editable labels and rewrite slugs, guarded AJAX persistence, functional header toggles, collapsed CPT cards, and immediate external ACF sibling cards.
 - `CredentialVault`: encrypted API-key/secret storage, masking, and credential field examples.
 - `DatabaseCleanup`: guarded provider-backed cleanup sessions, per-task cleanup, per-table optimization, pre/post provider state restoration, and live AJAX progress.
+- `DraftPreview`: opt-in public viewing of recent drafts at their own draft URL, uncached and noindexed; hosts own the toggle.
 - `DataNormalization`: compatibility-friendly scalar, ACF/meta field, and WordPress media normalizers for host-owned data mappings.
 - `EntitySources`: optional canonical website/entity selection, derived semantic types, legacy migration, user/post resolution, complete author/profile cards, attached-author extraction, field inspection, and reusable admin UI.
 - `FieldStructures`: reusable ACF group registration and settings panels, a generic live ACF gallery-details module, plus displays and status checks for ACF groups, custom post types, taxonomies, and option-backed feature structures.

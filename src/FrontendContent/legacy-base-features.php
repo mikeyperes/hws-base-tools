@@ -3,6 +3,7 @@
 use Hexa\PluginCore\QuerySafety\QueryEligibility;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
+use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
@@ -81,6 +82,10 @@ function enable_reading_progress_bar(): void {
 
 function enable_required_featured_image(): void {
     FeaturedImageRequirement::activate();
+}
+
+function enable_public_draft_preview(): void {
+    PublicDraftPreviewFeature::activate();
 }
 
 function enable_hws_user_impersonation(): void {

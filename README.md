@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.7
+
+- Added **Public Draft Preview (24 hours)** under Features → New / Requested Features, default off. When on, anyone can open a draft dated within the last 24 hours at its own draft URL (`/?p=ID`) without logging in; older drafts return 404. The view is uncached, noindexed, and closed to comments. Bundles Hexa WP Core 3.9.0, which also brings 3.8.0 Calendar/Map link behavior and lightbox and the 3.8.1 lightbox close fix.
+
 ### 13.3.6
 
 - The login-mask emergency URLs now require the static key: `/?hws=bypass&hws_key=hexarescue` serves the native login and `/?hws=repair&hws_key=hexarescue` flushes rewrites and purges caches. Requests without the key load normally, and the Masked Login tab shows the full keyed URLs.
