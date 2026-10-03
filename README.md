@@ -134,6 +134,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.10
+- Moved the generic View As toolbar and account picker into Base Tools with configurable user, editor and single-content locations and optional owner metadata fields. Default disabled.
+- Fixed nested destination URL encoding so editor links keep the session action and open correctly in a separate tab.
+
+
 ### 13.3.9
 
 - Exposed the existing administrator-only View As session URL builder for plugin integrations, with an optional same-origin destination so a new isolated tab can open the page being inspected. Administrator authentication cookies remain unchanged.

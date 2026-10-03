@@ -638,7 +638,7 @@ function get_snippets($type = "")
         'info'             => 'Default off. Enable it under HWS Core Tools → Features → Admin Features. Only administrators can start or end sessions. A fixed red banner identifies the virtual user and provides an End View As action.',
         'function'         => 'enable_hws_user_impersonation',
         'scope_admin_only' => true,
-        'code_example'     => 'Open Users, then select View as beneath any account. The virtual session opens in a new tab.',
+        'code_example'     => 'Choose user administration, content editors or single content pages in the feature settings. Configure optional owner user fields; use the top-bar picker to open a separate tab.',
     ],
     [
         'id'               => FeaturedImageRequirement::FEATURE_OPTION,

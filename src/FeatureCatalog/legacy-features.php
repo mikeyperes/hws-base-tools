@@ -122,6 +122,11 @@ function hws_render_feature_toggle( array $feature ): string {
 function hws_render_feature_settings( array $feature ): void {
     $feature_id = $feature['id'] ?? '';
 
+    if ( UserImpersonationFeature::FEATURE_OPTION === $feature_id ) {
+        UserImpersonationFeature::render_settings();
+        return;
+    }
+
     if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
         TeamMemberFeature::render_settings();
         return;
@@ -506,7 +511,9 @@ function hws_output_feature_card_scripts(): void {
                 style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
                 color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || '',
                 min_width: $settings.find('[data-hws-feature-field="min_width"]').val() || '0',
-                min_height: $settings.find('[data-hws-feature-field="min_height"]').val() || '0'
+                min_height: $settings.find('[data-hws-feature-field="min_height"]').val() || '0',
+                locations: $settings.find('[data-hws-feature-field="locations"]:checked').map(function() { return this.value; }).get(),
+                owner_fields: $settings.find('[data-hws-feature-field="owner_fields"]').val() || ''
             };
 
             $button.prop('disabled', true);
@@ -666,6 +673,15 @@ function ajax_hws_feature_save_settings(): void {
     hws_require_ajax_nonce_or_error();
 
     $feature_id = isset( $_POST['feature_id'] ) ? sanitize_key( wp_unslash( $_POST['feature_id'] ) ) : '';
+
+    if ( UserImpersonationFeature::FEATURE_OPTION === $feature_id ) {
+        $saved = UserImpersonationFeature::save_settings( [
+            'locations' => isset( $_POST['locations'] ) ? (array) wp_unslash( $_POST['locations'] ) : [],
+            'owner_fields' => isset( $_POST['owner_fields'] ) && is_string( $_POST['owner_fields'] ) ? wp_unslash( $_POST['owner_fields'] ) : '',
+        ] );
+        hws_add_feature_activity( $feature_id, 'Updated View As locations and owner fields.' );
+        wp_send_json_success( $saved );
+    }
 
     if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
         $style = isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : TeamMemberDirectory::DEFAULT_STYLE;

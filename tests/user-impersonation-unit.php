@@ -102,11 +102,25 @@ function add_query_arg( mixed $key, mixed $value = null, string $url = '' ): str
         [ $url, $fragment ] = explode( '#', $url, 2 );
         $fragment = '#' . $fragment;
     }
-    $separator = str_contains( $url, '?' ) ? '&' : '?';
-    $query = http_build_query( $args, '', '&', PHP_QUERY_RFC3986 );
-
-    return $url . $separator . $query . $fragment;
+    [ $base, $query ] = array_pad( explode( '?', $url, 2 ), 2, '' );
+    parse_str( $query, $existing );
+    // WordPress re-encodes existing arguments, but NEW values must already be encoded.
+    $existing = array_map( 'urlencode', $existing );
+    foreach ( $args as $name => $argument ) {
+        if ( false === $argument ) { unset( $existing[$name] ); }
+        else { $existing[$name] = $argument; }
+    }
+    $parts = [];
+    foreach ( $existing as $name => $argument ) { $parts[] = $name . '=' . $argument; }
+    return $base . ( $parts ? '?' . implode( '&', $parts ) : '' ) . $fragment;
 }
+
+function admin_url( string $path = '' ): string { return 'https://example.test/wp-admin/' . $path; }
+function wp_create_nonce( string $action ): string { return 'test-nonce'; }
+function wp_validate_redirect( string $url, string $fallback ): string { return $url ?: $fallback; }
+function remove_query_arg( array $keys, string $url ): string { return add_query_arg( array_fill_keys( $keys, false ), $url ); }
+function sanitize_key( mixed $value ): string { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $value ) ); }
+function update_option( string $key, mixed $value, mixed $autoload = null ): bool { global $options; $options[$key] = $value; return true; }
 
 function current_time( string $type ): string {
     return '2026-09-20 12:00:00';
@@ -122,6 +136,7 @@ require_once $root . '/src/UserImpersonation/ViewAsController.php';
 require_once $root . '/src/UserImpersonation/VirtualRequestTransport.php';
 require_once $root . '/src/UserImpersonation/ViewAsPresentation.php';
 require_once $root . '/src/UserImpersonation/UserImpersonationFeature.php';
+require_once $root . '/src/UserImpersonation/ViewAsToolbar.php';
 
 use HWS\BaseTools\UserImpersonation\ImpersonationAccessPolicy;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
@@ -195,6 +210,17 @@ impersonation_expect(
         && str_contains( $runtime_source, "'scope_admin_only' => true" ),
     'View As is listed in the HWS Admin Features catalog'
 );
+
+$destination = admin_url( 'post.php?post=328515&action=edit' );
+parse_str( (string) parse_url( \HWS\BaseTools\UserImpersonation\ViewAsController::start_url( 2, $destination ), PHP_URL_QUERY ), $start_args );
+impersonation_expect( 'hws_view_as_start' === $start_args['action'] && $destination === $start_args['redirect_to'] && 'test-nonce' === $start_args['_wpnonce'], 'nested editor query retains the start action, nonce and exact destination with WordPress encoding semantics' );
+parse_str( (string) parse_url( \HWS\BaseTools\UserImpersonation\ViewAsController::start_url( 2, 'https://outside.test/path' ), PHP_URL_QUERY ), $external_args );
+impersonation_expect( admin_url() === $external_args['redirect_to'], 'external destinations fall back to the same-site admin URL' );
+$settings = UserImpersonationFeature::save_settings( [ 'locations' => [ 'users', 'unknown' ], 'owner_fields' => 'submitted_by, owner_id, submitted_by' ] );
+impersonation_expect( ['users'] === $settings['locations'] && ['submitted_by', 'owner_id'] === $settings['owner_fields'], 'settings restrict locations and deduplicate configurable owner fields' );
+UserImpersonationFeature::save_settings( [ 'locations' => [] ] );
+impersonation_expect( ! UserImpersonationFeature::location_enabled( 'users' ) && ! UserImpersonationFeature::location_enabled( 'single_content' ), 'all entry locations can be disabled independently of the session engine' );
+unset( $options[UserImpersonationFeature::SETTINGS_OPTION] );
 
 if ( $failures ) {
     fwrite( STDERR, count( $failures ) . " user impersonation assertion(s) failed.\n" );

@@ -32,7 +32,7 @@ final class ViewAsController {
         $actor_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
         $target_id = isset( $user->ID ) ? (int) $user->ID : 0;
 
-        if ( $this->context->is_active() || ! $this->policy->can_start( $actor_id, $target_id ) ) {
+        if ( ! UserImpersonationFeature::location_enabled( 'users' ) || $this->context->is_active() || ! $this->policy->can_start( $actor_id, $target_id ) ) {
             return $actions;
         }
 
@@ -50,7 +50,7 @@ final class ViewAsController {
         $actor_id = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
         $target_id = isset( $user->ID ) ? (int) $user->ID : 0;
 
-        if ( $this->context->is_active() || ! $this->policy->can_start( $actor_id, $target_id ) ) {
+        if ( ! UserImpersonationFeature::location_enabled( 'users' ) || $this->context->is_active() || ! $this->policy->can_start( $actor_id, $target_id ) ) {
             return;
         }
 
@@ -166,7 +166,7 @@ final class ViewAsController {
         );
 
         if ( '' !== $destination ) {
-            $url = add_query_arg( 'redirect_to', self::safe_destination( $destination ), $url );
+            $url = add_query_arg( 'redirect_to', rawurlencode( self::safe_destination( $destination ) ), $url );
         }
 
         return add_query_arg( '_wpnonce', wp_create_nonce( self::START_ACTION . '_' . $target_id ), $url );
