@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.3.9
+
+- Exposed the existing administrator-only View As session URL builder for plugin integrations, with an optional same-origin destination so a new isolated tab can open the page being inspected. Administrator authentication cookies remain unchanged.
+
 ### 13.3.8
 
 - **Public Draft Links (48 hours)** replaces the 24-hour draft preview and now lives in Base Tools itself (Hexa WP Core 3.10.0 drops its module). A draft or pending post opens for anyone only at its own URL plus the site's secret key, `/?p=ID&draft_key=<key>`, for 48 hours after the post was created. The key is a human-friendly phrase such as `amber-falcon-river-42`, created on first use and stored in the `hws_public_draft_key` option (delete it to rotate). Each draft and pending post gets a **Public link (48h)** action in the Posts list. Without the key, or after 48 hours, the post stays private.

@@ -90,7 +90,10 @@ final class ViewAsController {
             wp_die( esc_html( $exception->getMessage() ), '', [ 'response' => 500 ] );
         }
 
-        $destination = add_query_arg( VirtualRequestContext::REQUEST_KEY, rawurlencode( $request_token ), admin_url() );
+        $redirect = isset( $_GET['redirect_to'] ) && is_string( $_GET['redirect_to'] )
+            ? (string) wp_unslash( $_GET['redirect_to'] )
+            : '';
+        $destination = add_query_arg( VirtualRequestContext::REQUEST_KEY, rawurlencode( $request_token ), self::safe_destination( $redirect ) );
         wp_safe_redirect( $destination );
         exit;
     }
@@ -152,7 +155,8 @@ final class ViewAsController {
         exit;
     }
 
-    private function start_url( int $target_id ): string {
+    /** Shared entry point for administrator integrations; authentication cookies stay unchanged. */
+    public static function start_url( int $target_id, string $destination = '' ): string {
         $url = add_query_arg(
             [
                 'action'  => self::START_ACTION,
@@ -161,6 +165,27 @@ final class ViewAsController {
             admin_url( 'admin-post.php' )
         );
 
+        if ( '' !== $destination ) {
+            $url = add_query_arg( 'redirect_to', self::safe_destination( $destination ), $url );
+        }
+
         return add_query_arg( '_wpnonce', wp_create_nonce( self::START_ACTION . '_' . $target_id ), $url );
+    }
+
+    private static function safe_destination( string $destination ): string {
+        $fallback = admin_url();
+        $destination = wp_validate_redirect( $destination, $fallback );
+        $target = wp_parse_url( $destination );
+        $site = wp_parse_url( $fallback );
+        if ( ! is_array( $target ) || ! is_array( $site )
+            || isset( $target['user'] ) || isset( $target['pass'] )
+            || strtolower( (string) ( $target['scheme'] ?? '' ) ) !== strtolower( (string) ( $site['scheme'] ?? '' ) )
+            || strtolower( (string) ( $target['host'] ?? '' ) ) !== strtolower( (string) ( $site['host'] ?? '' ) )
+            || (int) ( $target['port'] ?? 0 ) !== (int) ( $site['port'] ?? 0 )
+        ) {
+            return $fallback;
+        }
+
+        return remove_query_arg( [ VirtualRequestContext::REQUEST_KEY, '_wpnonce' ], $destination );
     }
 }
