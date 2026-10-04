@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.0
+
+- Bundles Hexa WP Plugin Core 3.13.0, including the generic native Elementor Search adapter for bounded live AJAX search and Loop Item listing grids.
+
 ### 13.3.11
 
 - Makes enabled public draft and pending-post links permanent publication-domain URLs, exposes the protected `hws_public_draft_url` REST field to editors, and keeps private or password-protected posts inaccessible.

@@ -4,6 +4,27 @@ Copy this file into every plugin that consumes `hexa/plugin-core`. Keep it updat
 
 This is the quick reference for developers and agents working in separate Codex or Claude chats.
 
+Calendar profiles accept `sort`, an ordered list of field or value-callback
+criteria handled by `Hexa\PluginCore\Calendar\CalendarSort`. Fields may be
+dot-separated paths such as `data.area`; criteria declare `direction`
+(`asc`/`desc`), `type` (`auto`/`text`/`number`/`boolean`), and missing-value
+placement (`first`/`last`). Sorting runs within each day after placement, before
+the visible/more split. See `docs/calendar.md` for examples and compatibility.
+
+Map profiles opt into a right selection panel with `selection => 'sidebar'`.
+Core's `Map\MapDetails` owns rich image/title/description/fact/action markup,
+the read endpoint `map/{profile}/details/{item}`, bounded pagination, loading,
+retry, request cancellation, focus, and responsive placement. Hosts supply a
+`details(int $id, array $data, array $item, array $query): array` callback
+returning `title`, `summary`, `entries`, `total`, and the clamped `page`.
+The query contains `page`, profile-controlled `per_page` (1–50), and `hours`
+(0 or a declared date window); hosts own grouping, ordering and date semantics.
+Set `related_post_types` for content dependencies so saves/terms/metadata
+invalidate map/detail caches even for user-sourced maps. `MapLocations::item()`
+resolves one eligible placed location. The popup remains the default; absent
+a details provider, a sidebar shows the existing card. See `docs/map.md` for
+entry shape, profile settings, endpoint visibility, and verification methods.
+
 ## Fixed Identity
 
 ```text
@@ -13,7 +34,7 @@ Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
 
-Current release: 3.10.0
+Current release: 3.13.0
 ```
 
 Do not rename these.
@@ -850,6 +871,8 @@ SearchQueryConfiguration
 SearchTermParser
 SearchQueryEngine
 JetEngineSearchAdapter
+ElementorSearchAdapter
+ElementorPublicTextIndex
 ```
 
 Use this namespace to alter one explicitly eligible native WordPress search-results query. The host owns option storage, capability/nonce checks, available public post types and taxonomies, and the request marker. Core owns normalization, bounded parsing, selected-source SQL, and query scoping.
@@ -873,17 +896,31 @@ $jet_engine = new \Hexa\PluginCore\SearchQuery\JetEngineSearchAdapter(
     'example_search'
 );
 $jet_engine->register();
+
+$elementor_search = new \Hexa\PluginCore\SearchQuery\ElementorSearchAdapter(
+    $settings_provider,
+    'example_live_search'
+);
+$elementor_search->register();
+
+$elementor_text = new \Hexa\PluginCore\SearchQuery\ElementorPublicTextIndex(
+    get_post_types( [ 'public' => true ], 'names' )
+);
+$elementor_text->register();
 ```
+
+Pass no post-type list when the host registers custom public types on `init`.
+Core then resolves the current public searchable types when the index runs.
 
 Supported behavior:
 
 - term logic: `all`, `any`, or `exact`
 - word matching: `whole`, `prefix`, or `contains`
-- sources: title, content, excerpt, slug, selected taxonomy names, author display names, and selected custom-field keys
+- sources: title, content, excerpt, slug, selected taxonomy names, author display names, selected custom-field keys, and public display names reached through selected numeric user-reference meta keys
 - public post-type selection, result count from 0 to 100, and relevance/newest/oldest/title ordering
 - `shortcode` scope through a hidden marker, or deliberate `all` public-search scope
 
-Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, unmarked nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state and records weak exact-object state consumed by one idempotently registered `posts_search` dispatcher. Duplicate preparation replaces state instead of stacking callbacks, and abandoned queries are not retained. `JetEngineSearchAdapter` can explicitly mark a posts grid created by a search-results template; archive grids and unrelated requests stay untouched. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
+Safety rules are mandatory. The engine rejects admin, AJAX, REST, cron, XML-RPC, feeds, unmarked nested queries, empty searches, suppressed filters, and disabled queries before host settings are loaded. It then checks enabled/scope state and records weak exact-object state consumed by one idempotently registered `posts_search` dispatcher. Duplicate preparation replaces state instead of stacking callbacks, and abandoned queries are not retained. `JetEngineSearchAdapter` can explicitly mark a posts grid created by a search-results template; archive grids and unrelated requests stay untouched. `ElementorSearchAdapter` binds one exact native Elementor Search widget Query ID, permits only that verified widget's REST/GET query, preserves Elementor's Loop Item renderer and live pagination, forces bounded public results, and adds scoped cancellation, stale-response protection, and accessible request states. `ElementorPublicTextIndex` stores only normalized text from Elementor's anonymous public renderer, refreshes exact public dependents after reusable-template saves, and exposes a hash-only dry run for bounded backfills. Advanced sources use `EXISTS` subqueries and remain opt-in. Parsing is capped at eight unique terms and 80 characters per term.
 
 Do not copy this into host `pre_get_posts` callbacks. Do not use it for suggestions: `SmartSearch` remains the separate AJAX typeahead/content-picker system. Full protocol: `docs/search-query.md`.
 
