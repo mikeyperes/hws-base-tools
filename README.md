@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.1
+
+- Bundles Hexa WP Plugin Core 3.13.1 with corrected live-search status and error-grid presentation.
+
 ### 13.4.0
 
 - Bundles Hexa WP Plugin Core 3.13.0, including the generic native Elementor Search adapter for bounded live AJAX search and Loop Item listing grids.
