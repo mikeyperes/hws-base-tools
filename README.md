@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.4
+
+- Bundles Hexa WordPress Plugin Core 3.13.4 with nested-search Escape handling and input-height icon alignment for native Elementor Search widgets.
+
 ### 13.4.2
 
 - Bundles Hexa WP Plugin Core 3.13.2 with bounded correlated meta constraints for efficient host-owned upcoming-event search eligibility.
