@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.6
+
+- Bundles Hexa WordPress Plugin Core 3.14.4, synchronizing the native Elementor Search input's expanded state on reopening and its collapsed state on outside clicks. Preserves inside clicks, unregistered widgets, and the existing natural search and map features.
+
 ### 13.4.5
 
 - Bundles Hexa WordPress Plugin Core 3.14.2 with generic natural search time windows for duration-only and keyword-plus-window event searches, while preserving native WordPress and Elementor behavior.
