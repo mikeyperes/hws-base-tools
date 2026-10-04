@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.2
+
+- Bundles Hexa WP Plugin Core 3.13.2 with bounded correlated meta constraints for efficient host-owned upcoming-event search eligibility.
+
 ### 13.4.1
 
 - Bundles Hexa WP Plugin Core 3.13.1 with corrected live-search status and error-grid presentation.
