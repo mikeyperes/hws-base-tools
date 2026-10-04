@@ -13,6 +13,7 @@ class WP_Post {
     public string $post_type = 'post';
     public string $post_status = 'draft';
     public string $post_date = '';
+    public string $post_password = '';
 
     public function __construct( array $fields = [] ) {
         foreach ( $fields as $key => $value ) {
@@ -34,7 +35,7 @@ class WP_Query {
     public function is_embed(): bool { return $this->flags['embed']; }
 }
 
-$options = [];
+$options = [ 'enable_public_draft_preview' => true ];
 $meta    = [];
 $hooks   = [];
 $posts   = [];
@@ -74,7 +75,7 @@ $now = time();
 
 // Key: human-friendly, stable once created.
 $key = Links::key();
-$expect( 1 === preg_match( '/^[a-z]+-[a-z]+-[a-z]+-[1-9][0-9]$/', $key ), 'the key is three words and a number: ' . $key );
+$expect( 1 === preg_match( '/^[a-z]+-[a-z]+-[a-z]+-[1-9][0-9]$/', $key ), 'the key is three words and a number' );
 $expect( Links::key() === $key, 'the key stays the same once created' );
 $expect( Links::key_matches( $key ) && Links::key_matches( ' ' . $key . ' ' ), 'the right key matches' );
 $expect( ! Links::key_matches( 'wrong-key' ) && ! Links::key_matches( null ) && ! Links::key_matches( [ $key ] ), 'a wrong, missing or array key does not' );
@@ -82,9 +83,9 @@ $expect( ! Links::key_matches( 'wrong-key' ) && ! Links::key_matches( null ) && 
 // Window and statuses.
 $expect( Links::is_eligible( 'draft', $now - 3600, $now ), 'a draft created an hour ago is open' );
 $expect( Links::is_eligible( 'pending', $now - 47 * 3600, $now ), 'a pending post created 47 hours ago is open' );
-$expect( ! Links::is_eligible( 'pending', $now - 48 * 3600, $now ), 'at exactly 48 hours it closes' );
+$expect( Links::is_eligible( 'pending', $now - 365 * 86400, $now ), 'pending links still work after a year' );
 $expect( ! Links::is_eligible( 'publish', $now - 60, $now ) && ! Links::is_eligible( 'private', $now - 60, $now ), 'published and private posts are never affected' );
-$expect( ! Links::is_eligible( 'draft', $now + 600, $now ) && ! Links::is_eligible( 'draft', null, $now ), 'future or unknown creation times are closed' );
+$expect( Links::is_eligible( 'draft', $now + 600, $now ) && Links::is_eligible( 'draft', null, $now ), 'draft access does not depend on a date' );
 
 // Creation time: recorded once, used instead of the moving draft date.
 $post = new WP_Post( [ 'ID' => 7, 'post_status' => 'pending', 'post_date' => gmdate( 'Y-m-d H:i:s', $now - 60 ) ] );
@@ -104,15 +105,24 @@ $expect( 'draft' === Links::filter_posts_results( [ $draft ], new WP_Query() )[0
 $_GET[ Links::PARAM ] = $key;
 $shown = Links::filter_posts_results( [ $draft ], new WP_Query() );
 $expect( 'publish' === $shown[0]->post_status && 'draft' === $draft->post_status, 'right key: the visitor sees it, the stored post keeps its status' );
-$expect( 'pending' === Links::filter_posts_results( [ $post ], new WP_Query() )[0]->post_status, 'right key but older than 48 hours: stays private' );
+$expect( 'publish' === Links::filter_posts_results( [ $post ], new WP_Query() )[0]->post_status, 'right key works beyond 48 hours without changing stored status' );
 $expect( 'draft' === Links::filter_posts_results( [ $draft ], new WP_Query( [ 'main' => false ] ) )[0]->post_status, 'secondary queries are untouched' );
 $expect( 'draft' === Links::filter_posts_results( [ $draft, $fresh ], new WP_Query() )[0]->post_status, 'lists are untouched' );
 
 // Link and row action.
 $posts = [ 9 => $draft, 7 => $post ];
 $expect( Links::link( 9 ) === 'https://example.com/?p=9&draft_key=' . rawurlencode( $key ), 'the link is the post URL plus the key' );
-$expect( null === Links::link( 7 ), 'no link once the 48 hours are over' );
-$expect( isset( Links::row_actions( [], $draft )['hws_public_draft_link'] ) && [] === Links::row_actions( [], $post ), 'the Posts list offers the link only while it works' );
+$expect( null !== Links::link( 7 ), 'the public draft link does not expire' );
+$expect( isset( Links::row_actions( [], $draft )['hws_public_draft_link'], Links::row_actions( [], $post )['hws_public_draft_link'] ), 'the Posts list offers the link only while it works' );
+
+$options[Links::FEATURE_OPTION] = false;
+$expect( null === Links::link( 9 ) && 'draft' === Links::filter_posts_results( [ $draft ], new WP_Query() )[0]->post_status, 'disabling the feature revokes access' );
+$options[Links::FEATURE_OPTION] = true;
+$draft->post_status = 'private';
+$expect( null === Links::link( 9 ), 'private posts have no public draft link' );
+$draft->post_status = 'draft';
+$draft->post_password = 'fixture';
+$expect( null === Links::link( 9 ) && 'draft' === Links::filter_posts_results( [ $draft ], new WP_Query() )[0]->post_status, 'password protection is preserved' );
 
 echo PHP_EOL . ( 0 === $failures ? 'All public draft link checks passed.' : $failures . ' check(s) failed.' ) . PHP_EOL;
 exit( 0 === $failures ? 0 : 1 );

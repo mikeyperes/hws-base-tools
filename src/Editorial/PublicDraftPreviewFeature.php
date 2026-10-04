@@ -7,11 +7,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Public draft links: a draft or pending post opens for anyone, without logging
  * in, at its own URL plus the site's secret key (`?p=123&draft_key=amber-falcon-river-42`),
- * for 48 hours after the post was created. Default off.
+ * without a time limit. Default off.
  *
  * The key is one human-friendly secret per site, created the first time the
  * feature runs and kept in an option; deleting the option rotates it. A link
- * without the right key, or older than 48 hours, behaves exactly as before
+ * without the right key behaves exactly as before
  * (404 for visitors). Only the main singular front-end query is touched; the
  * visitor gets a request-local copy marked `publish`, so the stored and cached
  * post keeps its real status. The view is never cached and is marked noindex.
@@ -21,7 +21,6 @@ final class PublicDraftPreviewFeature {
     public const KEY_OPTION     = 'hws_public_draft_key';
     public const PARAM          = 'draft_key';
     public const CREATED_META   = '_hws_created_at';
-    public const WINDOW         = 172800; // 48 hours.
     public const STATUSES       = [ 'draft', 'pending' ];
 
     private const ADJECTIVES = [ 'amber', 'bold', 'brisk', 'calm', 'clever', 'coral', 'crisp', 'dusty', 'eager', 'fancy', 'gentle', 'golden', 'hazel', 'humble', 'ivory', 'jolly', 'keen', 'lively', 'lucky', 'mellow', 'misty', 'noble', 'olive', 'plucky', 'proud', 'quiet', 'rapid', 'rosy', 'rustic', 'sandy', 'silver', 'sunny', 'swift', 'tidy', 'velvet', 'vivid', 'warm', 'wise', 'witty', 'zesty' ];
@@ -40,6 +39,7 @@ final class PublicDraftPreviewFeature {
         add_filter( 'posts_results', [ self::class, 'filter_posts_results' ], 10, 2 );
         add_filter( 'post_row_actions', [ self::class, 'row_actions' ], 10, 2 );
         add_filter( 'page_row_actions', [ self::class, 'row_actions' ], 10, 2 );
+        add_action( 'rest_api_init', [ self::class, 'register_rest_field' ] );
     }
 
     /** The site's secret key, created on first use. */
@@ -81,12 +81,8 @@ final class PublicDraftPreviewFeature {
     }
 
     public static function is_eligible( string $status, ?int $created_at, int $now ): bool {
-        if ( ! in_array( $status, self::STATUSES, true ) || null === $created_at ) {
-            return false;
-        }
-        $age = $now - $created_at;
-
-        return $age >= 0 && $age < self::WINDOW;
+        // Keep the existing signature for callers; draft access does not expire.
+        return in_array( $status, self::STATUSES, true );
     }
 
     public static function key_matches( $given ): bool {
@@ -95,10 +91,12 @@ final class PublicDraftPreviewFeature {
         return '' !== $stored && is_string( $given ) && hash_equals( $stored, trim( $given ) );
     }
 
-    /** The public link for a post, or null when it is not a draft/pending post inside its 48 hours. */
+    /** The non-expiring public link, available only when this site enables the feature. */
     public static function link( int $post_id ): ?string {
         $post = get_post( $post_id );
-        if ( ! $post instanceof \WP_Post || ! self::is_eligible( $post->post_status, self::created_timestamp( $post ), time() ) ) {
+        if ( ! get_option( self::FEATURE_OPTION, false ) || ! $post instanceof \WP_Post
+            || ! empty( $post->post_password ) || ! is_post_type_viewable( $post->post_type )
+            || ! self::is_eligible( $post->post_status, self::created_timestamp( $post ), time() ) ) {
             return null;
         }
 
@@ -115,7 +113,8 @@ final class PublicDraftPreviewFeature {
         }
 
         $post = $posts[0];
-        if ( ! $post instanceof \WP_Post || ! is_post_type_viewable( $post->post_type )
+        if ( ! get_option( self::FEATURE_OPTION, false ) || ! $post instanceof \WP_Post
+            || ! empty( $post->post_password ) || ! is_post_type_viewable( $post->post_type )
             || ! self::is_eligible( $post->post_status, self::created_timestamp( $post ), time() ) ) {
             return $posts;
         }
@@ -137,7 +136,7 @@ final class PublicDraftPreviewFeature {
         if ( $post instanceof \WP_Post && current_user_can( 'edit_post', $post->ID ) ) {
             $link = self::link( $post->ID );
             if ( null !== $link ) {
-                $actions['hws_public_draft_link'] = '<a href="' . esc_url( $link ) . '" target="_blank" rel="noopener">Public link (48h)</a>';
+                $actions['hws_public_draft_link'] = '<a href="' . esc_url( $link ) . '" target="_blank" rel="noopener">Public draft link</a>';
             }
         }
 
@@ -166,18 +165,29 @@ final class PublicDraftPreviewFeature {
         add_filter( 'pings_open', '__return_false' );
     }
 
+    /** Read-only REST field; the site code is returned only to an editor of this post. */
+    public static function register_rest_field(): void {
+        foreach ( get_post_types( [ 'show_in_rest' => true ], 'names' ) as $type ) {
+            register_rest_field( $type, 'hws_public_draft_url', [
+                'get_callback' => static function ( array $object ): ?string {
+                    $id = (int) ( $object['id'] ?? 0 );
+                    return current_user_can( 'edit_post', $id ) ? self::link( $id ) : null;
+                },
+                'schema' => [ 'type' => [ 'string', 'null' ], 'readonly' => true, 'context' => [ 'edit' ] ],
+            ] );
+        }
+    }
+
     /** @return array<string,mixed> */
     public static function definition(): array {
-        $key = (string) get_option( self::KEY_OPTION, '' );
-
         return [
             'id'               => self::FEATURE_OPTION,
-            'name'             => 'Public Draft Links (48 hours)',
-            'description'      => 'Lets anyone with the link open a draft or pending post, without logging in, for 48 hours after it was created.',
-            'info'             => 'Default off. The link is the post\'s own URL plus the site\'s secret key: /?p=ID&' . self::PARAM . '=' . ( '' !== $key ? $key : '<created when the feature is first turned on>' ) . '. Without the key, or after 48 hours, the URL stays private (404). Each draft and pending post shows a "Public link (48h)" action in the Posts list. The view is never cached, is marked noindex, and has comments closed. To change the key, delete the ' . self::KEY_OPTION . ' option; a new one is created and every old link stops working.',
+            'name'             => 'Public Draft Links',
+            'description'      => 'Lets anyone with the link open a draft or pending post without logging in. Links do not expire.',
+            'info'             => 'Default off. Uses the post URL plus the existing site code in draft_key. Private and password-protected posts remain private. Disabling this feature or rotating the site code revokes draft access. Views are not cached, are marked noindex, and have comments closed.',
             'function'         => 'enable_public_draft_preview',
             'scope_admin_only' => false,
-            'code_example'     => 'https://example.com/?p=123&' . self::PARAM . '=amber-falcon-river-42',
+            'code_example'     => 'https://example.com/?p=123&draft_key=<site-code>',
         ];
     }
 }

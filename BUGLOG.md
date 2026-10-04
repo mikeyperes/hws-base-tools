@@ -1,5 +1,13 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-006 — Client draft links expired during article review
+
+- Severity: High
+- Symptom: Article review links stopped opening after 48 hours, and delivery could not retrieve a supported anonymous publication URL.
+- Cause: Draft visibility and link generation used a creation-time window; no protected REST read field exposed the link.
+- Patch: The existing opt-in site-code feature now returns stable publication-domain draft links without an age limit. Editors can read `hws_public_draft_url` over REST; disabling the feature or rotating its code revokes access. Private and password-protected posts are excluded. Stored status, cache isolation and noindex behavior remain intact.
+- Guard: The focused public-draft fixture covers links older than a year, wrong codes, disabled features, private/password-protected posts and stored-status preservation.
+
 ## HWS-BASE-BUG-005 — Anyone could trigger the login-mask emergency actions
 
 - Severity: High
