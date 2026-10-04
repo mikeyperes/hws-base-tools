@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.4.5
+
+- Bundles Hexa WordPress Plugin Core 3.14.2 with generic natural search time windows for duration-only and keyword-plus-window event searches, while preserving native WordPress and Elementor behavior.
+
 ### 13.4.4
 
 - Bundles Hexa WordPress Plugin Core 3.13.4 with nested-search Escape handling and input-height icon alignment for native Elementor Search widgets.
