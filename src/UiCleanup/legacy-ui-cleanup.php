@@ -120,6 +120,7 @@ function get_ui_cleanup_options(): array {
         // Editor meta boxes come from Core's shared presets and are removed in PHP.
         'hide_post_editor_comments' => CleanupPresets::comments_meta_box( [ 'label' => 'Post Editor Comments', 'default' => false, 'section' => 'wordpress' ] ),
         'hide_fifu_editor_box'      => CleanupPresets::fifu_meta_box( [ 'label' => 'FIFU Post Editor Box', 'default' => false, 'section' => 'wordpress' ] ),
+        'hide_litespeed_for_non_admins' => CleanupPresets::litespeed_ui( [ 'label' => 'LiteSpeed for Non-Administrators', 'description' => 'Removes every LiteSpeed element from wp-admin for users who are not administrators: the post editor box, the Media Library columns and the admin-bar menu.', 'audience' => 'non_admins', 'default' => false, 'section' => 'wordpress' ] ),
         'hide_post_attributes_box' => [
             'label'         => 'Post Attributes Box',
             'description'   => 'Hides the Post Attributes metabox on post and page editor screens.',
@@ -199,14 +200,15 @@ function is_ui_cleanup_auto_enabled( array $opt ): bool {
 }
 
 /**
- * Editor meta box options run through Core's CleanupRegistry, which removes
- * them with remove_meta_box() after every plugin has added its boxes. The
- * shared option prefix keeps the settings saved by this tab.
+ * Options taken from Core's CleanupPresets (they carry a "mode") run through
+ * Core's CleanupRegistry: meta box removal after every plugin has added its
+ * boxes, column and admin-bar removal, and audience (non-administrator)
+ * scoping. The shared option prefix keeps the settings saved by this tab.
  */
 function register_ui_cleanup_meta_box_removal(): void {
     $meta_box_options = array_filter(
         get_ui_cleanup_options(),
-        static fn( array $opt ): bool => 'meta_box_remove' === ( $opt['mode'] ?? '' )
+        static fn( array $opt ): bool => isset( $opt['mode'] )
     );
     if ( [] === $meta_box_options ) {
         return;

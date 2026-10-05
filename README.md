@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.6.0
+
+- Bundles Hexa WordPress Plugin Core 3.16.0. New UI Cleanup option "LiteSpeed for Non-Administrators" removes the LiteSpeed post editor box, Media Library columns and admin-bar menu for users who are not administrators, using Core's shared `litespeed_ui()` preset and audience scoping.
+
 ### 13.5.0
 
 - Bundles Hexa WordPress Plugin Core 3.15.0. UI Cleanup's Post Editor Comments option now removes the Comments box in PHP (WordPress `remove_meta_box`) instead of hiding it with CSS, and turns on automatically while comments are disabled. New FIFU Post Editor Box option removes the FIFU box. Both come from Core's shared `CleanupPresets`.
