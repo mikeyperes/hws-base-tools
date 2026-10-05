@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.5.0
+
+- Bundles Hexa WordPress Plugin Core 3.15.0. UI Cleanup's Post Editor Comments option now removes the Comments box in PHP (WordPress `remove_meta_box`) instead of hiding it with CSS, and turns on automatically while comments are disabled. New FIFU Post Editor Box option removes the FIFU box. Both come from Core's shared `CleanupPresets`.
+
 ### 13.4.6
 
 - Bundles Hexa WordPress Plugin Core 3.14.4, synchronizing the native Elementor Search input's expanded state on reopening and its collapsed state on outside clicks. Preserves inside clicks, unregistered widgets, and the existing natural search and map features.
