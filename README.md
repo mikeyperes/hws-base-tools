@@ -134,6 +134,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.6.1
+
+- View As keeps WooCommerce AJAX requests (checkout totals, place order) in the virtual session by appending its token to `wc-ajax` endpoints. Previously checkout opened as the viewed user but its background requests ran without the session.
+
 ### 13.6.0
 
 - Bundles Hexa WordPress Plugin Core 3.16.0. New UI Cleanup option "LiteSpeed for Non-Administrators" removes the LiteSpeed post editor box, Media Library columns and admin-bar menu for users who are not administrators, using Core's shared `litespeed_ui()` preset and audience scoping.

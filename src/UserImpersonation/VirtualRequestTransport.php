@@ -13,6 +13,8 @@ final class VirtualRequestTransport {
     public function register(): void {
         add_filter( 'wp_redirect', [ $this, 'filter_redirect' ], PHP_INT_MAX, 2 );
         add_filter( 'rest_url', [ $this, 'filter_rest_url' ], PHP_INT_MAX );
+        // WooCommerce cart/checkout AJAX (totals, place order) must stay in the virtual session.
+        add_filter( 'woocommerce_ajax_get_endpoint', [ $this, 'filter_wc_ajax_endpoint' ], PHP_INT_MAX );
         add_action( 'init', [ $this, 'mark_uncacheable' ], -PHP_INT_MAX );
         add_action( 'send_headers', [ $this, 'send_privacy_headers' ], PHP_INT_MAX );
     }
@@ -27,6 +29,11 @@ final class VirtualRequestTransport {
         return $this->context->is_active()
             ? self::append_token( $url, $this->context->request_token() )
             : $url;
+    }
+
+    /** Keeps WooCommerce's literal %%endpoint%% placeholder intact for its scripts. */
+    public function filter_wc_ajax_endpoint( string $url ): string {
+        return str_replace( '%25%25endpoint%25%25', '%%endpoint%%', $this->filter_rest_url( $url ) );
     }
 
     public function mark_uncacheable(): void {
