@@ -2,6 +2,100 @@
 
 Shared WordPress site configuration, administration, and operational tooling for Hexa-managed websites.
 
+> Feature base for HWS Skills. Read before building on this plugin; use or
+> extend these features instead of rebuilding them.
+
+**Purpose:** site-wide building blocks for Hexa-managed sites: brand assets, site values, team and testimonial content, reading progress, footer text and admin cleanup. **Admin:** WP Admin → HWS Base Tools (`admin.php?page=hws-base-tools`); feature switches are on its Features tab, each stored as an option of the same name. **Depends on:** ACF Pro for the Website Settings and profile fields; Elementor optional.
+
+## Features
+
+### Reading progress bar
+- **Does:** a progress line at the top of the page that fills as the visitor scrolls.
+- **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
+- **Use:** automatic, printed right after `<body>`. Never build a second progress bar on a page; configure this one.
+- **Style:** `#hws-reading-progress.hws-reading-progress--<style>`, `.hws-reading-progress__track`, `.hws-reading-progress__fill`; variables `--hws-reading-progress-color`, `--hws-reading-progress-soft`, `--hws-reading-progress-glow`.
+- **Code:** `src/FrontendContent/ReadingProgress.php`
+
+### Site logo and brand assets
+- **Does:** outputs a saved Brand Assets image (logo, logo with text, icon) without distortion, or its URL.
+- **Switch:** HWS Base Tools → Brand Assets (ACF Assets group).
+- **Use:** `[site_logo key="logo" size="full" output="img" width="" height="" class="" alt="" loading="lazy" style=""]` (alias `[hws_brand_asset]`, `type=""` also accepted); `output="url"` returns the URL. Pass `loading="eager"` in headers.
+- **Code:** `src/BrandAssets/legacy-brand-functions.php`
+
+### Brand asset gallery
+- **Does:** the saved Brand gallery as a responsive grid, URL list or ID list.
+- **Use:** `[brand_asset_gallery size="medium" output="grid|urls|ids" columns="4" class="" loading="lazy"]` (alias `[site_gallery]`).
+- **Code:** `src/BrandAssets/legacy-brand-functions.php`
+
+### Site values and Website Settings content
+- **Does:** prints a core site value or a Website Settings field anywhere, including inside Elementor text widgets.
+- **Use:** `[hws_site_value field="site_name|home_url|contact_email|..." format="text|url|email|html" fallback=""]`; `[website_content field="website_mission_statement"]` for any Website Settings ACF field; `[website_url social="linkedin"]` for the Website profile's social links; `[company id="title"]` for the primary company.
+- **Code:** `src/BrandAssets/legacy-brand-functions.php`
+
+### Founder and profile photos
+- **Does:** the founder's (or any user's) profile fields and public photo gallery.
+- **Use:** `[founder id="title" size="medium" output="grid" columns="4" class="" loading="lazy"]`; `[hws_profile_photos user_id="0" size="medium" output="grid" columns="4" class="" loading="lazy"]`.
+- **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
+
+### Site page templates
+- **Does:** starter content for critical pages.
+- **Use:** `[site_page_template type="privacy|terms|brand_assets"]` (alias `[hws_site_page_template]`).
+- **Code:** `src/BrandAssets/legacy-brand-functions.php`
+
+### Team member directory
+- **Does:** a clean directory of published Team Members (`team-member` post type).
+- **Switch:** Features → Team Member Directory (`enable_team_member_directory_templates`); default style `hws_team_member_directory_style`.
+- **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" columns="3" limit="" featured_only="0"]`; Elementor query ID `featured_team_members` for Posts/Loop widgets.
+- **Style:** `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`.
+- **Code:** `src/TeamMembers/TeamMemberDirectory.php`
+
+### Testimonials
+- **Does:** one quote from a Testimonial (`testimonial` post type).
+- **Use:** `[hws_testimonial_quote id="" number="1"]` (current Testimonial when `id` is empty); Elementor query ID `featured_testimonials`.
+- **Code:** `src/Testimonials/TestimonialQuoteShortcode.php`
+
+### Site search display
+- **Does:** a styled search box that submits to the normal WordPress results page.
+- **Use:** `[hexa_search style="icon-reveal|overlay|pill|underline|command" placeholder="" accent="" radius=""]`.
+- **Code:** `lib/hexa-wordpress-plugin-core/src/SearchQuery/`
+
+### Current year
+- **Use:** `[current_year]` (legacy `[display_year]`). **Switch:** `enable_current_year_shortcode`.
+
+### Footer text band
+- **Does:** adds the saved footer text as a full-width band at the bottom of the theme footer, or at a chosen selector.
+- **Switch:** `enable_footer_text_auto_injection`; template `hws_footer_text_template`, alignment `hws_footer_text_alignment`, targeted placement `hws_footer_text_targeted_*`; text from Website Settings `website_footer_text`.
+- **Style:** `.hws-footer-inline-injection`, `.hws-footer-text--<template>`.
+- **Code:** `src/FrontendContent/legacy-footer-text.php`
+
+### Page layout styling
+- **Does:** a site-wide page layout style applied through body classes.
+- **Switch:** `hws_page_layout_style`.
+- **Style:** `body.hws-page-layout-styled.hws-page-layout-style-<style>`.
+- **Code:** `src/PageLayoutStyling/PageLayoutFeature.php`
+
+### Elementor helpers
+- **Does:** a dynamic tag for a word-limited ACF value; cleanup of empty Social Icons (hides empty icons, opens external links in a new tab); the brand shortcodes above render inside any Elementor widget.
+- **Use:** dynamic tag `hws-trimmed-acf-text`; Social Icons cleanup switch `enable_elementor_social_icon_cleanup`; custom query `query_featured_posts` (switch `enable_elementor_queries`).
+- **Code:** `src/Elementor/TrimmedAcfTextTag.php`, `src/FrontendContent/legacy-elementor-social-icons.php`
+
+### Maintenance mode
+- **Does:** shows a maintenance page to visitors while logged-in admins see the site.
+- **Switch:** `hws_maintenance_mode_enabled`; template `hws_maintenance_mode_template`.
+- **Code:** `src/MaintenanceMode/`
+
+### Editorial guards
+- **Does:** requires a featured image of a minimum size before publishing, and allows public previews of drafts.
+- **Switch:** `enable_required_featured_image` (`hws_required_featured_image_min_width`, `_min_height`, `_post_types`); `enable_public_draft_preview`.
+- **Code:** `src/Editorial/`
+
+### Extension points
+- `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
+
+## Internals
+
+Admin-only switches on the Features tab: admin bar for non-admins (`disable_non_admin_admin_bar`), SVG uploads, lowercase upload names, auto-updates, custom RSS feeds and tag feed limit, noindex for AMP and feeds, LiteSpeed JS combine, Rank Math sitemap cache, ACF source tracker, login masking (Settings → Masked Login), View As user impersonation (`enable_hws_user_impersonation`).
+
 ## Ownership
 
 HWS Base Tools is the canonical owner of:
