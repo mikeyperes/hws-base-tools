@@ -295,7 +295,14 @@ if (!function_exists(__NAMESPACE__ . '\\check_php_handler')) {
 
 if (!function_exists(__NAMESPACE__ . '\\enable_auto_update_plugins')) {
     function enable_auto_update_plugins() {
-        add_filter('auto_update_plugin', '__return_true');
+        add_filter('auto_update_plugin', function ($update, $item) {
+            $blocked = get_option('gplvault_blocked_plugins', []);
+            $file = is_object($item) && isset($item->plugin) ? $item->plugin : '';
+            if ($file !== '' && is_array($blocked) && in_array($file, $blocked, true)) {
+                return false;
+            }
+            return true;
+        }, 10, 2);
     }
 }
 

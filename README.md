@@ -94,7 +94,9 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Internals
 
-Admin-only switches on the Features tab: admin bar for non-admins (`disable_non_admin_admin_bar`), SVG uploads, lowercase upload names, auto-updates, custom RSS feeds and tag feed limit, noindex for AMP and feeds, LiteSpeed JS combine, Rank Math sitemap cache, ACF source tracker, login masking (Settings → Masked Login), View As user impersonation (`enable_hws_user_impersonation`).
+Admin-only switches on the Features tab: admin bar for non-admins (`disable_non_admin_admin_bar`), SVG uploads, lowercase upload names, custom RSS feeds and tag feed limit, noindex for AMP and feeds, LiteSpeed JS combine, Rank Math sitemap cache, ACF source tracker, login masking (Settings → Masked Login), View As user impersonation (`enable_hws_user_impersonation`).
+
+Auto-Update All Plugins (`enable_auto_update_plugins`) and Auto-Update All Themes (`enable_auto_update_themes`) load in every context, including WordPress background update runs and WP-CLI, so every plugin and theme updates automatically; plugins on GPL Vault's do-not-update list (`gplvault_blocked_plugins`) are skipped.
 
 ## Ownership
 

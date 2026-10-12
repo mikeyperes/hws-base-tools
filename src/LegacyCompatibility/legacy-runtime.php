@@ -668,24 +668,6 @@ function get_snippets($type = "")
         'recommended' => true
     ],
     [
-        'id' => 'enable_auto_update_plugins',
-        'name' => 'Auto-Update All Plugins',
-        'description' => 'Automatically updates all plugins when new versions are released.',
-        'info' => '⚠️ Recommended for most sites. Keeps plugins secure and up-to-date without manual intervention.',
-        'function' => 'enable_auto_update_plugins',
-        'scope_admin_only' => true,
-        'recommended' => true
-    ],
-    [
-        'id' => 'enable_auto_update_themes',
-        'name' => 'Auto-Update All Themes',
-        'description' => 'Automatically updates all themes when new versions are released.',
-        'info' => '⚠️ Recommended for most sites. Keeps themes secure and up-to-date.',
-        'function' => 'enable_auto_update_themes',
-        'scope_admin_only' => true,
-        'recommended' => true
-    ],
-    [
         'id' => 'snippet_enable_svg_uploads',
         'name' => 'Allow SVG Uploads',
         'description' => 'Enables SVG file uploads in the WordPress media library.',
@@ -716,6 +698,25 @@ function get_snippets($type = "")
 
     // ─── NON-ADMIN / FRONTEND SNIPPETS ─────────────────────────────────
     $snippet_non_admin = [
+    // Auto-updates run in WordPress background (cron/CLI) runs, never in wp-admin, so these load in every context.
+    [
+        'id' => 'enable_auto_update_plugins',
+        'name' => 'Auto-Update All Plugins',
+        'description' => 'Automatically updates all plugins, including ones installed later, whenever WordPress runs its background updates. Plugins on GPL Vault\'s do-not-update list are skipped.',
+        'info' => '⚠️ Recommended for most sites. Keeps plugins secure and up-to-date without manual intervention.',
+        'function' => 'enable_auto_update_plugins',
+        'scope_admin_only' => false,
+        'recommended' => true
+    ],
+    [
+        'id' => 'enable_auto_update_themes',
+        'name' => 'Auto-Update All Themes',
+        'description' => 'Automatically updates all themes whenever WordPress runs its background updates.',
+        'info' => '⚠️ Recommended for most sites. Keeps themes secure and up-to-date.',
+        'function' => 'enable_auto_update_themes',
+        'scope_admin_only' => false,
+        'recommended' => true
+    ],
     // ★ RECOMMENDED
     TeamMemberFeature::definition(),
     PublicDraftPreviewFeature::definition(),
