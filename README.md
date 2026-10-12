@@ -230,6 +230,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.6.2
+
+- Auto-Update All Plugins and Auto-Update All Themes now work. They were only switched on during wp-admin page views, so WordPress's background update run never saw them. They now load in every context and cover every plugin, including ones installed later. Plugins on GPL Vault's do-not-update list are skipped.
+
 ### 13.6.1
 
 - View As keeps WooCommerce AJAX requests (checkout totals, place order) in the virtual session by appending its token to `wc-ajax` endpoints. Previously checkout opened as the viewed user but its background requests ran without the session.
