@@ -230,17 +230,6 @@ if (!function_exists(__NAMESPACE__ . '\\check_smtp_auth_status_and_mailer')) {
     }
 } else write_log("⚠️ Warning: " . __NAMESPACE__ . "\\check_smtp_auth_status_and_mailer function is already declared",true);
 
-if (!function_exists(__NAMESPACE__ . '\\enable_auto_update_themes')) {
-    function enable_auto_update_themes() {
-        add_filter('auto_update_theme', '__return_true');
-        return [
-            'status' => true,
-            'details' => 'Theme auto-updates are enabled.'
-        ];
-    }
-} else {
-    write_log("⚠️ Warning: " . __NAMESPACE__ . "\\enable_auto_update_themes function is already declared", true);
-}
 
 
 

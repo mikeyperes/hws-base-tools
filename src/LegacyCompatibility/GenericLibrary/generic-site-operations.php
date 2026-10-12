@@ -1,6 +1,8 @@
 <?php
 
 namespace hws_base_tools;
+
+require_once __DIR__ . '/generic-auto-updates.php';
 function convert_to_bytes($value) {
     // Extract the numeric part and the unit (if any)
     if (preg_match('/^(\d+)([KMG]?)$/i', $value, $matches)) {
@@ -290,19 +292,6 @@ if (!function_exists(__NAMESPACE__ . '\\check_php_handler')) {
             'status' => true,
             'raw_value' => $details
         ];
-    }
-}
-
-if (!function_exists(__NAMESPACE__ . '\\enable_auto_update_plugins')) {
-    function enable_auto_update_plugins() {
-        add_filter('auto_update_plugin', function ($update, $item) {
-            $blocked = get_option('gplvault_blocked_plugins', []);
-            $file = is_object($item) && isset($item->plugin) ? $item->plugin : '';
-            if ($file !== '' && is_array($blocked) && in_array($file, $blocked, true)) {
-                return false;
-            }
-            return true;
-        }, 10, 2);
     }
 }
 

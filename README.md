@@ -230,6 +230,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.6.3
+
+- The auto-update switch code now loads on every request (new `GenericLibrary/generic-auto-updates.php`). In 13.6.2 the switches were activated in every context but their code was still only loaded in wp-admin, so background runs still skipped them.
+
 ### 13.6.2
 
 - Auto-Update All Plugins and Auto-Update All Themes now work. They were only switched on during wp-admin page views, so WordPress's background update run never saw them. They now load in every context and cover every plugin, including ones installed later. Plugins on GPL Vault's do-not-update list are skipped.

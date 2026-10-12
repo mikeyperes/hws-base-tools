@@ -602,6 +602,7 @@ if ( get_option( 'enable_current_year_shortcode', false ) ) {
 
 
 
+require_once HWS_BASE_TOOLS_DIR . '/src/LegacyCompatibility/GenericLibrary/generic-auto-updates.php';
 activate_snippets("non_admin");
 
 
