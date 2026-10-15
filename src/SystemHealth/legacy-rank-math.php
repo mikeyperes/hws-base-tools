@@ -1,5 +1,13 @@
 <?php namespace hws_base_tools;
 
+/**
+ * SEO & Rank Math tab: the Rank Math schema switch, then the Rank Math report.
+ */
+function render_tab_seo() {
+    \HWS\BaseTools\SeoSettings\RankMathSchemaSetting::render();
+    display_settings_seo_reporting();
+}
+
 function display_settings_seo_reporting() {
 
     // ---- helpers -----------------------------------------------------------

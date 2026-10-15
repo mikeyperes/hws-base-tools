@@ -111,6 +111,8 @@ expect_true( $registry->normalize( 'getting-started-checklist' ) === 'quick-star
 expect_true( isset( $tabs['snippets'] ) && $tabs['snippets']->deprecated, 'Legacy Snippets remains visible and deprecated' );
 expect_true( isset( $tabs['shortcodes'] ), 'HWS Shortcodes tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['search'] ), 'HWS Search tab is registered through the dashboard registry' );
+expect_true( isset( $tabs['seo'] ), 'SEO & Rank Math tab holds the Rank Math schema switch' );
+expect_true( str_contains( source( 'src/PluginRuntime/CoreIntegration.php' ), 'new RankMathSchemaSetting()' ), 'the Rank Math schema switch is registered with Core' );
 expect_true( isset( $tabs['brand-templates'] ), 'HWS Brand Templates tab is registered through the dashboard registry' );
 expect_true( isset( $tabs['page-layout-styling'] ), 'Page Layout Styling has a dedicated dashboard tab' );
 expect_true( isset( $tabs['maintenance-mode'] ), 'full-site Maintenance Mode has a dedicated dashboard tab' );

@@ -89,6 +89,11 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Switch:** `enable_required_featured_image` (`hws_required_featured_image_min_width`, `_min_height`, `_post_types`); `enable_public_draft_preview`.
 - **Code:** `src/Editorial/`
 
+### Rank Math schema switch
+- **Does:** decides whether Rank Math prints its own schema block next to the Hexa plugins' shared `hexa-schema` block. Where it is off, Featured Image From URL's duplicate image block is removed too. Rank Math stays active for titles, descriptions and sitemaps.
+- **Switch:** WP Admin → Settings → HWS Base Tools → SEO & Rank Math → Rank Math schema output (`hws_rank_math_schema_output`: `keep`, `hexa` default, `off`).
+- **Code:** `src/SeoSettings/RankMathSchemaSetting.php` (Core: `Hexa\PluginCore\SchemaTools\RankMathSchemaControl`)
+
 ### Extension points
 - `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
 
@@ -210,7 +215,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 3.2.1 |
+| Hexa WP Core bundle | 3.22.0 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -229,6 +234,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.7.0
+
+- New SEO & Rank Math tab with the site's one Rank Math schema switch: On, Off where Hexa plugins print schema (default), or Off on every page. Rank Math stays active for titles, descriptions and sitemaps; only its schema block is removed. Where it is removed, the duplicate image schema of Featured Image From URL is removed too. The SEO / Rank Math report moved from Advanced to this tab.
+- Bundles Hexa WordPress Plugin Core 3.22.0, the shared schema library every Hexa plugin now uses.
 
 ### 13.6.3
 

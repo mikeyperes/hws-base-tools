@@ -75,7 +75,7 @@ final class DashboardRegistry {
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'system-checks', 'mail-authentication', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -204,6 +204,7 @@ final class DashboardRegistry {
             'settings-dashboard-site-profile.php',
             'settings-dashboard-sitemaps.php',
         ] ) );
+        $this->add( new DashboardModuleDefinition( 'seo', 'SEO & Rank Math', 'hws_base_tools\\render_tab_seo', [ 'settings-dashboard-rank-math-settings.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'cleanup', 'Cleanup', 'hws_base_tools\\display_settings_cleanup', [ 'settings-dashboard-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'backups', 'Backups', 'hws_base_tools\\render_tab_backups', [ 'settings-dashboard-backups.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'update-center', 'Update Center', 'hws_base_tools\\display_settings_update_center', [
@@ -227,7 +228,6 @@ final class DashboardRegistry {
             'settings-dashboard-config.php',
             'settings-dashboard-log-delete-cron.php',
             'settings-dashboard-elementor-db-cron.php',
-            'settings-dashboard-rank-math-settings.php',
         ] ) );
         $this->add( new DashboardModuleDefinition( 'snippets', 'Legacy Snippets', 'hws_base_tools\\display_settings_snippets', [
             'settings-dashboard-website-types.php',

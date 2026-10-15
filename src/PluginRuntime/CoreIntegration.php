@@ -28,6 +28,7 @@ use HWS\BaseTools\ReviewCenter\ReviewCenterModule;
 use HWS\BaseTools\LiteSpeed\LiteSpeedModule;
 use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
+use HWS\BaseTools\SeoSettings\RankMathSchemaSetting;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -77,6 +78,7 @@ final class CoreIntegration {
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
             ->add_module( new ExternalPublishingModule() )
+            ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )

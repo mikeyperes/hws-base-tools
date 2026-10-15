@@ -242,9 +242,6 @@ function render_php_info() {
  * Render Advanced Tab
  */
 function render_tab_advanced() {
-    if ( function_exists( __NAMESPACE__ . '\\display_settings_seo_reporting' ) ) {
-        display_settings_seo_reporting();
-    }
     if ( get_option( 'enable_custom_rss_functionality', false ) && function_exists( __NAMESPACE__ . '\\display_settings_rss_dashboard' ) ) {
         display_settings_rss_dashboard();
     }
