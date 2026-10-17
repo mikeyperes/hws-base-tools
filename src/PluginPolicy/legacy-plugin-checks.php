@@ -389,11 +389,11 @@ function hws_get_monitored_plugins() {
             'category'    => 'essential',
             'pro'         => false,
         ],
-        'wp-user-avatars/wp-user-avatars.php' => [
-            'name'        => 'WP User Avatars',
+        'simple-local-avatars/simple-local-avatars.php' => [
+            'name'        => 'Simple Local Avatars',
             'should_be'   => 'active',
             'auto_update' => true,
-            'download'    => 'https://wordpress.org/plugins/wp-user-avatars/',
+            'download'    => 'https://wordpress.org/plugins/simple-local-avatars/',
             'category'    => 'essential',
             'pro'         => false,
         ],

@@ -235,6 +235,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.7.1
+
+- The plugin check lists Simple Local Avatars as the essential avatar plugin instead of WP User Avatars, matching SMP Publication Integration and the author photo code in Hexa WP Core.
+
 ### 13.7.0
 
 - New SEO & Rank Math tab with the site's one Rank Math schema switch: On, Off where Hexa plugins print schema (default), or Off on every page. Rank Math stays active for titles, descriptions and sitemaps; only its schema block is removed. Where it is removed, the duplicate image schema of Featured Image From URL is removed too. The SEO / Rank Math report moved from Advanced to this tab.
