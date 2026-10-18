@@ -30,6 +30,7 @@ use HWS\BaseTools\LiteSpeed\LiteSpeedModule;
 use HWS\BaseTools\DatabaseOptimization\DatabaseOptimizationModule;
 use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
+use HWS\BaseTools\Security\LoginLinkFallback;
 use HWS\BaseTools\SeoSettings\RankMathSchemaSetting;
 
 final class CoreIntegration {
@@ -84,6 +85,7 @@ final class CoreIntegration {
             ->add_module( new ExternalPublishingModule() )
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )
+            ->add_module( new LoginLinkFallback() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )
             ->add_module( UserProfileGalleryDetails::module() )

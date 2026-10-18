@@ -9,6 +9,11 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Expired login link message
+- **Does:** when a one-click login link from Code's WP Toolkit has expired or was already used, shows "This login link has expired or was already used. Ask for a new one." with a link to the login page (HTTP 410) instead of WordPress's bare "0"; a logged-in user goes to the dashboard.
+- **Switch:** always on; it answers only the `hws_auto_login` admin-ajax action, which a valid link's temporary file handles first.
+- **Code:** `src/Security/LoginLinkFallback.php`.
+
 ### Font smoothing
 - **Does:** draws text smoothly (antialiased) on every front-end page, so light text on dark backgrounds no longer looks bolder than the design on Mac browsers.
 - **Switch:** on by default; option `hws_font_smoothing` set to `0` turns it off.
@@ -246,6 +251,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.9.1
+
+- An expired or already-used one-click login link now shows "This login link has expired or was already used. Ask for a new one." with a link to the login page, instead of a blank page reading "0". Someone already logged in is taken to the dashboard.
 
 ### 13.9.0
 
