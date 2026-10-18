@@ -247,6 +247,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.8.1
+
+- Database Optimization: the cleanup and table lists scroll sideways on phones instead of squeezing words letter by letter.
+
 ### 13.8.0
 
 - New Database Optimization tab, our own replacement for WP-Optimize and WP Sweep. Live, with no page reloads: scan, clean selected items in batches, and check, repair, convert (MyISAM to InnoDB) and optimize each table one at a time, with a live log and a Stop button.

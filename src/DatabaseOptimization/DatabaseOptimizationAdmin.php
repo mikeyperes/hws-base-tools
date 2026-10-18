@@ -32,6 +32,9 @@ final class DatabaseOptimizationAdmin {
                 #<?php echo esc_attr( $root ); ?> .hws-dbo-report{margin:0 0 16px}
                 #<?php echo esc_attr( $root ); ?> .hws-dbo-report h4{font-size:13px;margin:0 0 8px}
                 #<?php echo esc_attr( $root ); ?> .hws-dbo-check{text-align:center;width:34px}
+                /* The dashboard caps every table at screen width; these scroll sideways on phones instead of squeezing. */
+                #<?php echo esc_attr( $root ); ?> table.hpc-runner-table{max-width:none;min-width:640px}
+                #<?php echo esc_attr( $root ); ?> table#<?php echo esc_attr( $root ); ?>-table-list{min-width:860px}
             </style>
             <?php
             echo DynamicNotice::render( [ 'id' => $root . '-notice' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -128,7 +131,7 @@ final class DatabaseOptimizationAdmin {
             . DynamicButton::render( [ 'label' => 'Optimize With Overhead', 'working_label' => 'Optimizing...', 'class' => 'hpc-button secondary', 'attrs' => [ 'data-dbo-bulk' => 'optimize' ] ] )
             . '</div>'
             . CoreUi::collection_filter( [ 'target_id' => self::ROOT . '-table-list', 'item_selector' => 'tr[data-dbo-table]', 'label' => 'Search tables', 'placeholder' => 'Search by name, engine or status (MyISAM, Needs repair, Can optimize)', 'item_label_singular' => 'table', 'empty_message' => 'No matching tables.' ] )
-            . '<div class="hpc-runner-table-wrap"><table class="hpc-runner-table" id="' . self::ROOT . '-table-list" style="min-width:860px"><thead><tr>'
+            . '<div class="hpc-runner-table-wrap"><table class="hpc-runner-table" id="' . self::ROOT . '-table-list"><thead><tr>'
             . '<th>Table</th><th>Engine</th><th class="num">Rows</th><th class="num">Size</th><th class="num">Reclaimable</th><th>Status</th><th>Actions</th>'
             . '</tr></thead><tbody data-dbo-tables><tr><td colspan="7" class="hpc-runner-muted">Loading...</td></tr></tbody></table></div>';
     }
