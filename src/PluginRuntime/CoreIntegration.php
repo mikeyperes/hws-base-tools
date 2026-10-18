@@ -27,6 +27,7 @@ use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
 use HWS\BaseTools\QuickStart\QuickStartModule;
 use HWS\BaseTools\ReviewCenter\ReviewCenterModule;
 use HWS\BaseTools\LiteSpeed\LiteSpeedModule;
+use HWS\BaseTools\DatabaseOptimization\DatabaseOptimizationModule;
 use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use HWS\BaseTools\SeoSettings\RankMathSchemaSetting;
@@ -71,6 +72,7 @@ final class CoreIntegration {
             ->add_module( new QuickStartModule() )
             ->add_module( new ReviewCenterModule() )
             ->add_module( new LiteSpeedModule() )
+            ->add_module( new DatabaseOptimizationModule() )
             ->add_module( new QueryHookCompatibility() )
             ->add_module( new BrandTemplateFeature() )
             ->add_module( new PageLayoutFeature() )

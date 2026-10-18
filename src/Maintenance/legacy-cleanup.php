@@ -11,35 +11,12 @@ use Hexa\PluginCore\ContentCleanup\BackupCleanupRenderer;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupAjaxController;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ContentCleanupRenderer;
-use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupAjaxController;
-use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupRenderer;
-use Hexa\PluginCore\DatabaseCleanup\DatabaseCleanupService;
+use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use Hexa\PluginCore\ObjectCache\LiteSpeedRedisService;
 
 defined( 'ABSPATH' ) || exit;
 
 const HWS_CONTENT_CLEANUP_NONCE_ACTION = 'hws_base_tools_content_cleanup';
-
-function hws_database_cleanup_config(): array {
-    return [
-        'root_id'                 => 'hws-database-cleanup',
-        'title'                   => 'Database Cleanup',
-        'description'             => 'Runs WP-Optimize cleanup tasks, then optimizes database tables one row at a time with live AJAX reporting. If WP-Optimize is inactive before the run, HWS activates it for the run and disables it again afterward.',
-        'capability'              => 'manage_options',
-        'nonce_action'            => HWS_CONTENT_CLEANUP_NONCE_ACTION,
-        'nonce_field'             => 'nonce',
-        'wp_optimize_plugin_file' => 'wp-optimize/wp-optimize.php',
-        'status_action'           => 'hws_database_cleanup_status',
-        'start_action'            => 'hws_database_cleanup_start',
-        'cleanup_action'          => 'hws_database_cleanup_task',
-        'table_action'            => 'hws_database_cleanup_table',
-        'finish_action'           => 'hws_database_cleanup_finish',
-    ];
-}
-
-function hws_database_cleanup_service(): DatabaseCleanupService {
-    return new DatabaseCleanupService( hws_database_cleanup_config() );
-}
 
 function hws_litespeed_redis_service(): LiteSpeedRedisService {
     return new LiteSpeedRedisService();
@@ -215,7 +192,6 @@ function hws_register_content_cleanup_ajax(): void {
     ( new ContentCleanupAjaxController( hws_content_cleanup_config() ) )->register();
     ( new BackupCleanupAjaxController( hws_backup_file_cleanup_config() ) )->register();
     ( new ArticleMediaCleanupAjaxController( hws_article_media_cleanup_config() ) )->register();
-    ( new DatabaseCleanupAjaxController( hws_database_cleanup_config() ) )->register();
 
     $registered = true;
 }
@@ -257,7 +233,8 @@ function hws_ajax_litespeed_redis_enable(): void {
 function display_settings_cleanup(): void {
     hws_register_content_cleanup_ajax();
 
-    ( new DatabaseCleanupRenderer( hws_database_cleanup_config() ) )->render();
+    CoreUi::render_assets();
+    echo '<p class="hpc-ui"><span class="hpc-callout" style="display:block;margin:0 0 14px">Database cleanup and table optimization now have their own tab: ' . CoreUi::external_link( admin_url( 'admin.php?page=' . \HWS\BaseTools\PluginRuntime\PluginMetadata::ADMIN_PAGE_SLUG . '&tab=database-optimization' ), 'Open Database Optimization', 'hpc-button secondary' ) . '</span></p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     ( new ContentCleanupRenderer( hws_content_cleanup_config() ) )->render();
     ( new BackupCleanupRenderer( hws_backup_file_cleanup_config() ) )->render();
     ( new ArticleMediaCleanupRenderer( hws_article_media_cleanup_config() ) )->render();

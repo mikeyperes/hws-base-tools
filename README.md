@@ -100,6 +100,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Switch:** WP Admin → Settings → HWS Base Tools → SEO & Rank Math → Rank Math schema output (`hws_rank_math_schema_output`: `keep`, `hexa` default, `off`).
 - **Code:** `src/SeoSettings/RankMathSchemaSetting.php` (Core: `Hexa\PluginCore\SchemaTools\RankMathSchemaControl`)
 
+### Database optimization
+- **Does:** cleans the database and maintains its tables without WP-Optimize or WP Sweep: revisions (keeps the newest N per post), auto-drafts, old trash, spam and trashed comments, pingbacks, trackbacks, expired transients, embed caches, leftover post/comment/user/term data and category links; optional review-first items (unapproved comments, all transients, duplicate custom fields, unused terms). Tables: check, repair damaged, convert MyISAM to InnoDB, optimize. Read-only reports: autoloaded options, non-WordPress tables with their likely plugin, media attached to deleted posts. Rows are removed through WordPress delete functions; only this site's prefixed tables are touched.
+- **Switch:** WP Admin → Settings → HWS Base Tools → Database Optimization (`options-general.php?page=hws-core-tools&tab=database-optimization`); retention ages in `hws_database_optimization_settings`.
+- **Use:** `wp hws db-optimize scan [--format=json]`, `wp hws db-optimize clean [--items=revisions,autodrafts]`, `wp hws db-optimize tables [--operation=check|repair|convert|optimize|all] [--tables=...]`, `wp hws db-optimize run`. AJAX actions `hws_database_optimization_{overview,count,clean,tables,table,reports,settings}` (nonce `hws_database_optimization`).
+- **Code:** `src/DatabaseOptimization/` (`CleanupTasks`, `TableMaintenance`, `DatabaseReport`, `DatabaseOptimizationModule`); UI on Core's `WpAdminComponents\TaskRunner`.
+
 ### Extension points
 - `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
 
@@ -240,6 +246,15 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.8.0
+
+- New Database Optimization tab, our own replacement for WP-Optimize and WP Sweep. Live, with no page reloads: scan, clean selected items in batches, and check, repair, convert (MyISAM to InnoDB) and optimize each table one at a time, with a live log and a Stop button.
+- Cleans revisions (keeps the newest 5 per post), auto-drafts, old trash, spam and trashed comments, pingbacks, trackbacks, expired transients, embed caches, and leftover post, comment, user and term data and category links, always through WordPress's own delete functions. Optional review-first items: unapproved comments, all transients, duplicate custom fields, unused categories and tags. Retention ages are set on the tab.
+- Read-only reports: largest settings loaded on every page, tables not created by WordPress with their likely plugin, and media attached to deleted posts.
+- `wp hws db-optimize scan|clean|tables|run` runs the same engine from the command line.
+- The Cleanup tab no longer switches WP-Optimize on for a run; it links to the new tab.
+- Bundles Hexa WordPress Plugin Core 3.24.1 (shared `TaskRunner` live-progress component).
 
 ### 13.7.2
 
