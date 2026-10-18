@@ -20,6 +20,7 @@ use HWS\BaseTools\BrandTemplates\BrandTemplateFeature;
 use HWS\BaseTools\PageLayoutStyling\PageLayoutFeature;
 use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
+use HWS\BaseTools\FrontendContent\FontSmoothing;
 use HWS\BaseTools\FrontendContent\DiscussionPolicy;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
@@ -77,6 +78,7 @@ final class CoreIntegration {
             ->add_module( new DiscussionPolicy() )
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
+            ->add_module( new FontSmoothing() )
             ->add_module( new ExternalPublishingModule() )
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )

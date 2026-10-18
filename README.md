@@ -9,6 +9,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Font smoothing
+- **Does:** draws text smoothly (antialiased) on every front-end page, so light text on dark backgrounds no longer looks bolder than the design on Mac browsers.
+- **Switch:** on by default; option `hws_font_smoothing` set to `0` turns it off.
+- **Use:** automatic, one small style in the page head (`#hws-font-smoothing`). Never add the same rule in Elementor or the theme.
+- **Code:** `src/FrontendContent/FontSmoothing.php`
+
 ### Reading progress bar
 - **Does:** a progress line at the top of the page that fills as the visitor scrolls.
 - **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
@@ -234,6 +240,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.7.2
+
+- Font smoothing on every site: text is drawn antialiased on every front-end page (on by default, option `hws_font_smoothing`), matching approved HTML drafts on Mac browsers.
 
 ### 13.7.1
 
