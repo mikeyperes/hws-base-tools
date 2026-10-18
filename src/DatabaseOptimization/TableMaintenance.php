@@ -236,6 +236,7 @@ final class TableMaintenance {
         }
 
         $flagged = self::flagged();
+        $owner   = TableOwners::owner( $name, isset( $core[ $name ] ) );
 
         return [
             'name'          => $name,
@@ -244,6 +245,8 @@ final class TableMaintenance {
             'size'          => $size,
             'overhead'      => $overhead,
             'core'          => isset( $core[ $name ] ),
+            'owner'         => $owner['name'],
+            'owner_state'   => $owner['state'],
             'optimizable'   => '' === $note,
             'optimize_note' => '' === $note ? 'Has ' . size_format( $overhead, 1 ) . ' to reclaim.' : $note,
             'rebuildable'   => in_array( $lower, [ 'innodb', 'myisam', 'aria', 'archive' ], true ),
@@ -297,12 +300,20 @@ final class TableMaintenance {
         return in_array( strtoupper( (string) ( $row['Value'] ?? '' ) ), [ 'ON', '1' ], true );
     }
 
-    /** @return array<string,bool> */
+    /**
+     * WordPress's own tables. $wpdb->tables() is not used because plugins such
+     * as Action Scheduler add their tables to it.
+     *
+     * @return array<string,bool>
+     */
     public static function core_tables(): array {
         global $wpdb;
         $core = [];
-        foreach ( $wpdb->tables( 'all', true ) as $table ) {
-            $core[ $table ] = true;
+        foreach ( [ 'posts', 'postmeta', 'comments', 'commentmeta', 'terms', 'termmeta', 'term_taxonomy', 'term_relationships', 'options', 'links' ] as $table ) {
+            $core[ $wpdb->prefix . $table ] = true;
+        }
+        foreach ( [ 'users', 'usermeta', 'blogs', 'blogmeta', 'signups', 'site', 'sitemeta', 'sitecategories', 'registration_log' ] as $table ) {
+            $core[ $wpdb->base_prefix . $table ] = true;
         }
 
         return $core;

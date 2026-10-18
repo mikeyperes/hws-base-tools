@@ -101,10 +101,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/SeoSettings/RankMathSchemaSetting.php` (Core: `Hexa\PluginCore\SchemaTools\RankMathSchemaControl`)
 
 ### Database optimization
-- **Does:** cleans the database and maintains its tables without WP-Optimize or WP Sweep: revisions (keeps the newest N per post), auto-drafts, old trash, spam and trashed comments, pingbacks, trackbacks, expired transients, embed caches, leftover post/comment/user/term data and category links; optional review-first items (unapproved comments, all transients, duplicate custom fields, unused terms). Tables: check, repair damaged, convert MyISAM to InnoDB, optimize. Read-only reports: autoloaded options, non-WordPress tables with their likely plugin, media attached to deleted posts. Rows are removed through WordPress delete functions; only this site's prefixed tables are touched.
+- **Does:** cleans the database and maintains its tables without WP-Optimize or WP Sweep: revisions (keeps the newest N per post), auto-drafts, old trash, spam and trashed comments, pingbacks, trackbacks, expired transients, embed caches, leftover post/comment/user/term data and category links; optional review-first items (unapproved comments, all transients, duplicate custom fields, unused terms). Tables: each shows its owning plugin and that plugin's state; check, repair damaged, convert MyISAM to InnoDB and optimize per selection or in one click for all. Read-only reports: autoloaded options, leftover tables grouped by inactive or removed plugin, media attached to deleted posts. Rows are removed through WordPress delete functions; only this site's prefixed tables are touched.
 - **Switch:** WP Admin → Settings → HWS Base Tools → Database Optimization (`options-general.php?page=hws-core-tools&tab=database-optimization`); retention ages in `hws_database_optimization_settings`.
 - **Use:** `wp hws db-optimize scan [--format=json]`, `wp hws db-optimize clean [--items=revisions,autodrafts]`, `wp hws db-optimize tables [--operation=check|repair|convert|optimize|all] [--tables=...]`, `wp hws db-optimize run`. AJAX actions `hws_database_optimization_{overview,count,clean,tables,table,reports,settings}` (nonce `hws_database_optimization`).
-- **Code:** `src/DatabaseOptimization/` (`CleanupTasks`, `TableMaintenance`, `DatabaseReport`, `DatabaseOptimizationModule`); UI on Core's `WpAdminComponents\TaskRunner`.
+- **Code:** `src/DatabaseOptimization/` (`CleanupTasks`, `TableMaintenance`, `TableOwners` with `data/table-owners.json.gz`, `DatabaseReport`, `DatabaseOptimizationModule`); UI on Core's `WpAdminComponents\TaskRunner`.
 
 ### Extension points
 - `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
@@ -246,6 +246,15 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.9.0
+
+- Database Optimization redesigned: summary tiles, Cleanup / Tables / Reports / Settings panels, a cleaner cleanup list with live per-item results, and a slim progress bar with Stop.
+- Every table shows the plugin that created it and whether that plugin is active, inactive or not installed, from WP-Optimize's list of 27,000+ known plugin tables (GPLv2+, bundled compressed) plus name matching. Action Scheduler tables are no longer counted as WordPress's own.
+- Tables: search, filter chips (Needs work, MyISAM, Space to free, Plugin tables, Inactive or removed plugins), checkboxes with bulk Check / Repair / Convert to InnoDB / Optimize, and one-click Convert all MyISAM, Free all space and Check all.
+- Reports: leftover tables grouped by plugin with table count, rows and size; autoloaded settings with size bars.
+- The page-load scan counts four items at a time, so the page is ready in about half the time.
+- Bundles Hexa WordPress Plugin Core 3.25.0.
 
 ### 13.8.1
 

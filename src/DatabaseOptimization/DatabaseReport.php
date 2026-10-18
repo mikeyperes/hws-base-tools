@@ -33,7 +33,7 @@ final class DatabaseReport {
             'needs_repair'   => $repair,
             'autoload_size'  => $autoload['size'],
             'autoload_count' => $autoload['count'],
-            'server'         => (string) $wpdb->db_server_info(),
+            'server'         => self::server_label( (string) $wpdb->db_server_info() ),
             'innodb'         => TableMaintenance::innodb_available(),
             'file_per_table' => TableMaintenance::file_per_table(),
         ];
@@ -48,47 +48,20 @@ final class DatabaseReport {
     }
 
     /**
-     * Tables with this site's prefix that WordPress did not create, with the
-     * installed plugin whose folder name matches, when one does.
+     * Tables whose plugin is inactive or no longer installed: the likely leftovers.
      *
      * @return array<int,array<string,mixed>>
      */
-    public static function extra_tables(): array {
-        global $wpdb;
-        if ( ! function_exists( 'get_plugins' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
-        }
-        $plugins = [];
-        foreach ( get_plugins() as $file => $data ) {
-            $slug             = strtolower( (string) strtok( $file, '/' ) );
-            $plugins[ $slug ] = [ 'name' => (string) $data['Name'], 'active' => is_plugin_active( $file ) ];
-        }
-
-        $extra = [];
+    public static function leftover_tables(): array {
+        $left = [];
         foreach ( TableMaintenance::tables() as $table ) {
-            if ( $table['core'] ) {
-                continue;
+            if ( in_array( $table['owner_state'], [ 'inactive', 'missing', 'unknown' ], true ) ) {
+                $left[] = [ 'name' => $table['name'], 'rows' => $table['rows'], 'size' => $table['size'], 'owner' => $table['owner'], 'owner_state' => $table['owner_state'] ];
             }
-            $suffix = strtolower( substr( $table['name'], strlen( $wpdb->prefix ) ) );
-            $token  = (string) strtok( $suffix, '_' );
-            $owner  = null;
-            foreach ( $plugins as $slug => $plugin ) {
-                $flat = str_replace( '-', '', $slug );
-                if ( strlen( $token ) >= 3 && ( str_starts_with( $flat, $token ) || str_starts_with( $token, $flat ) || str_contains( $slug, $token ) ) ) {
-                    $owner = $plugin;
-                    break;
-                }
-            }
-            $extra[] = [
-                'name'   => $table['name'],
-                'rows'   => $table['rows'],
-                'size'   => $table['size'],
-                'owner'  => $owner ? $owner['name'] : '',
-                'active' => $owner ? $owner['active'] : false,
-            ];
         }
+        usort( $left, static fn( array $a, array $b ): int => $b['size'] <=> $a['size'] );
 
-        return $extra;
+        return $left;
     }
 
     /** Media items attached to a post that no longer exists. The files may still be used elsewhere. */
@@ -104,6 +77,12 @@ final class DatabaseReport {
         $row = $wpdb->get_row( "SELECT COUNT(*) AS c, COALESCE( SUM( LENGTH( option_value ) ), 0 ) AS s FROM {$wpdb->options} WHERE autoload IN ( " . self::autoload_values() . ' )', ARRAY_A );
 
         return [ 'size' => (int) ( $row['s'] ?? 0 ), 'count' => (int) ( $row['c'] ?? 0 ) ];
+    }
+
+    private static function server_label( string $info ): string {
+        $version = preg_match( '/(\d+\.\d+(?:\.\d+)?)/', $info, $m ) ? $m[1] : $info;
+
+        return ( stripos( $info, 'mariadb' ) !== false ? 'MariaDB ' : 'MySQL ' ) . $version;
     }
 
     private static function autoload_values(): string {

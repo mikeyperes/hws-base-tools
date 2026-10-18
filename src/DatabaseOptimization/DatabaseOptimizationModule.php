@@ -101,7 +101,7 @@ final class DatabaseOptimizationModule implements ModuleInterface {
     public static function ajax_reports( AjaxRequest $request ): array {
         return [
             'autoload'       => DatabaseReport::autoload_top(),
-            'extra_tables'   => DatabaseReport::extra_tables(),
+            'leftover'       => DatabaseReport::leftover_tables(),
             'detached_media' => DatabaseReport::detached_media(),
         ];
     }
