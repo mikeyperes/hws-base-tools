@@ -12,6 +12,9 @@ defined( 'ABSPATH' ) || exit;
 final class ViewAsToolbar {
     private const SEARCH_ACTION = 'hws_view_as_users';
 
+    /** Any other page: the search opens View As on the page being viewed. */
+    private const ANY_PAGE = 'any_page';
+
     public function __construct( private readonly VirtualRequestContext $context ) {}
 
     public function register(): void {
@@ -54,7 +57,7 @@ final class ViewAsToolbar {
         wp_localize_script( 'hws-view-as-picker', 'hwsViewAsPicker', [
             'url' => admin_url( 'admin-ajax.php' ), 'action' => self::SEARCH_ACTION,
             'nonce' => wp_create_nonce( self::SEARCH_ACTION ),
-            'postId' => $page['post_id'], 'view' => $page['location'],
+            'postId' => $page['post_id'], 'view' => $page['location'], 'destination' => $page['destination'],
         ] );
     }
 
@@ -66,11 +69,15 @@ final class ViewAsToolbar {
         check_ajax_referer( self::SEARCH_ACTION, 'nonce' );
         $location = isset( $_POST['view'] ) && is_string( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
         $post_id = absint( $_POST['post_id'] ?? 0 );
-        if ( ! UserImpersonationFeature::location_enabled( $location ) ) {
+        if ( self::ANY_PAGE !== $location && ! UserImpersonationFeature::location_enabled( $location ) ) {
             wp_send_json_error( [ 'message' => 'View As is disabled for this location.' ], 403 );
             return;
         }
         $destination = admin_url();
+        if ( self::ANY_PAGE === $location && isset( $_POST['destination'] ) && is_string( $_POST['destination'] ) ) {
+            // start_url() keeps only same-site destinations.
+            $destination = esc_url_raw( wp_unslash( $_POST['destination'] ) );
+        }
         if ( in_array( $location, [ 'post_editor', 'single_content' ], true ) ) {
             $post = get_post( $post_id );
             if ( ! $post instanceof \WP_Post || ! current_user_can( 'edit_post', $post_id ) ) {
@@ -113,21 +120,28 @@ final class ViewAsToolbar {
                 return [ 'location' => 'users', 'post_id' => 0, 'user_id' => $user_id, 'destination' => admin_url() ];
             }
             if ( 'post' !== $screen->base || ! UserImpersonationFeature::location_enabled( 'post_editor' ) ) {
-                return null;
+                return $this->any_page();
             }
             $location = 'post_editor';
             $post = get_post( absint( $_GET['post'] ?? 0 ) );
         } else {
             if ( ! is_singular() || ! UserImpersonationFeature::location_enabled( 'single_content' ) ) {
-                return null;
+                return $this->any_page();
             }
             $location = 'single_content';
             $post = get_queried_object();
         }
         if ( ! $post instanceof \WP_Post || ! current_user_can( 'edit_post', $post->ID ) ) {
-            return null;
+            return $this->any_page();
         }
         return [ 'location' => $location, 'post_id' => (int) $post->ID, 'user_id' => 0, 'destination' => $this->post_destination( $post, 'post_editor' === $location ) ];
+    }
+
+    /** @return array{location:string,post_id:int,user_id:int,destination:string} */
+    private function any_page(): array {
+        $uri = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/';
+        $host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+        return [ 'location' => self::ANY_PAGE, 'post_id' => 0, 'user_id' => 0, 'destination' => set_url_scheme( 'http://' . $host . $uri ) ];
     }
 
     /** @param array{post_id:int,user_id:int} $page @return array<int,array{user:\WP_User,source:string}> */

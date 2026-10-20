@@ -56,12 +56,27 @@
         input.value = requestToken;
     }
 
-    document.addEventListener('click', function (event) {
-        var link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
-        if (link) {
-            link.href = tokenizedUrl(link.href);
+    // Links carry the token from page load, so new tabs (middle-click, right-click,
+    // copied links) stay in the session too. In-page and script links are left alone.
+    function prepareLink(link) {
+        var raw = link.getAttribute('href') || '';
+        if (raw && !/^(?:#|javascript:|mailto:|tel:)/i.test(raw)) {
+            var next = tokenizedUrl(link.href);
+            if (next !== link.href) {
+                link.href = next;
+            }
         }
-    }, true);
+    }
+
+    document.querySelectorAll('a[href]').forEach(prepareLink);
+    ['click', 'auxclick', 'mousedown', 'contextmenu'].forEach(function (type) {
+        document.addEventListener(type, function (event) {
+            var link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+            if (link) {
+                prepareLink(link);
+            }
+        }, true);
+    });
 
     document.addEventListener('submit', function (event) {
         prepareForm(event.target);

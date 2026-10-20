@@ -174,7 +174,7 @@ The HWS dashboard includes:
 - Brand Templates for safe WordPress fallbacks and native Elementor Theme Builder imports.
 - Default Page Content styling with six exact visual designs, an explicit No Style option, and an inspectable template/CSS view.
 - Full Site Maintenance Mode with five exact response templates, administrator bypass, proper public 503/Retry-After/noindex handling, REST/XML-RPC protection, and a live enable/disable checklist.
-- A default-off administrator-only View As User feature that opens an isolated virtual user session in a separate tab, keeps the administrator login intact, and displays a persistent red exit banner.
+- A default-off administrator-only View As User feature that opens an isolated virtual user session in a separate tab, keeps the administrator login intact, and displays a persistent red exit banner. The toolbar search starts it from any page, and the session survives refusal pages until it is ended.
 
 Dashboard navigation and asynchronous tab loading use Hexa WP Core. Operational actions report progress without requiring full page refreshes.
 
@@ -251,6 +251,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.10.0
+
+- View As stays on until you end it. A page the viewed user may not open now shows WordPress's refusal with the View As banner, a Back link and the session kept, instead of a bare page that dropped the session on the next click.
+- Links carry the View As session from page load, so opening them in a new tab (middle-click, right-click, copied links) stays in the session.
+- The toolbar's "View as user" search is available on every page, not only users, editors and single content. Choosing a user opens View As on the page you are on.
 
 ### 13.9.1
 

@@ -34,6 +34,7 @@
                 nonce: config.nonce,
                 post_id: config.postId,
                 view: config.view,
+                destination: config.destination || '',
                 query: query
             });
             fetch(config.url, { method: 'POST', credentials: 'same-origin', body: body, signal: pending.signal })

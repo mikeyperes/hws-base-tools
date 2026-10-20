@@ -25,6 +25,32 @@ final class ViewAsPresentation {
         add_action( 'wp_footer', [ $this, 'render' ], -PHP_INT_MAX );
         add_filter( 'admin_body_class', [ $this, 'admin_body_class' ] );
         add_filter( 'body_class', [ $this, 'frontend_body_classes' ] );
+        add_filter( 'wp_die_handler', [ $this, 'die_handler' ], PHP_INT_MAX );
+    }
+
+    /**
+     * A page the viewed user may not open ends in WordPress's refusal page, which has
+     * no admin header or scripts. Keep the banner, the token-carrying script and a
+     * Back link on it so the refusal never looks like, or becomes, the end of View As.
+     */
+    public function die_handler( mixed $handler ): mixed {
+        if ( ! $this->context->is_active() || ! is_callable( $handler ) ) {
+            return $handler;
+        }
+        return function ( mixed $message, mixed $title = '', mixed $args = [] ) use ( $handler ): void {
+            $banner = $this->banner_html();
+            if ( '' !== $banner ) {
+                $base_url = plugin_dir_url( PluginMetadata::plugin_file() );
+                $banner = '<link rel="stylesheet" href="' . esc_url( $base_url . 'assets/user-impersonation/view-as-user.css?ver=' . PluginMetadata::VERSION ) . '">'
+                    . $banner
+                    . '<script src="' . esc_url( $base_url . 'assets/user-impersonation/view-as-user.js?ver=' . PluginMetadata::VERSION ) . '"></script>';
+                ob_start( static fn( string $html ): string => str_contains( $html, '</body>' ) ? str_replace( '</body>', $banner . '</body>', $html ) : $html . $banner );
+            }
+            if ( is_array( $args ) ) {
+                $args['back_link'] = true;
+            }
+            call_user_func( $handler, $message, $title, $args );
+        };
     }
 
     public function enqueue_assets(): void {
@@ -49,18 +75,29 @@ final class ViewAsPresentation {
     }
 
     public function render(): void {
-        if ( $this->rendered || ! $this->context->is_active() ) {
+        if ( $this->rendered ) {
             return;
+        }
+        $html = $this->banner_html();
+        if ( '' !== $html ) {
+            $this->rendered = true;
+            echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in banner_html().
+        }
+    }
+
+    private function banner_html(): string {
+        if ( ! $this->context->is_active() ) {
+            return '';
         }
 
         $actor = $this->context->actor();
         $target = $this->context->target();
         $end_url = $this->controller->end_url();
         if ( ! $actor || ! $target || '' === $end_url ) {
-            return;
+            return '';
         }
 
-        $this->rendered = true;
+        ob_start();
         $actor_name = (string) ( $actor->display_name ?? $actor->user_login ?? 'Administrator' );
         $target_name = (string) ( $target->display_name ?? $target->user_login ?? 'User' );
         ?>
@@ -82,6 +119,7 @@ final class ViewAsPresentation {
             </a>
         </div>
         <?php
+        return (string) ob_get_clean();
     }
 
     public function admin_body_class( string $classes ): string {
