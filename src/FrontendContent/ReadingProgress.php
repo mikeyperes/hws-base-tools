@@ -29,6 +29,7 @@ final class ReadingProgress implements ModuleInterface {
 
     public function register(): void {
         add_action( 'init', [ self::class, 'migrate_from_smp' ], 1 );
+        add_shortcode( 'hws_reading_progress', [ self::class, 'inline_shortcode' ] );
     }
 
     public static function activate(): void {
@@ -308,6 +309,19 @@ final class ReadingProgress implements ModuleInterface {
         echo '<style id="hws-reading-progress-css">' . self::frontend_css() . '</style>';
     }
 
+    /** A themeable companion to the existing page indicator, without a second tracker. */
+    public static function inline_shortcode( $attributes = [] ): string {
+        if ( ! self::should_render() ) {
+            return '';
+        }
+        $attributes = shortcode_atts( [ 'label' => 'Read', 'class' => '' ], (array) $attributes, 'hws_reading_progress' );
+        $label = trim( (string) $attributes['label'] );
+        $classes = array_filter( array_map( 'sanitize_html_class', preg_split( '/\s+/', (string) $attributes['class'] ) ?: [] ) );
+        return '<div class="hws-reading-progress-inline ' . esc_attr( implode( ' ', $classes ) ) . '" data-hws-reading-progress role="progressbar" aria-label="' . esc_attr( $label ?: 'Reading progress' ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">'
+            . ( $label !== '' ? '<span class="hws-reading-progress-inline__label">' . esc_html( $label ) . '</span>' : '' )
+            . '<span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span><span class="hws-reading-progress-inline__value" data-hws-reading-progress-value>0%</span></div>';
+    }
+
     public static function print_markup(): void {
         if ( self::$markup_rendered || ! self::should_render() ) {
             return;
@@ -347,10 +361,13 @@ final class ReadingProgress implements ModuleInterface {
                 var value=maximum>0?Math.max(0,Math.min(100,(offset/maximum)*100)):0;
                 if(Math.abs(value-lastValue)<0.01){return;}
                 lastValue=value;
-                indicator.style.setProperty("--hws-reading-progress-scale",(value/100).toFixed(5));
-                indicator.style.setProperty("--hws-reading-progress-value",value.toFixed(3)+"%");
-                indicator.setAttribute("aria-valuenow",String(Math.round(value)));
-                indicator.classList.toggle("is-complete",value>=99.9);
+                document.querySelectorAll("#hws-reading-progress,[data-hws-reading-progress]").forEach(function(display){
+                    display.style.setProperty("--hws-reading-progress-scale",(value/100).toFixed(5));
+                    display.style.setProperty("--hws-reading-progress-value",value.toFixed(3)+"%");
+                    display.setAttribute("aria-valuenow",String(Math.round(value)));
+                    display.classList.toggle("is-complete",value>=99.9);
+                    display.querySelectorAll("[data-hws-reading-progress-value]").forEach(function(label){label.textContent=Math.round(value)+"%";});
+                });
             }
             function requestUpdate(){
                 if(ticking){return;}
@@ -429,7 +446,8 @@ final class ReadingProgress implements ModuleInterface {
     }
 
     private static function frontend_css(): string {
-        return '.hws-reading-progress{box-sizing:border-box;left:0;pointer-events:none;position:fixed;right:0;top:0;width:auto;z-index:2147483000}'
+        return '.hws-reading-progress-inline{display:flex;align-items:center;gap:12px}.hws-reading-progress-inline .hws-reading-progress__track{flex:1;height:4px;background:rgba(127,127,127,.2)}.hws-reading-progress-inline__value{font-variant-numeric:tabular-nums}'
+            . '.hws-reading-progress{box-sizing:border-box;left:0;pointer-events:none;position:fixed;right:0;top:0;width:auto;z-index:2147483000}'
             . '.hws-reading-progress *{box-sizing:border-box}'
             . '.hws-reading-progress--floating{left:12px;right:12px;top:8px}'
             . '@media(max-width:600px){.hws-reading-progress--floating{left:8px;right:8px;top:6px}}'
