@@ -78,7 +78,7 @@ final class SharedAcfStructures {
                 'hws_base_tools\\hws_user_additional_fields_group',
                 'All WordPress user profiles',
                 [ 'Public email', 'Public phone', 'Title', 'Team member', 'Profile type', 'Profile photo', 'Quotes repeater', 'Staff writer', 'Muck Rack fields' ]
-            ),
+            ) + [ 'client_view' => [ 'roles' => 'below_admin', 'hide' => true ] ], // Staff-only: not shown to clients.
             self::definition(
                 'sponsored-posts',
                 'Sponsored Content Fields',

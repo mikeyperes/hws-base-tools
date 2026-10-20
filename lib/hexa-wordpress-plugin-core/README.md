@@ -153,7 +153,15 @@ Version 3.15.1 adds the lightbox `media` layout: a large dialog with the origina
 
 Version 3.21.0 makes site search public-only for everyone: `SearchQueryEngine::restrict_to_public()` limits every prepared search (the regular search page and the Elementor Search widget) to published, non-password items, drops anything marked noindex (Rank Math `rank_math_robots`, Yoast `_yoast_wpseo_meta-robots-noindex`) and never returns the site's front or posts page. Before, the regular search page used WordPress's default, which shows private posts to signed-in editors.
 
+Version 3.28.0 keeps staff business away from clients (users below administrator) at the source. `WpAdminUiCleanup\ClientFacingPlugins` names the plugins that may speak to clients (`hexa-*`, `hws-*`, ACF, WP User Avatars; filter `hexa_core_client_facing_plugins`) and `strip( $hook )` removes every other plugin's callbacks from a hook before it runs. `CleanupPresets::client_notices()` strips the admin-notice hooks, so Rank Math notices and donation banners never reach clients. `CleanupPresets::client_profile()` strips staff plugins' Profile sections (Rank Math SEO, Elementor AI), turns Application Passwords off through `wp_is_application_passwords_available_for_user`, removes the color picker through its own hook and hides the remaining hook-less Personal Options rows by WordPress's row classes. `Fields\Audience` adds `'hide' => true` to `client_view`: a staff-only group is not registered for client-view users; the registry card offers "Hide the whole group from them".
+
 Version 3.27.0 adds a client-friendly field view (`Fields\Audience`). Any field can carry `developer_instructions` (shortcodes, meta keys, compatibility notes) beside its friendly `instructions`. A group's `client_view` (`['enabled' => true, 'roles' => 'below_admin']` by default, or a role list) decides who sees only the friendly help; everyone else sees both. `AcfFieldGroupRegistry` cards add a Client-friendly view switch with "Everyone below administrator" or chosen roles, saved per group. Filter: `hexa_core_fields_client_view`.
+
+Version 3.27.1 smooths the ImageZoom hover preview: it fades and settles in over about half a second once the image is decoded, with rounder corners (16px) and a softer hint line that follows them.
+
+Version 3.27.2 keeps the hover preview open while the pointer is on it: it closes only when the pointer leaves the preview (or the thumbnail without entering it) or on a click outside. Clicking the preview image opens the full-screen viewer and the detail links are real links (outside links open in a new tab).
+
+Version 3.27.3 makes the hover preview hint line easier to read: brighter text at 12.5px and a soft glow on its accent dot.
 
 Version 3.26.0 gives `ImageZoom` optional `delay` (ms, up to 5000) with a countdown ring on the thumbnail, a one-line `hint` above the preview (a default explainer when a delay is set; empty string hides it) and a `detail` side panel (title, label/value facts, short text, link lines). Without options the markup is unchanged.
 

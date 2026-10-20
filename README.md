@@ -232,7 +232,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 3.27.0 |
+| Hexa WP Core bundle | 3.28.0 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -251,6 +251,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.12.0
+
+- Staff business never reaches users below administrator. Two new UI Cleanup switches, on by default: "Plugin Notices for Non-Administrators" (only WordPress, Hexa, HWS, ACF and avatar notices reach them; Rank Math notices and donation banners never do) and "Profile Page for Non-Administrators" (no Personal Options, Application Passwords, or staff plugins' sections such as Rank Math SEO and Elementor AI). Both remove the other plugins' hooks at the source through Core's client-facing plugin list.
+- "Additional User Profile Fields" is staff-only: users below administrator do not get the group. Changeable on its ACF Structures card.
+- Bundles Hexa WordPress Plugin Core 3.28.0.
 
 ### 13.11.0
 

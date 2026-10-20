@@ -121,6 +121,9 @@ function get_ui_cleanup_options(): array {
         'hide_post_editor_comments' => CleanupPresets::comments_meta_box( [ 'label' => 'Post Editor Comments', 'default' => false, 'section' => 'wordpress' ] ),
         'hide_fifu_editor_box'      => CleanupPresets::fifu_meta_box( [ 'label' => 'FIFU Post Editor Box', 'default' => false, 'section' => 'wordpress' ] ),
         'hide_litespeed_for_non_admins' => CleanupPresets::litespeed_ui( [ 'label' => 'LiteSpeed for Non-Administrators', 'description' => 'Removes every LiteSpeed element from wp-admin for users who are not administrators: the post editor box, the Media Library columns and the admin-bar menu.', 'audience' => 'non_admins', 'default' => false, 'section' => 'wordpress' ] ),
+        // Staff business never reaches users below administrator: removed at the source by Core.
+        'client_plugin_notices'     => CleanupPresets::client_notices( [ 'default' => true ] ),
+        'client_profile_page'       => CleanupPresets::client_profile( [ 'default' => true ] ),
         'hide_post_attributes_box' => [
             'label'         => 'Post Attributes Box',
             'description'   => 'Hides the Post Attributes metabox on post and page editor screens.',
