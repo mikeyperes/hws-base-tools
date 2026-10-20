@@ -9,6 +9,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Hidden admin access message
+- **Does:** logged-out visitors to `/wp-admin/` see a Hexa Cloud Services notice and a link to `support@hexacloudservices.com`. The email subject starts with the site's canonical domain, followed by ` - Login URL Request`. The page keeps HTTP 404, disables caching, and never exposes the masked login URL.
+- **Switch:** Settings → HWS Base Tools → Security → Masked Login; masking and "Hide /wp-admin/ from guests" enabled (`hws_login_mask_options`).
+- **Use:** automatic; logged-in access and existing management-tool exceptions are preserved.
+- **Code:** `src/Security/legacy-login-mask.php` (`Login_Masking::render_admin_access_notice`).
+
 ### Expired login link message
 - **Does:** when a one-click login link from Code's WP Toolkit has expired or was already used, shows "This login link has expired or was already used. Ask for a new one." with a link to the login page (HTTP 410) instead of WordPress's bare "0"; a logged-in user goes to the dashboard.
 - **Switch:** always on; it answers only the `hws_auto_login` admin-ajax action, which a valid link's temporary file handles first.
@@ -252,6 +258,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.12.3
+
+- Restore the public Hexa contact message on the hidden admin address, retaining HTTP 404 and uncached responses. Add a support email link with the site's canonical domain and "Login URL Request" in the subject.
 
 ### 13.12.2
 

@@ -548,10 +548,9 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
                 return;
             }
 
-            // Everyone else (guests) should see a real hidden endpoint, not a 200 page.
+            // Keep the endpoint hidden while explaining how to request access.
             if (!is_user_logged_in() && !empty($o['hide_wp_admin'])) {
-                status_header(404);
-                nocache_headers();
+                self::render_admin_access_notice();
                 exit;
             }
             // Logged-in users: allow normal load
@@ -605,6 +604,23 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
             }
             exit;
         }
+    }
+
+    /** Render the public support notice without exposing the masked login URL. */
+    private static function render_admin_access_notice(): void {
+        $domain = (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+        $mailto = 'mailto:support@hexacloudservices.com?subject='
+            . rawurlencode( $domain . ' - Login URL Request' );
+        $title = esc_html__( 'Login URL changed', 'hws-base-tools' );
+        $message = '<h1>' . $title . '</h1><p>'
+            . esc_html__( 'The WordPress login URL has been changed by Hexa Cloud Services for security and performance.', 'hws-base-tools' )
+            . '</p><p>' . sprintf(
+                esc_html__( 'Please email %s to request the correct login URL or help with emergency access.', 'hws-base-tools' ),
+                '<a href="' . esc_url( $mailto ) . '">support@hexacloudservices.com</a>'
+            ) . '</p>';
+
+        nocache_headers();
+        wp_die( $message, $title, [ 'response' => 404 ] );
     }
 
     /** Identify the cryptographically random token emitted by WP Toolkit. */
