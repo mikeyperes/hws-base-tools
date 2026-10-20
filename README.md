@@ -232,7 +232,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | --- | --- |
 | WordPress | 6.0 |
 | PHP | 8.1 |
-| Hexa WP Core bundle | 3.28.0 |
+| Hexa WP Core bundle | 3.28.1 |
 
 ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
@@ -251,6 +251,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.12.1
+
+- Bundles Hexa WordPress Plugin Core 3.28.1: the Profile page for non-administrators also drops staff plugins' contact fields and their footer scripts (Rank Math's Twitter, Facebook and extra-link fields and its "Rank Math SEO" heading).
 
 ### 13.12.0
 

@@ -111,7 +111,7 @@ final class CleanupPresets {
     /**
      * The profile page for clients: staff-only sections removed at the source.
      * Plugin sections outside ClientFacingPlugins (Rank Math SEO, Elementor AI) are
-     * unhooked, Application Passwords are turned off through WordPress's own filter,
+     * unhooked, including their contact fields and footer scripts on Profile, Application Passwords are turned off through WordPress's own filter,
      * the color picker through its own hook, and the remaining Personal Options rows,
      * which WordPress prints without a hook, are hidden by WordPress's row classes.
      */
@@ -140,7 +140,7 @@ final class CleanupPresets {
         foreach ( [ "load-profile.php", "load-user-edit.php" ] as $screen ) {
             add_action( $screen, static function (): void {
                 remove_action( "admin_color_scheme_picker", "admin_color_scheme_picker" );
-                foreach ( [ "personal_options", "profile_personal_options", "show_user_profile", "edit_user_profile" ] as $hook ) {
+                foreach ( [ "personal_options", "profile_personal_options", "show_user_profile", "edit_user_profile", "user_contactmethods", "admin_footer" ] as $hook ) {
                     ClientFacingPlugins::strip( $hook );
                 }
             }, PHP_INT_MAX );
