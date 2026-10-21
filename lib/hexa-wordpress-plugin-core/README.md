@@ -31,8 +31,14 @@ This package exists to stop each plugin from re-implementing the same admin tabs
 - **Use:** `( new SearchIndex( $settings_provider ) )->register()`, `'index' => true` in the search settings, then build once with `rebuild()` pages.
 - **Code:** `src/SearchQuery/SearchIndex.php`
 
+### Listing search
+- **Does:** a search box and filters (type, category, tag, author, any taxonomy or custom field) that narrow the page's own list of posts in place: category, tag, author, search and post type pages, or any Elementor loop marked as the listing. Filters take several choices (match any or all), show how many results each option gives, nest subcategories, and the address keeps every state. Runs on WordPress's own query.
+- **Use:** register a profile with `ListingSearchRegistry::register( 'id', [...] )` and print `( new ListingSearchRenderer() )->render( 'id' )`; HWS Base Tools ships `[hws_listing_search]`. Mark the Elementor loop with the CSS class `hexa-listing-results` (loops showing the page's own list are found automatically).
+- **Code:** `src/ListingSearch/`, filters and counts in `src/QueryFilter/`.
+- **Extend:** `hexa_plugin_core_listing_search_target`, `hexa_plugin_core_listing_context_args`, `hexa_plugin_core_listing_search_post_types`, `hexa_plugin_core_query_filter_author_condition`, new filter types with `QueryFilterTypes::register()`.
+
 ### Directory search
-- **Does:** a searchable, filterable directory from a registered profile. More results load on scroll with a crawlable Load more link by default (`'load_mode' => 'infinite'`); `'load_mode' => 'load_more'` loads more only when the button is clicked (for a list with content below it, such as a form); `'load_mode' => 'numbered'` gives page links.
+- **Does:** a searchable, filterable directory from a registered profile, on WordPress's own post or user query. Filters take several choices and show counts; placed on an archive it lists only that archive. More results load on scroll with a crawlable Load more link by default (`'load_mode' => 'infinite'`); `'load_mode' => 'load_more'` loads more only when the button is clicked (for a list with content below it, such as a form); `'load_mode' => 'numbered'` gives page links.
 - **Use:** `DirectorySearchRegistry::register( 'id', [...] )`, then `[hexa_directory id="id"]`.
 - **Code:** `src/DirectorySearch/`
 
@@ -101,6 +107,7 @@ hexa-wordpress-plugin-core/
     SchemaDetection/    -> Hexa\PluginCore\SchemaDetection
     SchemaTools/        -> Hexa\PluginCore\SchemaTools
     DirectorySearch/    -> Hexa\PluginCore\DirectorySearch
+    ListingSearch/      -> Hexa\PluginCore\ListingSearch
     Calendar/           -> Hexa\PluginCore\Calendar
     Map/                -> Hexa\PluginCore\Map
     QueryFilter/        -> Hexa\PluginCore\QueryFilter
@@ -144,6 +151,8 @@ Version 1.2.0 adds an automatically registered static-front-page query invariant
 Version 2.1.4 keeps Getting Started parent-step and full-checklist runs available when only child tasks are awaiting input. Runnable subtasks execute in their registered order while each input-dependent child validates itself, so an early dependency-provisioning task can install required packages before later actions run. Template selection continues to distinguish selected from loaded states and expose loading, success, and failure feedback. `TemplateSelectionControl` retains its no-design toggle, responsive column constraints, accessible visual grid, scaled preview viewports, selected-state behavior, host save hooks, and AJAX-tab reinitialization.
 
 Version 3.0.0 establishes the coordinated major release for the expanded Core data-normalization, operations, provisioning, checklist-state, fleet-synchronization, and reusable admin infrastructure shipped in this source tree.
+
+Version 3.29 adds `Hexa\PluginCore\ListingSearch` (search and filters inside any WordPress listing, refreshed in place), moves `DirectorySearch` onto `WP_Query`/`WP_User_Query`, gives `QueryFilter` several-choice checkboxes with any/all matching, number ranges, nested term lists, per-option counts and the `author` and `post_type` types, and removes the JetEngine search adapter.
 
 Version 3.2.1 renames the DirectorySearch URL-owner parameter from `dir` to `hds` (the old name is still read), because common web firewalls such as ModSecurity/Imunify360 reject any request carrying `dir=`, which broke live search and pagination.
 
@@ -340,7 +349,7 @@ Do not create `HWS\BaseTools\PluginCore`, `HexaWordPressPluginCore`, `Hexa\Core`
 - `SchemaDetection`: reusable JSON-LD URL scans, source detection, semantic property validation, duplicate schema conflict checks, FAQ validation, and dark admin report rendering.
 - `SchemaTools`: the one schema library for every Hexa plugin: generic node builders (`SchemaNodes`), WordPress data adapters (`SchemaSources`), shared `@id` conventions (`SchemaIds`), one merged graph per page (`SchemaPage`), the Rank Math schema switch (`RankMathSchemaControl`), URL guards, normalization and JSON-LD rendering. Host plugins decide which pages they cover; Core builds and prints.
 - `SearchDisplay`: five reusable front-end WordPress search-form templates with shared markup, CSS, and accessible interactions.
-- `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, optional natural time windows from shared QueryFilter rules, selected post types and sources, one-query-only SQL hooks, guarded JetEngine and native Elementor Search bridging, and a safe public Elementor text index.
+- `SearchQuery`: bounded native WordPress result matching for all/any/exact terms, whole/prefix/contains word modes, optional natural time windows from shared QueryFilter rules, selected post types and sources, one-query-only SQL hooks, guarded native Elementor Search bridging, and a safe public Elementor text index.
 - `SmartSearch`: smart search/X-Search AJAX endpoint and reusable typeahead renderer.
 - `DirectorySearch`: declarative public directory search over posts or users with filters, sorts, card templates, a public REST endpoint, and a server-rendered shortcode that upgrades to live search.
 - `Calendar`: lightweight public month-grid calendar profiles over dated posts (or a host provider) with linked items, shared filters, bounded month navigation, a public REST endpoint, and a server-rendered shortcode.

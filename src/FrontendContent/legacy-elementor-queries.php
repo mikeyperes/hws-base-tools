@@ -164,7 +164,7 @@ function query_featured_posts( $query ) {
 }
 
 /**
- * Register HWS text transformations that replace JetEngine callbacks.
+ * Register HWS dynamic tags (trimmed ACF text).
  *
  * @param object $dynamic_tags Elementor's dynamic tag manager.
  * @return void

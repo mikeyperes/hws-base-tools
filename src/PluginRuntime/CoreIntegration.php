@@ -7,6 +7,7 @@ use Hexa\PluginCore\CoreBootstrap\CoreBootstrap;
 use Hexa\PluginCore\CoreRuntime\PluginContext;
 use Hexa\PluginCore\CoreRuntime\CorePackageRuntime;
 use Hexa\PluginCore\DirectorySearch\DirectorySearchModule;
+use Hexa\PluginCore\ListingSearch\ListingSearchModule;
 use Hexa\PluginCore\WpAdminTabs\CoreTabConfig;
 use Hexa\PluginCore\WpAdminTabs\CoreTabModule;
 use HWS\BaseTools\AdminDashboard\DashboardAssets;
@@ -21,6 +22,7 @@ use HWS\BaseTools\PageLayoutStyling\PageLayoutFeature;
 use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\FontSmoothing;
+use HWS\BaseTools\FrontendContent\ListingSearchFeature;
 use HWS\BaseTools\FrontendContent\DiscussionPolicy;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\QueryCompatibility\QueryHookCompatibility;
@@ -93,6 +95,9 @@ final class CoreIntegration {
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             // Shared public components: any site plugin or snippet registers a profile and places [hexa_directory] or [hexa_calendar].
             ->add_module( new DirectorySearchModule() )
+            // Search and filters inside any list of posts: [hws_listing_search] above an Elementor loop marked hexa-listing-results.
+            ->add_module( new ListingSearchModule() )
+            ->add_module( new ListingSearchFeature() )
             ->add_module( new CalendarModule() )
             ->add_module(
                 new CoreTabModule(

@@ -99,7 +99,7 @@ function render_search_query_settings(): void {
 
         <div class="hws-search-query-callout hws-search-query-template-callout">
             <strong>Search-template compatibility</strong>
-            <span>Native WordPress result templates work directly. JetEngine post grids rendered inside an eligible search request are bridged to the same bounded engine; archive grids and unrelated listing grids remain untouched.</span>
+            <span>Native WordPress result templates and Elementor archive templates work directly; unrelated listing grids remain untouched.</span>
         </div>
 
         <div class="hws-search-query-top-grid">

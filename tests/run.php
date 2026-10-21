@@ -77,7 +77,6 @@ require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDi
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryConfiguration.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchTermParser.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryEngine.php';
-require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/JetEngineSearchAdapter.php';
 require_once $root . '/src/PluginRuntime/PluginMetadata.php';
 require_once $root . '/src/BrandAssets/HighlightColorResolver.php';
 require_once $root . '/src/PageLayoutStyling/PageLayoutSettings.php';
@@ -596,10 +595,10 @@ expect_true(
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'data-hws-search-query-save' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "body.append('post_types[]',value)" )
     && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new SearchQueryEngine(' )
-    && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new JetEngineSearchAdapter(' )
+    && ! str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'JetEngine' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Search-template compatibility' )
     && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
-    'Search Behavior exposes the five-plugin audit, refresh-free save, reusable Core query engine, and guarded JetEngine template adapter'
+    'Search Behavior exposes the five-plugin audit, refresh-free save, reusable Core query engine, and no JetEngine bridge'
 );
 $getting_started_source = source( 'src/QuickStart/QuickStartModule.php' );
 expect_true(
