@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.13.2
+
+- A filter list opened near the right edge of the screen opens leftward so it stays on screen. Bundles Core 3.29.4.
+
 ### 13.13.1
 
 - The listing search box keeps its look and live updates on sites where another plugin renders page content in the background first. Bundles Core 3.29.3.
