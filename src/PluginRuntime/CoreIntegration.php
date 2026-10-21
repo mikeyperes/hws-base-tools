@@ -95,7 +95,7 @@ final class CoreIntegration {
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             // Shared public components: any site plugin or snippet registers a profile and places [hexa_directory] or [hexa_calendar].
             ->add_module( new DirectorySearchModule() )
-            // Search and filters inside any list of posts: [hws_listing_search] above an Elementor loop marked hexa-listing-results.
+            // Search and filters inside any list of posts: [hws_search] above an Elementor loop marked hexa-listing-results.
             ->add_module( new ListingSearchModule() )
             ->add_module( new ListingSearchFeature() )
             ->add_module( new CalendarModule() )

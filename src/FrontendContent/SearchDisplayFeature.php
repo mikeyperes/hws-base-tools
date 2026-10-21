@@ -6,7 +6,9 @@ use Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer;
 
 final class SearchDisplayFeature {
     public const OPTION_KEY = 'hws_search_display';
-    public const SHORTCODE = 'hexa_search';
+    public const SHORTCODE = 'hws_search_box';
+    /** Former name, still served so existing headers keep working. */
+    public const LEGACY_SHORTCODE = 'hexa_search';
 
     /** @return array{style:string,accent:string,placeholder:string} */
     public static function defaults(): array {
@@ -56,6 +58,7 @@ final class SearchDisplayFeature {
 
     public static function register_shortcode(): void {
         add_shortcode( self::SHORTCODE, [ self::class, 'render_shortcode' ] );
+        add_shortcode( self::LEGACY_SHORTCODE, [ self::class, 'render_shortcode' ] );
     }
 
     /** @param array<string,mixed>|string $attributes */

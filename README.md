@@ -74,12 +74,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### Site search display
 - **Does:** a styled search box that submits to the normal WordPress results page.
-- **Use:** `[hexa_search style="icon-reveal|overlay|pill|underline|command" placeholder="" accent="" radius=""]`.
+- **Use:** `[hws_search_box style="icon-reveal|overlay|pill|underline|command" placeholder="" accent="" radius=""]`.
 - **Code:** `lib/hexa-wordpress-plugin-core/src/SearchQuery/`
 
 ### Listing search (search and filters inside any list of posts)
 - **Does:** a search box with Type, Category, Tag and Author filters above any list of posts. On a category, tag, author, search or post type page it searches inside that page; the list, the filter counts and the address refresh in place as visitors type or tick, without reloading. Filters take several choices, show how many stories each gives and list subcategories under their parent. Site search covers pages, posts and custom post types (what the Search settings cover once switched on).
-- **Use:** `[hws_listing_search profile="listing" placeholder="" filters="category,tag,author" target=".hexa-listing-results" class="" results_one="%d result" results_many="%d results" clear="Clear"]` above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself.
+- **Use:** `[hws_search profile="listing" placeholder="" filters="category,tag,author" target=".hexa-listing-results" class="" results_one="%d result" results_many="%d results" clear="Clear"]` above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself.
 - **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial), or `style="none|default-1|default-2"` per box; inherits the site's fonts and colours, every rule overridable by site CSS; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
 - **Code:** `src/FrontendContent/ListingSearchFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/ListingSearch/`.
 
@@ -233,7 +233,7 @@ Each type and field structure is closed by default in the dashboard and includes
 
 | Shortcode | Purpose |
 | --- | --- |
-| `[hexa_search]` | Render the saved public search design. |
+| `[hws_search_box]` | Render the saved public search design (former name `[hexa_search]` still works). |
 | `[site_logo key="logo" size="medium"]` | Render a configured brand image. |
 | `[site_logo key="logo_text" width="180"]` | Constrain a logo without changing its aspect ratio. |
 | `[team_members]` | Render the HWS Team Member directory. |
@@ -269,6 +269,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.15.0
+
+- The search box with filters is now `[hws_search]` and the plain header search box `[hws_search_box]`; the former names `[hws_listing_search]` and `[hexa_search]` keep working.
 
 ### 13.14.2
 

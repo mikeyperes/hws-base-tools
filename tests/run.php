@@ -576,11 +576,11 @@ expect_true(
     'HWS Search Behavior delegates a bounded post-type, source, matching, and result contract to Hexa Core'
 );
 expect_true(
-    str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), "public const SHORTCODE = 'hexa_search'" )
+    str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), "public const SHORTCODE = 'hws_search_box'" )
     && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchDisplayRenderer::render(' )
     && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchQueryFeature::marker_fields()' )
     && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'SearchDisplayRenderer::render(' )
-    && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hexa_search]'" ),
+    && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_search_box]'" ),
     'HWS frontend shortcode, admin previews, and shortcode catalog share the marked Hexa Core Search Display contract'
 );
 expect_true(

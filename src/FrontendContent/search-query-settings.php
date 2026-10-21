@@ -85,7 +85,7 @@ function render_search_query_settings(): void {
         <div class="hws-search-query-intro">
             <div>
                 <h3>Search Query Behavior</h3>
-                <p>Configure how the results behind <code>[hexa_search]</code> match words and which WordPress content is eligible.</p>
+                <p>Configure how the results behind <code>[hws_search_box]</code> match words and which WordPress content is eligible.</p>
             </div>
             <span class="hpc-pill <?php echo $settings['enabled'] ? 'success' : 'warning'; ?>" data-hws-search-query-state>
                 <?php echo esc_html( $settings['enabled'] ? 'Engine enabled' : 'Engine disabled' ); ?>

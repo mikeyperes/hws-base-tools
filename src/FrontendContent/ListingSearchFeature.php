@@ -11,7 +11,7 @@ use Hexa\PluginCore\SearchQuery\SearchQueryEngine;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The site's listing search: `[hws_listing_search]` places a search box with
+ * The site's listing search: `[hws_search]` places a search box with
  * type, category, tag and author filters above any list of posts. On a
  * category, tag, author, search or post type page it searches inside that
  * page; the list refreshes in place as visitors type or tick.
@@ -28,7 +28,9 @@ defined( 'ABSPATH' ) || exit;
  * scroll, never both.
  */
 final class ListingSearchFeature implements ModuleInterface {
-    public const SHORTCODE = 'hws_listing_search';
+    public const SHORTCODE = 'hws_search';
+    /** Former name, still served so existing pages keep working. */
+    public const LEGACY_SHORTCODE = 'hws_listing_search';
     public const PROFILE = 'listing';
     public const AUTO_LOAD_CLASSES = [ 'hws-auto-load-more', 'smpi-auto-load-more' ];
     public const STYLE_OPTION = 'hws_listing_search_style';
@@ -81,6 +83,7 @@ final class ListingSearchFeature implements ModuleInterface {
 
     public static function register_shortcode(): void {
         add_shortcode( self::SHORTCODE, [ self::class, 'render_shortcode' ] );
+        add_shortcode( self::LEGACY_SHORTCODE, [ self::class, 'render_shortcode' ] );
     }
 
     /** @param array<string,mixed>|string $attributes */

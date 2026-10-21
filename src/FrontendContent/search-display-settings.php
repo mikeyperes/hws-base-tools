@@ -55,7 +55,7 @@ function render_tab_search(): void {
         <header class="hws-search-display-heading">
             <div>
                 <h2>Site Search</h2>
-                <p>Control both the public search-box design and the tightly scoped query behavior used by <code>[hexa_search]</code>.</p>
+                <p>Control both the public search-box design and the tightly scoped query behavior used by <code>[hws_search_box]</code>.</p>
             </div>
             <div class="hws-search-display-current" aria-live="polite">
                 <span>Current design</span>
@@ -69,7 +69,7 @@ function render_tab_search(): void {
                 <p>The short version follows the saved design. Attributes can override it for one placement.</p>
             </div>
             <div class="hws-search-display-code-row">
-                <code data-hws-search-shortcode>[hexa_search]</code>
+                <code data-hws-search-shortcode>[hws_search_box]</code>
                 <button type="button" class="button" data-hws-search-copy title="Copy shortcode">
                     <span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
                     <span>Copy</span>
@@ -123,7 +123,7 @@ function render_tab_search(): void {
             <section class="hws-search-display-controls" aria-labelledby="hws-search-customize-title">
                 <div>
                     <h3 id="hws-search-customize-title">Customize The Default</h3>
-                    <p>These values apply to <code>[hexa_search]</code>. Shortcode attributes can override them.</p>
+                    <p>These values apply to <code>[hws_search_box]</code>. Shortcode attributes can override them.</p>
                 </div>
                 <label>
                     <span>Accent color</span>

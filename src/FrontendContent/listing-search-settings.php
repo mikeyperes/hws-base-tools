@@ -38,7 +38,7 @@ function render_listing_search_style_settings(): void {
     ];
     ?>
     <section class="hws-listing-style" id="hws-listing-style">
-        <h3>Search box above lists (<code>[hws_listing_search]</code>)</h3>
+        <h3>Search box above lists (<code>[hws_search]</code>)</h3>
         <p>The look of the search box with filters above category, tag, author and search results. Site CSS always wins over it.</p>
         <div class="hws-listing-style-options">
             <?php foreach ( ListingSearchFeature::STYLES as $key => $label ) : ?>
