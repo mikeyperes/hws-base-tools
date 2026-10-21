@@ -40,8 +40,8 @@ function ajax_save_search_behavior(): void {
             'settings' => $settings,
             'summary'  => search_behavior_summary( $settings ),
             'message'  => $settings['enabled']
-                ? 'Search behavior saved and enabled.'
-                : 'Search behavior saved. The enhanced query engine is disabled.',
+                ? 'Saved.'
+                : 'Saved. These settings are off, so the site uses WordPress\'s normal search.',
         ]
     );
 }
@@ -286,11 +286,7 @@ function render_search_query_settings(): void {
         ?>
 
         <div class="hws-search-query-actions">
-            <button type="button" class="button button-primary" data-hws-search-query-save>
-                <span class="dashicons dashicons-saved" aria-hidden="true"></span>
-                <span>Save Search Behavior</span>
-            </button>
-            <span class="spinner" data-hws-search-query-spinner></span>
+            <button type="button" class="button button-primary" data-hws-search-query-save>Save</button>
             <span class="hws-search-query-status" data-hws-search-query-status role="status" aria-live="polite"></span>
         </div>
     </div>
@@ -324,8 +320,6 @@ function render_search_query_settings(): void {
     .hws-search-audit-table th,.hws-search-audit-table td{line-height:1.45;vertical-align:top}
     .hws-search-audit-table th small{color:#697586;display:block;font-weight:400;margin-top:3px}
     .hws-search-query-actions{align-items:center;border-top:1px solid #dcdcde;display:flex;gap:9px;padding-top:14px}
-    .hws-search-query-actions .button{align-items:center;display:inline-flex;gap:6px}
-    .hws-search-query-actions .dashicons{font-size:16px;height:16px;width:16px}
     .hws-search-query-status{font-weight:600}
     .hws-search-query-status.is-success{color:#16803c}
     .hws-search-query-status.is-error{color:#b42336}
@@ -336,7 +330,6 @@ function render_search_query_settings(): void {
       if(!root||root.dataset.ready==='1')return;
       root.dataset.ready='1';
       var save=root.querySelector('[data-hws-search-query-save]');
-      var spinner=root.querySelector('[data-hws-search-query-spinner]');
       var status=root.querySelector('[data-hws-search-query-status]');
       var state=root.querySelector('[data-hws-search-query-state]');
       var summary=document.querySelector('[data-hws-search-query-summary]');
@@ -357,12 +350,12 @@ function render_search_query_settings(): void {
         body.set('word_matching',matching.value);body.set('authors',root.querySelector('[name="authors"]').checked?'1':'0');
         body.set('custom_fields',root.querySelector('[name="custom_fields"]').value);body.set('results_per_page',root.querySelector('[name="results_per_page"]').value);body.set('orderby',root.querySelector('[name="orderby"]').value);
         postTypes.forEach(function(value){body.append('post_types[]',value);});fields.forEach(function(value){body.append('fields[]',value);});checked('taxonomies').forEach(function(value){body.append('taxonomies[]',value);});
-        save.disabled=true;spinner.classList.add('is-active');setStatus('Saving search behavior...','');
+        save.disabled=true;save.textContent='Saving…';setStatus('','');
         fetch(<?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()})
           .then(function(response){return response.json();})
           .then(function(payload){if(!payload||!payload.success||!payload.data)throw new Error(payload&&payload.data&&payload.data.message?payload.data.message:'Save failed.');var enabled=!!payload.data.settings.enabled;state.textContent=enabled?'Engine enabled':'Engine disabled';state.classList.toggle('success',enabled);state.classList.toggle('warning',!enabled);if(summary)summary.textContent=payload.data.summary||'';setStatus(payload.data.message||'Search behavior saved.','success');})
           .catch(function(error){setStatus(error.message||'Search behavior could not be saved.','error');})
-          .finally(function(){save.disabled=false;spinner.classList.remove('is-active');});
+          .finally(function(){save.disabled=false;save.textContent='Save';});
       });
       syncChoices();
     })();

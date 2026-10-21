@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.15.3
+
+- Search settings: plain Save buttons that read Saving… while they work (no icon), and plain save messages.
+
 ### 13.15.2
 
 - Settings, Search: each look (No styling, Default 1, Default 2) shows a live preview of the real search box under it. Bundles Core 3.29.8.

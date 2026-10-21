@@ -139,11 +139,7 @@ function render_tab_search(): void {
             </section>
 
             <div class="hws-search-display-actions">
-                <button type="button" class="button button-primary" data-hws-search-save>
-                    <span class="dashicons dashicons-saved" aria-hidden="true"></span>
-                    <span>Save Search Design</span>
-                </button>
-                <span class="spinner" data-hws-search-spinner></span>
+                <button type="button" class="button button-primary" data-hws-search-save>Save</button>
                 <span class="hws-search-display-status" data-hws-search-status role="status" aria-live="polite"></span>
             </div>
         </div>
@@ -205,7 +201,7 @@ function render_tab_search(): void {
       root.dataset.ready='1';
       var form=root.querySelector('[data-hws-search-form]');
       var save=root.querySelector('[data-hws-search-save]');
-      var spinner=root.querySelector('[data-hws-search-spinner]');
+      
       var status=root.querySelector('[data-hws-search-status]');
       var accent=root.querySelector('[data-hws-search-accent]');
       var picker=root.querySelector('[data-hws-search-accent-picker]');
@@ -231,12 +227,12 @@ function render_tab_search(): void {
         body.set('style',selectedStyle());
         body.set('accent',accent.value.trim());
         body.set('placeholder',placeholder.value.trim());
-        save.disabled=true;spinner.classList.add('is-active');setStatus('Saving search design...','');
+        save.disabled=true;save.textContent='Saving…';setStatus('','');
         fetch(<?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()})
           .then(function(response){return response.json();})
           .then(function(payload){if(!payload||!payload.success||!payload.data)throw new Error(payload&&payload.data&&payload.data.message?payload.data.message:'Save failed.');root.querySelector('[data-hws-search-current]').textContent=payload.data.style_label||selectedStyle();setStatus(payload.data.message||'Search design saved.','success');})
           .catch(function(error){setStatus(error.message||'Search design could not be saved.','error');})
-          .finally(function(){save.disabled=false;spinner.classList.remove('is-active');});
+          .finally(function(){save.disabled=false;save.textContent='Save';});
       });
       syncSelection();syncPreviews();
     })();
