@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.14.1
+
+- The search box keeps its look on themes whose own field and checkbox styles used to reshape it; restyle it with the --hls-* settings. Bundles Core 3.29.6.
+
 ### 13.14.0
 
 - Settings, Search: choose the search box's look above lists (No styling, Default 1 compact, Default 2 editorial); site CSS always wins. Shortcode attribute `style` overrides it per box. Bundles Core 3.29.5.
