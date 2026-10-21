@@ -80,7 +80,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ### Listing search (search and filters inside any list of posts)
 - **Does:** a search box with Type, Category, Tag and Author filters above any list of posts. On a category, tag, author, search or post type page it searches inside that page; the list, the filter counts and the address refresh in place as visitors type or tick, without reloading. Filters take several choices, show how many stories each gives and list subcategories under their parent. Site search covers pages, posts and custom post types (what the Search settings cover once switched on).
 - **Use:** `[hws_listing_search profile="listing" placeholder="" filters="category,tag,author" target=".hexa-listing-results" class="" results_one="%d result" results_many="%d results" clear="Clear"]` above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself.
-- **Style:** inherits the site's fonts and colours; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
+- **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial), or `style="none|default-1|default-2"` per box; inherits the site's fonts and colours, every rule overridable by site CSS; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
 - **Code:** `src/FrontendContent/ListingSearchFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/ListingSearch/`.
 
 ### Infinite scroll with a Load more fallback
@@ -269,6 +269,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.14.0
+
+- Settings, Search: choose the search box's look above lists (No styling, Default 1 compact, Default 2 editorial); site CSS always wins. Shortcode attribute `style` overrides it per box. Bundles Core 3.29.5.
 
 ### 13.13.2
 

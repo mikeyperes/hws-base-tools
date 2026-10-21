@@ -18,7 +18,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * The list to refresh is the page's Elementor Loop Grid, Posts or Archive
  * Posts widget with the CSS class `hexa-listing-results` (or one a plugin
- * marks itself). Text matching follows the site's search settings.
+ * marks itself). Text matching follows the site's search settings. Its look
+ * is chosen in Settings, Search: No styling, Default 1 or Default 2.
  *
  * It also keeps lists loading while visitors scroll: a Loop Grid or Posts
  * widget set to "Load on click" with the CSS class `hws-auto-load-more`
@@ -30,6 +31,19 @@ final class ListingSearchFeature implements ModuleInterface {
     public const SHORTCODE = 'hws_listing_search';
     public const PROFILE = 'listing';
     public const AUTO_LOAD_CLASSES = [ 'hws-auto-load-more', 'smpi-auto-load-more' ];
+    public const STYLE_OPTION = 'hws_listing_search_style';
+    public const STYLES = [
+        'none'      => 'No styling',
+        'default-1' => 'Default 1',
+        'default-2' => 'Default 2',
+    ];
+
+    /** The site's chosen look for the search box (Settings: Search). */
+    public static function style(): string {
+        $style = (string) get_option( self::STYLE_OPTION, 'default-1' );
+
+        return isset( self::STYLES[ $style ] ) ? $style : 'default-1';
+    }
 
     public function register(): void {
         add_action( ListingSearchRegistry::REGISTER_ACTION, [ self::class, 'register_profile' ] );
@@ -78,6 +92,7 @@ final class ListingSearchFeature implements ModuleInterface {
         $attributes = shortcode_atts(
             [
                 'profile'      => self::PROFILE,
+                'style'        => '',
                 'placeholder'  => '',
                 'filters'      => '',
                 'target'       => '',
@@ -91,6 +106,7 @@ final class ListingSearchFeature implements ModuleInterface {
         );
 
         $options = array_filter( [
+            'style'        => isset( self::STYLES[ (string) $attributes['style'] ] ) ? (string) $attributes['style'] : self::style(),
             'placeholder'  => (string) $attributes['placeholder'],
             'filters'      => (string) $attributes['filters'],
             'target'       => (string) $attributes['target'],

@@ -242,4 +242,5 @@ function render_tab_search(): void {
     })();
     </script>
     <?php
+    render_listing_search_style_settings();
 }
