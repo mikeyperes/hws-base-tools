@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.13.1
+
+- The listing search box keeps its look and live updates on sites where another plugin renders page content in the background first. Bundles Core 3.29.3.
+
 ### 13.13.0
 
 - `[hws_listing_search]`: search and filters inside category, tag, author, search and any listing page, refreshed in place with counts.
