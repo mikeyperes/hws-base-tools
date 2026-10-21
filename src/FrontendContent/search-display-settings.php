@@ -179,7 +179,7 @@ function render_tab_search(): void {
     .hws-search-template-behavior{padding:4px 9px;border:1px solid #8c8f94;border-radius:999px;color:#3c434a;font-size:11px;font-weight:700;text-transform:uppercase}
     .hws-search-template-preview{display:flex;min-height:150px;align-items:center;padding:30px 46px;border-top:1px solid #2c3338;border-bottom:1px solid #2c3338;background:#10141c}
     .hws-search-template-best{margin:0;padding:14px 20px;color:#50575e}
-    .hws-search-display-controls{display:grid;grid-template-columns:minmax(230px,1fr) minmax(190px,.65fr) minmax(240px,1fr);gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid #c3c4c7;border-radius:8px;background:#fff}
+    .hws-search-display-controls{display:flex;flex-direction:column;max-width:420px;gap:16px;margin-top:20px;padding:18px;border:1px solid #c3c4c7;border-radius:8px;background:#fff}
     .hws-search-display-controls>label{display:grid;gap:7px;font-weight:600}
     .hws-search-display-controls input[type="text"]{width:100%;min-height:38px}
     .hws-search-color-control{display:grid;grid-template-columns:44px minmax(0,1fr);gap:7px}

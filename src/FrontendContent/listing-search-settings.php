@@ -52,13 +52,12 @@ function render_listing_search_style_settings(): void {
         <span class="hws-listing-style-status" role="status" aria-live="polite"></span>
     </section>
     <style>
-    .hws-listing-style{max-width:1180px;margin-top:24px;padding:18px;border:1px solid #c3c4c7;border-radius:8px;background:#fff}
+    .hws-listing-style{max-width:760px;margin-top:28px;padding-top:18px;border-top:1px solid #dcdcde}
     .hws-listing-style h3{margin:0 0 4px;font-size:15px}.hws-listing-style>p{margin:0 0 12px;color:#646970}
-    .hws-listing-style-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    .hws-listing-style-option{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;padding:12px;border:1px solid #dcdcde;border-radius:6px;cursor:pointer}
+    .hws-listing-style-options{display:flex;flex-direction:column;gap:2px}
+    .hws-listing-style-option{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;padding:6px 8px;border-radius:4px;cursor:pointer}.hws-listing-style-option:hover{background:#f6f7f7}
     .hws-listing-style-option span{grid-column:2;color:#646970;font-size:12px}
     .hws-listing-style-status{display:block;margin-top:10px;font-weight:600;color:#008a20}
-    @media(max-width:782px){.hws-listing-style-options{grid-template-columns:1fr}}
     </style>
     <script>
     (function(){

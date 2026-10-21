@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.14.2
+
+- The Search settings screens are one plain column: options stacked under short headings, no side-by-side card grids.
+
 ### 13.14.1
 
 - The search box keeps its look on themes whose own field and checkbox styles used to reshape it; restyle it with the --hls-* settings. Bundles Core 3.29.6.
