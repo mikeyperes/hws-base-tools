@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.15.2
+
+- Settings, Search: each look (No styling, Default 1, Default 2) shows a live preview of the real search box under it. Bundles Core 3.29.8.
+
 ### 13.15.1
 
 - The number of ticked options now shows on each filter button (it was drawn white on white). Bundles Core 3.29.7.

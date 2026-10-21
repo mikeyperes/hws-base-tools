@@ -2,6 +2,7 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\ListingSearch\ListingSearchRenderer;
 use HWS\BaseTools\FrontendContent\ListingSearchFeature;
 
 defined( 'ABSPATH' ) || exit;
@@ -32,7 +33,7 @@ function ajax_save_listing_search_style(): void {
 function render_listing_search_style_settings(): void {
     $current = ListingSearchFeature::style();
     $notes   = [
-        'none'      => 'Only what the filter lists need to open and close. Style everything in the site CSS.',
+        'none'      => 'Bare: only what the filter lists need to open and close. Style it in the site CSS.',
         'default-1' => 'Compact: a boxed field up to 360 px wide and small filter buttons beside it.',
         'default-2' => 'Editorial: an underlined field and uppercase text filters, no boxes.',
     ];
@@ -47,6 +48,9 @@ function render_listing_search_style_settings(): void {
                     <strong><?php echo esc_html( $label ); ?></strong>
                     <span><?php echo esc_html( $notes[ $key ] ); ?></span>
                 </label>
+                <?php if ( method_exists( ListingSearchRenderer::class, 'preview' ) ) : ?>
+                    <div class="hws-listing-style-preview" aria-hidden="true"><?php echo ListingSearchRenderer::preview( $key ); // phpcs:ignore WordPress.Security.EscapeOutput -- Core builds escaped preview markup. ?></div>
+                <?php endif; ?>
             <?php endforeach; ?>
         </div>
         <span class="hws-listing-style-status" role="status" aria-live="polite"></span>
@@ -57,7 +61,7 @@ function render_listing_search_style_settings(): void {
     .hws-listing-style-options{display:flex;flex-direction:column;gap:2px}
     .hws-listing-style-option{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;padding:6px 8px;border-radius:4px;cursor:pointer}.hws-listing-style-option:hover{background:#f6f7f7}
     .hws-listing-style-option span{grid-column:2;color:#646970;font-size:12px}
-    .hws-listing-style-status{display:block;margin-top:10px;font-weight:600;color:#008a20}
+    .hws-listing-style-preview{margin:4px 0 18px 32px;padding:20px;border:1px solid #dcdcde;border-radius:6px;background:#fff;color:#1d2327;font-size:15px;pointer-events:none}.hws-listing-style-status{display:block;margin-top:10px;font-weight:600;color:#008a20}
     </style>
     <script>
     (function(){

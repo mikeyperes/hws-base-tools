@@ -91,6 +91,27 @@ final class ListingSearchRenderer {
         return $this->assets( $style ) . PublicComponent::inert( $html );
     }
 
+    /**
+     * A still picture of the box in one look, for settings screens: the real markup and CSS
+     * with sample filters (one ticked), never connected to a query or the live script.
+     */
+    public static function preview( string $style ): string {
+        $style = in_array( $style, self::STYLES, true ) ? $style : 'default-1';
+        $chev  = '';
+        $html  = '<form class="hls hls--' . esc_attr( $style ) . '" data-hls-ready="1" onsubmit="return false" style="margin:0">'
+            . '<div class="hls-bar"><label class="hls-field hls-field--text"><span class="hls-visually-hidden">Search</span>'
+            . '<svg class="hls-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+            . '<input class="hls-input" type="search" value="" placeholder="Search Business" tabindex="-1"></label>'
+            . '<div class="hls-filters">';
+        foreach ( [ 'Category' => 1, 'Tag' => 0, 'Author' => 0 ] as $label => $ticked ) {
+            $html .= '<details class="hls-filter' . ( $ticked ? ' is-active' : '' ) . '"><summary class="hls-filter-toggle" tabindex="-1"><span class="hls-filter-label">' . $label . '</span>'
+                . ( $ticked ? '<span class="hls-filter-badge">1</span>' : '' ) . '</summary></details>';
+        }
+
+        return $html . '</div><a class="hls-clear" href="#" tabindex="-1">Clear</a></div><p class="hls-status">12 stories</p></form>'
+            . '<style>' . self::css( $style ) . '</style>' . $chev;
+    }
+
     /** Whether a profile's box was already printed on this page. */
     public static function rendered( string $profile_id ): bool {
         return in_array( $profile_id, self::$rendered, true );
