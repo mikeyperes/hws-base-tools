@@ -270,6 +270,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.15.1
+
+- The number of ticked options now shows on each filter button (it was drawn white on white). Bundles Core 3.29.7.
+
 ### 13.15.0
 
 - The search box with filters is now `[hws_search]` and the plain header search box `[hws_search_box]`; the former names `[hws_listing_search]` and `[hexa_search]` keep working.
