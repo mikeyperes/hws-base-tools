@@ -106,6 +106,7 @@ function hws_sitemap_feeds_rows( string $kind ): array {
             'note'      => $entry['note'],
             'available' => (bool) $entry['available'],
             'settings'  => $entry['settings'],
+            'settings_label' => $entry['settings_label'],
             'toggle'    => 'feed' === $kind && ! empty( $entry['toggle'] ),
             'on'        => 'feed' !== $kind || ! SitemapFeedRegistry::is_disabled( $key ),
             'result'    => is_array( $stored ) ? hws_sitemap_feeds_present( $stored ) : null,
@@ -307,7 +308,7 @@ function hws_sitemap_feeds_render( string $kind ): void {
             var title = { healthy:'Working', failed:'Not working', off:'Turned off', unavailable:'Not available', unchecked:'Not checked yet' }[state];
             var toggle = row.toggle && row.available ? '<label class="hpc-toggle"><input type="checkbox" data-role="switch"' + (row.on ? ' checked' : '') + '><span class="hpc-toggle-ui" aria-hidden="true"></span><span class="hpc-toggle-label">Active</span></label>' : '';
             var validate = row.available && row.url ? '<button type="button" class="hpc-button secondary" data-role="validate">Validate</button>' : '';
-            var settings = row.settings ? '<a href="' + esc(row.settings) + '" target="_blank" rel="noopener" style="font-size:12px">Settings</a>' : '';
+            var settings = row.settings ? '<a href="' + esc(row.settings) + '" target="_blank" rel="noopener" style="font-size:12px">' + esc(row.settings_label || 'Settings') + '</a>' : '';
             var html = '<div class="hws-sf-top"><span class="hws-sf-icon ' + state + '" title="' + esc(title) + '">' + icon + '</span>'
                 + '<span class="hws-sf-label">' + esc(row.label) + '</span>'
                 + '<span class="hws-sf-actions">' + settings + toggle + validate + '</span></div>';

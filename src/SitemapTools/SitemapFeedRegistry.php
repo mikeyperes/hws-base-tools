@@ -2,6 +2,8 @@
 
 namespace HWS\BaseTools\SitemapTools;
 
+use HWS\BaseTools\FrontendContent\DiscussionPolicy;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -58,6 +60,11 @@ final class SitemapFeedRegistry {
                 'label'  => 'Comments',
                 'group'  => 'WordPress',
                 'url'    => get_feed_link( 'comments_rss2' ),
+                // Follows the site's comments setting: no comments, no comments feed.
+                'toggle'         => ! DiscussionPolicy::comments_disabled(),
+                'note'           => DiscussionPolicy::comments_disabled() ? 'Off because comments are turned off on this site. Turn comments on to use this feed.' : '',
+                'settings'       => DiscussionPolicy::comments_disabled() ? admin_url( 'options-general.php?page=hws-core-tools&tab=comments' ) : '',
+                'settings_label' => 'Turn comments on',
                 'match'  => static fn(): bool => is_comment_feed() && ! is_singular(),
                 'total'  => static fn(): int => (int) wp_count_comments()->approved,
                 'latest' => static function (): int {
@@ -171,7 +178,12 @@ final class SitemapFeedRegistry {
     }
 
     public static function is_disabled( string $key ): bool {
-        return in_array( $key, self::disabled(), true );
+        return ( 'comments' === $key && DiscussionPolicy::comments_disabled() ) || in_array( $key, self::disabled(), true );
+    }
+
+    /** True when the feed is off because of another site setting rather than its own switch. */
+    public static function forced_off( string $key ): bool {
+        return 'comments' === $key && DiscussionPolicy::comments_disabled();
     }
 
     /** @return string[] */
@@ -271,6 +283,7 @@ final class SitemapFeedRegistry {
                     'available' => true,
                     'note'      => '',
                     'settings'  => '',
+                    'settings_label' => 'Settings',
                     'kind'      => '',
                     'match'     => null,
                     'total'     => null,

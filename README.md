@@ -130,7 +130,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/DatabaseOptimization/` (`CleanupTasks`, `TableMaintenance`, `TableOwners` with `data/table-owners.json.gz`, `DatabaseReport`, `DatabaseOptimizationModule`); UI on Core's `WpAdminComponents\TaskRunner`.
 
 ### Sitemaps and RSS feeds
-- **Does:** lists every RSS feed (all posts, comments, each browsable content type, category, tag and author feeds, Rank Math Pro's podcast feed) and every XML sitemap (index, Rank Math Pro news and video sitemaps, each content type). Each one shows a working ✓ or broken ✗, item count, published total, newest date and response time. Validate requests the address from the server and checks the HTTP status, content type, XML and required fields. Server response shows the headers and the start of the body. Advanced shows the feed's general (channel) fields and each item's fields, plus which fields each item has. Each feed has an Active switch: off answers 404 "This feed is turned off." and removes it from the page head. Tools: never cache sitemaps, clear cached sitemaps and feeds, refresh permalinks.
+- **Does:** lists every RSS feed (all posts, comments, each browsable content type, category, tag and author feeds, Rank Math Pro's podcast feed) and every XML sitemap (index, Rank Math Pro news and video sitemaps, each content type). Each one shows a working ✓ or broken ✗, item count, published total, newest date and response time. Validate requests the address from the server and checks the HTTP status, content type, XML and required fields. Server response shows the headers and the start of the body. Advanced shows the feed's general (channel) fields and each item's fields, plus which fields each item has. Each feed has an Active switch: off answers 404 "This feed is turned off." and removes it from the page head. While comments are turned off on the site, the comments feeds (site-wide and each post's) are off automatically, their head links are removed, and the Comments row links to the Comments tab to turn comments back on. Tools: never cache sitemaps, clear cached sitemaps and feeds, refresh permalinks.
 - **Switch:** two tabs: WP Admin → Settings → HWS Base Tools → Sitemaps (`options-general.php?page=hws-core-tools&tab=sitemaps`) and RSS Feeds (`options-general.php?page=hws-core-tools&tab=rss-feeds`). Turned-off feed keys in `hws_feeds_disabled`; last check results in `hws_sitemap_feed_checks`.
 - **Extend:** filters `hws_base_tools_feeds` and `hws_base_tools_sitemaps` add entries (`label`, `group`, `url`, optional `toggle`, `match`, `total`, `latest`, `available`, `note`, `settings`); see `SitemapFeedRegistry`. AJAX `hws_sitemap_check`, `hws_sitemap_feed_toggle`.
 - **Code:** `src/SitemapTools/` (`SitemapFeedRegistry`, `XmlInspector`, `FeedSwitches`, `sitemaps-feeds-admin.php`).
@@ -275,6 +275,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.16.2
+
+- RSS Feeds: when comments are turned off on the site, the comments feeds (site-wide and each post's) are off automatically and drop out of the page head. The Comments row says why and links to the Comments tab to turn comments back on.
 
 ### 13.16.2
 

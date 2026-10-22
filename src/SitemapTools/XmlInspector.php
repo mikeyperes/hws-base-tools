@@ -21,7 +21,9 @@ final class XmlInspector {
         }
         if ( SitemapFeedRegistry::is_disabled( $key ) ) {
             $result['status'] = 'off';
-            $result['summary'] = 'Turned off: the address returns "not found".';
+            $result['summary'] = SitemapFeedRegistry::forced_off( $key )
+                ? 'Off because comments are turned off: the address returns "not found".'
+                : 'Turned off: the address returns "not found".';
         }
 
         $response = self::request( $feed['url'], $result );
