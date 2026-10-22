@@ -110,6 +110,9 @@ final class TeamTab implements ModuleInterface {
                 .hws-team-code code{flex:1;overflow-wrap:anywhere;white-space:normal}
                 .hws-team-tab pre{background:#0b1120;border-radius:8px;color:#cbd5e1;font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;margin:8px 0 0;max-height:360px;overflow:auto;padding:14px;white-space:pre-wrap}
                 .hws-team-preview{border:1px solid #edf0f4;border-radius:8px;margin-top:8px;padding:14px}
+                .hws-team-sample{background:#fff;border:1px solid #e3e8ef;border-radius:6px;margin:8px 0 16px 24px;max-width:760px;padding:14px}
+                .hws-team-sample.is-none{max-height:340px;overflow:auto}
+                .hws-team-sample-label{color:#64748b;display:block;font-size:11px;font-weight:600;letter-spacing:.06em;margin:0 0 8px;text-transform:uppercase}
             </style>
             <style><?php echo TeamMemberDirectory::styles(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></style>
 
@@ -141,7 +144,7 @@ final class TeamTab implements ModuleInterface {
                 <div class="hws-team-code"><code data-team-shortcode>[hws_team_members]</code><button type="button" class="button" data-team-copy>Copy</button></div>
                 <h4>Preview</h4>
                 <div class="hws-team-preview" data-team-preview></div>
-                <h4>HTML structure</h4>
+                <h4>HTML structure (one person)</h4>
                 <pre data-team-html></pre>
             </section>
 
@@ -170,13 +173,13 @@ final class TeamTab implements ModuleInterface {
         <h4>Layout</h4>
         <ul class="hws-team-options">
             <?php foreach ( TeamMemberDirectory::template_options() as $style => $template ) : ?>
-                <li><label><input type="radio" data-field="style" name="<?php echo esc_attr( $name( 'style' ) ); ?>" value="<?php echo esc_attr( $style ); ?>" <?php checked( $settings['style'], $style ); ?>> <?php echo esc_html( $template['label'] ); ?></label><small><?php echo esc_html( $template['description'] ); ?></small></li>
+                <li><label><input type="radio" data-field="style" name="<?php echo esc_attr( $name( 'style' ) ); ?>" value="<?php echo esc_attr( $style ); ?>" <?php checked( $settings['style'], $style ); ?>> <?php echo esc_html( $template['label'] ); ?></label><small><?php echo esc_html( $template['description'] ); ?></small><?php self::sample( $style, 'default', $settings ); ?></li>
             <?php endforeach; ?>
         </ul>
         <h4>Design</h4>
         <ul class="hws-team-options">
-            <li><label><input type="radio" data-field="design" name="<?php echo esc_attr( $name( 'design' ) ); ?>" value="default" <?php checked( $settings['design'], 'default' ); ?>> Built-in look</label><small>The plugin's own clean styling.</small></li>
-            <li><label><input type="radio" data-field="design" name="<?php echo esc_attr( $name( 'design' ) ); ?>" value="none" <?php checked( $settings['design'], 'none' ); ?>> No plugin styling</label><small>Same markup with no plugin CSS, for an Elementor or HTML design that styles the classes itself.</small></li>
+            <li><label><input type="radio" data-field="design" name="<?php echo esc_attr( $name( 'design' ) ); ?>" value="default" <?php checked( $settings['design'], 'default' ); ?>> Built-in look</label><small>The plugin's own clean styling.</small><?php self::sample( (string) $settings['style'], 'default', $settings ); ?></li>
+            <li><label><input type="radio" data-field="design" name="<?php echo esc_attr( $name( 'design' ) ); ?>" value="none" <?php checked( $settings['design'], 'none' ); ?>> No plugin styling</label><small>Same markup with no plugin CSS, for an Elementor or HTML design that styles the classes itself. This is exactly how it looks until the site's design styles it.</small><?php self::sample( (string) $settings['style'], 'none', $settings ); ?></li>
         </ul>
         <h4>Columns</h4>
         <ul class="hws-team-options"><li><input type="number" min="1" max="4" data-field="columns" value="<?php echo esc_attr( (string) $settings['columns'] ); ?>"><small>1 to 4 on desktop, for the portrait grid.</small></li></ul>
@@ -251,7 +254,28 @@ final class TeamTab implements ModuleInterface {
             $html = TeamMemberDirectory::preview_html( (string) ( $atts['style'] ?? '' ), (string) ( $atts['design'] ?? 'default' ) );
         }
 
-        wp_send_json_success( [ 'html' => $html, 'pretty' => self::pretty( $html ) ] );
+        // The HTML structure shows the wrapper with one person, so every class to style is visible once.
+        $single = TeamMemberDirectory::render( array_merge( $atts, [ 'limit' => '1' ] ) );
+        if ( '' === $single ) {
+            $single = $html;
+        }
+
+        wp_send_json_success( [ 'html' => $html, 'pretty' => self::pretty( $single ) ] );
+    }
+
+    /**
+     * A real sample of a design choice: published team members rendered by the
+     * shortcode with the plugin's own front-end CSS, exactly as the site shows it.
+     *
+     * @param array<string,mixed> $settings
+     */
+    private static function sample( string $style, string $design, array $settings ): void {
+        $atts = [ 'style' => $style, 'design' => $design, 'limit' => 'none' === $design ? '1' : '3', 'columns' => '3', 'roles_first' => (string) $settings['roles_first'], 'show_excerpt' => (string) $settings['show_excerpt'], 'link_profiles' => (string) $settings['link_profiles'] ];
+        $html = TeamMemberDirectory::render( $atts );
+        if ( '' === $html ) {
+            $html = TeamMemberDirectory::preview_html( $style, $design );
+        }
+        echo '<div class="hws-team-sample' . ( 'none' === $design ? ' is-none' : '' ) . '"><span class="hws-team-sample-label">Sample, as the site shows it</span>' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
     /** @return array<string,string> */

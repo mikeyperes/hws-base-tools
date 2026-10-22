@@ -276,6 +276,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.18.1
+
+- Team tab: every Layout and Design choice shows a real sample of the team list with the plugin's own front-end styling; the HTML structure shows the wrapper with one person.
+
 ### 13.18.0
 
 - Team: "Roles shown first" setting and `roles_first` attribute on `[hws_team_members]`: people whose position is listed (default Founder, Co-Founder, CEO, President, COO, CTO) come first in that order, everyone else after.
