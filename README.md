@@ -278,6 +278,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.16.8
+
+- Masked Login: settings and status are one column instead of two side by side.
+
 ### 13.16.7
 
 - RSS Feeds and Sitemaps: new Settings section (items per feed, from site default to unlimited; addresses per sitemap page) and Caching section (how long LiteSpeed keeps them; clear when a post is published, updated or unpublished). Saves as you change it. Replaces the Never cache sitemaps switch with a Don't cache choice.
