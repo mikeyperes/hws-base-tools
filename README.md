@@ -276,6 +276,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.16.2
+
+- Settings, Search: removed the leftover "Five-Plugin Search Criteria Audit" research panel.
+
 ### 13.16.1
 
 - Sitemaps & Feeds is now two tabs: Sitemaps and RSS Feeds. Each has its own checks and tools; Never cache sitemaps stays on Sitemaps.

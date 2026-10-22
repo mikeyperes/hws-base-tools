@@ -592,14 +592,14 @@ expect_true(
 );
 expect_true(
     str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'hws_search_behavior_save' )
-    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Five-Plugin Search Criteria Audit' )
+    && ! str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Five-Plugin Search Criteria Audit' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'HWSSettingsAutosave.bind(root' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "post_types:checked('post_types')" )
     && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new SearchQueryEngine(' )
     && ! str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'JetEngine' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Search-template compatibility' )
     && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
-    'Search Behavior exposes the five-plugin audit, autosave, reusable Core query engine, and no JetEngine bridge'
+    'Search Behavior has no audit panel, autosave, reusable Core query engine, and no JetEngine bridge'
 );
 expect_true(
     str_contains( source( 'src/AdminDashboard/SettingsAutosave.php' ), 'HexaWpCoreDynamicNotice' )

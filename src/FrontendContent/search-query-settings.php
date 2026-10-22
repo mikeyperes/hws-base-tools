@@ -254,38 +254,6 @@ function render_search_query_settings(): void {
             </div>
         </div>
 
-        <?php
-        ob_start();
-        ?>
-        <div class="hws-search-audit-table-wrap">
-            <table class="widefat striped hws-search-audit-table">
-                <thead><tr><th>Plugin audited</th><th>Matching criteria</th><th>Search sources</th><th>Decision carried into HWS</th></tr></thead>
-                <tbody>
-                    <?php foreach ( SearchQueryFeature::research_audit() as $row ) : ?>
-                        <tr>
-                            <th scope="row"><?php echo esc_html( $row['plugin'] ); ?><small>v<?php echo esc_html( $row['version'] ); ?></small></th>
-                            <td><?php echo esc_html( $row['matching'] ); ?></td>
-                            <td><?php echo esc_html( $row['sources'] ); ?></td>
-                            <td><?php echo esc_html( $row['lesson'] ); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            <p class="hpc-small">Audit source: official WordPress.org stable ZIPs and their settings/query implementations. Full comparison: <code>docs/search-query-audit.md</code>.</p>
-        </div>
-        <?php
-        $audit_body = (string) ob_get_clean();
-        echo CoreUi::detail_card(
-            [
-                'title'       => 'Five-Plugin Search Criteria Audit',
-                'body_html'   => $audit_body,
-                'open'        => false,
-                'persist_key' => 'hws-search-query-plugin-audit',
-                'meta_html'   => CoreUi::pill( '5 official packages', 'dark' ),
-            ]
-        ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        ?>
-
         <?php echo SettingsAutosave::notice( 'hws-search-query-notice' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
     </div>
     <style>
@@ -313,10 +281,6 @@ function render_search_query_settings(): void {
     .hws-search-query-choice strong,.hws-search-query-check strong{color:#1d2327;font-weight:600}
     .hws-search-query-check code{background:transparent;color:#8c8f94;font-size:11px;padding:0}
     .hws-search-query-limit-note strong{color:#1d2327}
-    .hws-search-audit-table-wrap{max-width:100%;overflow-x:auto}
-    .hws-search-audit-table{min-width:860px}
-    .hws-search-audit-table th,.hws-search-audit-table td{line-height:1.45;vertical-align:top}
-    .hws-search-audit-table th small{color:#697586;display:block;font-weight:400;margin-top:3px}
     </style>
     <script>
     (function(){
