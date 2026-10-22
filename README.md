@@ -276,7 +276,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
-### 13.16.2
+### 13.16.3
 
 - RSS Feeds: when comments are turned off on the site, the comments feeds (site-wide and each post's) are off automatically and drop out of the page head. The Comments row says why and links to the Comments tab to turn comments back on.
 
