@@ -154,6 +154,11 @@ function hws_sitemap_feeds_render( string $kind ): void {
             #hws-sf .hws-sf-meta{margin:6px 0 0 32px;color:#50575e;font-size:12px;line-height:1.6}
             #hws-sf .hws-sf-meta b{color:#1d2327;font-weight:600}
             #hws-sf .hws-sf-summary-line{margin:4px 0 0 32px;font-size:12px}
+            #hws-sf .hws-sf-http{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0 32px;padding:3px 10px 3px 4px;border-radius:999px;font-size:12px;font-weight:600}
+            #hws-sf .hws-sf-http.ok{background:#edfaef;color:#00701a}#hws-sf .hws-sf-http.bad{background:#fcf0f1;color:#b32d2e}
+            #hws-sf .hws-sf-http b{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:11px}
+            #hws-sf .hws-sf-http.ok b{background:#00a32a}#hws-sf .hws-sf-http.bad b{background:#d63638}
+            #hws-sf .hws-sf-http span{font-weight:400;color:#50575e}
             #hws-sf .hws-sf-summary-line.failed{color:#b32d2e}#hws-sf .hws-sf-summary-line.healthy{color:#00701a}
             #hws-sf details.hws-sf-more{margin:8px 0 0 32px}
             #hws-sf details.hws-sf-more>summary{cursor:pointer;color:#2271b1;font-size:12px}
@@ -255,9 +260,17 @@ function hws_sitemap_feeds_render( string $kind ): void {
             var newest = r.display && (r.display.latest_item || r.display.latest_saved);
             if (newest) parts.push('last published <b>' + esc(newest) + '</b>');
             if (r.extra) Object.keys(r.extra).forEach(function(k){ parts.push(num(r.extra[k]) + ' ' + k); });
-            if (r.response && r.response.code) parts.push('HTTP ' + r.response.code + ' in ' + num(r.response.time_ms) + ' ms');
             if (r.display && r.display.checked_at) parts.push('checked ' + esc(r.display.checked_at));
             return parts.join(' · ');
+        }
+
+        // The server's answer in plain view: green check for 200, red X for anything else.
+        function httpBadge(r){
+            var res = r.response || {};
+            if (!res.code && !res.error) return '';
+            var ok = res.code === 200;
+            var text = res.error ? 'No answer: ' + res.error : res.code + ' ' + (res.message || '');
+            return '<div class="hws-sf-http ' + (ok ? 'ok' : 'bad') + '"><b>' + (ok ? '✓' : '✗') + '</b>Server response: ' + esc(text) + (res.time_ms ? ' <span>in ' + num(res.time_ms) + ' ms</span>' : '') + '</div>';
         }
 
         function responseHtml(r){
@@ -315,6 +328,7 @@ function hws_sitemap_feeds_render( string $kind ): void {
             if (row.url) html += '<div class="hws-sf-url"><a href="' + esc(row.url) + '" target="_blank" rel="noopener">' + esc(row.url) + '</a></div>';
             if (row.note) html += '<div class="hws-sf-meta">' + esc(row.note) + '</div>';
             if (r && row.available) {
+                html += httpBadge(r);
                 if (r.summary) html += '<div class="hws-sf-summary-line ' + esc(r.status) + '">' + esc(r.summary) + '</div>';
                 var m = meta(row, r); if (m) html += '<div class="hws-sf-meta">' + m + '</div>';
                 html += '<details class="hws-sf-more"><summary>Checks</summary><div class="hws-sf-panel">' + checksHtml(r) + '</div></details>';
