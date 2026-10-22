@@ -275,6 +275,7 @@ final class DashboardRegistry {
             'hws_feature_'                       => [ 'settings-dashboard-features.php' ],
             'hws_search_display_'                => [ 'settings-dashboard-search.php' ],
             'hws_search_behavior_'               => [ 'settings-dashboard-search.php' ],
+            'hws_listing_search_'                => [ 'settings-dashboard-search.php' ],
             'hws_footer_text_'                   => [ 'settings-dashboard-footer-text.php' ],
             'hws_toggle_ui_cleanup'              => [ 'settings-dashboard-ui-cleanup.php' ],
             'hws_ui_cleanup_bulk'                => [ 'settings-dashboard-ui-cleanup.php' ],

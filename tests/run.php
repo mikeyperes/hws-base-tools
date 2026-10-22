@@ -300,7 +300,8 @@ expect_true(
     'Search tab and its AJAX save action load the focused Search Display adapter'
 );
 expect_true(
-    $registry->implementation_files_for_ajax_action( 'hws_search_behavior_save' ) === [ 'settings-dashboard-search.php' ],
+    $registry->implementation_files_for_ajax_action( 'hws_search_behavior_save' ) === [ 'settings-dashboard-search.php' ]
+    && $registry->implementation_files_for_ajax_action( 'hws_listing_search_style_save' ) === [ 'settings-dashboard-search.php' ],
     'Search Behavior AJAX saves load the focused Search tab adapter'
 );
 expect_true(
@@ -585,20 +586,27 @@ expect_true(
 );
 expect_true(
     str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<div data-hws-search-form>' )
-    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'save.addEventListener(\'click\'' )
+    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'HWSSettingsAutosave.bind(form' )
     && ! str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<form data-hws-search-form>' ),
     'Search settings avoid invalid nested forms while Core previews render native search forms'
 );
 expect_true(
     str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'hws_search_behavior_save' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Five-Plugin Search Criteria Audit' )
-    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'data-hws-search-query-save' )
-    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "body.append('post_types[]',value)" )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'HWSSettingsAutosave.bind(root' )
+    && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), "post_types:checked('post_types')" )
     && str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'new SearchQueryEngine(' )
     && ! str_contains( source( 'src/FrontendContent/SearchQueryFeature.php' ), 'JetEngine' )
     && str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'Search-template compatibility' )
     && str_contains( source( 'src/FrontendContent/search-display.php' ), 'register_query_engine' ),
-    'Search Behavior exposes the five-plugin audit, refresh-free save, reusable Core query engine, and no JetEngine bridge'
+    'Search Behavior exposes the five-plugin audit, autosave, reusable Core query engine, and no JetEngine bridge'
+);
+expect_true(
+    str_contains( source( 'src/AdminDashboard/SettingsAutosave.php' ), 'HexaWpCoreDynamicNotice' )
+    && ! str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'data-hws-search-save' )
+    && ! str_contains( source( 'src/FrontendContent/search-query-settings.php' ), 'data-hws-search-query-save' )
+    && str_contains( source( 'src/FrontendContent/listing-search-settings.php' ), 'HWSSettingsAutosave.bind(root' ),
+    'Every Search tab section saves on change through the shared autosave and Core notice'
 );
 $getting_started_source = source( 'src/QuickStart/QuickStartModule.php' );
 expect_true(

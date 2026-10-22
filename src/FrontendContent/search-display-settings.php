@@ -4,6 +4,7 @@ namespace hws_base_tools;
 
 use Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
+use HWS\BaseTools\AdminDashboard\SettingsAutosave;
 use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
 use HWS\BaseTools\FrontendContent\SearchQueryFeature;
 
@@ -34,7 +35,7 @@ function ajax_save_search_display(): void {
             'settings'    => $settings,
             'style_label' => $styles[ $settings['style'] ]['label'] ?? 'Pill',
             'shortcode'   => '[' . SearchDisplayFeature::SHORTCODE . ']',
-            'message'     => 'Search design saved. The shortcode now uses this template by default.',
+            'message'     => 'The header search box now uses ' . ( $styles[ $settings['style'] ]['label'] ?? 'Pill' ) . '.',
         ]
     );
 }
@@ -138,10 +139,7 @@ function render_tab_search(): void {
                 </label>
             </section>
 
-            <div class="hws-search-display-actions">
-                <button type="button" class="button button-primary" data-hws-search-save>Save</button>
-                <span class="hws-search-display-status" data-hws-search-status role="status" aria-live="polite"></span>
-            </div>
+            <?php echo SettingsAutosave::notice( 'hws-search-display-notice' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         </div>
     </div>
 
@@ -159,8 +157,8 @@ function render_tab_search(): void {
     .hws-search-display-shortcode p,.hws-search-display-controls p{margin:0;color:#646970}
     .hws-search-display-code-row{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .hws-search-display-code-row code{padding:8px 11px;border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7;color:#1d2327;font-size:13px}
-    .hws-search-display-code-row .button,.hws-search-display-actions .button{display:inline-flex;align-items:center;gap:6px}
-    .hws-search-display-code-row .dashicons,.hws-search-display-actions .dashicons{width:16px;height:16px;font-size:16px}
+    .hws-search-display-code-row .button{display:inline-flex;align-items:center;gap:6px}
+    .hws-search-display-code-row .dashicons{width:16px;height:16px;font-size:16px}
     .hws-search-display-example{flex-basis:100%;display:none}
     .hws-search-display-templates{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin:0;padding:0;border:0}
     .hws-search-template{min-width:0;overflow:hidden;border:1px solid #c3c4c7;border-radius:8px;background:#fff;transition:border-color .15s,box-shadow .15s}
@@ -180,10 +178,6 @@ function render_tab_search(): void {
     .hws-search-display-controls input[type="text"]{width:100%;min-height:38px}
     .hws-search-color-control{display:grid;grid-template-columns:44px minmax(0,1fr);gap:7px}
     .hws-search-color-control input[type="color"]{width:44px;height:38px;margin:0;padding:2px;border:1px solid #8c8f94;border-radius:4px;background:#fff}
-    .hws-search-display-actions{display:flex;align-items:center;gap:8px;margin-top:16px}
-    .hws-search-display-status{font-weight:600}
-    .hws-search-display-status.is-success{color:#008a20}
-    .hws-search-display-status.is-error{color:#b32d2e}
     @media(max-width:782px){
       .hws-search-display-heading,.hws-search-display-shortcode,.hws-search-template-heading{align-items:stretch;flex-direction:column}
       .hws-search-display-current{min-width:0}
@@ -200,39 +194,29 @@ function render_tab_search(): void {
       if(!root||root.dataset.ready==='1')return;
       root.dataset.ready='1';
       var form=root.querySelector('[data-hws-search-form]');
-      var save=root.querySelector('[data-hws-search-save]');
-      
-      var status=root.querySelector('[data-hws-search-status]');
+      var notice='#hws-search-display-notice';
       var accent=root.querySelector('[data-hws-search-accent]');
       var picker=root.querySelector('[data-hws-search-accent-picker]');
       var placeholder=root.querySelector('[data-hws-search-placeholder]');
       function selectedStyle(){var input=form.querySelector('input[name="style"]:checked');return input?input.value:'pill';}
-      function setStatus(message,type){status.textContent=message||'';status.classList.toggle('is-success',type==='success');status.classList.toggle('is-error',type==='error');}
       function syncSelection(){root.querySelectorAll('[data-hws-search-template]').forEach(function(card){card.classList.toggle('is-selected',card.dataset.hwsSearchTemplate===selectedStyle());});}
       function syncPreviews(){var color=(accent.value||'').trim()||'#1b2230';root.querySelectorAll('.hexa-search,.hexa-search-overlay').forEach(function(widget){widget.style.setProperty('--sd-accent',color);});root.querySelectorAll('.hexa-search .sd-input,.hexa-search-overlay .sd-input').forEach(function(input){input.setAttribute('placeholder',placeholder.value||'Search...');});}
-      form.addEventListener('change',function(event){if(event.target.name==='style'){syncSelection();setStatus('Preview selected. Save to make it the default.','');}});
+      form.addEventListener('change',function(event){if(event.target.name==='style')syncSelection();});
       picker.addEventListener('input',function(){accent.value=picker.value;syncPreviews();});
       accent.addEventListener('input',function(){if(/^#[0-9a-fA-F]{6}$/.test(accent.value))picker.value=accent.value;syncPreviews();});
       placeholder.addEventListener('input',syncPreviews);
+      HWSSettingsAutosave.bind(form,{
+        notice:notice,
+        ignore:'[data-hws-search-preview] *',
+        validate:function(){var value=accent.value.trim();if(value&&!/^#[0-9a-fA-F]{6}$/.test(value)){HWSSettingsAutosave.fail(notice,'Accent color must be a 6-digit hex code like #1b2230.');return false;}return true;},
+        save:function(){return HWSSettingsAutosave.post('hws_search_display_save',<?php echo wp_json_encode( $nonce ); ?>,{style:selectedStyle(),accent:accent.value.trim(),placeholder:placeholder.value.trim()}).then(function(data){root.querySelector('[data-hws-search-current]').textContent=data.style_label||selectedStyle();return {message:data.message};});}
+      });
       var copy=root.querySelector('[data-hws-search-copy]');
       copy.addEventListener('click',function(){
         var value=root.querySelector('[data-hws-search-shortcode]').textContent;
-        if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(value).then(function(){setStatus('Shortcode copied.','success');}).catch(function(){setStatus('Copy failed. Select the shortcode and copy it manually.','error');});return;}
-        var field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var copied=false;try{copied=document.execCommand('copy');}catch(error){}document.body.removeChild(field);setStatus(copied?'Shortcode copied.':'Copy failed. Select the shortcode and copy it manually.',copied?'success':'error');
-      });
-      save.addEventListener('click',function(){
-        var body=new URLSearchParams();
-        body.set('action','hws_search_display_save');
-        body.set('nonce',<?php echo wp_json_encode( $nonce ); ?>);
-        body.set('style',selectedStyle());
-        body.set('accent',accent.value.trim());
-        body.set('placeholder',placeholder.value.trim());
-        save.disabled=true;save.textContent='Saving…';setStatus('','');
-        fetch(<?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()})
-          .then(function(response){return response.json();})
-          .then(function(payload){if(!payload||!payload.success||!payload.data)throw new Error(payload&&payload.data&&payload.data.message?payload.data.message:'Save failed.');root.querySelector('[data-hws-search-current]').textContent=payload.data.style_label||selectedStyle();setStatus(payload.data.message||'Search design saved.','success');})
-          .catch(function(error){setStatus(error.message||'Search design could not be saved.','error');})
-          .finally(function(){save.disabled=false;save.textContent='Save';});
+        function report(copied){if(copied){HWSSettingsAutosave.done(notice,'Shortcode copied',value);}else{HWSSettingsAutosave.fail(notice,'Copy failed. Select the shortcode and copy it manually.');}}
+        if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(value).then(function(){report(true);}).catch(function(){report(false);});return;}
+        var field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var copied=false;try{copied=document.execCommand('copy');}catch(error){}document.body.removeChild(field);report(copied);
       });
       syncSelection();syncPreviews();
     })();

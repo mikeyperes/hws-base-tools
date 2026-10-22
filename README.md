@@ -184,7 +184,7 @@ The HWS dashboard includes:
 - Custom Post Types and ACF structure controls.
 - Plugins, themes, updates, backups, cleanup, and system checks.
 - Brand Assets, Footer Text, UI Cleanup, and Site Structure tools.
-- Sitemaps, Search Display, Search Behavior, Features, and Shortcodes.
+- Sitemaps, Search Display, Search Behavior, Features, and Shortcodes. Every Search tab section saves on its own as you change it (text after you stop typing) and reports Saved or Not saved with the reason in the shared Core notice.
 - Featured image publication requirements for selected public content types, with optional minimum dimensions and one-time migration from Require Featured Image.
 - A generic reading-progress feature with an entire-site override, front-page and public post-type targeting, five visual designs, live previews, and the shared Hexa WP Core color picker.
 - Elementor query IDs and a configurable trimmed ACF text dynamic tag for native Loop Grid documents.
@@ -269,6 +269,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.15.4
+
+- Settings, Search: no Save buttons. Every section saves as you change it and shows Saved or Not saved (with the reason) in the shared notice bar. Fixes the search box look choice, which never saved.
 
 ### 13.15.3
 

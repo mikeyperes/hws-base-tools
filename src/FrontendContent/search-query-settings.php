@@ -4,6 +4,7 @@ namespace hws_base_tools;
 
 use Hexa\PluginCore\SearchQuery\SearchQueryConfiguration;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
+use HWS\BaseTools\AdminDashboard\SettingsAutosave;
 use HWS\BaseTools\FrontendContent\SearchQueryFeature;
 
 defined( 'ABSPATH' ) || exit;
@@ -40,8 +41,8 @@ function ajax_save_search_behavior(): void {
             'settings' => $settings,
             'summary'  => search_behavior_summary( $settings ),
             'message'  => $settings['enabled']
-                ? 'Saved.'
-                : 'Saved. These settings are off, so the site uses WordPress\'s normal search.',
+                ? 'Search behavior updated.'
+                : 'These settings are off, so the site uses WordPress\'s normal search.',
         ]
     );
 }
@@ -285,10 +286,7 @@ function render_search_query_settings(): void {
         ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         ?>
 
-        <div class="hws-search-query-actions">
-            <button type="button" class="button button-primary" data-hws-search-query-save>Save</button>
-            <span class="hws-search-query-status" data-hws-search-query-status role="status" aria-live="polite"></span>
-        </div>
+        <?php echo SettingsAutosave::notice( 'hws-search-query-notice' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
     </div>
     <style>
     /* One column, plain lists: each setting is a short heading with its options stacked under it. */
@@ -319,43 +317,40 @@ function render_search_query_settings(): void {
     .hws-search-audit-table{min-width:860px}
     .hws-search-audit-table th,.hws-search-audit-table td{line-height:1.45;vertical-align:top}
     .hws-search-audit-table th small{color:#697586;display:block;font-weight:400;margin-top:3px}
-    .hws-search-query-actions{align-items:center;border-top:1px solid #dcdcde;display:flex;gap:9px;padding-top:14px}
-    .hws-search-query-status{font-weight:600}
-    .hws-search-query-status.is-success{color:#16803c}
-    .hws-search-query-status.is-error{color:#b42336}
     </style>
     <script>
     (function(){
       var root=document.getElementById('hws-search-query-settings');
       if(!root||root.dataset.ready==='1')return;
       root.dataset.ready='1';
-      var save=root.querySelector('[data-hws-search-query-save]');
-      var status=root.querySelector('[data-hws-search-query-status]');
+      var notice='#hws-search-query-notice';
       var state=root.querySelector('[data-hws-search-query-state]');
       var summary=document.querySelector('[data-hws-search-query-summary]');
       var matching=root.querySelector('[name="word_matching"]');
       function checked(name){return Array.prototype.slice.call(root.querySelectorAll('[name="'+name+'[]"]:checked')).map(function(input){return input.value;});}
       function selected(name,fallback){var input=root.querySelector('[name="'+name+'"]:checked');return input?input.value:fallback;}
-      function setStatus(message,type){status.textContent=message||'';status.classList.toggle('is-success',type==='success');status.classList.toggle('is-error',type==='error');}
       function syncChoices(){root.querySelectorAll('.hws-search-query-choice').forEach(function(card){var input=card.querySelector('input');card.classList.toggle('is-selected',!!input&&input.checked);});var exact=selected('term_logic','all')==='exact';matching.disabled=exact;root.querySelector('[data-hws-search-query-matching-note]').hidden=!exact;}
       root.addEventListener('change',function(event){if(event.target.name==='term_logic')syncChoices();});
-      save.addEventListener('click',function(){
-        var postTypes=checked('post_types');var fields=checked('fields');
-        if(!postTypes.length){setStatus('Select at least one content type.','error');return;}
-        if(!fields.length&&!checked('taxonomies').length&&!root.querySelector('[name="authors"]').checked&&!root.querySelector('[name="custom_fields"]').value.trim()){setStatus('Select at least one searchable field or advanced source.','error');return;}
-        var body=new URLSearchParams();
-        body.set('action','hws_search_behavior_save');body.set('nonce',<?php echo wp_json_encode( $nonce ); ?>);
-        body.set('enabled',root.querySelector('[name="enabled"]').checked?'1':'0');
-        body.set('scope',root.querySelector('[name="scope"]').value);body.set('term_logic',selected('term_logic','all'));
-        body.set('word_matching',matching.value);body.set('authors',root.querySelector('[name="authors"]').checked?'1':'0');
-        body.set('custom_fields',root.querySelector('[name="custom_fields"]').value);body.set('results_per_page',root.querySelector('[name="results_per_page"]').value);body.set('orderby',root.querySelector('[name="orderby"]').value);
-        postTypes.forEach(function(value){body.append('post_types[]',value);});fields.forEach(function(value){body.append('fields[]',value);});checked('taxonomies').forEach(function(value){body.append('taxonomies[]',value);});
-        save.disabled=true;save.textContent='Saving…';setStatus('','');
-        fetch(<?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()})
-          .then(function(response){return response.json();})
-          .then(function(payload){if(!payload||!payload.success||!payload.data)throw new Error(payload&&payload.data&&payload.data.message?payload.data.message:'Save failed.');var enabled=!!payload.data.settings.enabled;state.textContent=enabled?'Engine enabled':'Engine disabled';state.classList.toggle('success',enabled);state.classList.toggle('warning',!enabled);if(summary)summary.textContent=payload.data.summary||'';setStatus(payload.data.message||'Search behavior saved.','success');})
-          .catch(function(error){setStatus(error.message||'Search behavior could not be saved.','error');})
-          .finally(function(){save.disabled=false;save.textContent='Save';});
+      HWSSettingsAutosave.bind(root,{
+        notice:notice,
+        validate:function(){
+          if(!checked('post_types').length){HWSSettingsAutosave.fail(notice,'Select at least one content type.');return false;}
+          if(!checked('fields').length&&!checked('taxonomies').length&&!root.querySelector('[name="authors"]').checked&&!root.querySelector('[name="custom_fields"]').value.trim()){HWSSettingsAutosave.fail(notice,'Select at least one searchable field or advanced source.');return false;}
+          return true;
+        },
+        save:function(){
+          return HWSSettingsAutosave.post('hws_search_behavior_save',<?php echo wp_json_encode( $nonce ); ?>,{
+            enabled:root.querySelector('[name="enabled"]').checked?'1':'0',
+            scope:root.querySelector('[name="scope"]').value,
+            term_logic:selected('term_logic','all'),
+            word_matching:matching.value,
+            authors:root.querySelector('[name="authors"]').checked?'1':'0',
+            custom_fields:root.querySelector('[name="custom_fields"]').value,
+            results_per_page:root.querySelector('[name="results_per_page"]').value,
+            orderby:root.querySelector('[name="orderby"]').value,
+            post_types:checked('post_types'),fields:checked('fields'),taxonomies:checked('taxonomies')
+          }).then(function(data){var enabled=!!(data.settings&&data.settings.enabled);state.textContent=enabled?'Engine enabled':'Engine disabled';state.classList.toggle('success',enabled);state.classList.toggle('warning',!enabled);if(summary)summary.textContent=data.summary||'';return {message:data.message};});
+        }
       });
       syncChoices();
     })();
