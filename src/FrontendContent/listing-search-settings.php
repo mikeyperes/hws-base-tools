@@ -41,7 +41,7 @@ function render_listing_search_style_settings(): void {
     ?>
     <section class="hws-listing-style" id="hws-listing-style">
         <h3>Search box above lists (<code>[hws_search]</code>)</h3>
-        <p>The search box with filters above category, tag, author and search results. The look chosen below is the site default; site CSS always wins over it.</p>
+        <p>The search box with filters above category, tag, author and search results. The look chosen below is the site default. HTML structure and styling guide: <a href="https://github.com/mikeyperes/hws-base-tools/blob/main/docs/hws-search.md" target="_blank" rel="noopener">docs/hws-search.md</a>.</p>
         <div class="hws-listing-attrs">
             <div class="hws-listing-attrs-head">
                 <strong>Shortcode attributes</strong>

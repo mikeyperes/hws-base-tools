@@ -83,6 +83,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Attributes:** every one optional and per box, listed with examples on Settings, Search: `style`, `filters`, `placeholder`, `results_one`, `results_many`, `empty`, `clear`, `accent`, `border`, `radius`, `panel_bg`, `field_width`, `field_height`, `font_size`, `target`, `class`.
 - **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial), or `style="none|default-1|default-2"` per box; inherits the site's fonts and colours, every rule overridable by site CSS; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
 - **Code:** `src/FrontendContent/ListingSearchFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/ListingSearch/`.
+- **HTML structure and styling:** [docs/hws-search.md](docs/hws-search.md): the box's markup, states, classes, custom properties and how to style it in Elementor and HTML drafts.
 
 ### Infinite scroll with a Load more fallback
 - **Does:** a Loop Grid or Posts widget set to "Load on click" loads its next batch as its button comes into view; the button stays as the fallback. A page with `window.hexaFreezeAutoLoad = true` keeps its first batch.
