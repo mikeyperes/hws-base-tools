@@ -57,6 +57,7 @@ final class TeamMemberDirectory {
                 'order'         => (string) $page['order'],
                 'orderby'       => (string) $page['orderby'],
                 'design'        => (string) $page['design'],
+                'roles_first'   => (string) $page['roles_first'],
             ],
             $atts,
             self::SHORTCODE
@@ -74,7 +75,7 @@ final class TeamMemberDirectory {
         $query_args = [
             'post_type'           => self::POST_TYPE,
             'post_status'         => 'publish',
-            'posts_per_page'      => $limit,
+            'posts_per_page'      => '' !== trim( (string) $atts['roles_first'] ) ? self::MAX_LIMIT : $limit,
             'orderby'             => 'menu_order' === $orderby ? [ 'menu_order' => $order, 'title' => 'ASC' ] : $orderby,
             'order'               => $order,
             'ignore_sticky_posts' => true,
@@ -114,6 +115,8 @@ final class TeamMemberDirectory {
             }
         }
 
+        $items = array_slice( self::roles_first( $items, (string) $atts['roles_first'] ), 0, $limit );
+
         return self::render_items(
             $items,
             $style,
@@ -123,6 +126,32 @@ final class TeamMemberDirectory {
             false,
             self::normalize_design( (string) $atts['design'] )
         );
+    }
+
+    /**
+     * People whose position matches a listed role come first, in the list's order;
+     * everyone else keeps the query order after them.
+     *
+     * @param array<int,array<string,mixed>> $items
+     * @return array<int,array<string,mixed>>
+     */
+    public static function roles_first( array $items, string $roles ): array {
+        $rank = [];
+        foreach ( array_values( array_filter( array_map( 'trim', explode( ',', strtolower( $roles ) ) ) ) ) as $index => $role ) {
+            $rank[ $role ] = $rank[ $role ] ?? $index;
+        }
+        if ( ! $rank ) {
+            return $items;
+        }
+
+        $keyed = [];
+        foreach ( array_values( $items ) as $position => $item ) {
+            $role    = strtolower( trim( (string) ( $item['position'] ?? '' ) ) );
+            $keyed[] = [ $rank[ $role ] ?? count( $rank ), $position, $item ];
+        }
+        usort( $keyed, static fn( array $a, array $b ): int => [ $a[0], $a[1] ] <=> [ $b[0], $b[1] ] );
+
+        return array_column( $keyed, 2 );
     }
 
     /** `default` prints the built-in look; `none` prints the same markup with no plugin styling. */

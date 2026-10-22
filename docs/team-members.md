@@ -7,6 +7,7 @@
 WP Admin → Settings → HWS Base Tools → Team (`options-general.php?page=hws-core-tools&tab=team`).
 
 - **One switch** turns on the Team Member post type (`team-member`, archive at `/team/`, single at `/team-member/<slug>/`), its ACF fields (`position`, `featured` and profile details) and the shortcode together. Off hides them; saved team members are kept.
+- **Roles shown first** (a team page setting) puts people with those positions at the top, for example the founder first.
 - **Team page settings** are the defaults for every `[hws_team_members]` on the site (option `hws_team_page_settings`).
 - **Shortcode builder** builds a shortcode from options and shows its live preview and the exact HTML it prints.
 
@@ -23,6 +24,7 @@ Every attribute is optional; one left out uses the Team page settings.
 - `link_profiles`: `1` or `0`, links the photo, name and "View profile" to the person's page.
 - `featured_only`: `1` lists only people whose `featured` field is on.
 - `category`: one category slug, for example `leadership`.
+- `roles_first`: positions listed first, in this order, comma-separated (default `Founder, Co-Founder, CEO, President, COO, CTO`). A person whose Position field matches one exactly (capitals ignored) comes first; everyone else follows in the `orderby` order. `roles_first=""` turns it off.
 
 Example: `[hws_team_members design="none" columns="4" show_excerpt="0"]`.
 

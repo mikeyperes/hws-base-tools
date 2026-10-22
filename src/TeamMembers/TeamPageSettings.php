@@ -23,6 +23,7 @@ final class TeamPageSettings {
             'order'         => 'ASC',
             'orderby'       => 'menu_order',
             'design'        => 'default',
+            'roles_first'   => 'Founder, Co-Founder, CEO, President, COO, CTO',
         ];
     }
 
@@ -68,7 +69,21 @@ final class TeamPageSettings {
             'order'         => 'DESC' === $order ? 'DESC' : 'ASC',
             'orderby'       => in_array( $orderby, [ 'menu_order', 'title', 'date' ], true ) ? $orderby : 'menu_order',
             'design'        => 'none' === $design ? 'none' : 'default',
+            'roles_first'   => self::roles( (string) ( $values['roles_first'] ?? $defaults['roles_first'] ) ),
         ];
+    }
+
+    /** A comma list of role names, trimmed, empty entries and duplicates dropped. */
+    public static function roles( string $value ): string {
+        $roles = [];
+        foreach ( explode( ',', sanitize_text_field( $value ) ) as $role ) {
+            $role = trim( $role );
+            if ( '' !== $role && ! in_array( strtolower( $role ), array_map( 'strtolower', $roles ), true ) ) {
+                $roles[] = $role;
+            }
+        }
+
+        return implode( ', ', $roles );
     }
 
     private static function flag( mixed $value ): int {

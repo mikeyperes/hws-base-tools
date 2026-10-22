@@ -191,6 +191,8 @@ final class TeamTab implements ModuleInterface {
                 <li><label><input type="radio" data-field="order" name="<?php echo esc_attr( $name( 'order' ) ); ?>" value="<?php echo esc_attr( $value ); ?>" <?php checked( $settings['order'], $value ); ?>> <?php echo esc_html( $label ); ?></label></li>
             <?php endforeach; ?>
         </ul>
+        <h4>Roles shown first</h4>
+        <ul class="hws-team-options"><li><input type="text" data-field="roles_first" value="<?php echo esc_attr( (string) $settings['roles_first'] ); ?>" style="max-width:520px"><small>Positions listed first, in this order, separated by commas (they match the Position field exactly, ignoring capitals). Everyone else follows in the order above. Leave empty to turn it off.</small></li></ul>
         <h4>Show</h4>
         <ul class="hws-team-options">
             <li><label><input type="checkbox" data-field="show_excerpt" <?php checked( ! empty( $settings['show_excerpt'] ) ); ?>> Short bio</label></li>
@@ -242,7 +244,7 @@ final class TeamTab implements ModuleInterface {
 
     public static function handle_preview(): void {
         self::authorize();
-        $atts = array_filter( self::posted_values(), static fn( $value ): bool => '' !== $value );
+        $atts = array_filter( self::posted_values(), static fn( $value, $key ): bool => '' !== $value || 'roles_first' === $key, ARRAY_FILTER_USE_BOTH );
         $atts['limit'] = (string) min( 6, TeamMemberDirectory::normalize_limit( $atts['limit'] ?? TeamPageSettings::all()['limit'] ) );
         $html = TeamMemberDirectory::render( $atts );
         if ( '' === $html ) {
@@ -255,7 +257,7 @@ final class TeamTab implements ModuleInterface {
     /** @return array<string,string> */
     private static function posted_values(): array {
         $values = [];
-        foreach ( [ 'style', 'design', 'columns', 'limit', 'orderby', 'order', 'show_excerpt', 'link_profiles', 'featured_only', 'category' ] as $key ) {
+        foreach ( [ 'style', 'design', 'columns', 'limit', 'orderby', 'order', 'show_excerpt', 'link_profiles', 'featured_only', 'category', 'roles_first' ] as $key ) {
             if ( isset( $_POST[ $key ] ) ) {
                 $values[ $key ] = sanitize_text_field( (string) wp_unslash( $_POST[ $key ] ) );
             }

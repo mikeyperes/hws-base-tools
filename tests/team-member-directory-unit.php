@@ -55,6 +55,13 @@ foreach ( array_keys( $templates ) as $style ) {
     team_expect( ! str_contains( $preview, 'smpi-' ), $style . ' preview has no SMP-owned classes' );
 }
 
+$ordered = TeamMemberDirectory::roles_first(
+    [ [ 'name' => 'A', 'position' => 'Designer' ], [ 'name' => 'B', 'position' => 'coo' ], [ 'name' => 'C', 'position' => 'Founder' ], [ 'name' => 'D', 'position' => 'Writer' ] ],
+    'Founder, COO'
+);
+team_expect( 'C,B,A,D' === implode( ',', array_column( $ordered, 'name' ) ), 'roles shown first come first in list order, the rest keep their order' );
+team_expect( 'A,B' === implode( ',', array_column( TeamMemberDirectory::roles_first( [ [ 'name' => 'A', 'position' => 'x' ], [ 'name' => 'B', 'position' => 'Founder' ] ], '' ), 'name' ) ), 'an empty role list keeps the original order' );
+
 $styles = TeamMemberDirectory::styles();
 team_expect( str_contains( $styles, '@media(max-width:600px)' ), 'team templates include a mobile breakpoint' );
 team_expect( str_contains( $styles, 'object-fit:cover' ), 'team images preserve their aspect ratio without skewing' );

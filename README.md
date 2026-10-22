@@ -63,7 +63,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ### Team
 - **Does:** the Team Member post type (`team-member`, archive `/team/`), its ACF fields and the `[hws_team_members]` listing grid. The plugin prints only the grid; the rest of the team page is the site's own design around it.
 - **Switch:** Settings → HWS Base Tools → Team (`options-general.php?page=hws-core-tools&tab=team`): one switch turns the post type, its fields and the shortcode on or off together (`enable_team_member_directory_templates` plus the Team Member content type settings). Team page defaults in `hws_team_page_settings`.
-- **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" design="default|none" columns="3" limit="24" orderby="menu_order|title|date" order="ASC|DESC" show_excerpt="1" link_profiles="1" featured_only="0" category=""]`; the Team tab's shortcode builder writes it and shows its preview and HTML. Elementor query ID `featured_team_members` for Posts/Loop widgets.
+- **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" design="default|none" columns="3" limit="24" orderby="menu_order|title|date" order="ASC|DESC" show_excerpt="1" link_profiles="1" featured_only="0" category="" roles_first="Founder, Co-Founder, CEO, President, COO, CTO"]` (people whose position is in `roles_first` come first, in that order); the Team tab's shortcode builder writes it and shows its preview and HTML. Elementor query ID `featured_team_members` for Posts/Loop widgets.
 - **HTML structure and styling:** [docs/team-members.md](docs/team-members.md): the grid's markup, every attribute, the classes (`.hws-team-directory`, `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`), the built-in CSS and how to style it in Elementor and HTML drafts.
 - **Code:** `src/TeamMembers/TeamTab.php`, `src/TeamMembers/TeamMemberDirectory.php`, `src/TeamMembers/TeamPageSettings.php`
 
@@ -275,6 +275,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.18.0
+
+- Team: "Roles shown first" setting and `roles_first` attribute on `[hws_team_members]`: people whose position is listed (default Founder, Co-Founder, CEO, President, COO, CTO) come first in that order, everyone else after.
 
 ### 13.17.1
 
