@@ -40,6 +40,40 @@ final class ListingSearchFeature implements ModuleInterface {
         'default-2' => 'Default 2',
     ];
 
+    /**
+     * Every `[hws_search]` attribute, with what it does and an example. The
+     * settings screen lists these, so code and help never drift apart.
+     */
+    public const ATTRIBUTES = [
+        'style'        => [ 'Look of this box, overriding the site setting: none (no styling), default-1 or default-2.', 'style="none"' ],
+        'filters'      => [ 'Which filters to show: any of type, category, tag, author. Leave out for all.', 'filters="category,author"' ],
+        'placeholder'  => [ 'Text inside the empty search field. Default: "Search <page title>".', 'placeholder="Search stories"' ],
+        'results_one'  => [ 'Count line for one result; %d is the number.', 'results_one="%d article"' ],
+        'results_many' => [ 'Count line for several results; %d is the number.', 'results_many="%d articles"' ],
+        'empty'        => [ 'Line shown when nothing matches.', 'empty="Nothing found"' ],
+        'clear'        => [ 'Text of the link that resets the search.', 'clear="Reset"' ],
+        'accent'       => [ 'Accent colour (focus line, ticked filters, count badge).', 'accent="#c2410c"' ],
+        'border'       => [ 'Border colour of the field and filter buttons.', 'border="#d0d5dd"' ],
+        'radius'       => [ 'Corner rounding.', 'radius="0"' ],
+        'panel_bg'     => [ 'Background of the opened filter lists.', 'panel_bg="#ffffff"' ],
+        'field_width'  => [ 'Widest the search field gets.', 'field_width="480px"' ],
+        'field_height' => [ 'Height of the field and filter buttons.', 'field_height="42px"' ],
+        'font_size'    => [ 'Text size of the box.', 'font_size="15px"' ],
+        'target'       => [ 'CSS selector of the list to refresh, when it is not the page\'s marked list.', 'target=".my-grid"' ],
+        'class'        => [ 'Extra CSS class on the box, for site CSS.', 'class="sidebar-search"' ],
+    ];
+
+    /** Look attributes, each setting one of the box's custom properties. */
+    private const LOOK_ATTRIBUTES = [
+        'accent'       => '--hls-accent',
+        'border'       => '--hls-border',
+        'radius'       => '--hls-radius',
+        'panel_bg'     => '--hls-panel-bg',
+        'field_width'  => '--hls-field-width',
+        'field_height' => '--hls-field-height',
+        'font_size'    => '--hls-font-size',
+    ];
+
     /** The site's chosen look for the search box (Settings: Search). */
     public static function style(): string {
         $style = (string) get_option( self::STYLE_OPTION, 'default-1' );
@@ -93,36 +127,40 @@ final class ListingSearchFeature implements ModuleInterface {
         }
 
         $attributes = shortcode_atts(
-            [
-                'profile'      => self::PROFILE,
-                'style'        => '',
-                'placeholder'  => '',
-                'filters'      => '',
-                'target'       => '',
-                'class'        => '',
-                'results_one'  => '',
-                'results_many' => '',
-                'clear'        => '',
-            ],
+            [ 'profile' => self::PROFILE ] + array_fill_keys( array_keys( self::ATTRIBUTES ), '' ),
             is_array( $attributes ) ? $attributes : [],
             self::SHORTCODE
         );
+
+        // Look attributes become this box's own custom properties through a unique class.
+        $look = '';
+        foreach ( self::LOOK_ATTRIBUTES as $key => $property ) {
+            $value = trim( (string) $attributes[ $key ] );
+            if ( '' === $value || ! preg_match( '/^[#a-zA-Z0-9.,%()\s-]{1,40}$/', $value ) ) {
+                continue;
+            }
+            $look .= $property . ':' . ( preg_match( '/^\d+(\.\d+)?$/', $value ) && 'border' !== $key && 'accent' !== $key && 'panel_bg' !== $key ? $value . 'px' : $value ) . ';';
+        }
+        $look_class = '' !== $look ? 'hws-hls-' . substr( md5( $look ), 0, 8 ) : '';
 
         $options = array_filter( [
             'style'        => isset( self::STYLES[ (string) $attributes['style'] ] ) ? (string) $attributes['style'] : self::style(),
             'placeholder'  => (string) $attributes['placeholder'],
             'filters'      => (string) $attributes['filters'],
             'target'       => (string) $attributes['target'],
-            'class'        => (string) $attributes['class'],
+            'class'        => trim( (string) $attributes['class'] . ' ' . $look_class ),
             'results_one'  => (string) $attributes['results_one'],
             'results_many' => (string) $attributes['results_many'],
+            'empty'        => (string) $attributes['empty'],
             'clear'        => (string) $attributes['clear'],
         ], static fn( string $value ): bool => '' !== trim( $value ) );
         if ( is_search() ) {
             $options['hidden'] = SearchQueryFeature::marker_fields();
         }
 
-        return ( new ListingSearchRenderer() )->render( sanitize_key( (string) $attributes['profile'] ), $options );
+        $html = ( new ListingSearchRenderer() )->render( sanitize_key( (string) $attributes['profile'] ), $options );
+
+        return '' !== $html && '' !== $look ? '<style>.' . $look_class . '.hls{' . $look . '}</style>' . $html : $html;
     }
 
     /**

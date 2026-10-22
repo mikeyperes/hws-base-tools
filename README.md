@@ -80,6 +80,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ### Listing search (search and filters inside any list of posts)
 - **Does:** a search box with Type, Category, Tag and Author filters above any list of posts. On a category, tag, author, search or post type page it searches inside that page; the list, the filter counts and the address refresh in place as visitors type or tick, without reloading. Filters take several choices, show how many stories each gives and list subcategories under their parent. Site search covers pages, posts and custom post types (what the Search settings cover once switched on).
 - **Use:** `[hws_search profile="listing" placeholder="" filters="category,tag,author" target=".hexa-listing-results" class="" results_one="%d result" results_many="%d results" clear="Clear"]` above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself.
+- **Attributes:** every one optional and per box, listed with examples on Settings, Search: `style`, `filters`, `placeholder`, `results_one`, `results_many`, `empty`, `clear`, `accent`, `border`, `radius`, `panel_bg`, `field_width`, `field_height`, `font_size`, `target`, `class`.
 - **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial), or `style="none|default-1|default-2"` per box; inherits the site's fonts and colours, every rule overridable by site CSS; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
 - **Code:** `src/FrontendContent/ListingSearchFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/ListingSearch/`.
 
@@ -275,6 +276,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.16.5
+
+- `[hws_search]` takes every setting as an attribute: style (none, default-1, default-2), filters, placeholder, results_one, results_many, empty, clear, accent, border, radius, panel_bg, field_width, field_height, font_size, target, class. Look attributes apply to that one box only. Settings, Search lists them all at the top of the search box section.
 
 ### 13.16.4
 
