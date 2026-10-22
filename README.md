@@ -134,7 +134,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 ### Sitemaps and RSS feeds
 - **Does:** lists every RSS feed (all posts, comments, each browsable content type, category, tag and author feeds, Rank Math Pro's podcast feed) and every XML sitemap (index, Rank Math Pro news and video sitemaps, each content type). Each one shows the server response in plain view (green ✓ for 200 OK, red ✗ for anything else, with the response time), a working ✓ or broken ✗, item count, published total, newest date and response time. Validate requests the address from the server and checks the HTTP status, content type, XML and required fields. Server response shows the headers and the start of the body. Advanced shows the feed's general (channel) fields and each item's fields, plus which fields each item has. Each feed has an Active switch: off answers 404 "This feed is turned off." and removes it from the page head. While comments are turned off on the site, the comments feeds (site-wide and each post's) are off automatically, their head links are removed, and the Comments row links to the Comments tab to turn comments back on. Settings: items per feed (site default, 5, 10, 20, 50, 100 or unlimited) and addresses per sitemap page (Rank Math's Links per sitemap). Caching: how long LiteSpeed keeps each feed or sitemap (its own setting, don't cache, 15 minutes to 1 week) and clearing them when a post is published, updated or unpublished (on by default). A plugin that controls feed caching itself (Hexa PR Wire Distributor's "Disable local RSS caching") is shown and the length choice is locked; others declare it with `hws_base_tools_feed_cache_owner`. Tools: clear cached sitemaps or feeds, refresh permalinks.
 - **Switch:** two tabs: WP Admin → Settings → HWS Base Tools → Sitemaps (`options-general.php?page=hws-core-tools&tab=sitemaps`) and RSS Feeds (`options-general.php?page=hws-core-tools&tab=rss-feeds`). Turned-off feed keys in `hws_feeds_disabled`; settings in `hws_feed_sitemap_settings`; last check results in `hws_sitemap_feed_checks`.
-- **Extend:** filters `hws_base_tools_feeds` and `hws_base_tools_sitemaps` add entries (`label`, `group`, `url`, optional `toggle`, `match`, `total`, `latest`, `available`, `note`, `settings`); see `SitemapFeedRegistry`. AJAX `hws_sitemap_check`, `hws_sitemap_feed_toggle`.
+- **Shortcode:** `[hws_rss_feeds]` lists the active feeds (icon, name, item count, address, copy button). Each feed has an ID shown on the RSS Feeds tab (`posts`, `comments`, a content type's name such as `press-release`, `categories`, `tags`, `authors`, `podcast`). Attributes: `only="posts,press-release"` (just these, in order; the only way to list categories, tags or authors), `exclude="comments"`, `hide="icon,title,url,count,copy"`, `style="none"`. A feed turned off drops out by itself.
+- **Extend:** filters `hws_base_tools_feeds` and `hws_base_tools_sitemaps` add entries (`label`, `group`, `url`, optional `slug`, `example`, `toggle`, `match`, `total`, `latest`, `available`, `note`, `settings`); see `SitemapFeedRegistry`. AJAX `hws_sitemap_check`, `hws_sitemap_feed_toggle`.
 - **Code:** `src/SitemapTools/` (`SitemapFeedRegistry`, `XmlInspector`, `FeedSwitches`, `FeedSitemapSettings`, `sitemaps-feeds-admin.php`).
 
 ### Extension points
@@ -277,6 +278,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.16.9
+
+- New `[hws_rss_feeds]` shortcode listing the active RSS feeds, with `only`, `exclude`, `hide` and `style` attributes. Every feed has an ID, shown next to its name on the RSS Feeds tab, which also explains the shortcode.
 
 ### 13.16.8
 

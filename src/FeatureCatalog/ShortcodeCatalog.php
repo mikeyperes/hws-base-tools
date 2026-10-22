@@ -88,6 +88,21 @@ final class ShortcodeCatalog {
                 ],
             ],
             [
+                'id' => \HWS\BaseTools\SitemapTools\FeedListShortcode::SHORTCODE,
+                'label' => 'RSS Feed List',
+                'shortcode' => '[hws_rss_feeds]',
+                'description' => 'Lists the active RSS feeds from Settings, RSS Feeds, each with its icon, name, item count, address and a copy button. Feeds are named by the ID shown on that tab.',
+                'test_method' => 'Render it, turn a feed off on the RSS Feeds tab and confirm it drops out; check only, exclude and hide.',
+                'source' => 'src/SitemapTools/FeedListShortcode.php',
+                'provider' => 'HWS Base Tools',
+                'parameters' => [ 'only' => '', 'exclude' => '', 'hide' => 'icon,title,url,count,copy', 'style' => 'default|none' ],
+                'examples' => [
+                    [ 'label' => 'Every active feed', 'shortcode' => '[hws_rss_feeds]', 'parameters' => [] ],
+                    [ 'label' => 'Posts and press releases only', 'shortcode' => '[hws_rss_feeds only="posts,press-release"]', 'parameters' => [ 'only' => 'posts,press-release' ] ],
+                    [ 'label' => 'Names and links only', 'shortcode' => '[hws_rss_feeds hide="url,count,copy"]', 'parameters' => [ 'hide' => 'url,count,copy' ] ],
+                ],
+            ],
+            [
                 'id' => 'current_year',
                 'label' => 'Current Year',
                 'shortcode' => '[current_year]',

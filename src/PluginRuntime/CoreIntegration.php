@@ -34,6 +34,7 @@ use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use HWS\BaseTools\Security\LoginLinkFallback;
 use HWS\BaseTools\SeoSettings\RankMathSchemaSetting;
+use HWS\BaseTools\SitemapTools\FeedListShortcode;
 use HWS\BaseTools\SitemapTools\FeedSitemapSettings;
 use HWS\BaseTools\SitemapTools\FeedSwitches;
 
@@ -88,6 +89,7 @@ final class CoreIntegration {
             ->add_module( new FontSmoothing() )
             ->add_module( new FeedSwitches() )
             ->add_module( new FeedSitemapSettings() )
+            ->add_module( new FeedListShortcode() )
             ->add_module( new ExternalPublishingModule() )
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )

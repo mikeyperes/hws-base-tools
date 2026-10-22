@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  *     add_filter( 'hws_base_tools_feeds', function ( array $feeds ): array {
  *         $feeds['my_feed'] = [
+ *             'slug'       => 'my-feed',      // ID for [hws_rss_feeds only="..." exclude="..."].
  *             'label'      => 'My feed',
  *             'group'      => 'My Plugin',
  *             'url'        => home_url( '/feed/my-feed/' ),
@@ -23,6 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *             'available'  => true,          // False shows the reason instead of checking it.
  *             'note'       => '',            // Why it is unavailable, or a short description.
  *             'settings'   => admin_url( '...' ), // Where it is configured (optional).
+ *             'example'    => false,         // True when the address is one example of many (each category).
  *         ];
  *         return $feeds;
  *     } );
@@ -49,6 +51,7 @@ final class SitemapFeedRegistry {
 
         $feeds = [
             'main'     => [
+                'slug'   => 'posts',
                 'label'  => 'All posts',
                 'group'  => 'WordPress',
                 'url'    => get_feed_link(),
@@ -57,6 +60,7 @@ final class SitemapFeedRegistry {
                 'latest' => static fn(): int => self::latest( 'post' ),
             ],
             'comments' => [
+                'slug'   => 'comments',
                 'label'  => 'Comments',
                 'group'  => 'WordPress',
                 'url'    => get_feed_link( 'comments_rss2' ),
@@ -77,6 +81,7 @@ final class SitemapFeedRegistry {
         foreach ( self::feed_post_types() as $post_type => $object ) {
             $archive = get_post_type_archive_feed_link( $post_type );
             $feeds[ 'post_type_' . $post_type ] = [
+                'slug'   => $post_type,
                 'label'  => (string) $object->labels->name,
                 'group'  => 'Content types',
                 'url'    => $archive ? $archive : add_query_arg( [ 'post_type' => $post_type, 'feed' => get_default_feed() ], home_url( '/' ) ),
@@ -90,6 +95,8 @@ final class SitemapFeedRegistry {
             $terms = get_terms( [ 'taxonomy' => $taxonomy, 'orderby' => 'count', 'order' => 'DESC', 'number' => 1, 'hide_empty' => true ] );
             $term  = is_array( $terms ) && $terms ? $terms[0] : null;
             $feeds[ 'taxonomy_' . $taxonomy ] = [
+                'slug'      => 'category' === $taxonomy ? 'categories' : 'tags',
+                'example'   => true,
                 'label'     => $label,
                 'group'     => 'Archives',
                 'url'       => $term ? get_term_feed_link( $term->term_id, $taxonomy ) : '',
@@ -102,6 +109,8 @@ final class SitemapFeedRegistry {
 
         $author = get_users( [ 'has_published_posts' => [ 'post' ], 'number' => 1, 'orderby' => 'post_count', 'order' => 'DESC', 'fields' => [ 'ID', 'display_name' ] ] );
         $feeds['authors'] = [
+            'slug'      => 'authors',
+            'example'   => true,
             'label'     => 'Each author',
             'group'     => 'Archives',
             'url'       => $author ? get_author_feed_link( (int) $author[0]->ID ) : '',
@@ -111,6 +120,7 @@ final class SitemapFeedRegistry {
         ];
 
         $feeds['rank_math_podcast'] = [
+            'slug'      => 'podcast',
             'label'     => 'Podcast',
             'group'     => 'Rank Math Pro',
             'url'       => home_url( '/feed/podcast/' ),
@@ -284,6 +294,8 @@ final class SitemapFeedRegistry {
                     'note'      => '',
                     'settings'  => '',
                     'settings_label' => 'Settings',
+                    'slug'      => str_replace( '_', '-', sanitize_key( (string) $key ) ),
+                    'example'   => false,
                     'kind'      => '',
                     'match'     => null,
                     'total'     => null,

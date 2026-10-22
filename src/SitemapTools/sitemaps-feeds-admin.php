@@ -4,6 +4,7 @@ namespace hws_base_tools;
 
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
+use HWS\BaseTools\SitemapTools\FeedListShortcode;
 use HWS\BaseTools\SitemapTools\FeedSitemapSettings;
 use HWS\BaseTools\SitemapTools\SitemapFeedRegistry;
 use HWS\BaseTools\SitemapTools\XmlInspector;
@@ -124,6 +125,7 @@ function hws_sitemap_feeds_rows( string $kind ): array {
             'key'       => $key,
             'kind'      => $kind,
             'label'     => $entry['label'],
+            'slug'      => 'feed' === $kind ? (string) $entry['slug'] : '',
             'group'     => $entry['group'],
             'url'       => $entry['url'],
             'note'      => $entry['note'],
@@ -215,10 +217,14 @@ function hws_sitemap_feeds_render( string $kind ): void {
             #hws-sf .hws-sf-tools{display:flex;flex-direction:column;gap:10px}
             #hws-sf .hws-sf-list{list-style:none;margin:0;padding:0;max-width:560px}
             #hws-sf .hws-sf-list li{margin:0;padding:7px 0;border-bottom:1px solid #f0f0f1}
+            #hws-sf .hws-sf-list li code{font-size:12px}
             #hws-sf .hws-sf-list label{display:flex;align-items:center;justify-content:space-between;gap:16px}
             #hws-sf .hws-sf-list label.hws-sf-check{justify-content:flex-start;gap:8px}
             #hws-sf .hws-sf-list select{min-width:220px}
             #hws-sf .hws-sf-owner{background:#fcf9e8;border-left:4px solid #dba617;padding:8px 12px;margin:0 0 8px;max-width:560px}
+            #hws-sf .hws-sf-id{font-size:11px;font-weight:400;background:#f0f0f1;padding:1px 6px;border-radius:3px;margin-left:6px;color:#50575e}
+            #hws-sf .hws-sf-code{display:flex;align-items:center;gap:10px;margin:6px 0}
+            #hws-sf .hws-sf-code code{font-size:13px;padding:6px 10px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px}
             #hws-sf .hws-sf-hint{font-size:12px;color:#787c82;margin-top:6px}
             #hws-sf .hws-sf-tools .hpc-actions{margin:0}
             #hws-sf .hws-sf-notice{margin-top:6px;font-size:12px;color:#00701a}
@@ -242,6 +248,21 @@ function hws_sitemap_feeds_render( string $kind ): void {
         <section class="hws-sf-section">
             <div data-list="<?php echo esc_attr( $kind ); ?>"></div>
         </section>
+
+        <?php if ( 'feed' === $kind ) : ?>
+        <section class="hws-sf-section">
+            <h3>Shortcode</h3>
+            <p>Lists the active feeds on any page, for example the RSS Feed page. A feed turned off above drops out of the list by itself. Each feed's ID is the grey label next to its name.</p>
+            <div class="hws-sf-code"><code>[<?php echo esc_html( FeedListShortcode::SHORTCODE ); ?>]</code><?php echo CoreUi::copy_button( '[' . FeedListShortcode::SHORTCODE . ']' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+            <ul class="hws-sf-list">
+                <li><code>only="posts,press-release"</code> lists just these feeds, in this order. Each category, tag and author feed is listed only this way.</li>
+                <li><code>exclude="comments,testimonial"</code> lists every active feed except these.</li>
+                <li><code>hide="icon,title,url,count,copy"</code> leaves those parts out of each row (any of them, comma separated).</li>
+                <li><code>style="none"</code> drops the built-in styling so the theme or Elementor styles it.</li>
+            </ul>
+            <p class="hws-sf-hint">Would list now: <?php echo esc_html( implode( ', ', array_keys( FeedListShortcode::feeds() ) ) ?: 'no feeds' ); ?>.</p>
+        </section>
+        <?php endif; ?>
 
         <section class="hws-sf-section hws-sf-settings" id="hws-sf-settings">
             <h3>Settings</h3>
@@ -412,7 +433,7 @@ function hws_sitemap_feeds_render( string $kind ): void {
             var validate = row.available && row.url ? '<button type="button" class="hpc-button secondary" data-role="validate">Validate</button>' : '';
             var settings = row.settings ? '<a href="' + esc(row.settings) + '" target="_blank" rel="noopener" style="font-size:12px">' + esc(row.settings_label || 'Settings') + '</a>' : '';
             var html = '<div class="hws-sf-top"><span class="hws-sf-icon ' + state + '" title="' + esc(title) + '">' + icon + '</span>'
-                + '<span class="hws-sf-label">' + esc(row.label) + '</span>'
+                + '<span class="hws-sf-label">' + esc(row.label) + (row.slug ? ' <code class="hws-sf-id" title="ID for the shortcode">' + esc(row.slug) + '</code>' : '') + '</span>'
                 + '<span class="hws-sf-actions">' + settings + toggle + validate + '</span></div>';
             if (row.url) html += '<div class="hws-sf-url"><a href="' + esc(row.url) + '" target="_blank" rel="noopener">' + esc(row.url) + '</a></div>';
             if (row.note) html += '<div class="hws-sf-meta">' + esc(row.note) + '</div>';
