@@ -276,6 +276,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.18.2
+
+- Hexa WP Core 3.30.4: an Elementor loop that shows the page's own results (Current Query loops and archive post lists) is narrowed by the search without the `hexa-listing-results` class; filter controls (checkboxes, ranges, menus) are styled in every look; the browser's own clear button no longer doubles the search field's clear button.
+
 ### 13.18.1
 
 - Team tab: every Layout and Design choice shows a real sample of the team list with the plugin's own front-end styling; the HTML structure shows the wrapper with one person.
