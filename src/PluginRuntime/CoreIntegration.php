@@ -99,6 +99,8 @@ final class CoreIntegration {
             ->add_module( SharedAcfStructures::registry() )
             ->add_module( UserProfileGalleryDetails::module() )
             ->add_module( PrimaryEntityIntegration::module() )
+            ->add_module( new \HWS\BaseTools\SiteProfile\SiteIdentity() )
+            ->add_module( \HWS\BaseTools\SiteProfile\SiteIdentity::panel() )
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             // The one search (Hexa WP Core): [hws_search] above any list, [hws_search_box] in the header, [hexa_search id] for any registered profile.
             ->add_module( new SearchModule() )

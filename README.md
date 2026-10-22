@@ -45,6 +45,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[brand_asset_gallery size="medium" output="grid|urls|ids" columns="4" class="" loading="lazy"]` (alias `[site_gallery]`).
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
+### Site identity (company or person basics)
+- **Does:** holds the website's basic identity, generic for any site: on Website & Primary Entity, "This website represents: a company / a person / neither", each with its own short form. Company: name, legal name, other names, short description, logo, website, founding date, founding city (and link), founders (users), headquarters (city, address, link), parent company (name, link), contact email, phone, mission, online profiles. Person: name, user account, job title, short bio, photo, online profiles. Fields are defined in code through Hexa WP Core's field layer (works with or without ACF) and stored as options `options_hws_site_represents`, `options_hws_company_*`, `options_hws_person_*`.
+- **Use (PHP):** `hws_site_identity()` returns `[ 'type' => 'company'|'person'|'none'|'', 'company' => [...], 'person' => [...] ]`; `hws_site_identity( 'company.name' )`, `hws_site_identity( 'person.job_title' )`, or a bare key (`'name'`, `'email'`) for the type the site represents. Logo and photo are attachment IDs, founders and user are user IDs, other names and profiles are lists. `hws_site_identity_edit_url()` is the edit screen. Check `function_exists( 'hws_site_identity' )` first.
+- **Use (shortcode):** `[hws_site_identity field="company.name"]`, `[hws_site_identity field="mission"]`, `[hws_site_identity field="profiles" sep=" | "]`, `[hws_site_identity field="logo" size="medium"]` (image), `[hws_site_identity field="founders"]` (names).
+- **Showing it in another plugin:** read it with `hws_site_identity()` and put Hexa WP Core's `SourceBanner::render( [ 'owner' => 'HWS Base Tools', 'edit_url' => hws_site_identity_edit_url() ] )` above it ("Original content at HWS Base Tools. Click here to edit."). Never copy the values into the other plugin.
+- **Routing for skills:** basic website identity (who the site represents, company or person basics, contact email, mission, social profiles, founders, headquarters) is read and edited here. Publication-specific information (DMCA, policies, editorial pages, founding-date page, publication standard pages) belongs to SMP Publication Integration. The older Website Settings fields (founder, website group) are kept for old shortcodes but are superseded; write new values to Site identity.
+- **Code:** `src/SiteProfile/SiteIdentity.php`, `src/SiteProfile/site-identity-functions.php`
+
 ### Site values and Website Settings content
 - **Does:** prints a core site value or a Website Settings field anywhere, including inside Elementor text widgets.
 - **Use:** `[hws_site_value field="site_name|home_url|contact_email|..." format="text|url|email|html" fallback=""]`; `[website_content field="website_mission_statement"]` for any Website Settings ACF field; `[website_url social="linkedin"]` for the Website profile's social links; `[company id="title"]` for the primary company.
@@ -56,8 +64,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
 
 ### Site page templates
-- **Does:** starter content for critical pages.
-- **Use:** `[site_page_template type="privacy|terms|brand_assets"]` (alias `[hws_site_page_template]`).
+- **Does:** starter content for critical pages. The Pages tab manages only generic pages any website has: Contact. Publication standard pages (Terms of Use, Privacy Policy, Brand Assets, Headquarters, FAQs, DMCA and every policy) are managed in SMP Publication Integration's Pages tab since 13.19.0; their old assignments stay stored and SMP reads them. The starter templates below still render for pages that already use them.
+- **Use:** `[site_page_template type="contact|privacy|terms|brand_assets|headquarters|faqs"]` (alias `[hws_site_page_template]`).
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
 ### Team
@@ -147,6 +155,8 @@ Auto-Update All Plugins (`enable_auto_update_plugins`) and Auto-Update All Theme
 
 HWS Base Tools is the canonical owner of:
 
+- The website's basic identity (company, person or neither, and its basics); see Site identity.
+- Generic site pages (Contact). Publication standard pages belong to SMP.
 - Website classification: News Outlet, Podcast Website, Personal Website, Company Website, e-Commerce Website, or Other.
 - The optional primary entity selection consumed by profile and publication plugins.
 - Shared custom post types: `team-member`, `testimonial`, and `services`.
@@ -275,6 +285,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.19.0
+
+- Website & Primary Entity: new Website Identity form, "This website represents: a company / a person / neither", each with its own basics; read API `hws_site_identity()` and `[hws_site_identity]`. The older Website Settings panel is relabeled as superseded and kept.
+- Pages tab keeps only Contact; Terms of Use, Privacy Policy, Brand Assets, Headquarters and FAQs moved to SMP Publication Integration 2.5.17.
+- Hexa WP Core 3.31.0: SourceBanner, and native fields honor wrapper classes.
 
 ### 13.18.2
 

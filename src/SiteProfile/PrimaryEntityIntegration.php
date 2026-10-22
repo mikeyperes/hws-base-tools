@@ -53,8 +53,8 @@ final class PrimaryEntityIntegration {
             [
                 'page_slug' => 'hws-core-tools', 'tab' => 'website-types', 'post_id' => 'option',
                 'field_groups' => [ 'group_hws_brand_assets_gallery', 'group_6842076add7ad' ],
-                'title' => 'Website Settings Fields',
-                'description' => 'Existing Website Settings values remain stored in the same ACF option records. This panel replaces the standalone Website Settings admin page.',
+                'title' => 'Older Website Settings (branding, gallery; founder and website fields replaced by Website Identity)',
+                'description' => 'Older values kept as they are. Founder, company, email and mission now live in Website Identity above; favicon, highlight colors, brand gallery and footer text stay here. DMCA and policy text belong to SMP Publication Integration.',
                 'submit_value' => 'Save Website Settings', 'updated_message' => 'Website settings saved.',
                 'persist_key' => 'hws-website-settings-fields', 'open' => false,
             ]
@@ -62,6 +62,7 @@ final class PrimaryEntityIntegration {
     }
 
     public static function render(): void {
+        echo SiteIdentity::render_panel();
         echo ( new PrimaryEntityRenderer() )->render( self::manager() );
         echo self::website_settings_panel()->render();
     }

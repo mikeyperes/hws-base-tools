@@ -6,42 +6,17 @@ use Hexa\PluginCore\SiteStructure\SiteStructureRenderer;
 
 defined( "ABSPATH" ) || exit;
 
+/**
+ * Generic site pages any website has. Publication standard pages (Terms of Use, Privacy Policy,
+ * Brand Assets, Headquarters, FAQs and every other policy or publication page) belong to
+ * SMP Publication Integration; their old hws_site_page_assignment_* options are kept and read by SMP.
+ */
 function hws_pages_page_definitions(): array {
     return [
-        "terms" => [
-            "title" => "Terms of Use",
-            "slug" => "terms-of-use",
-            "description" => "Site-level terms governing website access, content use, submissions, disclaimers, and limitations.",
-            "template" => true,
-        ],
-        "privacy" => [
-            "title" => "Privacy Policy",
-            "slug" => "privacy-policy",
-            "description" => "Site-level privacy practices covering analytics, cookies, forms, advertising, data rights, and contact paths.",
-            "template" => true,
-        ],
-        "brand_assets" => [
-            "title" => "Brand Assets",
-            "slug" => "brand-assets",
-            "description" => "Public brand asset and media kit page for logos, marks, screenshots, brand colors, and usage rules.",
-            "template" => true,
-        ],
-        "headquarters" => [
-            "title" => "Headquarters",
-            "slug" => "headquarters",
-            "description" => "Public headquarters and operating-location page for organization transparency and schema support.",
-            "template" => true,
-        ],
         "contact" => [
             "title" => "Contact",
             "slug" => "contact",
-            "description" => "Primary public contact page for general, editorial, advertising, legal, privacy, and support inquiries.",
-            "template" => true,
-        ],
-        "faqs" => [
-            "title" => "FAQs",
-            "slug" => "faqs",
-            "description" => "Site-level FAQ page for common reader, account, contact, privacy, and publication questions.",
+            "description" => "Generic: any website. The public contact page.",
             "template" => true,
         ],
     ];
@@ -51,18 +26,8 @@ function hws_pages_menu_structures(): array {
     return [
         "footer" => [
             "title" => "Footer Site Pages",
-            "description" => "Shared site pages commonly linked from the footer.",
-            "page_keys" => [ "contact", "faqs", "brand_assets", "headquarters", "privacy", "terms" ],
-        ],
-        "legal" => [
-            "title" => "Legal Pages",
-            "description" => "Compliance and policy pages for legal or sub-footer navigation.",
-            "page_keys" => [ "privacy", "terms" ],
-        ],
-        "support" => [
-            "title" => "Support Pages",
-            "description" => "Reader support and organization-information pages.",
-            "page_keys" => [ "contact", "faqs", "headquarters" ],
+            "description" => "Generic site pages commonly linked from the footer.",
+            "page_keys" => [ "contact" ],
         ],
     ];
 }
@@ -199,7 +164,7 @@ function hws_pages_page_detail_html( int $page_id ): string {
 }
 
 function display_settings_pages(): void {
-    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>Assign, create, template, and attach shared site-level pages owned by HWS Base Tools. Publication-specific pages remain in SMP Publication Integration.</p></div>";
+    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>Generic pages any website has (Contact). Policies and publication standard pages (Terms of Use, Privacy Policy, Brand Assets, Headquarters, FAQs, DMCA and the rest) are in SMP Publication Integration, Pages.</p></div>";
 
     if ( ! class_exists( SiteStructureRenderer::class ) || ! class_exists( PageStructureManager::class ) ) {
         echo "<div class=\"notice notice-error\"><p>Hexa WordPress Plugin Core SiteStructure tools are not loaded.</p></div>";
@@ -222,7 +187,7 @@ function display_settings_pages(): void {
         "labels" => [
             "pages_title" => "Shared Site Pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "Create published pages or assign existing pages for Terms of Use, Privacy Policy, Brand Assets, Headquarters, Contact, and FAQs.",
+            "pages_description" => "Create a published page or assign an existing page for Contact.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",
