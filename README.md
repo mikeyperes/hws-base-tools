@@ -46,12 +46,21 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
 ### Site identity (company or person basics)
-- **Does:** holds the website's basic identity, generic for any site: on Website & Primary Entity, "This website represents: a company / a person / neither", each with its own short form. Company: name, legal name, other names, short description, logo, website, founding date, founding city (and link), founders (users), headquarters (city, address, link), parent company (name, link), contact email, phone, mission, online profiles. Person: name, user account, job title, short bio, photo, online profiles. Fields are defined in code through Hexa WP Core's field layer (works with or without ACF) and stored as options `options_hws_site_represents`, `options_hws_company_*`, `options_hws_person_*`.
+- **Does:** holds the website's basic identity, generic for any site: on Website & Primary Entity, "This website represents: a company / a person / neither", each with its own short form. Company (founding date and city show only when the site represents a company, never on a person and never inside founders): name, legal name, other names, short description, logo, website, founding date, founding city (and link), founders (read from the Founders tab; no picker here), headquarters (city, address, link), parent company (name, link), contact email, phone, mission, online profiles. Person: name, user account, job title, short bio, photo, online profiles. Fields are defined in code through Hexa WP Core's field layer (works with or without ACF) and stored as options `options_hws_site_represents`, `options_hws_company_*`, `options_hws_person_*`.
 - **Use (PHP):** `hws_site_identity()` returns `[ 'type' => 'company'|'person'|'none'|'', 'company' => [...], 'person' => [...] ]`; `hws_site_identity( 'company.name' )`, `hws_site_identity( 'person.job_title' )`, or a bare key (`'name'`, `'email'`) for the type the site represents. Logo and photo are attachment IDs, founders and user are user IDs, other names and profiles are lists. `hws_site_identity_edit_url()` is the edit screen. Check `function_exists( 'hws_site_identity' )` first.
 - **Use (shortcode):** `[hws_site_identity field="company.name"]`, `[hws_site_identity field="mission"]`, `[hws_site_identity field="profiles" sep=" | "]`, `[hws_site_identity field="logo" size="medium"]` (image), `[hws_site_identity field="founders"]` (names).
 - **Showing it in another plugin:** read it with `hws_site_identity()` and put Hexa WP Core's `SourceBanner::render( [ 'owner' => 'HWS Base Tools', 'edit_url' => hws_site_identity_edit_url() ] )` above it ("Original content at HWS Base Tools. Click here to edit."). Never copy the values into the other plugin.
-- **Routing for skills:** basic website identity (who the site represents, company or person basics, contact email, mission, social profiles, founders, headquarters) is read and edited here. Publication-specific information (DMCA, policies, editorial pages, founding-date page, publication standard pages) belongs to SMP Publication Integration. The older Website Settings fields (founder, website group) are kept for old shortcodes but are superseded; write new values to Site identity.
+- **Routing for skills:** basic website identity (who the site represents, company or person basics, contact email, mission, social profiles, headquarters) is read and edited here. Founders are picked only on the Founders tab (see Founders). Publication-specific information (DMCA, policies, editorial pages, founding-date page, publication standard pages) belongs to SMP Publication Integration. The older Website Settings fields (founder, website group) are kept for old shortcodes but are superseded; write new values to Site identity.
 - **Code:** `src/SiteProfile/SiteIdentity.php`, `src/SiteProfile/site-identity-functions.php`
+
+### Founders
+- **Does:** the website's founders, its own definition in HWS Base Tools, separate from the Primary Entity and from Website Identity (which reads it). Founders tab (`options-general.php?page=hws-core-tools&tab=founders`): on/off, section title ("Founders" by default), the people (user search, drag to order, an optional title each, one-column editor), style (Cards, List, No styling) with a live example, the HTML structure, a plugin breakdown and the shortcode breakdown. When the Primary Entity is a person marked as a founder, that person is included automatically, first; more founders are added by hand. A company Primary Entity is never on the list, so its founders (any number) are picked separately. Founding date and city are not part of founders (they are company basics). Stored in option `hws_publication_founders`; on first read it is seeded from SMP's `smpi_founders`, else Website Identity's old founders field.
+- **Use (shortcode):** `[hws_publication_founders]` with `style`, `columns`, `ids`, `limit`, `hide="photo,title,bio,link"`, `link`, `bio_words`, `photo_size`, `heading` (tag for each name), `section_title` (`none` hides it), `section_tag`. Prints only the founders, never the founding date; prints nothing while off. `[smpi_founders]` is an alias for pages built with SMP's shortcode and keeps the `smpi-founders` / `smpi-founder` class names.
+- **Use (PHP, the read API):** `hws_publication_founders()` returns every founder in order, whether or not the section is on: `[ [ 'user_id', 'name', 'title', 'url', 'bio', 'photo' ], ... ]`; `hws_publication_founders_enabled()`; `hws_publication_founders_edit_url()`. Check `function_exists( 'hws_publication_founders' )` first.
+- **Extend:** filter `hws_publication_founders_photo_url( $url, $user_id, $size )` supplies a profile photo (default: the user's avatar).
+- **Routing for skills:** founders are read and edited only here. SMP Publication Integration reads `hws_publication_founders()` for its search-engine data and shows the list read-only under Core's SourceBanner linking to the Founders tab; it stores no founders.
+- **HTML structure and styling:** [docs/founders.md](docs/founders.md)
+- **Code:** `src/Founders/Founders.php`, `src/Founders/FounderCards.php`, `src/Founders/FoundersTab.php`, `src/Founders/founders-functions.php`
 
 ### Site values and Website Settings content
 - **Does:** prints a core site value or a Website Settings field anywhere, including inside Elementor text widgets.
@@ -73,7 +82,9 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Switch:** Settings → HWS Base Tools → Team (`options-general.php?page=hws-core-tools&tab=team`): one switch turns the post type, its fields and the shortcode on or off together (`enable_team_member_directory_templates` plus the Team Member content type settings). Team page defaults in `hws_team_page_settings`.
 - **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" design="default|none" columns="3" limit="24" orderby="menu_order|title|date" order="ASC|DESC" show_excerpt="1" link_profiles="1" featured_only="0" category="" roles_first="Founder, Co-Founder, CEO, President, COO, CTO"]` (people whose position is in `roles_first` come first, in that order); the Team tab's shortcode builder writes it and shows its preview and HTML. Elementor query ID `featured_team_members` for Posts/Loop widgets.
 - **HTML structure and styling:** [docs/team-members.md](docs/team-members.md): the grid's markup, every attribute, the classes (`.hws-team-directory`, `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`), the built-in CSS and how to style it in Elementor and HTML drafts.
-- **Code:** `src/TeamMembers/TeamTab.php`, `src/TeamMembers/TeamMemberDirectory.php`, `src/TeamMembers/TeamPageSettings.php`
+- **Use (PHP, the read API):** `hws_team_members( [ 'featured_only' => false, 'category' => '', 'limit' => 0 ] )` returns published team members in the team page order (roles first), as data: `[ [ 'id', 'name', 'position', 'featured', 'excerpt', 'url', 'photo', 'photo_id', 'order', 'edit_url' ], ... ]`; `hws_team_enabled()`; `hws_team_page_url()` (the `/team/` archive); `hws_team_edit_url()` (the Team tab). Check `function_exists( 'hws_team_members' )` first.
+- **Routing for skills:** HWS Base Tools is the one source for team work: the post type, its fields, the listing and the team page. Other plugins (SMP's Team page first) read `hws_team_members()` or place `[hws_team_members]`, report it and link to `hws_team_edit_url()` under Core's SourceBanner; they never store team members.
+- **Code:** `src/TeamMembers/TeamTab.php`, `src/TeamMembers/TeamMemberDirectory.php`, `src/TeamMembers/TeamPageSettings.php`, `src/TeamMembers/team-functions.php`
 
 ### Testimonials
 - **Does:** one quote from a Testimonial (`testimonial` post type).
@@ -142,6 +153,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Extend:** filters `hws_base_tools_feeds` and `hws_base_tools_sitemaps` add entries (`label`, `group`, `url`, optional `slug`, `example`, `toggle`, `match`, `total`, `latest`, `available`, `note`, `settings`); see `SitemapFeedRegistry`. AJAX `hws_sitemap_check`, `hws_sitemap_feed_toggle`.
 - **Code:** `src/SitemapTools/` (`SitemapFeedRegistry`, `XmlInspector`, `FeedSwitches`, `FeedSitemapSettings`, `sitemaps-feeds-admin.php`).
 
+### Code and shortcode displays
+- **Does:** every code block and shortcode explanation in the admin uses Hexa WP Core's shared components: `CodeDisplay` (colour-coded HTML, CSS, PHP, JSON and shortcodes with a copy button) on the Founders, Team, Default Page Content, Maintenance Mode, Features and Configuration tabs and the login-masking debug page; `ShortcodeBreakdown` (shortcode, copy, every attribute with default and explanation) on the Founders and RSS Feeds tabs.
+- **Code:** Hexa WP Core `src/WpAdminComponents/CodeDisplay.php`, `src/ShortcodeRegistry/ShortcodeBreakdown.php`
+
 ### Extension points
 - `hws_base_tools_feeds` / `hws_base_tools_sitemaps` (entries on the RSS Feeds and Sitemaps tabs), `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
 
@@ -156,6 +171,7 @@ Auto-Update All Plugins (`enable_auto_update_plugins`) and Auto-Update All Theme
 HWS Base Tools is the canonical owner of:
 
 - The website's basic identity (company, person or neither, and its basics); see Site identity.
+- The website's founders (one list; see Founders) and the team (see Team).
 - Generic site pages (Contact). Publication standard pages belong to SMP.
 - Website classification: News Outlet, Podcast Website, Personal Website, Company Website, e-Commerce Website, or Other.
 - The optional primary entity selection consumed by profile and publication plugins.
@@ -252,7 +268,8 @@ Each type and field structure is closed by default in the dashboard and includes
 | `[hws_search_box]` | Header search box: magnifying glass that opens in place, or a field. |
 | `[site_logo key="logo" size="medium"]` | Render a configured brand image. |
 | `[site_logo key="logo_text" width="180"]` | Constrain a logo without changing its aspect ratio. |
-| `[team_members]` | Render the HWS Team Member directory. |
+| `[hws_team_members]` | Render the HWS Team Member directory. |
+| `[hws_publication_founders]` | The founders section (alias `[smpi_founders]`). |
 | `[hws_testimonial_quote]` | Return a quote from the current or specified Testimonial. |
 | `[website_content id="..."]` | Read a configured Website Settings value. |
 | `[website_url]` | Return the site URL. |
@@ -285,6 +302,13 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.20.0
+
+- Founders: own definition and Founders tab (moved from SMP's Founders tab); `[hws_publication_founders]` with alias `[smpi_founders]`; read API `hws_publication_founders()`; Primary Entity person marked as a founder is included automatically, a company never is. Website Identity's founders picker folded into it. Her Forward carried over: Michael Peres, "Founder & Publisher".
+- Team read API: `hws_team_members()`, `hws_team_enabled()`, `hws_team_page_url()`, `hws_team_edit_url()`.
+- Every admin code and shortcode display now uses Hexa WP Core's CodeDisplay and ShortcodeBreakdown.
+- Hexa WP Core 3.32.0.
 
 ### 13.19.0
 

@@ -22,6 +22,7 @@ final class TeamTab implements ModuleInterface {
     public const DOCS_URL      = 'https://github.com/mikeyperes/hws-base-tools/blob/main/docs/team-members.md';
 
     public function register(): void {
+        require_once __DIR__ . '/team-functions.php';
         if ( get_option( TeamMemberDirectory::FEATURE_OPTION, false ) ) {
             ( new TeamMemberDirectory() )->register();
         }
@@ -141,11 +142,11 @@ final class TeamTab implements ModuleInterface {
                 <h3>Shortcode builder</h3>
                 <p class="hws-team-note">Choose options to build a shortcode. Only options that differ from the team page settings are added. The preview and HTML below are the shortcode's real output. Full markup reference: <a href="<?php echo esc_url( self::DOCS_URL ); ?>" target="_blank" rel="noopener">docs/team-members.md</a>.</p>
                 <?php self::fields( 'builder', $settings, true ); ?>
-                <div class="hws-team-code"><code data-team-shortcode>[hws_team_members]</code><button type="button" class="button" data-team-copy>Copy</button></div>
+                <div data-team-shortcode-box><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( '[hws_team_members]', [ 'language' => 'shortcode', 'title' => 'Your shortcode', 'max_height' => 0 ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
                 <h4>Preview</h4>
                 <div class="hws-team-preview" data-team-preview></div>
                 <h4>HTML structure (one person)</h4>
-                <pre data-team-html></pre>
+                <div data-team-html-box><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( '', [ 'language' => 'html', 'title' => 'One person' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
             </section>
 
             <script>
@@ -155,9 +156,9 @@ final class TeamTab implements ModuleInterface {
                 function request(action,data){var body=new URLSearchParams(Object.assign({action:action,nonce:root.dataset.nonce},data||{}));return fetch(root.dataset.ajaxUrl,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()}).then(function(r){return r.json();}).then(function(p){if(!p||!p.success){throw new Error(p&&p.data&&p.data.message?p.data.message:'The request failed.');}return p.data;});}
                 function values(scope){var box=root.querySelector('[data-team-'+scope+']'),out={};box.querySelectorAll('[data-field]').forEach(function(el){var k=el.dataset.field;if(el.type==='radio'){if(el.checked){out[k]=el.value;}}else if(el.type==='checkbox'){out[k]=el.checked?'1':'0';}else{out[k]=el.value.trim();}});return out;}
                 function shortcode(v){var parts=['hws_team_members'];Object.keys(v).forEach(function(k){var val=v[k];if(k==='featured_only'){if(val==='1'){parts.push('featured_only="1"');}return;}if(k==='category'){if(val){parts.push('category="'+val.replace(/"/g,'')+'"');}return;}if(String(defaults[k])!==String(val)){parts.push(k+'="'+val+'"');}});return '['+parts.join(' ')+']';}
-                var timer;function build(){var v=values('builder'),code=shortcode(v);root.querySelector('[data-team-shortcode]').textContent=code;clearTimeout(timer);timer=setTimeout(function(){request('hws_team_tab_preview',v).then(function(d){root.querySelector('[data-team-preview]').innerHTML=d.html||'<p>No published team members match these options.</p>';root.querySelector('[data-team-html]').textContent=d.pretty||'';}).catch(function(e){root.querySelector('[data-team-html]').textContent=e.message;});},250);}
+                function show(box,html,text){var b=root.querySelector('[data-team-'+box+'-box]');b.querySelector('.hpc-code-display-pre code').innerHTML=html;b.querySelector('.hpc-code-display-copy').setAttribute('data-hpc-copy',text);}
+                var timer;function build(){var v=values('builder'),code=shortcode(v);show('shortcode',code.replace(/&/g,'&amp;').replace(/</g,'&lt;'),code);clearTimeout(timer);timer=setTimeout(function(){request('hws_team_tab_preview',Object.assign({shortcode:code},v)).then(function(d){root.querySelector('[data-team-preview]').innerHTML=d.html||'<p>No published team members match these options.</p>';show('shortcode',d.shortcode_html||'',code);show('html',d.pretty_html||'',d.pretty||'');}).catch(function(e){show('html',e.message.replace(/</g,'&lt;'),'');});},250);}
                 root.querySelector('[data-team-builder]').addEventListener('input',build);root.querySelector('[data-team-builder]').addEventListener('change',build);build();
-                root.querySelector('[data-team-copy]').addEventListener('click',function(){var b=this,t=root.querySelector('[data-team-shortcode]').textContent;(navigator.clipboard&&window.isSecureContext?navigator.clipboard.writeText(t):Promise.reject()).catch(function(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);});});
                 root.querySelector('[data-team-save]').addEventListener('click',function(){var msg=root.querySelector('[data-team-save-msg]');msg.textContent='Saving…';request('hws_team_tab_save',values('settings')).then(function(d){defaults=d.settings;msg.textContent=d.message;build();}).catch(function(e){msg.textContent='Not saved: '+e.message;});});
                 var toggle=root.querySelector('[data-team-toggle]');toggle.addEventListener('change',function(){var msg=root.querySelector('[data-team-toggle-msg]');toggle.disabled=true;msg.textContent='Saving…';request('hws_team_tab_toggle',{enabled:toggle.checked?'1':'0'}).then(function(d){root.querySelector('[data-team-toggle-label]').textContent=d.enabled?'On':'Off';root.querySelector('[data-team-status]').innerHTML=d.status_html;msg.textContent=d.message;}).catch(function(e){toggle.checked=!toggle.checked;msg.textContent='Not saved: '+e.message;}).finally(function(){toggle.disabled=false;});});
             }());
@@ -260,7 +261,9 @@ final class TeamTab implements ModuleInterface {
             $single = $html;
         }
 
-        wp_send_json_success( [ 'html' => $html, 'pretty' => self::pretty( $single ) ] );
+        $pretty = self::pretty( $single );
+        $code   = sanitize_text_field( wp_unslash( (string) ( $_POST['shortcode'] ?? '' ) ) );
+        wp_send_json_success( [ 'html' => $html, 'pretty' => $pretty, 'pretty_html' => \Hexa\PluginCore\WpAdminComponents\CodeDisplay::highlight( $pretty, 'html' ), 'shortcode_html' => \Hexa\PluginCore\WpAdminComponents\CodeDisplay::highlight( $code, 'shortcode' ) ] );
     }
 
     /**

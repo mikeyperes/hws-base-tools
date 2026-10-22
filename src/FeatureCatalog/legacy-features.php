@@ -331,7 +331,7 @@ function hws_render_feature_card( array $feature ): void {
         <?php if ( '' !== $code_example ) : ?>
             <section>
                 <h4>Code Example</h4>
-                <pre><code><?php echo esc_html( $code_example ); ?></code></pre>
+                <?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( $code_example, [ 'language' => preg_match( '/^\s*\[/', $code_example ) ? 'shortcode' : ( preg_match( '/(add_action|add_filter|function\s*\(|\$\w+)/', $code_example ) ? 'php' : 'text' ), 'title' => 'Code example' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </section>
         <?php endif; ?>
 

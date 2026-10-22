@@ -89,14 +89,8 @@ final class PageLayoutAdmin {
                     <?php if ( $discovery['edit_url'] ) : ?><a class="button" href="<?php echo esc_url( $discovery['edit_url'] ); ?>" target="_blank" rel="noopener">Edit Default Page Template in Elementor ↗</a><?php endif; ?>
                 </div>
                 <div class="hws-pla-code-grid">
-                    <div class="hws-pla-code-view">
-                        <div class="hws-pla-code-head"><div><strong>Template structure</strong><span>Where WordPress page content is rendered</span></div><button type="button" class="button hws-pla-copy" data-hws-copy="hws-pla-template-code">Copy structure</button></div>
-                        <pre><code id="hws-pla-template-code"><?php echo esc_html( $template_structure ); ?></code></pre>
-                    </div>
-                    <div class="hws-pla-code-view">
-                        <div class="hws-pla-code-head"><div><strong>CSS override</strong><span>Scoped to the active Default Page content style</span></div><button type="button" class="button hws-pla-copy" data-hws-copy="hws-pla-css-code">Copy CSS</button></div>
-                        <pre><code id="hws-pla-css-code"><?php echo esc_html( $override_css ); ?></code></pre>
-                    </div>
+                    <div class="hws-pla-code-view-new"><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( $template_structure, [ 'language' => 'html', 'title' => 'Template structure: where WordPress page content is rendered' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+                    <div class="hws-pla-code-view-new"><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( $override_css, [ 'language' => 'css', 'title' => 'CSS override, scoped to the active Default Page content style' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
                 </div>
                 <div class="hws-pla-guidance"><strong>How to override it</strong><p>Copy the CSS, paste it into a child theme or site-owned stylesheet that loads after HWS Base Tools, then change the values you need. Keep the <code>body.hws-page-layout-style-<?php echo esc_html( $selected ); ?></code> prefix to affect only the selected design. Selecting <strong>No Style</strong> disables HWS content styling.</p></div>
                 <details class="hws-pla-tech"><summary>Technical selectors and renderer details</summary><div class="hws-pla-facts">
@@ -106,23 +100,6 @@ final class PageLayoutAdmin {
                     <div class="hws-pla-fact"><span>HWS scope</span><code><?php echo esc_html( $discovery['scoped_selector'] ); ?></code></div>
                 </div></details>
             </section>
-            <script>
-                (function(){
-                    var root=document.currentScript.closest('.hws-page-layout-admin');
-                    if(!root){return;}
-                    root.addEventListener('click',function(event){
-                        var button=event.target.closest('[data-hws-copy]');
-                        if(!button){return;}
-                        var code=document.getElementById(button.getAttribute('data-hws-copy'));
-                        if(!code){return;}
-                        var text=code.textContent||'';
-                        var done=function(){var old=button.textContent;button.textContent='Copied';button.classList.add('is-copied');window.setTimeout(function(){button.textContent=old;button.classList.remove('is-copied');},1600);};
-                        var fallback=function(){var area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();var copied=false;try{copied=document.execCommand('copy');}catch(error){}area.remove();if(copied){done();}else{button.textContent='Copy failed';window.setTimeout(function(){button.textContent='Copy';},1600);}};
-                        if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done).catch(fallback);return;}
-                        fallback();
-                    });
-                }());
-            </script>
         </div>
         <?php
     }

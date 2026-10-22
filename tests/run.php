@@ -192,7 +192,7 @@ expect_true(
     && str_contains( $maintenance_admin_source, 'MaintenanceTemplateRenderer::document( $template )' )
     && str_contains( $maintenance_admin_source, 'View exact front-end code' )
     && str_contains( $maintenance_admin_source, 'Complete HTTP response document' )
-    && str_contains( $maintenance_admin_source, 'navigator.clipboard.writeText' ),
+    && str_contains( $maintenance_admin_source, 'CodeDisplay::render( $document' ),
     'Maintenance previews and backend code views use the exact front-end response document'
 );
 expect_true(
@@ -240,13 +240,8 @@ expect_true(
 );
 expect_true(
     str_contains( $page_layout_admin_source, 'Default Page Template structure &amp; CSS' )
-    && str_contains( $page_layout_admin_source, 'data-hws-copy="hws-pla-template-code"' )
-    && str_contains( $page_layout_admin_source, 'data-hws-copy="hws-pla-css-code"' )
-    && str_contains( $page_layout_admin_source, 'Copy structure' )
-    && str_contains( $page_layout_admin_source, 'Copy CSS' )
-    && str_contains( $page_layout_admin_source, "navigator.clipboard.writeText" )
-    && str_contains( $page_layout_admin_source, ".catch(fallback)" )
-    && str_contains( $page_layout_admin_source, "document.execCommand('copy')" )
+    && str_contains( $page_layout_admin_source, 'CodeDisplay::render( $template_structure' )
+    && str_contains( $page_layout_admin_source, 'CodeDisplay::render( $override_css' )
     && str_contains( $page_layout_admin_source, "echo apply_filters( 'the_content', get_the_content() );" )
     && str_contains( $page_layout_admin_source, 'Technical selectors and renderer details' ),
     'Default Page template structure and CSS are visible code views with working copy controls'
@@ -956,7 +951,8 @@ foreach ( $source_iterator as $source_file ) {
     }
 
     $relative = substr( $source_file->getPathname(), strlen( $root ) + 1 );
-    if ( 'src/LegacyCompatibility/legacy-helper.php' === $relative ) {
+    // Global read-API files (hws_site_identity(), hws_publication_founders(), hws_team_members()) are global by design.
+    if ( 'src/LegacyCompatibility/legacy-helper.php' === $relative || str_ends_with( $relative, '-functions.php' ) ) {
         continue;
     }
 

@@ -103,19 +103,10 @@ final class TeamMemberDirectory {
             ];
         }
 
-        $query = new \WP_Query( $query_args );
-        if ( ! $query->have_posts() ) {
+        $items = self::query_items( $query_args, (string) $atts['roles_first'], $limit );
+        if ( ! $items ) {
             return '';
         }
-
-        $items = [];
-        foreach ( $query->posts as $post ) {
-            if ( $post instanceof \WP_Post ) {
-                $items[] = self::item_from_post( $post );
-            }
-        }
-
-        $items = array_slice( self::roles_first( $items, (string) $atts['roles_first'] ), 0, $limit );
 
         return self::render_items(
             $items,
@@ -126,6 +117,62 @@ final class TeamMemberDirectory {
             false,
             self::normalize_design( (string) $atts['design'] )
         );
+    }
+
+    /** @return array<int,array<string,mixed>> Display items, roles first, cut to $limit. */
+    private static function query_items( array $query_args, string $roles_first, int $limit ): array {
+        $items = [];
+        foreach ( ( new \WP_Query( $query_args ) )->posts as $post ) {
+            if ( $post instanceof \WP_Post ) {
+                $items[] = self::item_from_post( $post ) + [ 'id' => (int) $post->ID ];
+            }
+        }
+        return array_slice( self::roles_first( $items, $roles_first ), 0, $limit );
+    }
+
+    /**
+     * Read API (hws_team_members()): published team members as data, in the team page order
+     * (Team tab defaults; roles listed in "roles first" lead). Empty while the Team feature is off.
+     *
+     * @param array{featured_only?:bool,category?:string,limit?:int} $args
+     * @return array<int,array{id:int,name:string,position:string,featured:bool,excerpt:string,url:string,photo:string,photo_id:int,order:int,edit_url:string}>
+     */
+    public static function members( array $args = [] ): array {
+        if ( ! post_type_exists( self::POST_TYPE ) ) {
+            return [];
+        }
+        $page  = TeamPageSettings::all();
+        $query = [
+            'post_type' => self::POST_TYPE, 'post_status' => 'publish', 'posts_per_page' => self::MAX_LIMIT,
+            'orderby' => 'menu_order' === $page['orderby'] ? [ 'menu_order' => $page['order'], 'title' => 'ASC' ] : $page['orderby'],
+            'order' => $page['order'], 'ignore_sticky_posts' => true, 'no_found_rows' => true,
+        ];
+        if ( ! empty( $args['featured_only'] ) ) {
+            $query['meta_query'] = [ [ 'key' => 'featured', 'value' => '1', 'compare' => '=' ] ];
+        }
+        $category = sanitize_title( (string) ( $args['category'] ?? '' ) );
+        if ( '' !== $category && is_object_in_taxonomy( self::POST_TYPE, 'category' ) ) {
+            $query['tax_query'] = [ [ 'taxonomy' => 'category', 'field' => 'slug', 'terms' => [ $category ] ] ];
+        }
+        $limit = isset( $args['limit'] ) && (int) $args['limit'] > 0 ? min( self::MAX_LIMIT, (int) $args['limit'] ) : self::MAX_LIMIT;
+        $rows  = [];
+        foreach ( self::query_items( $query, (string) $page['roles_first'], $limit ) as $item ) {
+            $id       = (int) $item['id'];
+            $photo_id = (int) get_post_thumbnail_id( $id );
+            $rows[]   = [
+                'id'       => $id,
+                'name'     => (string) $item['name'],
+                'position' => (string) $item['position'],
+                'featured' => '1' === (string) get_post_meta( $id, 'featured', true ),
+                'excerpt'  => (string) $item['excerpt'],
+                'url'      => (string) get_permalink( $id ),
+                'photo'    => $photo_id ? (string) wp_get_attachment_image_url( $photo_id, 'medium_large' ) : '',
+                'photo_id' => $photo_id,
+                'order'    => (int) get_post_field( 'menu_order', $id ),
+                'edit_url' => (string) get_edit_post_link( $id, 'raw' ),
+            ];
+        }
+        return $rows;
     }
 
     /**

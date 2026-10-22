@@ -25,8 +25,8 @@ function render_tab_config() {
             </div>
 
             <div id="wp-config-view" style="display: none; margin-top: 15px;">
-                <pre style="background: #1d2327; color: #50c878; padding: 15px; border-radius: 6px; max-height: 400px; overflow: auto; font-size: 12px;">
-<?php
+                <?php
+$config_lines = [];
 $wp_config_path = ABSPATH . 'wp-config.php';
 $exclude = [ 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST', 'AUTH_KEY', 'SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'NONCE_KEY', 'AUTH_SALT', 'SECURE_AUTH_SALT', 'LOGGED_IN_SALT', 'NONCE_SALT' ];
 
@@ -41,14 +41,14 @@ if ( file_exists( $wp_config_path ) ) {
             }
         }
         if ( ! $skip ) {
-            echo htmlspecialchars( $line ) . "\n";
+            $config_lines[] = $line;
         }
     }
 } else {
-    echo 'wp-config.php not found';
+    $config_lines[] = 'wp-config.php not found';
 }
+echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( implode( "\n", $config_lines ), [ 'language' => 'php', 'title' => 'wp-config.php (database names, passwords and keys left out)' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 ?>
-                </pre>
             </div>
 
             <div id="wp-constants-view" style="display: none; margin-top: 15px;">

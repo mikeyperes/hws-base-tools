@@ -252,14 +252,7 @@ function hws_sitemap_feeds_render( string $kind ): void {
         <?php if ( 'feed' === $kind ) : ?>
         <section class="hws-sf-section">
             <h3>Shortcode</h3>
-            <p>Lists the active feeds on any page, for example the RSS Feed page. A feed turned off above drops out of the list by itself. Each feed's ID is the grey label next to its name.</p>
-            <div class="hws-sf-code"><code>[<?php echo esc_html( FeedListShortcode::SHORTCODE ); ?>]</code><?php echo CoreUi::copy_button( '[' . FeedListShortcode::SHORTCODE . ']' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-            <ul class="hws-sf-list">
-                <li><code>only="posts,press-release"</code> lists just these feeds, in this order. Each category, tag and author feed is listed only this way.</li>
-                <li><code>exclude="comments,testimonial"</code> lists every active feed except these.</li>
-                <li><code>hide="icon,title,url,count,copy"</code> leaves those parts out of each row (any of them, comma separated).</li>
-                <li><code>style="none"</code> drops the built-in styling so the theme or Elementor styles it.</li>
-            </ul>
+            <?php echo \Hexa\PluginCore\ShortcodeRegistry\ShortcodeBreakdown::render( [ 'tag' => FeedListShortcode::SHORTCODE, 'title' => 'Feed list', 'description' => 'Lists the active feeds on any page, for example the RSS Feed page. A feed turned off above drops out of the list by itself. Each feed\'s ID is the grey label next to its name.', 'attributes' => [ 'only' => [ 'default' => '', 'description' => 'Lists just these feeds, in this order, for example posts,press-release. Each category, tag and author feed is listed only this way.' ], 'exclude' => [ 'default' => '', 'description' => 'Lists every active feed except these, for example comments,testimonial.' ], 'hide' => [ 'default' => '', 'description' => 'Leaves those parts out of each row, comma separated.', 'options' => [ 'icon', 'title', 'url', 'count', 'copy' ] ], 'style' => [ 'default' => 'built-in', 'description' => 'none drops the built-in styling so the theme or Elementor styles it.', 'options' => [ 'none' ] ] ] ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <p class="hws-sf-hint">Would list now: <?php echo esc_html( implode( ', ', array_keys( FeedListShortcode::feeds() ) ) ?: 'no feeds' ); ?>.</p>
         </section>
         <?php endif; ?>

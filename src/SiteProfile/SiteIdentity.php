@@ -132,7 +132,8 @@ final class SiteIdentity implements ModuleInterface {
             } elseif ( in_array( $key, [ 'logo', 'photo', 'user' ], true ) ) {
                 $value = is_array( $value ) ? (int) ( $value['ID'] ?? $value['id'] ?? 0 ) : (int) $value;
             } elseif ( 'founders' === $key ) {
-                $value = array_values( array_filter( array_map( static fn( $u ) => is_array( $u ) ? (int) ( $u['ID'] ?? 0 ) : ( is_object( $u ) ? (int) $u->ID : (int) $u ), (array) ( $value ?: [] ) ) ) );
+                // One definition: the Founders tab (HWS\BaseTools\Founders\Founders).
+                $value = \HWS\BaseTools\Founders\Founders::user_ids();
             } else {
                 $value = is_scalar( $value ) ? trim( (string) $value ) : '';
             }
@@ -157,7 +158,7 @@ final class SiteIdentity implements ModuleInterface {
             [ 'key' => 'field_hws_identity_founding_date', 'label' => 'Founding date', 'name' => 'founding_date', 'type' => 'date_picker', 'display_format' => 'F j, Y', 'return_format' => 'Y-m-d' ],
             $text( 'founding_location', 'Founding city' ),
             $text( 'founding_location_url', 'Founding city link', 'Optional, e.g. its Wikipedia page.', 'url' ),
-            [ 'key' => 'field_hws_identity_founders', 'label' => 'Founders', 'name' => 'founders', 'type' => 'user', 'multiple' => 1, 'allow_null' => 1, 'return_format' => 'id', 'role' => '' ],
+            [ 'key' => 'field_hws_identity_founders_note', 'label' => 'Founders', 'name' => '', 'type' => 'message', 'message' => 'Founders are picked in one place: the <a href="' . esc_url( admin_url( 'options-general.php?page=hws-core-tools&tab=founders' ) ) . '">Founders tab</a>.' ],
             $text( 'headquarters_city', 'Headquarters city' ),
             [ 'key' => 'field_hws_identity_headquarters_address', 'label' => 'Headquarters address', 'name' => 'headquarters_address', 'type' => 'textarea', 'rows' => 2, 'new_lines' => '' ],
             $text( 'headquarters_url', 'Headquarters link', 'Optional, e.g. the city\'s Wikipedia page.', 'url' ),

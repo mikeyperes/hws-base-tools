@@ -46,7 +46,7 @@ final class MaintenanceModeAdmin {
                         <article class="hws-mm-card">
                             <div class="hws-mm-preview"><iframe title="<?php echo esc_attr( $definition['label'] . ' maintenance page preview' ); ?>" sandbox srcdoc="<?php echo esc_attr( $document ); ?>"></iframe></div>
                             <label class="hws-mm-card-choice"><input type="radio" name="hws_maintenance_template" value="<?php echo esc_attr( $template ); ?>" <?php checked( $selected, $template ); ?>><span><strong><?php echo esc_html( $definition['label'] ); ?></strong><small><?php echo esc_html( $definition['description'] ); ?></small></span></label>
-                            <details class="hws-mm-code"><summary>View exact front-end code</summary><div class="hws-mm-code-head"><span>Complete HTTP response document</span><button type="button" class="button" data-mm-copy="hws-mm-code-<?php echo esc_attr( $template ); ?>">Copy code</button></div><pre><code id="hws-mm-code-<?php echo esc_attr( $template ); ?>"><?php echo esc_html( $document ); ?></code></pre></details>
+                            <details class="hws-mm-code"><summary>View exact front-end code</summary><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( $document, [ 'language' => 'html', 'title' => 'Complete HTTP response document', 'max_height' => 360 ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></details>
                         </article>
                     <?php endforeach; ?>
                 </div>
@@ -70,7 +70,6 @@ final class MaintenanceModeAdmin {
                 }
                 toggle.addEventListener('change',function(){process(toggle.checked);});
                 root.addEventListener('change',function(event){if(!event.target.matches('input[name="hws_maintenance_template"]')){return;}templateStatus.textContent='Saving selected template…';request('hws_maintenance_select_template',{template:selected()}).then(function(data){templateStatus.textContent=data.message;}).catch(function(error){templateStatus.textContent='Template was not saved: '+error.message;templateStatus.style.color='#b91c1c';});});
-                root.addEventListener('click',function(event){var button=event.target.closest('[data-mm-copy]');if(!button){return;}var code=root.querySelector('#'+button.dataset.mmCopy);if(!code){return;}var value=code.textContent||'',done=function(){var old=button.textContent;button.textContent='Copied';window.setTimeout(function(){button.textContent=old;},1500);},fallback=function(){var area=document.createElement('textarea');area.value=value;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');done();}catch(e){button.textContent='Copy failed';}area.remove();};if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(value).then(done).catch(fallback);}else{fallback();}});
             }());
             </script>
         </div>

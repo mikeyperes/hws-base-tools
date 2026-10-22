@@ -322,7 +322,7 @@ function hws_login_render_output( string $title, array $data, string $format = '
     <body>
         <h1>HWS Login Masking: <?php echo esc_html( $title ); ?></h1>
         <p><a href="<?php echo home_url(); ?>">← Back to site</a></p>
-        <pre><?php echo esc_html( json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ); ?></pre>
+        <?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( (string) json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ), [ 'language' => 'json', 'title' => $title ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
     </body>
     </html>
     <?php

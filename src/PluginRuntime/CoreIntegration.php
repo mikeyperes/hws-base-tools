@@ -84,6 +84,9 @@ final class CoreIntegration {
             ->add_module( new PageLayoutFeature() )
             ->add_module( new MaintenanceModeFeature() )
             ->add_module( new TeamTab() )
+            // Founders: picked once here; Website Identity and SMP read hws_publication_founders().
+            ->add_module( new \HWS\BaseTools\Founders\Founders() )
+            ->add_module( new \HWS\BaseTools\Founders\FoundersTab() )
             ->add_module( new DiscussionPolicy() )
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
