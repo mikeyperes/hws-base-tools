@@ -129,8 +129,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `wp hws db-optimize scan [--format=json]`, `wp hws db-optimize clean [--items=revisions,autodrafts]`, `wp hws db-optimize tables [--operation=check|repair|convert|optimize|all] [--tables=...]`, `wp hws db-optimize run`. AJAX actions `hws_database_optimization_{overview,count,clean,tables,table,reports,settings}` (nonce `hws_database_optimization`).
 - **Code:** `src/DatabaseOptimization/` (`CleanupTasks`, `TableMaintenance`, `TableOwners` with `data/table-owners.json.gz`, `DatabaseReport`, `DatabaseOptimizationModule`); UI on Core's `WpAdminComponents\TaskRunner`.
 
+### Sitemaps and feeds
+- **Does:** lists every RSS feed (all posts, comments, each browsable content type, category, tag and author feeds, Rank Math Pro's podcast feed) and every XML sitemap (index, Rank Math Pro news and video sitemaps, each content type). Each one shows a working ✓ or broken ✗, item count, published total, newest date and response time. Validate requests the address from the server and checks the HTTP status, content type, XML and required fields. Server response shows the headers and the start of the body. Advanced shows the feed's general (channel) fields and each item's fields, plus which fields each item has. Each feed has an Active switch: off answers 404 "This feed is turned off." and removes it from the page head. Tools: never cache sitemaps, clear cached sitemaps and feeds, refresh permalinks.
+- **Switch:** WP Admin → Settings → HWS Base Tools → Sitemaps & Feeds (`options-general.php?page=hws-core-tools&tab=sitemaps`). Turned-off feed keys in `hws_feeds_disabled`; last check results in `hws_sitemap_feed_checks`.
+- **Extend:** filters `hws_base_tools_feeds` and `hws_base_tools_sitemaps` add entries (`label`, `group`, `url`, optional `toggle`, `match`, `total`, `latest`, `available`, `note`, `settings`); see `SitemapFeedRegistry`. AJAX `hws_sitemap_check`, `hws_sitemap_feed_toggle`.
+- **Code:** `src/SitemapTools/` (`SitemapFeedRegistry`, `XmlInspector`, `FeedSwitches`, `sitemaps-feeds-admin.php`).
+
 ### Extension points
-- `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
+- `hws_base_tools_feeds` / `hws_base_tools_sitemaps` (feeds and sitemaps on Sitemaps & Feeds), `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
 
 ## Internals
 
@@ -184,7 +190,7 @@ The HWS dashboard includes:
 - Custom Post Types and ACF structure controls.
 - Plugins, themes, updates, backups, cleanup, and system checks.
 - Brand Assets, Footer Text, UI Cleanup, and Site Structure tools.
-- Sitemaps, Search Display, Search Behavior, Features, and Shortcodes. Every Search tab section saves on its own as you change it (text after you stop typing) and reports Saved or Not saved with the reason in the shared Core notice.
+- Sitemaps & Feeds (every feed and sitemap with health checks and feed switches), Search Display, Search Behavior, Features, and Shortcodes. Every Search tab section saves on its own as you change it (text after you stop typing) and reports Saved or Not saved with the reason in the shared Core notice.
 - Featured image publication requirements for selected public content types, with optional minimum dimensions and one-time migration from Require Featured Image.
 - A generic reading-progress feature with an entire-site override, front-page and public post-type targeting, five visual designs, live previews, and the shared Hexa WP Core color picker.
 - Elementor query IDs and a configurable trimmed ACF text dynamic tag for native Loop Grid documents.
@@ -269,6 +275,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.16.0
+
+- New Sitemaps & Feeds tab (replaces Sitemaps): every RSS feed and sitemap with a working or broken mark, Validate, server response, advanced field view, item counts and newest date. Feeds have an Active switch. Includes Rank Math Pro's news and video sitemaps and podcast feed. Other plugins add their own through `hws_base_tools_feeds` and `hws_base_tools_sitemaps`.
 
 ### 13.15.4
 

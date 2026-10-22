@@ -201,7 +201,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'database-optimization', 'Database Optimization', [ \HWS\BaseTools\DatabaseOptimization\DatabaseOptimizationModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'mail-authentication', 'Mail Authentication', 'hws_base_tools\\render_tab_mail_authentication', [ 'settings-dashboard-mail-authentication.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps', 'hws_base_tools\\render_tab_sitemaps', [
+        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps & Feeds', 'hws_base_tools\\render_tab_sitemaps', [
             'settings-dashboard-site-profile.php',
             'settings-dashboard-sitemaps.php',
         ] ) );

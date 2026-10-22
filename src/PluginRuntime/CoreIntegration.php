@@ -34,6 +34,7 @@ use HWS\BaseTools\ExternalPublishing\ExternalPublishingModule;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use HWS\BaseTools\Security\LoginLinkFallback;
 use HWS\BaseTools\SeoSettings\RankMathSchemaSetting;
+use HWS\BaseTools\SitemapTools\FeedSwitches;
 
 final class CoreIntegration {
     private static ?CoreBootstrap $bootstrap = null;
@@ -84,6 +85,7 @@ final class CoreIntegration {
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
             ->add_module( new FontSmoothing() )
+            ->add_module( new FeedSwitches() )
             ->add_module( new ExternalPublishingModule() )
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )
