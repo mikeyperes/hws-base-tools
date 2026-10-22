@@ -277,6 +277,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.16.6
+
+- Settings, Search: the `[hws_search]` attribute list is now compact rows grouped into Look, Content and Advanced; click an example to copy it.
+
 ### 13.16.5
 
 - `[hws_search]` takes every setting as an attribute: style (none, default-1, default-2), filters, placeholder, results_one, results_many, empty, clear, accent, border, radius, panel_bg, field_width, field_height, font_size, target, class. Look attributes apply to that one box only. Settings, Search lists them all at the top of the search box section.

@@ -42,16 +42,22 @@ function render_listing_search_style_settings(): void {
     <section class="hws-listing-style" id="hws-listing-style">
         <h3>Search box above lists (<code>[hws_search]</code>)</h3>
         <p>The search box with filters above category, tag, author and search results. The look chosen below is the site default; site CSS always wins over it.</p>
-        <details class="hws-listing-attrs" open>
-            <summary>Shortcode attributes</summary>
-            <p>Every attribute is optional and changes only that one box. Example: <code>[hws_search style="none" filters="category,author" placeholder="Search stories"]</code></p>
-            <dl>
-                <?php foreach ( ListingSearchFeature::ATTRIBUTES as $name => [ $does, $example ] ) : ?>
-                    <dt><code><?php echo esc_html( $name ); ?></code></dt>
-                    <dd><?php echo esc_html( $does ); ?> <code><?php echo esc_html( $example ); ?></code></dd>
+        <div class="hws-listing-attrs">
+            <div class="hws-listing-attrs-head">
+                <strong>Shortcode attributes</strong>
+                <span>All optional. They change only that one box. Click an example to copy it.</span>
+            </div>
+            <?php foreach ( ListingSearchFeature::ATTRIBUTES as $group => $attributes ) : ?>
+                <div class="hws-listing-attrs-group"><?php echo esc_html( $group ); ?></div>
+                <?php foreach ( $attributes as $name => [ $does, $example ] ) : ?>
+                    <div class="hws-listing-attr">
+                        <code class="hws-listing-attr-name"><?php echo esc_html( $name ); ?></code>
+                        <span class="hws-listing-attr-does"><?php echo esc_html( $does ); ?></span>
+                        <button type="button" class="hws-listing-attr-example" data-copy="<?php echo esc_attr( '[hws_search ' . $example . ']' ); ?>" title="Copy"><?php echo esc_html( $example ); ?></button>
+                    </div>
                 <?php endforeach; ?>
-            </dl>
-        </details>
+            <?php endforeach; ?>
+        </div>
         <h4 class="hws-listing-style-heading">Site default look</h4>
         <div class="hws-listing-style-options">
             <?php foreach ( ListingSearchFeature::STYLES as $key => $label ) : ?>
@@ -70,10 +76,19 @@ function render_listing_search_style_settings(): void {
     <style>
     .hws-listing-style{max-width:760px;margin-top:28px;padding-top:18px;border-top:1px solid #dcdcde}
     .hws-listing-style h3{margin:0 0 4px;font-size:15px}.hws-listing-style>p{margin:0 0 12px;color:#646970}
-    .hws-listing-attrs{margin:0 0 18px;padding:12px 14px;border:1px solid #dcdcde;border-radius:6px;background:#fff}
-    .hws-listing-attrs summary{cursor:pointer;font-weight:600}.hws-listing-attrs>p{margin:8px 0 10px;color:#646970}
-    .hws-listing-attrs dl{margin:0}.hws-listing-attrs dt{margin-top:8px}.hws-listing-attrs dd{margin:2px 0 0;color:#50575e}
-    .hws-listing-attrs dd code{font-size:12px}.hws-listing-style-heading{margin:0 0 6px;font-size:14px}
+    .hws-listing-attrs{margin:0 0 22px;border:1px solid #dcdcde;border-radius:6px;background:#fff;overflow:hidden}
+    .hws-listing-attrs-head{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-bottom:1px solid #dcdcde;background:#f6f7f7}
+    .hws-listing-attrs-head span{color:#646970;font-size:12px}
+    .hws-listing-attrs-group{padding:10px 16px 4px;color:#646970;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+    .hws-listing-attr{display:flex;align-items:center;gap:12px;padding:6px 16px;border-top:1px solid #f0f0f1;font-size:13px}
+    .hws-listing-attr:hover{background:#fafafa}
+    .hws-listing-attr-name{flex:0 0 108px;padding:0;background:none;color:#1d2327;font-size:12px;font-weight:600}
+    .hws-listing-attr-does{flex:1 1 auto;min-width:0;color:#50575e}
+    .hws-listing-attr-example{flex:0 0 auto;padding:2px 8px;border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7;color:#3c434a;font:12px/1.5 Consolas,Monaco,monospace;cursor:pointer;transition:background-color .2s,border-color .2s}
+    .hws-listing-attr-example:hover{border-color:#2271b1;background:#f0f6fc}
+    .hws-listing-attr-example.is-copied{border-color:#16803c;background:#edf9f1;color:#16803c}
+    @media(max-width:600px){.hws-listing-attr{flex-wrap:wrap;gap:4px 12px}.hws-listing-attr-does{flex-basis:calc(100% - 120px)}}
+    .hws-listing-style-heading{margin:0 0 6px;font-size:14px}
     .hws-listing-style-options{display:flex;flex-direction:column;gap:2px}
     .hws-listing-style-option{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;padding:6px 8px;border-radius:4px;cursor:pointer}.hws-listing-style-option:hover{background:#f6f7f7}
     .hws-listing-style-option span{grid-column:2;color:#646970;font-size:12px}
@@ -82,6 +97,7 @@ function render_listing_search_style_settings(): void {
     <script>
     (function(){
       var root=document.getElementById('hws-listing-style');if(!root)return;
+      root.addEventListener('click',function(e){var b=e.target.closest('.hws-listing-attr-example');if(!b)return;var text=b.getAttribute('data-copy');function done(){b.classList.add('is-copied');HWSSettingsAutosave.done('#hws-listing-style-notice','Copied',text);setTimeout(function(){b.classList.remove('is-copied');},1500);}if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done);}});
       HWSSettingsAutosave.bind(root,{
         notice:'#hws-listing-style-notice',
         ignore:'.hws-listing-style-preview *',

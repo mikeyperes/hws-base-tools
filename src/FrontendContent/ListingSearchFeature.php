@@ -41,26 +41,32 @@ final class ListingSearchFeature implements ModuleInterface {
     ];
 
     /**
-     * Every `[hws_search]` attribute, with what it does and an example. The
-     * settings screen lists these, so code and help never drift apart.
+     * Every `[hws_search]` attribute by group: what it does and an example.
+     * The settings screen lists these, so code and help never drift apart.
      */
     public const ATTRIBUTES = [
-        'style'        => [ 'Look of this box, overriding the site setting: none (no styling), default-1 or default-2.', 'style="none"' ],
-        'filters'      => [ 'Which filters to show: any of type, category, tag, author. Leave out for all.', 'filters="category,author"' ],
-        'placeholder'  => [ 'Text inside the empty search field. Default: "Search <page title>".', 'placeholder="Search stories"' ],
-        'results_one'  => [ 'Count line for one result; %d is the number.', 'results_one="%d article"' ],
-        'results_many' => [ 'Count line for several results; %d is the number.', 'results_many="%d articles"' ],
-        'empty'        => [ 'Line shown when nothing matches.', 'empty="Nothing found"' ],
-        'clear'        => [ 'Text of the link that resets the search.', 'clear="Reset"' ],
-        'accent'       => [ 'Accent colour (focus line, ticked filters, count badge).', 'accent="#c2410c"' ],
-        'border'       => [ 'Border colour of the field and filter buttons.', 'border="#d0d5dd"' ],
-        'radius'       => [ 'Corner rounding.', 'radius="0"' ],
-        'panel_bg'     => [ 'Background of the opened filter lists.', 'panel_bg="#ffffff"' ],
-        'field_width'  => [ 'Widest the search field gets.', 'field_width="480px"' ],
-        'field_height' => [ 'Height of the field and filter buttons.', 'field_height="42px"' ],
-        'font_size'    => [ 'Text size of the box.', 'font_size="15px"' ],
-        'target'       => [ 'CSS selector of the list to refresh, when it is not the page\'s marked list.', 'target=".my-grid"' ],
-        'class'        => [ 'Extra CSS class on the box, for site CSS.', 'class="sidebar-search"' ],
+        'Look'    => [
+            'style'        => [ 'none, default-1 or default-2', 'style="none"' ],
+            'accent'       => [ 'Focus line, ticked filters, badge', 'accent="#c2410c"' ],
+            'border'       => [ 'Field and button border', 'border="#d0d5dd"' ],
+            'panel_bg'     => [ 'Opened filter list background', 'panel_bg="#fff"' ],
+            'radius'       => [ 'Corner rounding', 'radius="0"' ],
+            'field_width'  => [ 'Widest the field gets', 'field_width="480px"' ],
+            'field_height' => [ 'Field and button height', 'field_height="42px"' ],
+            'font_size'    => [ 'Text size', 'font_size="15px"' ],
+        ],
+        'Content' => [
+            'filters'      => [ 'Any of type, category, tag, author', 'filters="category,author"' ],
+            'placeholder'  => [ 'Empty field text', 'placeholder="Search stories"' ],
+            'results_one'  => [ 'One result; %d is the number', 'results_one="%d article"' ],
+            'results_many' => [ 'Several results', 'results_many="%d articles"' ],
+            'empty'        => [ 'No results', 'empty="Nothing found"' ],
+            'clear'        => [ 'Reset link text', 'clear="Reset"' ],
+        ],
+        'Advanced' => [
+            'target'       => [ 'List to refresh (CSS selector)', 'target=".my-grid"' ],
+            'class'        => [ 'Extra CSS class on the box', 'class="sidebar-search"' ],
+        ],
     ];
 
     /** Look attributes, each setting one of the box's custom properties. */
@@ -127,7 +133,7 @@ final class ListingSearchFeature implements ModuleInterface {
         }
 
         $attributes = shortcode_atts(
-            [ 'profile' => self::PROFILE ] + array_fill_keys( array_keys( self::ATTRIBUTES ), '' ),
+            [ 'profile' => self::PROFILE ] + array_fill_keys( array_keys( array_merge( ...array_values( self::ATTRIBUTES ) ) ), '' ),
             is_array( $attributes ) ? $attributes : [],
             self::SHORTCODE
         );
