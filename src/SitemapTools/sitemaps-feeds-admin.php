@@ -3,6 +3,8 @@
 namespace hws_base_tools;
 
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
+use HWS\BaseTools\AdminDashboard\SettingsAutosave;
+use HWS\BaseTools\SitemapTools\FeedSitemapSettings;
 use HWS\BaseTools\SitemapTools\SitemapFeedRegistry;
 use HWS\BaseTools\SitemapTools\XmlInspector;
 
@@ -63,6 +65,27 @@ function hws_sitemap_feeds_ajax_toggle(): void {
 }
 add_action( 'wp_ajax_hws_sitemap_feed_toggle', __NAMESPACE__ . '\\hws_sitemap_feeds_ajax_toggle' );
 
+function hws_sitemap_feeds_ajax_save_settings(): void {
+    hws_sitemap_feeds_guard();
+    $kind   = 'sitemap' === sanitize_key( (string) ( $_POST['kind'] ?? '' ) ) ? 'sitemap' : 'feed';
+    $limits = json_decode( (string) wp_unslash( $_POST['limits'] ?? '{}' ), true );
+    FeedSitemapSettings::save(
+        $kind,
+        [
+            'limits' => is_array( $limits ) ? $limits : [],
+            'cache'  => sanitize_text_field( (string) wp_unslash( $_POST['cache'] ?? 'default' ) ),
+            'clear'  => '1' === (string) ( $_POST['clear'] ?? '' ),
+            'size'   => (int) ( $_POST['size'] ?? 0 ),
+        ]
+    );
+    $what = 'feed' === $kind ? 'feeds' : 'sitemaps';
+    foreach ( 'feed' === $kind ? SitemapFeedRegistry::feeds() : SitemapFeedRegistry::sitemaps() as $entry ) {
+        do_action( 'litespeed_purge_url', $entry['url'] );
+    }
+    wp_send_json_success( [ 'message' => 'Settings for ' . $what . ' saved. Cached ' . $what . ' were cleared so the change shows now.' ] );
+}
+add_action( 'wp_ajax_hws_sitemap_settings_save', __NAMESPACE__ . '\\hws_sitemap_feeds_ajax_save_settings' );
+
 function hws_sitemaps_ajax_disable_cache(): void {
     hws_sitemap_feeds_guard();
     $on = '1' === (string) ( $_POST['on'] ?? '1' );
@@ -115,6 +138,21 @@ function hws_sitemap_feeds_rows( string $kind ): array {
     return $rows;
 }
 
+/** LiteSpeed's own cache rule for feeds or sitemaps, in words. */
+function hws_sitemap_feeds_litespeed_default( string $kind ): string {
+    if ( ! defined( 'LSCWP_V' ) ) {
+        return 'LiteSpeed Cache is not active';
+    }
+    if ( 'feed' === $kind && ! get_option( 'litespeed.conf.cache-feed' ) ) {
+        return 'not cached';
+    }
+    $ttl = (int) get_option( 'feed' === $kind ? 'litespeed.conf.cache-ttl_feed' : 'litespeed.conf.cache-ttl_pub', 0 );
+    if ( $ttl <= 0 ) {
+        return 'not cached';
+    }
+    return $ttl % 86400 === 0 ? ( $ttl / 86400 ) . ( 86400 === $ttl ? ' day' : ' days' ) : ( $ttl % 3600 === 0 ? ( $ttl / 3600 ) . ' hours' : round( $ttl / 60 ) . ' minutes' );
+}
+
 function render_tab_sitemaps(): void {
     hws_sitemap_feeds_render( 'sitemap' );
 }
@@ -130,7 +168,8 @@ function hws_sitemap_feeds_render( string $kind ): void {
         'kind'  => $kind,
         'rows'  => hws_sitemap_feeds_rows( $kind ),
     ];
-    $nocache = hws_sitemaps_nocache_enabled();
+    $settings          = FeedSitemapSettings::get();
+    $litespeed_default = hws_sitemap_feeds_litespeed_default( $kind );
     ?>
     <div id="hws-sf" class="hpc-ui hws-sf">
         <style>
@@ -174,6 +213,13 @@ function hws_sitemap_feeds_render( string $kind ): void {
             #hws-sf .hws-sf-advanced{margin:8px 0 0 32px}
             #hws-sf .hws-sf-advanced select{max-width:100%;margin:6px 0}
             #hws-sf .hws-sf-tools{display:flex;flex-direction:column;gap:10px}
+            #hws-sf .hws-sf-list{list-style:none;margin:0;padding:0;max-width:560px}
+            #hws-sf .hws-sf-list li{margin:0;padding:7px 0;border-bottom:1px solid #f0f0f1}
+            #hws-sf .hws-sf-list label{display:flex;align-items:center;justify-content:space-between;gap:16px}
+            #hws-sf .hws-sf-list label.hws-sf-check{justify-content:flex-start;gap:8px}
+            #hws-sf .hws-sf-list select{min-width:220px}
+            #hws-sf .hws-sf-owner{background:#fcf9e8;border-left:4px solid #dba617;padding:8px 12px;margin:0 0 8px;max-width:560px}
+            #hws-sf .hws-sf-hint{font-size:12px;color:#787c82;margin-top:6px}
             #hws-sf .hws-sf-tools .hpc-actions{margin:0}
             #hws-sf .hws-sf-notice{margin-top:6px;font-size:12px;color:#00701a}
             #hws-sf .hws-sf-notice.error{color:#b32d2e}
@@ -197,12 +243,55 @@ function hws_sitemap_feeds_render( string $kind ): void {
             <div data-list="<?php echo esc_attr( $kind ); ?>"></div>
         </section>
 
+        <section class="hws-sf-section hws-sf-settings" id="hws-sf-settings">
+            <h3>Settings</h3>
+            <?php if ( 'feed' === $kind ) : ?>
+                <p>How many of the newest items each feed shows. Site default is WordPress's "Syndication feeds show the most recent" (<?php echo esc_html( (string) get_option( 'posts_per_rss' ) ); ?>).</p>
+                <ul class="hws-sf-list">
+                    <?php foreach ( SitemapFeedRegistry::feeds() as $key => $feed ) : ?>
+                        <?php if ( ! $feed['available'] ) { continue; } ?>
+                        <li><label><span><?php echo esc_html( $feed['label'] ); ?></span>
+                            <select name="limit_<?php echo esc_attr( $key ); ?>" data-limit="<?php echo esc_attr( $key ); ?>">
+                                <?php foreach ( FeedSitemapSettings::FEED_LIMITS as $value => $label ) : ?>
+                                    <option value="<?php echo esc_attr( (string) $value ); ?>"<?php selected( FeedSitemapSettings::feed_limit( $key ), $value ); ?>><?php echo esc_html( 0 === $value ? $label . ' (' . get_option( 'posts_per_rss' ) . ')' : $label ); ?></option>
+                                <?php endforeach; ?>
+                            </select></label></li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="hws-sf-hint">Unlimited lists every published item and can make a large feed slow to load.</p>
+            <?php else : ?>
+                <p>How many addresses each sitemap page lists before it continues on a second page<?php echo SitemapFeedRegistry::rank_math_module( 'sitemap' ) ? ' (Rank Math\'s "Links per sitemap")' : ''; ?>.</p>
+                <ul class="hws-sf-list">
+                    <li><label><span>Addresses per sitemap page</span>
+                        <select name="size">
+                            <?php foreach ( FeedSitemapSettings::SITEMAP_SIZES as $value => $label ) : ?>
+                                <option value="<?php echo esc_attr( (string) $value ); ?>"<?php selected( $settings['sitemap_size'], $value ); ?>><?php echo esc_html( $label ); ?></option>
+                            <?php endforeach; ?>
+                        </select></label></li>
+                </ul>
+            <?php endif; ?>
+
+            <h3 style="margin-top:22px">Caching</h3>
+            <p><?php echo esc_html( 'feed' === $kind ? 'How long LiteSpeed keeps a saved copy of each feed before building it again.' : 'How long LiteSpeed keeps a saved copy of each sitemap before building it again.' ); ?></p>
+            <?php $owner = 'feed' === $kind ? FeedSitemapSettings::feed_cache_owner() : null; ?>
+            <?php if ( $owner ) : ?>
+                <p class="hws-sf-owner">Feeds are never cached because <?php echo esc_html( $owner['label'] ); ?> is on. Turn it off there to choose a cache length here.<?php if ( '' !== $owner['url'] ) : ?> <a href="<?php echo esc_url( $owner['url'] ); ?>" target="_blank" rel="noopener">Open that setting</a><?php endif; ?></p>
+            <?php endif; ?>
+            <ul class="hws-sf-list">
+                <li><label><span>Keep a cached copy for</span>
+                    <select name="cache"<?php disabled( (bool) $owner ); ?>>
+                        <?php foreach ( FeedSitemapSettings::CACHE_TIMES as $value => $label ) : ?>
+                            <option value="<?php echo esc_attr( (string) $value ); ?>"<?php selected( $settings[ $kind . '_cache' ], (string) $value ); ?>><?php echo esc_html( 'default' === $value ? $label . ' (' . $litespeed_default . ')' : $label ); ?></option>
+                        <?php endforeach; ?>
+                    </select></label></li>
+                <li><label class="hws-sf-check"><input type="checkbox" name="clear" value="1"<?php checked( $settings[ $kind . '_clear' ] ); ?>> Clear the cached copy when a post is published, updated or unpublished</label></li>
+            </ul>
+            <?php echo SettingsAutosave::notice( 'hws-sf-settings-notice' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+        </section>
+
         <section class="hws-sf-section">
             <h3>Tools</h3>
             <div class="hws-sf-tools">
-                <?php if ( 'sitemap' === $kind ) : ?>
-                    <?php echo CoreUi::toggle( 'hws_sitemaps_nocache', $nocache, 'Never cache sitemaps', [ 'id' => 'hws-sf-nocache', 'tooltip' => 'LiteSpeed serves sitemaps fresh every time, so new articles show up straight away.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                <?php endif; ?>
                 <div class="hpc-actions">
                     <button type="button" class="hpc-button secondary" data-action="purge"><?php echo esc_html( 'feed' === $kind ? 'Clear cached feeds' : 'Clear cached sitemaps' ); ?></button>
                     <button type="button" class="hpc-button secondary" data-action="flush">Refresh web addresses</button>
@@ -395,16 +484,23 @@ function hws_sitemap_feeds_render( string $kind ): void {
             }
         });
 
+        var settingsBox = document.getElementById('hws-sf-settings');
+        if (settingsBox && window.HWSSettingsAutosave) {
+            HWSSettingsAutosave.bind(settingsBox, {
+                notice: '#hws-sf-settings-notice',
+                save: function(){
+                    var limits = {};
+                    settingsBox.querySelectorAll('select[data-limit]').forEach(function(sel){ limits[sel.getAttribute('data-limit')] = sel.value; });
+                    var size = settingsBox.querySelector('select[name="size"]'), cache = settingsBox.querySelector('select[name="cache"]'), clear = settingsBox.querySelector('input[name="clear"]');
+                    return HWSSettingsAutosave.post('hws_sitemap_settings_save', data.nonce, { kind: data.kind, limits: JSON.stringify(limits), size: size ? size.value : '', cache: cache.value, clear: clear.checked ? '1' : '' }).then(function(d){ return { message: d.message }; });
+                }
+            });
+            // Its own named selects would otherwise trip the row handler below.
+        }
+
         root.addEventListener('change', function(e){
+            if (settingsBox && settingsBox.contains(e.target)) return;
             var el = e.target.closest('.hws-sf-row');
-            if (e.target.id === 'hws-sf-nocache') {
-                var notice = root.querySelector('[data-role="tools-notice"]');
-                notice.className = 'hws-sf-notice'; notice.textContent = 'Saving…';
-                post('hws_sitemap_disable_cache', { on: e.target.checked ? '1' : '0' })
-                    .then(function(d){ notice.textContent = d.message; })
-                    .catch(function(err){ notice.className = 'hws-sf-notice error'; notice.textContent = err.message; e.target.checked = !e.target.checked; });
-                return;
-            }
             if (!el) return;
             var row = el._row;
             if (e.target.matches('[data-role="switch"]')) {
