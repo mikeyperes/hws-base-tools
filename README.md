@@ -51,6 +51,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use (shortcode):** `[hws_site_identity field="company.name"]`, `[hws_site_identity field="mission"]`, `[hws_site_identity field="profiles" sep=" | "]`, `[hws_site_identity field="logo" size="medium"]` (image), `[hws_site_identity field="founders"]` (names).
 - **Showing it in another plugin:** read it with `hws_site_identity()` and put Hexa WP Core's `SourceBanner::render( [ 'owner' => 'HWS Base Tools', 'edit_url' => hws_site_identity_edit_url() ] )` above it ("Original content at HWS Base Tools. Click here to edit."). Never copy the values into the other plugin.
 - **Routing for skills:** basic website identity (who the site represents, company or person basics, contact email, mission, social profiles, headquarters) is read and edited here. Founders are picked only on the Founders tab (see Founders). Publication-specific information (DMCA, policies, editorial pages, founding-date page, publication standard pages) belongs to SMP Publication Integration. The older Website Settings fields (founder, website group) are kept for old shortcodes but are superseded; write new values to Site identity.
+- **Safe during startup:** read during plugin startup (before ACF has started), the lookup returns the stored option values instead of reading fields, so an early caller can never start ACF too early and crash the site.
 - **Code:** `src/SiteProfile/SiteIdentity.php`, `src/SiteProfile/site-identity-functions.php`
 
 ### Founders
@@ -72,10 +73,16 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[founder id="title" size="medium" output="grid" columns="4" class="" loading="lazy"]`; `[hws_profile_photos user_id="0" size="medium" output="grid" columns="4" class="" loading="lazy"]`.
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
 
-### Site page templates
-- **Does:** starter content for critical pages. The Pages tab manages only generic pages any website has: Contact. Publication standard pages (Terms of Use, Privacy Policy, Brand Assets, Headquarters, FAQs, DMCA and every policy) are managed in SMP Publication Integration's Pages tab since 13.19.0; their old assignments stay stored and SMP reads them. The starter templates below still render for pages that already use them.
-- **Use:** `[site_page_template type="contact|privacy|terms|brand_assets|headquarters|faqs"]` (alias `[hws_site_page_template]`).
-- **Code:** `src/BrandAssets/legacy-brand-functions.php`
+### Company pages: Contact, Headquarters, Logo
+- **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns three company pages any website has: Contact, Headquarters and Logo. Each has its page type, its template and its page link here. Headquarters and Logo templates read Website Identity and print only the facts that are filled in (city with its link, address, contact email, Contact page link, logo, brand files), never a half sentence. Publication standard pages (Terms of Use, Privacy Policy, FAQs, DMCA and every policy) stay in SMP Publication Integration, which shows these three read-only.
+- **Use:** `[site_page_template type="contact|headquarters|logo"]` (alias `[hws_site_page_template]`); older types `privacy|terms|brand_assets|faqs` still render for pages that already use them.
+- **Use (PHP):** `hws_base_tools_linked_page( 'contact'|'headquarters'|'logo' )` returns the linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<type>`.
+- **Code:** `src/CompanyPages/CompanyPages.php`, `src/CompanyPages/company-pages-functions.php`, `src/SiteStructure/legacy-pages.php`
+
+### Missing company facts notice
+- **Does:** when another plugin has a fact page switched on but Website Identity lacks what it needs, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
+- **Extend:** filter `hws_base_tools_pages_in_use` (`key => label`); SMP Publication Integration adds `headquarters` and `founding_date` when those pages are on.
+- **Code:** `src/CompanyPages/CompanyPages.php`
 
 ### Team
 - **Does:** the Team Member post type (`team-member`, archive `/team/`), its ACF fields and the `[hws_team_members]` listing grid. The plugin prints only the grid; the rest of the team page is the site's own design around it.
@@ -84,6 +91,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **HTML structure and styling:** [docs/team-members.md](docs/team-members.md): the grid's markup, every attribute, the classes (`.hws-team-directory`, `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`), the built-in CSS and how to style it in Elementor and HTML drafts.
 - **Use (PHP, the read API):** `hws_team_members( [ 'featured_only' => false, 'category' => '', 'limit' => 0 ] )` returns published team members in the team page order (roles first), as data: `[ [ 'id', 'name', 'position', 'featured', 'excerpt', 'url', 'photo', 'photo_id', 'order', 'edit_url' ], ... ]`; `hws_team_enabled()`; `hws_team_page_url()` (the `/team/` archive); `hws_team_edit_url()` (the Team tab). Check `function_exists( 'hws_team_members' )` first.
 - **Routing for skills:** HWS Base Tools is the one source for team work: the post type, its fields, the listing and the team page. Other plugins (SMP's Team page first) read `hws_team_members()` or place `[hws_team_members]`, report it and link to `hws_team_edit_url()` under Core's SourceBanner; they never store team members.
+- **Shortcode breakdown:** the Team tab shows Core's shortcode breakdown for `[hws_team_members]` (every attribute, its default from the team page settings, examples). The grid's CSS prints only with the first list on a page.
 - **Code:** `src/TeamMembers/TeamTab.php`, `src/TeamMembers/TeamMemberDirectory.php`, `src/TeamMembers/TeamPageSettings.php`, `src/TeamMembers/team-functions.php`
 
 ### Testimonials
@@ -101,7 +109,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### Infinite scroll with a Load more fallback
 - **Does:** a Loop Grid or Posts widget set to "Load on click" loads its next batch as its button comes into view; the button stays as the fallback. A page with `window.hexaFreezeAutoLoad = true` keeps its first batch.
-- **Use:** give the widget the CSS class `hws-auto-load-more` (the older `smpi-auto-load-more` still works).
+- **Use:** give the widget the CSS class `hws-auto-load-more` (the older `smpi-auto-load-more` still works). The script prints only on pages whose Elementor output carries one of these classes.
 - **Code:** `src/FrontendContent/SearchBoxFeature.php`
 
 ### Current year
@@ -154,11 +162,15 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/SitemapTools/` (`SitemapFeedRegistry`, `XmlInspector`, `FeedSwitches`, `FeedSitemapSettings`, `sitemaps-feeds-admin.php`).
 
 ### Code and shortcode displays
-- **Does:** every code block and shortcode explanation in the admin uses Hexa WP Core's shared components: `CodeDisplay` (colour-coded HTML, CSS, PHP, JSON and shortcodes with a copy button) on the Founders, Team, Default Page Content, Maintenance Mode, Features and Configuration tabs and the login-masking debug page; `ShortcodeBreakdown` (shortcode, copy, every attribute with default and explanation) on the Founders and RSS Feeds tabs.
+- **Does:** every code block and shortcode explanation in the admin uses Hexa WP Core's shared components: `CodeDisplay` (colour-coded HTML, CSS, PHP, JSON and shortcodes with a copy button) on the Founders, Team, Default Page Content, Maintenance Mode, Features and Configuration tabs and the login-masking debug page; `ShortcodeBreakdown` (shortcode, copy, every attribute with default and explanation) on the Founders, Team and RSS Feeds tabs.
 - **Code:** Hexa WP Core `src/WpAdminComponents/CodeDisplay.php`, `src/ShortcodeRegistry/ShortcodeBreakdown.php`
 
 ### Extension points
 - `hws_base_tools_feeds` / `hws_base_tools_sitemaps` (entries on the RSS Feeds and Sitemaps tabs), `hws_base_tools_shared_content_type_definitions` (add or change shared post types), `hws_base_tools_dashboard_tabs` / `hws_base_tools_dashboard_tab_groups` / `hws_base_tools_render_dashboard_tab` (dashboard tabs), `hws_base_tools_quick_start_profiles`, `hws_base_tools_litespeed_profiles`, `hws_base_tools_article_image_post_types`, `hws_acf_group_meta`, `hws_base_tools/login_mask_allowlist`.
+
+## Asset loading
+
+Rule: admin CSS and JS load only in the admin and only on the screens that use them; front-end CSS and JS load only on the front end and only where the feature is used. Nothing admin-only loads for visitors. How each feature is scoped, and how to check it, is in [docs/asset-loading.md](docs/asset-loading.md).
 
 ## Internals
 
@@ -302,6 +314,15 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.21.0
+
+- Safe startup: Website Identity and the Primary Entity lookup (used by Founders) return stored values before ACF has started, so an early caller cannot crash the admin (cause of the 2026-10-22 17:16 UTC crash).
+- Asset loading: the auto load-more script prints only on pages with a marked list; the Team grid CSS only with a team list. Rule and checks in docs/asset-loading.md.
+- Headquarters and Logo are Base Tools company pages like Contact (page type, smart template, page link); `hws_base_tools_linked_page()`.
+- Missing company facts notice, fed by `hws_base_tools_pages_in_use`.
+- Team tab: shortcode breakdown.
+- Hexa WP Core 3.33.0.
 
 ### 13.20.0
 

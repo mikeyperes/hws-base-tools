@@ -129,6 +129,13 @@ function hws_site_value_raw( string $field ) {
 function hws_site_page_template_shortcode( $atts ): string {
     $atts = shortcode_atts( [ "type" => "" ], $atts, "hws_site_page_template" );
     $type = sanitize_key( (string) $atts["type"] );
+    // Headquarters and Logo print only the Website Identity facts that are filled in.
+    if ( "headquarters" === $type ) {
+        return wp_kses_post( \HWS\BaseTools\CompanyPages\CompanyPages::headquarters_html() );
+    }
+    if ( "logo" === $type ) {
+        return wp_kses_post( \HWS\BaseTools\CompanyPages\CompanyPages::logo_html() );
+    }
     $definition = "" !== $type ? hws_site_page_template_definition( $type ) : [];
     return $definition ? wp_kses_post( do_shortcode( hws_site_page_template_html( $type, $definition ) ) ) : "";
 }

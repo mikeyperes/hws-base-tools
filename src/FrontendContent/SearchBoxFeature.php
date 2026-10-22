@@ -109,7 +109,23 @@ final class SearchBoxFeature implements ModuleInterface {
         add_action( SearchRegistry::REGISTER_ACTION, [ self::class, 'register_profile' ] );
         add_filter( SearchContext::SEARCH_TYPES_FILTER, [ self::class, 'search_post_types' ] );
         add_action( 'init', [ self::class, 'register_shortcodes' ] );
+        add_filter( 'elementor/frontend/the_content', [ self::class, 'detect_auto_load_more' ] );
         add_action( 'wp_footer', [ self::class, 'print_auto_load_more_script' ], 34 );
+    }
+
+    private static bool $auto_load_more_used = false;
+
+    /** Notes when Elementor output on this page carries an auto-load class (cached elements included). */
+    public static function detect_auto_load_more( $content ) {
+        if ( ! self::$auto_load_more_used && is_string( $content ) ) {
+            foreach ( self::AUTO_LOAD_CLASSES as $class ) {
+                if ( str_contains( $content, $class ) ) {
+                    self::$auto_load_more_used = true;
+                    break;
+                }
+            }
+        }
+        return $content;
     }
 
     public static function register_profile(): void {
@@ -190,7 +206,7 @@ final class SearchBoxFeature implements ModuleInterface {
      * first batch.
      */
     public static function print_auto_load_more_script(): void {
-        if ( is_admin() || wp_doing_ajax() || is_feed() ) {
+        if ( is_admin() || wp_doing_ajax() || is_feed() || ! self::$auto_load_more_used ) {
             return;
         }
 

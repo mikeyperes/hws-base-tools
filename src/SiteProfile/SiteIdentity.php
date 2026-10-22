@@ -119,7 +119,25 @@ final class SiteIdentity implements ModuleInterface {
     }
 
     private static function read( string $name ): mixed {
-        return Field::available() ? Field::get( $name, 'option' ) : get_option( 'options_' . $name, null );
+        return self::started() ? Field::get( $name, 'option' ) : self::stored( $name );
+    }
+
+    /** False during plugin startup, before ACF has started: reading fields then would start ACF too early and crash. */
+    public static function started(): bool {
+        return ! function_exists( 'get_field' ) || (bool) did_action( 'acf/init' );
+    }
+
+    /** The saved value straight from the options table (a group's sub-fields are stored as options_<group>_<key>). */
+    private static function stored( string $name ): mixed {
+        $keys = [ self::COMPANY => self::COMPANY_KEYS, self::PERSON => self::PERSON_KEYS ][ $name ] ?? null;
+        if ( null === $keys ) {
+            return get_option( 'options_' . $name, null );
+        }
+        $out = [];
+        foreach ( $keys as $key ) {
+            $out[ $key ] = get_option( 'options_' . $name . '_' . $key, '' );
+        }
+        return $out;
     }
 
     /** @param array<string,mixed> $raw @param array<int,string> $keys @return array<string,mixed> */

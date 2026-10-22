@@ -15,15 +15,17 @@ final class TeamMemberDirectory {
 
     public function register(): void {
         add_shortcode( self::SHORTCODE, [ $this, 'render_shortcode' ] );
-        add_action( 'wp_head', [ $this, 'print_styles' ], 31 );
     }
 
-    public function print_styles(): void {
-        if ( ! get_option( self::FEATURE_OPTION, false ) ) {
-            return;
-        }
+    private static bool $styles_printed = false;
 
-        echo '<style id="hws-team-directory-styles">' . self::styles() . '</style>';
+    /** The grid's styles, once per page, printed with the first team list (never on pages without one). */
+    public static function style_tag(): string {
+        if ( self::$styles_printed ) {
+            return '';
+        }
+        self::$styles_printed = true;
+        return '<style id="hws-team-directory-styles">' . self::styles() . '</style>';
     }
 
     public function render_shortcode( array|string $atts = [] ): string {
@@ -31,7 +33,8 @@ final class TeamMemberDirectory {
             return '';
         }
 
-        return self::render( is_array( $atts ) ? $atts : [] );
+        $html = self::render( is_array( $atts ) ? $atts : [] );
+        return '' === $html ? '' : self::style_tag() . $html;
     }
 
     /**

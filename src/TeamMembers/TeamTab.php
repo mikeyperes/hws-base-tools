@@ -149,6 +149,11 @@ final class TeamTab implements ModuleInterface {
                 <div data-team-html-box><?php echo \Hexa\PluginCore\WpAdminComponents\CodeDisplay::render( '', [ 'language' => 'html', 'title' => 'One person' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
             </section>
 
+            <section>
+                <h3>Shortcode</h3>
+                <?php echo self::breakdown( $settings ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </section>
+
             <script>
             (function(){
                 var script=document.currentScript,root=script&&script.closest('.hws-team-tab');if(!root||root.dataset.bound==='1'){return;}root.dataset.bound='1';
@@ -168,6 +173,33 @@ final class TeamTab implements ModuleInterface {
     }
 
     /** @param array<string,mixed> $settings */
+    /** Core's shortcode breakdown for [hws_team_members]: every attribute, its default (the team page settings) and examples. */
+    private static function breakdown( array $settings ): string {
+        $styles = array_keys( TeamMemberDirectory::template_options() );
+        return \Hexa\PluginCore\ShortcodeRegistry\ShortcodeBreakdown::render( [
+            'tag'         => TeamMemberDirectory::SHORTCODE,
+            'title'       => 'Team list',
+            'description' => 'Place it on any page. With no attributes it uses the team page settings above. While the Team feature is off it prints nothing.',
+            'attributes'  => [
+                'style'         => [ 'default' => (string) $settings['style'], 'description' => 'Layout of the list.', 'options' => $styles ],
+                'design'        => [ 'default' => (string) $settings['design'], 'description' => 'none prints the same markup without plugin CSS, for a site design that styles it.', 'options' => [ 'default', 'none' ] ],
+                'columns'       => [ 'default' => (string) $settings['columns'], 'description' => 'Columns on desktop for the portrait grid, 1 to 4.' ],
+                'limit'         => [ 'default' => (string) $settings['limit'], 'description' => 'How many people are shown, up to ' . TeamMemberDirectory::MAX_LIMIT . '.' ],
+                'orderby'       => [ 'default' => (string) $settings['orderby'], 'description' => 'Sort by the Order field, name or date added.', 'options' => [ 'menu_order', 'title', 'date' ] ],
+                'order'         => [ 'default' => (string) $settings['order'], 'description' => 'Sort direction.', 'options' => [ 'ASC', 'DESC' ] ],
+                'roles_first'   => [ 'default' => (string) $settings['roles_first'], 'description' => 'Positions listed first, in this order, comma separated.' ],
+                'show_excerpt'  => [ 'default' => (string) $settings['show_excerpt'], 'description' => '1 shows each short bio, 0 hides it.', 'options' => [ '1', '0' ] ],
+                'link_profiles' => [ 'default' => (string) $settings['link_profiles'], 'description' => '1 links each person to their profile page.', 'options' => [ '1', '0' ] ],
+                'featured_only' => [ 'default' => '0', 'description' => '1 shows only people marked Featured.', 'options' => [ '1', '0' ] ],
+                'category'      => [ 'default' => '', 'description' => 'Only people in this category slug, for example leadership.' ],
+            ],
+            'examples'    => [
+                [ 'label' => 'Leadership only, three columns', 'shortcode' => '[' . TeamMemberDirectory::SHORTCODE . ' category="leadership" columns="3"]' ],
+                [ 'label' => 'No plugin styling', 'shortcode' => '[' . TeamMemberDirectory::SHORTCODE . ' design="none"]' ],
+            ],
+        ] );
+    }
+
     private static function fields( string $scope, array $settings, bool $builder ): void {
         $name = static fn( string $field ): string => 'hws_team_' . $scope . '_' . $field;
         ?>

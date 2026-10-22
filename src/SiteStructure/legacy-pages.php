@@ -7,19 +7,12 @@ use Hexa\PluginCore\SiteStructure\SiteStructureRenderer;
 defined( "ABSPATH" ) || exit;
 
 /**
- * Generic site pages any website has. Publication standard pages (Terms of Use, Privacy Policy,
- * Brand Assets, Headquarters, FAQs and every other policy or publication page) belong to
- * SMP Publication Integration; their old hws_site_page_assignment_* options are kept and read by SMP.
+ * Company pages any website has: Contact, Headquarters and Logo (HWS\BaseTools\CompanyPages).
+ * Publication standard pages (Terms of Use, Privacy Policy, FAQs and every other policy or
+ * publication page) belong to SMP Publication Integration, which shows these three read-only.
  */
 function hws_pages_page_definitions(): array {
-    return [
-        "contact" => [
-            "title" => "Contact",
-            "slug" => "contact",
-            "description" => "Generic: any website. The public contact page.",
-            "template" => true,
-        ],
-    ];
+    return \HWS\BaseTools\CompanyPages\CompanyPages::definitions();
 }
 
 function hws_pages_menu_structures(): array {
@@ -27,7 +20,7 @@ function hws_pages_menu_structures(): array {
         "footer" => [
             "title" => "Footer Site Pages",
             "description" => "Generic site pages commonly linked from the footer.",
-            "page_keys" => [ "contact" ],
+            "page_keys" => [ "contact", "headquarters", "logo" ],
         ],
     ];
 }
@@ -164,7 +157,7 @@ function hws_pages_page_detail_html( int $page_id ): string {
 }
 
 function display_settings_pages(): void {
-    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>Generic pages any website has (Contact). Policies and publication standard pages (Terms of Use, Privacy Policy, Brand Assets, Headquarters, FAQs, DMCA and the rest) are in SMP Publication Integration, Pages.</p></div>";
+    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>Company pages any website has: Contact, Headquarters and Logo. Their facts come from Website Identity. Policies and publication standard pages (Terms of Use, Privacy Policy, FAQs, DMCA and the rest) are in SMP Publication Integration, Pages, which shows these three read-only.</p></div>";
 
     if ( ! class_exists( SiteStructureRenderer::class ) || ! class_exists( PageStructureManager::class ) ) {
         echo "<div class=\"notice notice-error\"><p>Hexa WordPress Plugin Core SiteStructure tools are not loaded.</p></div>";
@@ -187,7 +180,7 @@ function display_settings_pages(): void {
         "labels" => [
             "pages_title" => "Shared Site Pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "Create a published page or assign an existing page for Contact.",
+            "pages_description" => "Create a published page or assign an existing page for Contact, Headquarters and Logo.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",

@@ -105,7 +105,8 @@ final class PrimaryEntityIntegration {
     private static function acf_option( array $names ): mixed {
         if ( ! \Hexa\PluginCore\Fields\Field::available() ) return null;
         foreach ( $names as $name ) {
-            $value = \Hexa\PluginCore\Fields\Field::get( $name, 'option' );
+            // During startup (before ACF has started) read the saved option instead of starting ACF too early.
+            $value = SiteIdentity::started() ? \Hexa\PluginCore\Fields\Field::get( $name, 'option' ) : get_option( 'options_' . $name, null );
             if ( null !== $value && false !== $value && '' !== $value && [] !== $value ) return $value;
         }
         return null;

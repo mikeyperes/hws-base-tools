@@ -103,6 +103,8 @@ final class CoreIntegration {
             ->add_module( UserProfileGalleryDetails::module() )
             ->add_module( PrimaryEntityIntegration::module() )
             ->add_module( new \HWS\BaseTools\SiteProfile\SiteIdentity() )
+            // Contact, Headquarters and Logo page types (Pages tab) and the missing company facts notice.
+            ->add_module( new \HWS\BaseTools\CompanyPages\CompanyPages() )
             ->add_module( \HWS\BaseTools\SiteProfile\SiteIdentity::panel() )
             ->add_module( PrimaryEntityIntegration::website_settings_panel() )
             // The one search (Hexa WP Core): [hws_search] above any list, [hws_search_box] in the header, [hexa_search id] for any registered profile.
