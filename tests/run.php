@@ -73,7 +73,6 @@ function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed {
 require_once __DIR__ . '/bootstrap-fields.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabDefinition.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/WpAdminTabs/TabRegistry.php';
-require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay/SearchDisplayRenderer.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryConfiguration.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchTermParser.php';
 require_once $root . '/lib/hexa-wordpress-plugin-core/src/SearchQuery/SearchQueryEngine.php';
@@ -84,7 +83,7 @@ require_once $root . '/src/MaintenanceMode/MaintenanceSettings.php';
 require_once $root . '/src/AdminDashboard/DashboardModuleDefinition.php';
 require_once $root . '/src/AdminDashboard/DashboardRegistry.php';
 require_once $root . '/src/FeatureCatalog/FeatureValueResolver.php';
-require_once $root . '/src/FrontendContent/SearchDisplayFeature.php';
+require_once $root . '/src/FrontendContent/SearchBoxFeature.php';
 require_once $root . '/src/FrontendContent/SearchQueryFeature.php';
 require_once $root . '/src/Security/SecretStore.php';
 require_once $root . '/src/Security/RemoteActionPolicy.php';
@@ -537,7 +536,7 @@ expect_true(
     && str_contains( source( 'src/AcfFields/SharedAcfStructures.php' ), "'legacy_option'" ),
     'CPT and ACF controls use the generic Core UI while retaining legacy option state'
 );
-$search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_settings(
+$search_settings = HWS\BaseTools\FrontendContent\SearchBoxFeature::sanitize_header(
     [
         'style'       => 'overlay',
         'accent'      => '#2f6df6',
@@ -545,8 +544,9 @@ $search_settings = HWS\BaseTools\FrontendContent\SearchDisplayFeature::sanitize_
     ]
 );
 expect_true(
-    $search_settings === [ 'style' => 'overlay', 'accent' => '#2f6df6', 'placeholder' => 'Find stories' ],
-    'HWS Search Display sanitizes the saved template, accent, and placeholder contract'
+    $search_settings === [ 'style' => 'icon-reveal', 'accent' => '#2f6df6', 'placeholder' => 'Find stories' ]
+    && 'field' === HWS\BaseTools\FrontendContent\SearchBoxFeature::sanitize_header( [ 'style' => 'pill' ] )['style'],
+    'The header search box keeps its look, accent and placeholder; old popup and pill looks map to the in-place reveal and the field'
 );
 $search_behavior = HWS\BaseTools\FrontendContent\SearchQueryFeature::sanitize_settings(
     [
@@ -577,15 +577,19 @@ expect_true(
     'HWS Search Behavior delegates a bounded post-type, source, matching, and result contract to Hexa Core'
 );
 expect_true(
-    str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), "public const SHORTCODE = 'hws_search_box'" )
-    && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchDisplayRenderer::render(' )
-    && str_contains( source( 'src/FrontendContent/SearchDisplayFeature.php' ), 'SearchQueryFeature::marker_fields()' )
-    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'SearchDisplayRenderer::render(' )
+    str_contains( source( 'src/FrontendContent/SearchBoxFeature.php' ), "public const HEADER_SHORTCODE = 'hws_search_box'" )
+    && str_contains( source( 'src/FrontendContent/SearchBoxFeature.php' ), 'SearchBox::header(' )
+    && str_contains( source( 'src/FrontendContent/SearchBoxFeature.php' ), 'SearchBox::render(' )
+    && str_contains( source( 'src/FrontendContent/SearchBoxFeature.php' ), 'SearchQueryFeature::marker_fields()' )
+    && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'SearchBox::header(' )
+    && ! is_dir( $root . '/lib/hexa-wordpress-plugin-core/src/ListingSearch' )
+    && ! is_dir( $root . '/lib/hexa-wordpress-plugin-core/src/DirectorySearch' )
+    && ! is_dir( $root . '/lib/hexa-wordpress-plugin-core/src/SearchDisplay' )
     && str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_search_box]'" ),
-    'HWS frontend shortcode, admin previews, and shortcode catalog share the marked Hexa Core Search Display contract'
+    'Both search shortcodes, the admin previews and the catalog use Hexa Core\'s one search; the old searches are gone'
 );
 expect_true(
-    str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<div data-hws-search-form>' )
+    str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'data-hws-search-form>' )
     && str_contains( source( 'src/FrontendContent/search-display-settings.php' ), 'HWSSettingsAutosave.bind(form' )
     && ! str_contains( source( 'src/FrontendContent/search-display-settings.php' ), '<form data-hws-search-form>' ),
     'Search settings avoid invalid nested forms while Core previews render native search forms'

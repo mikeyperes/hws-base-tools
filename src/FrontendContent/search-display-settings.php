@@ -2,11 +2,10 @@
 
 namespace hws_base_tools;
 
-use Hexa\PluginCore\SearchDisplay\SearchDisplayRenderer;
+use Hexa\PluginCore\Search\SearchBox;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
-use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
-use HWS\BaseTools\FrontendContent\SearchQueryFeature;
+use HWS\BaseTools\FrontendContent\SearchBoxFeature;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +18,7 @@ function ajax_save_search_display(): void {
 
     hws_require_ajax_nonce_or_error();
 
-    $settings = SearchDisplayFeature::sanitize_settings(
+    $settings = SearchBoxFeature::sanitize_header(
         [
             'style'       => isset( $_POST['style'] ) ? wp_unslash( $_POST['style'] ) : '',
             'accent'      => isset( $_POST['accent'] ) ? wp_unslash( $_POST['accent'] ) : '',
@@ -27,166 +26,80 @@ function ajax_save_search_display(): void {
         ]
     );
 
-    update_option( SearchDisplayFeature::OPTION_KEY, $settings );
+    update_option( SearchBoxFeature::HEADER_OPTION, $settings );
+    if ( function_exists( 'do_action' ) ) {
+        do_action( 'litespeed_purge_all' ); // Cached pages carry the old header box.
+    }
 
-    $styles = SearchDisplayRenderer::styles();
     wp_send_json_success(
         [
-            'settings'    => $settings,
-            'style_label' => $styles[ $settings['style'] ]['label'] ?? 'Pill',
-            'shortcode'   => '[' . SearchDisplayFeature::SHORTCODE . ']',
-            'message'     => 'The header search box now uses ' . ( $styles[ $settings['style'] ]['label'] ?? 'Pill' ) . '.',
+            'settings' => $settings,
+            'message'  => 'The header search box now uses: ' . SearchBoxFeature::HEADER_STYLES[ $settings['style'] ] . '.',
         ]
     );
 }
 
 function render_tab_search(): void {
-    if ( ! class_exists( SearchDisplayRenderer::class ) ) {
-        echo '<div class="notice notice-error"><p>The Hexa WP Core Search Display renderer is unavailable.</p></div>';
+    if ( ! class_exists( SearchBox::class ) ) {
+        echo '<div class="notice notice-error"><p>The Hexa WP Core search is unavailable.</p></div>';
         return;
     }
 
-    $settings = SearchDisplayFeature::settings();
-    $styles = SearchDisplayRenderer::styles();
-    $accent_value = '' !== $settings['accent'] ? $settings['accent'] : '#1b2230';
-    $nonce = wp_create_nonce( HWS_AJAX_NONCE );
+    $settings = SearchBoxFeature::header_settings();
+    $accent   = '' !== $settings['accent'] ? $settings['accent'] : '#1b2230';
     CoreUi::render_assets();
     ?>
     <div class="hws-search-display-admin hpc-ui" id="hws-search-display-admin">
         <header class="hws-search-display-heading">
-            <div>
-                <h2>Site Search</h2>
-                <p>Control both the public search-box design and the tightly scoped query behavior used by <code>[hws_search_box]</code>.</p>
-            </div>
-            <div class="hws-search-display-current" aria-live="polite">
-                <span>Current design</span>
-                <strong data-hws-search-current><?php echo esc_html( $styles[ $settings['style'] ]['label'] ?? 'Pill' ); ?></strong>
-            </div>
+            <h2>Site Search</h2>
+            <p>How site search matches words, the header search box, and the search box above lists. All three use Hexa WP Core's one search.</p>
         </header>
-
-        <section class="hws-search-display-shortcode" aria-labelledby="hws-search-shortcode-title">
-            <div>
-                <h3 id="hws-search-shortcode-title">Use On The Website</h3>
-                <p>The short version follows the saved design. Attributes can override it for one placement.</p>
-            </div>
-            <div class="hws-search-display-code-row">
-                <code data-hws-search-shortcode>[hws_search_box]</code>
-                <button type="button" class="button" data-hws-search-copy title="Copy shortcode">
-                    <span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
-                    <span>Copy</span>
-                </button>
-            </div>
-            <p class="hws-search-display-example"><code>[hexa_search style="overlay" accent="#2f6df6" placeholder="Search stories..."]</code></p>
-        </section>
 
         <?php render_search_query_settings(); ?>
 
-        <div data-hws-search-form>
-            <fieldset class="hws-search-display-templates">
-                <legend class="screen-reader-text">Search display template</legend>
-                <?php foreach ( $styles as $style => $definition ) :
-                    $input_id = 'hws-search-style-' . $style;
-                    $selected = $style === $settings['style'];
-                    ?>
-                    <article class="hws-search-template<?php echo $selected ? ' is-selected' : ''; ?>" data-hws-search-template="<?php echo esc_attr( $style ); ?>">
-                        <div class="hws-search-template-heading">
-                            <div>
-                                <h3><?php echo esc_html( $definition['label'] ); ?></h3>
-                                <p><?php echo esc_html( $definition['description'] ); ?></p>
-                            </div>
-                            <div class="hws-search-template-choice">
-                                <span class="hws-search-template-behavior"><?php echo esc_html( $definition['behavior'] ); ?></span>
-                                <code><?php echo esc_html( $style ); ?></code>
-                                <label for="<?php echo esc_attr( $input_id ); ?>">
-                                    <input id="<?php echo esc_attr( $input_id ); ?>" type="radio" name="style" value="<?php echo esc_attr( $style ); ?>" <?php checked( $selected ); ?>>
-                                    <span>Select</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="hws-search-template-preview" data-hws-search-preview>
-                            <?php
-                            echo SearchDisplayRenderer::render(
-                                [
-                                    'style'       => $style,
-                                    'accent'      => $settings['accent'],
-                                    'placeholder' => $settings['placeholder'],
-                                    'id'          => 'hws-search-preview-' . $style,
-                                    'hidden_fields' => SearchQueryFeature::marker_fields(),
-                                ]
-                            ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                            ?>
-                        </div>
-                        <p class="hws-search-template-best"><strong>Best for:</strong> <?php echo esc_html( $definition['best_for'] ); ?></p>
-                    </article>
+        <section class="hws-search-head" aria-labelledby="hws-search-head-title" data-hws-search-form>
+            <h3 id="hws-search-head-title">Header search box (<code>[hws_search_box]</code>)</h3>
+            <p>Goes to the search page; it never opens a popup. Shortcode attributes <code>style</code>, <code>accent</code>, <code>placeholder</code> and <code>label</code> override these for one placement.</p>
+            <h4>Look</h4>
+            <div class="hws-search-head-options">
+                <?php foreach ( SearchBoxFeature::HEADER_STYLES as $style => $label ) : ?>
+                    <label class="hws-search-head-option">
+                        <input type="radio" name="style" value="<?php echo esc_attr( $style ); ?>" <?php checked( $settings['style'], $style ); ?>>
+                        <strong><?php echo esc_html( $label ); ?></strong>
+                        <code>style="<?php echo esc_html( $style ); ?>"</code>
+                    </label>
+                    <div class="hws-search-head-preview" data-hws-search-preview>
+                        <?php echo SearchBox::header( [ 'style' => $style, 'accent' => $settings['accent'], 'placeholder' => $settings['placeholder'], 'id' => 'preview-' . $style ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    </div>
                 <?php endforeach; ?>
-            </fieldset>
-
-            <section class="hws-search-display-controls" aria-labelledby="hws-search-customize-title">
-                <div>
-                    <h3 id="hws-search-customize-title">Customize The Default</h3>
-                    <p>These values apply to <code>[hws_search_box]</code>. Shortcode attributes can override them.</p>
-                </div>
-                <label>
-                    <span>Accent color</span>
-                    <span class="hws-search-color-control">
-                        <input type="color" name="accent_picker" value="<?php echo esc_attr( $accent_value ); ?>" data-hws-search-accent-picker>
-                        <input type="text" name="accent" value="<?php echo esc_attr( $settings['accent'] ); ?>" placeholder="#1b2230" pattern="^#[0-9a-fA-F]{6}$" data-hws-search-accent>
-                    </span>
-                </label>
-                <label>
-                    <span>Placeholder text</span>
-                    <input type="text" name="placeholder" value="<?php echo esc_attr( $settings['placeholder'] ); ?>" maxlength="120" data-hws-search-placeholder>
-                </label>
-            </section>
-
+            </div>
+            <h4>Accent colour</h4>
+            <span class="hws-search-color-control">
+                <input type="color" name="accent_picker" value="<?php echo esc_attr( $accent ); ?>" data-hws-search-accent-picker>
+                <input type="text" name="accent" value="<?php echo esc_attr( $settings['accent'] ); ?>" placeholder="#1b2230" pattern="^#[0-9a-fA-F]{6}$" data-hws-search-accent>
+            </span>
+            <h4>Placeholder text</h4>
+            <input type="text" name="placeholder" value="<?php echo esc_attr( $settings['placeholder'] ); ?>" maxlength="120" data-hws-search-placeholder class="hws-search-head-text">
             <?php echo SettingsAutosave::notice( 'hws-search-display-notice' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-        </div>
+        </section>
     </div>
 
     <style>
-    #hws-search-display-admin{width:100%;max-width:1180px;color:#1d2327}
+    #hws-search-display-admin{width:100%;max-width:760px;color:#1d2327}
     #hws-search-display-admin *{box-sizing:border-box}
-    .hws-search-display-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid #dcdcde}
+    .hws-search-display-heading{margin:0 0 20px;padding:0 0 18px;border-bottom:1px solid #dcdcde}
     .hws-search-display-heading h2{margin:0 0 7px;font-size:22px;line-height:1.25}
-    .hws-search-display-heading p{max-width:760px;margin:0;color:#50575e;font-size:14px;line-height:1.6}
-    .hws-search-display-current{min-width:150px;padding:10px 12px;border:1px solid #c3c4c7;border-radius:6px;background:#fff}
-    .hws-search-display-current span{display:block;margin-bottom:3px;color:#646970;font-size:11px;text-transform:uppercase}
-    .hws-search-display-current strong{font-size:14px}
-    .hws-search-display-shortcode{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px;padding:16px;border:1px solid #c3c4c7;border-left:4px solid #2271b1;border-radius:6px;background:#fff}
-    .hws-search-display-shortcode h3,.hws-search-display-controls h3{margin:0 0 4px;font-size:15px}
-    .hws-search-display-shortcode p,.hws-search-display-controls p{margin:0;color:#646970}
-    .hws-search-display-code-row{display:flex;align-items:center;gap:8px;flex:0 0 auto}
-    .hws-search-display-code-row code{padding:8px 11px;border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7;color:#1d2327;font-size:13px}
-    .hws-search-display-code-row .button{display:inline-flex;align-items:center;gap:6px}
-    .hws-search-display-code-row .dashicons{width:16px;height:16px;font-size:16px}
-    .hws-search-display-example{flex-basis:100%;display:none}
-    .hws-search-display-templates{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin:0;padding:0;border:0}
-    .hws-search-template{min-width:0;overflow:hidden;border:1px solid #c3c4c7;border-radius:8px;background:#fff;transition:border-color .15s,box-shadow .15s}
-    .hws-search-template.is-selected{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1}
-    .hws-search-template-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px}
-    .hws-search-template-heading h3{margin:0 0 7px;font-size:18px;line-height:1.25}
-    .hws-search-template-heading p{max-width:720px;margin:0;color:#646970;line-height:1.55}
-    .hws-search-template-choice{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-    .hws-search-template-choice label{display:inline-flex;align-items:center;gap:5px;font-weight:600;cursor:pointer}
-    .hws-search-template-choice input{margin:0}
-    .hws-search-template-choice code{padding:4px 7px;border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7;color:#50575e}
-    .hws-search-template-behavior{padding:4px 9px;border:1px solid #8c8f94;border-radius:999px;color:#3c434a;font-size:11px;font-weight:700;text-transform:uppercase}
-    .hws-search-template-preview{display:flex;min-height:150px;align-items:center;padding:30px 46px;border-top:1px solid #2c3338;border-bottom:1px solid #2c3338;background:#10141c}
-    .hws-search-template-best{margin:0;padding:14px 20px;color:#50575e}
-    .hws-search-display-controls{display:flex;flex-direction:column;max-width:420px;gap:16px;margin-top:20px;padding:18px;border:1px solid #c3c4c7;border-radius:8px;background:#fff}
-    .hws-search-display-controls>label{display:grid;gap:7px;font-weight:600}
-    .hws-search-display-controls input[type="text"]{width:100%;min-height:38px}
-    .hws-search-color-control{display:grid;grid-template-columns:44px minmax(0,1fr);gap:7px}
+    .hws-search-display-heading p{margin:0;color:#50575e;font-size:14px;line-height:1.6}
+    .hws-search-head{margin-top:28px;padding-top:18px;border-top:1px solid #dcdcde}
+    .hws-search-head h3{margin:0 0 4px;font-size:15px}.hws-search-head>p{margin:0 0 12px;color:#646970}
+    .hws-search-head h4{margin:18px 0 6px;font-size:14px}
+    .hws-search-head-options{display:flex;flex-direction:column;gap:2px}
+    .hws-search-head-option{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;cursor:pointer}.hws-search-head-option:hover{background:#f6f7f7}
+    .hws-search-head-option code{margin-left:auto;font-size:11px;color:#646970;background:none}
+    .hws-search-head-preview{display:flex;justify-content:flex-end;margin:4px 0 14px 32px;padding:14px 18px;border:1px solid #dcdcde;border-radius:6px;background:#fff}
+    .hws-search-color-control{display:grid;grid-template-columns:44px minmax(0,320px);gap:7px}
     .hws-search-color-control input[type="color"]{width:44px;height:38px;margin:0;padding:2px;border:1px solid #8c8f94;border-radius:4px;background:#fff}
-    @media(max-width:782px){
-      .hws-search-display-heading,.hws-search-display-shortcode,.hws-search-template-heading{align-items:stretch;flex-direction:column}
-      .hws-search-display-current{min-width:0}
-      .hws-search-display-code-row{justify-content:space-between}
-      .hws-search-display-code-row code{min-width:0;overflow-wrap:anywhere}
-      .hws-search-template-choice{justify-content:flex-start}
-      .hws-search-template-preview{min-height:130px;padding:24px 18px}
-      .hws-search-display-controls{grid-template-columns:minmax(0,1fr)}
-    }
+    .hws-search-color-control input[type="text"],.hws-search-head-text{min-height:38px;width:100%;max-width:371px}
     </style>
     <script>
     (function(){
@@ -198,27 +111,18 @@ function render_tab_search(): void {
       var accent=root.querySelector('[data-hws-search-accent]');
       var picker=root.querySelector('[data-hws-search-accent-picker]');
       var placeholder=root.querySelector('[data-hws-search-placeholder]');
-      function selectedStyle(){var input=form.querySelector('input[name="style"]:checked');return input?input.value:'pill';}
-      function syncSelection(){root.querySelectorAll('[data-hws-search-template]').forEach(function(card){card.classList.toggle('is-selected',card.dataset.hwsSearchTemplate===selectedStyle());});}
-      function syncPreviews(){var color=(accent.value||'').trim()||'#1b2230';root.querySelectorAll('.hexa-search,.hexa-search-overlay').forEach(function(widget){widget.style.setProperty('--sd-accent',color);});root.querySelectorAll('.hexa-search .sd-input,.hexa-search-overlay .sd-input').forEach(function(input){input.setAttribute('placeholder',placeholder.value||'Search...');});}
-      form.addEventListener('change',function(event){if(event.target.name==='style')syncSelection();});
+      function selectedStyle(){var input=form.querySelector('input[name="style"]:checked');return input?input.value:'icon-reveal';}
+      function syncPreviews(){var color=(accent.value||'').trim()||'#1b2230';root.querySelectorAll('[data-hws-search-preview] .hls-head').forEach(function(box){box.style.setProperty('--hls-accent',color);});root.querySelectorAll('[data-hws-search-preview] .hls-head-input').forEach(function(input){input.setAttribute('placeholder',placeholder.value||'Search…');});}
       picker.addEventListener('input',function(){accent.value=picker.value;syncPreviews();});
       accent.addEventListener('input',function(){if(/^#[0-9a-fA-F]{6}$/.test(accent.value))picker.value=accent.value;syncPreviews();});
       placeholder.addEventListener('input',syncPreviews);
       HWSSettingsAutosave.bind(form,{
         notice:notice,
         ignore:'[data-hws-search-preview] *',
-        validate:function(){var value=accent.value.trim();if(value&&!/^#[0-9a-fA-F]{6}$/.test(value)){HWSSettingsAutosave.fail(notice,'Accent color must be a 6-digit hex code like #1b2230.');return false;}return true;},
-        save:function(){return HWSSettingsAutosave.post('hws_search_display_save',<?php echo wp_json_encode( $nonce ); ?>,{style:selectedStyle(),accent:accent.value.trim(),placeholder:placeholder.value.trim()}).then(function(data){root.querySelector('[data-hws-search-current]').textContent=data.style_label||selectedStyle();return {message:data.message};});}
+        validate:function(){var value=accent.value.trim();if(value&&!/^#[0-9a-fA-F]{6}$/.test(value)){HWSSettingsAutosave.fail(notice,'Accent colour must be a 6-digit hex code like #1b2230.');return false;}return true;},
+        save:function(){return HWSSettingsAutosave.post('hws_search_display_save',<?php echo wp_json_encode( wp_create_nonce( HWS_AJAX_NONCE ) ); ?>,{style:selectedStyle(),accent:accent.value.trim(),placeholder:placeholder.value.trim()}).then(function(data){return {message:data.message};});}
       });
-      var copy=root.querySelector('[data-hws-search-copy]');
-      copy.addEventListener('click',function(){
-        var value=root.querySelector('[data-hws-search-shortcode]').textContent;
-        function report(copied){if(copied){HWSSettingsAutosave.done(notice,'Shortcode copied',value);}else{HWSSettingsAutosave.fail(notice,'Copy failed. Select the shortcode and copy it manually.');}}
-        if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(value).then(function(){report(true);}).catch(function(){report(false);});return;}
-        var field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var copied=false;try{copied=document.execCommand('copy');}catch(error){}document.body.removeChild(field);report(copied);
-      });
-      syncSelection();syncPreviews();
+      syncPreviews();
     })();
     </script>
     <?php

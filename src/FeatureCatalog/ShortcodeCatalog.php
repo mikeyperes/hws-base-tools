@@ -3,7 +3,7 @@
 namespace HWS\BaseTools\FeatureCatalog;
 
 use Hexa\PluginCore\ShortcodeRegistry\ShortcodeDisplayRenderer;
-use HWS\BaseTools\FrontendContent\SearchDisplayFeature;
+use HWS\BaseTools\FrontendContent\SearchBoxFeature;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\Testimonials\TestimonialQuoteShortcode;
 
@@ -64,27 +64,31 @@ final class ShortcodeCatalog {
                 ],
             ],
             [
-                'id' => SearchDisplayFeature::SHORTCODE,
-                'label' => 'Site Search Display',
-                'shortcode' => '[hws_search_box]',
-                'description' => 'Renders the selected Hexa WP Core site-search design and submits to the native WordPress search results URL.',
-                'test_method' => 'Render all five styles, submit a query, and confirm WordPress receives it through the native s query parameter. For overlay, also verify click, Cmd/Ctrl+K, Escape, and backdrop close.',
-                'source' => 'src/FrontendContent/SearchDisplayFeature.php',
-                'provider' => 'HWS Base Tools + Hexa WP Core SearchDisplay',
-                'parameters' => [
-                    'style' => 'icon-reveal|overlay|pill|underline|command',
-                    'accent' => '',
-                    'placeholder' => 'Search...',
-                    'label' => 'Search',
-                    'radius' => '',
+                'id' => SearchBoxFeature::SHORTCODE,
+                'label' => 'Search box above lists',
+                'shortcode' => '[hws_search]',
+                'description' => 'Hexa WP Core\'s one search above any list: category, tag, author and search pages, or any Elementor loop marked hexa-listing-results (a homepage section). The list refreshes in place with the shared loader. Markup and styling: docs/hws-search.md.',
+                'test_method' => 'Type and tick filters on a category, author and search page and on a homepage section; the list dims with a spinner, then shows the narrowed results, counts and address.',
+                'source' => 'src/FrontendContent/SearchBoxFeature.php',
+                'provider' => 'HWS Base Tools + Hexa WP Core Search',
+                'parameters' => [ 'style' => 'none|default-1|default-2', 'filters' => 'type,category,tag,author', 'post_type' => '', 'category' => '', 'tag' => '', 'author' => '', 'placeholder' => '', 'accent' => '' ],
+                'examples' => [
+                    [ 'label' => 'Above an archive list', 'shortcode' => '[hws_search]', 'parameters' => [] ],
+                    [ 'label' => 'Homepage press release section', 'shortcode' => '[hws_search post_type="press_release" filters="category" placeholder="Search press releases"]', 'parameters' => [ 'post_type' => 'press_release', 'filters' => 'category' ] ],
                 ],
+            ],
+            [
+                'id' => SearchBoxFeature::HEADER_SHORTCODE,
+                'label' => 'Header search box',
+                'shortcode' => '[hws_search_box]',
+                'description' => 'A magnifying glass that opens a field in place, or an always-open field; it submits to the search page and never opens a popup.',
+                'test_method' => 'Open it, type, press Enter and confirm the search page shows the results; Escape closes the field.',
+                'source' => 'src/FrontendContent/SearchBoxFeature.php',
+                'provider' => 'HWS Base Tools + Hexa WP Core Search',
+                'parameters' => [ 'style' => 'icon-reveal|field', 'accent' => '', 'placeholder' => 'Search…', 'label' => 'Search' ],
                 'examples' => [
                     [ 'label' => 'Saved default', 'shortcode' => '[hws_search_box]', 'parameters' => [] ],
-                    [ 'label' => 'Icon reveal', 'shortcode' => '[hws_search_box style="icon-reveal"]', 'parameters' => [ 'style' => 'icon-reveal' ] ],
-                    [ 'label' => 'Overlay', 'shortcode' => '[hws_search_box style="overlay" accent="#2f6df6"]', 'parameters' => [ 'style' => 'overlay', 'accent' => '#2f6df6' ] ],
-                    [ 'label' => 'Pill', 'shortcode' => '[hws_search_box style="pill" placeholder="Search stories..."]', 'parameters' => [ 'style' => 'pill', 'placeholder' => 'Search stories...' ] ],
-                    [ 'label' => 'Underline', 'shortcode' => '[hws_search_box style="underline"]', 'parameters' => [ 'style' => 'underline' ] ],
-                    [ 'label' => 'Command bar', 'shortcode' => '[hws_search_box style="command" radius="8"]', 'parameters' => [ 'style' => 'command', 'radius' => 8 ] ],
+                    [ 'label' => 'Always-open field', 'shortcode' => '[hws_search_box style="field" placeholder="Search stories"]', 'parameters' => [ 'style' => 'field' ] ],
                 ],
             ],
             [

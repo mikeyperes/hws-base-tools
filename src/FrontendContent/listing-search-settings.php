@@ -2,9 +2,9 @@
 
 namespace hws_base_tools;
 
-use Hexa\PluginCore\ListingSearch\ListingSearchRenderer;
+use Hexa\PluginCore\Search\SearchBox;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
-use HWS\BaseTools\FrontendContent\ListingSearchFeature;
+use HWS\BaseTools\FrontendContent\SearchBoxFeature;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,21 +18,21 @@ function ajax_save_listing_search_style(): void {
     hws_require_ajax_nonce_or_error();
 
     $style = isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '';
-    if ( ! isset( ListingSearchFeature::STYLES[ $style ] ) ) {
+    if ( ! isset( SearchBoxFeature::STYLES[ $style ] ) ) {
         wp_send_json_error( [ 'message' => 'Unknown style.' ], 400 );
     }
 
-    update_option( ListingSearchFeature::STYLE_OPTION, $style, false );
+    update_option( SearchBoxFeature::STYLE_OPTION, $style, false );
     if ( function_exists( 'do_action' ) ) {
         do_action( 'litespeed_purge_all' ); // Cached pages carry the old look.
     }
 
-    wp_send_json_success( [ 'message' => 'The search box above lists now uses ' . ListingSearchFeature::STYLES[ $style ] . '. Cached pages were cleared.' ] );
+    wp_send_json_success( [ 'message' => 'The search box above lists now uses ' . SearchBoxFeature::STYLES[ $style ] . '. Cached pages were cleared.' ] );
 }
 
 /** The listing search box's look, shown on the Search tab. */
 function render_listing_search_style_settings(): void {
-    $current = ListingSearchFeature::style();
+    $current = SearchBoxFeature::style();
     $notes   = [
         'none'      => 'Bare: only what the filter lists need to open and close. Style it in the site CSS.',
         'default-1' => 'Compact: a boxed field up to 360 px wide and small filter buttons beside it.',
@@ -47,7 +47,7 @@ function render_listing_search_style_settings(): void {
                 <strong>Shortcode attributes</strong>
                 <span>All optional. They change only that one box. Click an example to copy it.</span>
             </div>
-            <?php foreach ( ListingSearchFeature::ATTRIBUTES as $group => $attributes ) : ?>
+            <?php foreach ( SearchBoxFeature::ATTRIBUTES as $group => $attributes ) : ?>
                 <div class="hws-listing-attrs-group"><?php echo esc_html( $group ); ?></div>
                 <?php foreach ( $attributes as $name => [ $does, $example ] ) : ?>
                     <div class="hws-listing-attr">
@@ -60,14 +60,14 @@ function render_listing_search_style_settings(): void {
         </div>
         <h4 class="hws-listing-style-heading">Site default look</h4>
         <div class="hws-listing-style-options">
-            <?php foreach ( ListingSearchFeature::STYLES as $key => $label ) : ?>
+            <?php foreach ( SearchBoxFeature::STYLES as $key => $label ) : ?>
                 <label class="hws-listing-style-option">
                     <input type="radio" name="hws_listing_search_style" value="<?php echo esc_attr( $key ); ?>" <?php checked( $current, $key ); ?>>
                     <strong><?php echo esc_html( $label ); ?></strong>
                     <span><?php echo esc_html( $notes[ $key ] ); ?></span>
                 </label>
-                <?php if ( method_exists( ListingSearchRenderer::class, 'preview' ) ) : ?>
-                    <div class="hws-listing-style-preview" aria-hidden="true"><?php echo ListingSearchRenderer::preview( $key ); // phpcs:ignore WordPress.Security.EscapeOutput -- Core builds escaped preview markup. ?></div>
+                <?php if ( method_exists( SearchBox::class, 'preview' ) ) : ?>
+                    <div class="hws-listing-style-preview" aria-hidden="true"><?php echo SearchBox::preview( $key ); // phpcs:ignore WordPress.Security.EscapeOutput -- Core builds escaped preview markup. ?></div>
                 <?php endif; ?>
             <?php endforeach; ?>
         </div>

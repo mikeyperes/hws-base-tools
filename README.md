@@ -72,23 +72,18 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[hws_testimonial_quote id="" number="1"]` (current Testimonial when `id` is empty); Elementor query ID `featured_testimonials`.
 - **Code:** `src/Testimonials/TestimonialQuoteShortcode.php`
 
-### Site search display
-- **Does:** a styled search box that submits to the normal WordPress results page.
-- **Use:** `[hws_search_box style="icon-reveal|overlay|pill|underline|command" placeholder="" accent="" radius=""]`.
-- **Code:** `lib/hexa-wordpress-plugin-core/src/SearchQuery/`
-
-### Listing search (search and filters inside any list of posts)
-- **Does:** a search box with Type, Category, Tag and Author filters above any list of posts. On a category, tag, author, search or post type page it searches inside that page; the list, the filter counts and the address refresh in place as visitors type or tick, without reloading. Filters take several choices, show how many stories each gives and list subcategories under their parent. Site search covers pages, posts and custom post types (what the Search settings cover once switched on).
-- **Use:** `[hws_search profile="listing" placeholder="" filters="category,tag,author" target=".hexa-listing-results" class="" results_one="%d result" results_many="%d results" clear="Clear"]` above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself.
-- **Attributes:** every one optional and per box, listed with examples on Settings, Search: `style`, `filters`, `placeholder`, `results_one`, `results_many`, `empty`, `clear`, `accent`, `border`, `radius`, `panel_bg`, `field_width`, `field_height`, `font_size`, `target`, `class`.
-- **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial), or `style="none|default-1|default-2"` per box; inherits the site's fonts and colours, every rule overridable by site CSS; classes `hls-*`, custom properties `--hls-accent`, `--hls-border`, `--hls-radius`, `--hls-panel-bg`, `--hls-field-height`.
-- **Code:** `src/FrontendContent/ListingSearchFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/ListingSearch/`.
-- **HTML structure and styling:** [docs/hws-search.md](docs/hws-search.md): the box's markup, states, classes, custom properties and how to style it in Elementor and HTML drafts.
+### Search (Hexa WP Core's one search)
+- **Does:** one search for the whole site. `[hws_search]` is a search box with Type, Category, Tag and Author filters above any list of posts: on a category, tag, author, search or post type page it searches inside that page; on any other page (a homepage section) it searches what its `post_type`, `category`, `tag` and `author` attributes say. The list, the filter counts and the address refresh in place as visitors type or tick, without reloading, and the list dims under one spinner while it loads. `[hws_search_box]` is the header search: a magnifying glass that opens a field in place, or an always-open field; it goes to the search page and never opens a popup. Site search covers pages, posts and custom post types (what the Search settings cover once switched on).
+- **Use:** `[hws_search]` directly above the list. The list is the Elementor Loop Grid, Posts or Archive Posts widget with the CSS class `hexa-listing-results`; a loop showing the page's own list (Source: Current Query) is found by itself. `[hws_search_box style="icon-reveal|field" placeholder="" accent="" label=""]` in the header.
+- **Attributes:** every one optional and per box, listed with examples on Settings, Search: `style`, `filters`, `post_type`, `category`, `tag`, `author`, `placeholder`, `results_one`, `results_many`, `empty`, `clear`, `accent`, `border`, `radius`, `panel_bg`, `field_width`, `field_height`, `font_size`, `target`, `class`.
+- **Style:** Settings, Search picks No styling, Default 1 (compact) or Default 2 (editorial) for the box and the header look; classes `hls-*`, custom properties `--hls-*` including the loader's.
+- **Code:** `src/FrontendContent/SearchBoxFeature.php`, engine in `lib/hexa-wordpress-plugin-core/src/Search/`.
+- **HTML structure and styling:** [docs/hws-search.md](docs/hws-search.md): the markup, states, classes, custom properties, loader and how to style it in Elementor and HTML drafts.
 
 ### Infinite scroll with a Load more fallback
 - **Does:** a Loop Grid or Posts widget set to "Load on click" loads its next batch as its button comes into view; the button stays as the fallback. A page with `window.hexaFreezeAutoLoad = true` keeps its first batch.
 - **Use:** give the widget the CSS class `hws-auto-load-more` (the older `smpi-auto-load-more` still works).
-- **Code:** `src/FrontendContent/ListingSearchFeature.php`
+- **Code:** `src/FrontendContent/SearchBoxFeature.php`
 
 ### Current year
 - **Use:** `[current_year]` (legacy `[display_year]`). **Switch:** `enable_current_year_shortcode`.
@@ -243,7 +238,8 @@ Each type and field structure is closed by default in the dashboard and includes
 
 | Shortcode | Purpose |
 | --- | --- |
-| `[hws_search_box]` | Render the saved public search design (former name `[hexa_search]` still works). |
+| `[hws_search]` | Search box with filters above any list of posts. |
+| `[hws_search_box]` | Header search box: magnifying glass that opens in place, or a field. |
 | `[site_logo key="logo" size="medium"]` | Render a configured brand image. |
 | `[site_logo key="logo_text" width="180"]` | Constrain a logo without changing its aspect ratio. |
 | `[team_members]` | Render the HWS Team Member directory. |
@@ -279,6 +275,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.17.1
+
+- One search for the whole site, built on Hexa WP Core 3.30.2's new single search: `[hws_search]` (box above any list, now also on ordinary pages with `post_type`, `category`, `tag`, `author`) and `[hws_search_box]` (header: magnifying glass that opens a field in place, or a field; never a popup). Every search refreshes in place with one loader: the list dims and a spinner shows. The old separate search code is gone; the old shortcode names `[hws_listing_search]` and `[hexa_search]` (header) are retired: pages using them switch to `[hws_search]` and `[hws_search_box]`.
 
 ### 13.17.0
 
