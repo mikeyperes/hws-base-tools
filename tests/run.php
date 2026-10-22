@@ -392,7 +392,7 @@ expect_true(
 );
 
 $team_directory_source = source( 'src/TeamMembers/TeamMemberDirectory.php' );
-$team_feature_source = source( 'src/TeamMembers/TeamMemberFeature.php' );
+$team_feature_source = source( 'src/TeamMembers/TeamTab.php' );
 expect_true(
     str_contains( $team_directory_source, "public const SHORTCODE = 'hws_team_members'" )
     && str_contains( $team_directory_source, "public const POST_TYPE = 'team-member'" ),
@@ -405,10 +405,10 @@ expect_true(
     'HWS Team Member directory exposes exactly the three requested template identifiers'
 );
 expect_true(
-    str_contains( $team_feature_source, 'Prerequisite check' )
-    && str_contains( $team_feature_source, 'data-hws-team-template' )
-    && str_contains( $team_feature_source, 'Copy-ready shortcodes' ),
-    'HWS Features UI includes readiness, visual template selection, and shortcode documentation'
+    str_contains( $team_feature_source, 'Shortcode builder' )
+    && str_contains( $team_feature_source, 'set_enabled' )
+    && str_contains( $team_feature_source, 'HTML structure' ),
+    'HWS Team tab includes the switch, shortcode builder and HTML structure'
 );
 expect_true(
     str_contains( source( 'src/FeatureCatalog/ShortcodeCatalog.php' ), "'shortcode' => '[hws_team_members]'" ),

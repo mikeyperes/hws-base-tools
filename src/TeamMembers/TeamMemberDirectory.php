@@ -26,22 +26,37 @@ final class TeamMemberDirectory {
         echo '<style id="hws-team-directory-styles">' . self::styles() . '</style>';
     }
 
-    public function render_shortcode( array $atts = [] ): string {
-        if ( ! get_option( self::FEATURE_OPTION, false ) || ! post_type_exists( self::POST_TYPE ) ) {
+    public function render_shortcode( array|string $atts = [] ): string {
+        if ( ! get_option( self::FEATURE_OPTION, false ) ) {
             return '';
         }
 
+        return self::render( is_array( $atts ) ? $atts : [] );
+    }
+
+    /**
+     * Render the listing grid. Attributes left out use the Team tab's page settings.
+     *
+     * @param array<string,mixed> $atts
+     */
+    public static function render( array $atts = [] ): string {
+        if ( ! post_type_exists( self::POST_TYPE ) ) {
+            return '';
+        }
+
+        $page = TeamPageSettings::all();
         $atts = shortcode_atts(
             [
-                'style'         => (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ),
+                'style'         => (string) $page['style'],
                 'featured_only' => '0',
                 'category'      => '',
-                'limit'         => (string) self::DEFAULT_LIMIT,
-                'columns'       => '3',
-                'show_excerpt'  => '1',
-                'link_profiles' => '1',
-                'order'         => 'ASC',
-                'orderby'       => 'menu_order',
+                'limit'         => (string) $page['limit'],
+                'columns'       => (string) $page['columns'],
+                'show_excerpt'  => (string) $page['show_excerpt'],
+                'link_profiles' => (string) $page['link_profiles'],
+                'order'         => (string) $page['order'],
+                'orderby'       => (string) $page['orderby'],
+                'design'        => (string) $page['design'],
             ],
             $atts,
             self::SHORTCODE
@@ -104,8 +119,15 @@ final class TeamMemberDirectory {
             $style,
             max( 1, min( 4, (int) $atts['columns'] ) ),
             self::attribute_enabled( $atts['show_excerpt'] ),
-            self::attribute_enabled( $atts['link_profiles'] )
+            self::attribute_enabled( $atts['link_profiles'] ),
+            false,
+            self::normalize_design( (string) $atts['design'] )
         );
+    }
+
+    /** `default` prints the built-in look; `none` prints the same markup with no plugin styling. */
+    public static function normalize_design( string $design ): string {
+        return 'none' === sanitize_key( $design ) ? 'none' : 'default';
     }
 
     /**
@@ -148,7 +170,7 @@ final class TeamMemberDirectory {
         return self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) );
     }
 
-    public static function preview_html( string $style ): string {
+    public static function preview_html( string $style, string $design = 'default' ): string {
         $items = [
             [
                 'name'       => 'Jordan Lee',
@@ -168,7 +190,7 @@ final class TeamMemberDirectory {
             ],
         ];
 
-        return self::render_items( $items, self::normalize_style( $style ), 2, true, false, true );
+        return self::render_items( $items, self::normalize_style( $style ), 2, true, false, true, self::normalize_design( $design ) );
     }
 
     /**
@@ -213,19 +235,19 @@ final class TeamMemberDirectory {
     }
 
     public static function styles(): string {
-        return '.hws-team-directory{--hws-team-columns:3;box-sizing:border-box;color:#171717;display:grid;gap:28px;letter-spacing:0;list-style:none;margin:0;padding:0;width:100%}'
-            . '.hws-team-directory *{box-sizing:border-box;letter-spacing:0}'
-            . '.hws-team-card{margin:0;min-width:0;padding:0}'
-            . '.hws-team-card a{color:inherit;text-decoration:none}'
-            . '.hws-team-card a:focus-visible{outline:2px solid currentColor;outline-offset:3px}'
-            . '.hws-team-member-media{background:#f1f3f4;display:block;overflow:hidden;position:relative}'
-            . '.hws-team-member-media img{display:block;height:100%;max-width:none;object-fit:cover;width:100%}'
-            . '.hws-team-member-placeholder{align-items:center;background:#eceff1;color:#4b5563;display:flex;font-size:24px;font-weight:700;height:100%;justify-content:center;width:100%}'
-            . '.hws-team-member-name{font-size:18px;font-weight:700;line-height:1.25;margin:0}'
-            . '.hws-team-member-position{color:#5b6168;font-size:13px;font-weight:600;line-height:1.4;margin:4px 0 0}'
-            . '.hws-team-member-excerpt{color:#50555a;font-size:14px;line-height:1.55;margin:12px 0 0}'
-            . '.hws-team-member-link{display:inline-block;font-size:13px;font-weight:700;margin-top:13px}'
-            . '.hws-team-member-link span{display:inline-block;margin-left:5px}'
+        return '.hws-team-directory--styled{--hws-team-columns:3;box-sizing:border-box;color:#171717;display:grid;gap:28px;letter-spacing:0;list-style:none;margin:0;padding:0;width:100%}'
+            . '.hws-team-directory--styled *{box-sizing:border-box;letter-spacing:0}'
+            . '.hws-team-directory--styled .hws-team-card{margin:0;min-width:0;padding:0}'
+            . '.hws-team-directory--styled .hws-team-card a{color:inherit;text-decoration:none}'
+            . '.hws-team-directory--styled .hws-team-card a:focus-visible{outline:2px solid currentColor;outline-offset:3px}'
+            . '.hws-team-directory--styled .hws-team-member-media{background:#f1f3f4;display:block;overflow:hidden;position:relative}'
+            . '.hws-team-directory--styled .hws-team-member-media img{display:block;height:100%;max-width:none;object-fit:cover;width:100%}'
+            . '.hws-team-directory--styled .hws-team-member-placeholder{align-items:center;background:#eceff1;color:#4b5563;display:flex;font-size:24px;font-weight:700;height:100%;justify-content:center;width:100%}'
+            . '.hws-team-directory--styled .hws-team-member-name{font-size:18px;font-weight:700;line-height:1.25;margin:0}'
+            . '.hws-team-directory--styled .hws-team-member-position{color:#5b6168;font-size:13px;font-weight:600;line-height:1.4;margin:4px 0 0}'
+            . '.hws-team-directory--styled .hws-team-member-excerpt{color:#50555a;font-size:14px;line-height:1.55;margin:12px 0 0}'
+            . '.hws-team-directory--styled .hws-team-member-link{display:inline-block;font-size:13px;font-weight:700;margin-top:13px}'
+            . '.hws-team-directory--styled .hws-team-member-link span{display:inline-block;margin-left:5px}'
             . '.hws-team-directory--portrait_grid{grid-template-columns:repeat(var(--hws-team-columns),minmax(0,1fr))}'
             . '.hws-team-directory--portrait_grid .hws-team-member-media{aspect-ratio:4/5;border-radius:4px}'
             . '.hws-team-directory--portrait_grid .hws-team-member-content{border-bottom:1px solid #dedede;padding:13px 0 16px}'
@@ -288,17 +310,21 @@ final class TeamMemberDirectory {
     /**
      * @param array<int,array<string,mixed>> $items
      */
-    private static function render_items( array $items, string $style, int $columns, bool $show_excerpt, bool $link_profiles, bool $preview = false ): string {
+    private static function render_items( array $items, string $style, int $columns, bool $show_excerpt, bool $link_profiles, bool $preview = false, string $design = 'default' ): string {
         if ( empty( $items ) ) {
             return '';
         }
 
-        $classes = 'hws-team-directory hws-team-directory--' . sanitize_html_class( $style );
+        // design="none" keeps the markup and drops every plugin style class, so a site design owns the look.
+        $classes = 'hws-team-directory';
+        if ( 'none' !== $design ) {
+            $classes .= ' hws-team-directory--styled hws-team-directory--' . sanitize_html_class( $style );
+        }
         if ( $preview ) {
             $classes .= ' hws-team-directory--preview';
         }
 
-        $html = '<div class="' . esc_attr( $classes ) . '" style="--hws-team-columns:' . esc_attr( (string) $columns ) . '" role="list">';
+        $html = '<div class="' . esc_attr( $classes ) . '" data-layout="' . esc_attr( $style ) . '" data-columns="' . esc_attr( (string) $columns ) . '" style="--hws-team-columns:' . esc_attr( (string) $columns ) . '" role="list">';
         foreach ( $items as $item ) {
             $html .= self::render_item( $item, $show_excerpt, $link_profiles );
         }

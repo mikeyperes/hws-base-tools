@@ -60,12 +60,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[site_page_template type="privacy|terms|brand_assets"]` (alias `[hws_site_page_template]`).
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
-### Team member directory
-- **Does:** a clean directory of published Team Members (`team-member` post type).
-- **Switch:** Features → Team Member Directory (`enable_team_member_directory_templates`); default style `hws_team_member_directory_style`.
-- **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" columns="3" limit="" featured_only="0"]`; Elementor query ID `featured_team_members` for Posts/Loop widgets.
-- **Style:** `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`.
-- **Code:** `src/TeamMembers/TeamMemberDirectory.php`
+### Team
+- **Does:** the Team Member post type (`team-member`, archive `/team/`), its ACF fields and the `[hws_team_members]` listing grid. The plugin prints only the grid; the rest of the team page is the site's own design around it.
+- **Switch:** Settings → HWS Base Tools → Team (`options-general.php?page=hws-core-tools&tab=team`): one switch turns the post type, its fields and the shortcode on or off together (`enable_team_member_directory_templates` plus the Team Member content type settings). Team page defaults in `hws_team_page_settings`.
+- **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" design="default|none" columns="3" limit="24" orderby="menu_order|title|date" order="ASC|DESC" show_excerpt="1" link_profiles="1" featured_only="0" category=""]`; the Team tab's shortcode builder writes it and shows its preview and HTML. Elementor query ID `featured_team_members` for Posts/Loop widgets.
+- **HTML structure and styling:** [docs/team-members.md](docs/team-members.md): the grid's markup, every attribute, the classes (`.hws-team-directory`, `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`), the built-in CSS and how to style it in Elementor and HTML drafts.
+- **Code:** `src/TeamMembers/TeamTab.php`, `src/TeamMembers/TeamMemberDirectory.php`, `src/TeamMembers/TeamPageSettings.php`
 
 ### Testimonials
 - **Does:** one quote from a Testimonial (`testimonial` post type).
@@ -279,6 +279,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.17.0
+
+- New Team tab: one switch for the Team Member post type, its fields and the `[hws_team_members]` listing grid, team page defaults, and a shortcode builder with live preview and the exact HTML. The team directory moved here from the Features tab.
+- `[hws_team_members]` gains `design="none"` (same markup, no plugin styling) and `data-layout` / `data-columns` on the wrapper; attributes left out use the team page settings. Markup reference: `docs/team-members.md`.
 
 ### 13.16.9
 

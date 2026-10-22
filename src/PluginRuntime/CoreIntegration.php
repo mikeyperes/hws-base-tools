@@ -20,6 +20,7 @@ use HWS\BaseTools\Diagnostics\IntegrationTests;
 use HWS\BaseTools\BrandTemplates\BrandTemplateFeature;
 use HWS\BaseTools\PageLayoutStyling\PageLayoutFeature;
 use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
+use HWS\BaseTools\TeamMembers\TeamTab;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\FontSmoothing;
 use HWS\BaseTools\FrontendContent\ListingSearchFeature;
@@ -83,6 +84,7 @@ final class CoreIntegration {
             ->add_module( new BrandTemplateFeature() )
             ->add_module( new PageLayoutFeature() )
             ->add_module( new MaintenanceModeFeature() )
+            ->add_module( new TeamTab() )
             ->add_module( new DiscussionPolicy() )
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )

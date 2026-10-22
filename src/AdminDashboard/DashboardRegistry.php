@@ -74,7 +74,7 @@ final class DashboardRegistry {
         $definitions = [
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
-            'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
+            'Content' => [ 'custom-post-types', 'team', 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
@@ -215,6 +215,7 @@ final class DashboardRegistry {
         ] ) );
         $this->add( new DashboardModuleDefinition( 'ui-cleanup', 'UI Cleanup', 'hws_base_tools\\display_settings_ui_cleanup', [ 'settings-dashboard-ui-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'website-types', 'Website & Primary Entity', [ \HWS\BaseTools\SiteProfile\PrimaryEntityIntegration::class, 'render' ] ) );
+        $this->add( new DashboardModuleDefinition( 'team', 'Team', [ \HWS\BaseTools\TeamMembers\TeamTab::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'custom-post-types', 'Custom Post Types', 'hws_base_tools\\render_tab_content_types', [ 'settings-dashboard-content-types.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'footer-text', 'Footer Text', 'hws_base_tools\\display_settings_footer_text', [
             'settings-dashboard-website-types.php',

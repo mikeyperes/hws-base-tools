@@ -13,7 +13,6 @@ use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
-use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
 /**
@@ -719,7 +718,6 @@ function get_snippets($type = "")
         'recommended' => true
     ],
     // ★ RECOMMENDED
-    TeamMemberFeature::definition(),
     PublicDraftPreviewFeature::definition(),
     [
         'id'               => ReadingProgress::FEATURE_OPTION,

@@ -4,8 +4,6 @@ use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
-use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
-use HWS\BaseTools\TeamMembers\TeamMemberFeature;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use Hexa\PluginCore\WpAdminComponents\ColorControl;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
@@ -85,7 +83,6 @@ function hws_get_all_dashboard_features(): array {
         ReadingProgress::FEATURE_OPTION,
         FeaturedImageRequirement::FEATURE_OPTION,
         PublicDraftPreviewFeature::FEATURE_OPTION,
-        TeamMemberDirectory::FEATURE_OPTION,
     ];
 
     foreach ( [ 'Admin Features', 'Frontend Features' ] as $group_name ) {
@@ -124,11 +121,6 @@ function hws_render_feature_settings( array $feature ): void {
 
     if ( UserImpersonationFeature::FEATURE_OPTION === $feature_id ) {
         UserImpersonationFeature::render_settings();
-        return;
-    }
-
-    if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
-        TeamMemberFeature::render_settings();
         return;
     }
 
@@ -589,38 +581,6 @@ function hws_output_feature_card_scripts(): void {
             });
         });
 
-        $(document).off('change.hwsTeamTemplate', '[data-hws-team-template]').on('change.hwsTeamTemplate', '[data-hws-team-template]', function() {
-            var $input = $(this);
-            var $settings = $input.closest('[data-feature-settings]');
-            var $status = $settings.find('[data-hws-team-template-status]');
-            var featureId = $settings.data('feature-settings');
-            var style = $input.val() || '';
-
-            $settings.find('.hws-team-template-option').removeClass('is-selected');
-            $input.closest('.hws-team-template-option').addClass('is-selected');
-            $settings.find('[data-hws-team-template]').prop('disabled', true);
-            $status.text('Saving template...');
-
-            $.post(ajaxurl, {
-                action: 'hws_feature_save_settings',
-                nonce: hwsNonce,
-                feature_id: featureId,
-                style: style
-            }, function(response) {
-                if (!response || !response.success) {
-                    $status.text(response && response.data && response.data.message ? response.data.message : 'Save failed.');
-                    return;
-                }
-
-                var data = response.data || {};
-                $settings.find('[data-hws-team-selected-shortcode]').text(data.shortcode || '[hws_team_members]');
-                $status.text('Saved ' + (data.label || data.style || 'template') + '.');
-            }, 'json').fail(function() {
-                $status.text('AJAX error while saving the template.');
-            }).always(function() {
-                $settings.find('[data-hws-team-template]').prop('disabled', false);
-            });
-        });
     });
     </script>
     <?php
@@ -680,13 +640,6 @@ function ajax_hws_feature_save_settings(): void {
             'owner_fields' => isset( $_POST['owner_fields'] ) && is_string( $_POST['owner_fields'] ) ? wp_unslash( $_POST['owner_fields'] ) : '',
         ] );
         hws_add_feature_activity( $feature_id, 'Updated View As locations and owner fields.' );
-        wp_send_json_success( $saved );
-    }
-
-    if ( TeamMemberDirectory::FEATURE_OPTION === $feature_id ) {
-        $style = isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : TeamMemberDirectory::DEFAULT_STYLE;
-        $saved = TeamMemberFeature::save_style( $style );
-        hws_add_feature_activity( $feature_id, 'Selected the ' . $saved['label'] . ' template.' );
         wp_send_json_success( $saved );
     }
 
@@ -767,9 +720,6 @@ function hws_run_feature_test( string $feature_id ): array {
     }
 
     switch ( $feature_id ) {
-        case TeamMemberDirectory::FEATURE_OPTION:
-            return TeamMemberFeature::test_report();
-
         case ReadingProgress::FEATURE_OPTION:
             $settings = ReadingProgress::settings();
             $targets = $settings['entire_site']
