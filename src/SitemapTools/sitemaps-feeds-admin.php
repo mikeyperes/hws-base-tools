@@ -8,7 +8,7 @@ use HWS\BaseTools\SitemapTools\XmlInspector;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Settings, Sitemaps & Feeds: every feed and sitemap, its switch, its check and what it contains. */
+/** Settings, Sitemaps and Settings, RSS Feeds: every sitemap or feed, its check and what it contains; feeds also have an on/off switch. */
 
 function hws_sitemap_feeds_guard(): void {
     if ( ! current_user_can( Config::$settings_page_capability ) ) {
@@ -74,11 +74,12 @@ add_action( 'wp_ajax_hws_sitemap_disable_cache', __NAMESPACE__ . '\\hws_sitemaps
 
 function hws_sitemaps_ajax_purge_litespeed(): void {
     hws_sitemap_feeds_guard();
-    $urls = array_filter( array_merge( array_column( SitemapFeedRegistry::sitemaps(), 'url' ), array_column( SitemapFeedRegistry::feeds(), 'url' ) ) );
+    $feeds = 'feed' === sanitize_key( (string) ( $_POST['kind'] ?? '' ) );
+    $urls  = array_filter( array_column( $feeds ? SitemapFeedRegistry::feeds() : SitemapFeedRegistry::sitemaps(), 'url' ) );
     foreach ( $urls as $url ) {
         do_action( 'litespeed_purge_url', $url );
     }
-    wp_send_json_success( [ 'message' => 'Cleared the cached copy of ' . count( $urls ) . ' sitemaps and feeds.' ] );
+    wp_send_json_success( [ 'message' => 'Cleared the cached copy of ' . count( $urls ) . ( $feeds ? ' feeds.' : ' sitemaps.' ) ] );
 }
 add_action( 'wp_ajax_hws_sitemap_purge_litespeed', __NAMESPACE__ . '\\hws_sitemaps_ajax_purge_litespeed' );
 
@@ -114,11 +115,19 @@ function hws_sitemap_feeds_rows( string $kind ): array {
 }
 
 function render_tab_sitemaps(): void {
+    hws_sitemap_feeds_render( 'sitemap' );
+}
+
+function render_tab_rss_feeds(): void {
+    hws_sitemap_feeds_render( 'feed' );
+}
+
+function hws_sitemap_feeds_render( string $kind ): void {
     CoreUi::render_assets();
     $data = [
-        'nonce'    => wp_create_nonce( HWS_AJAX_NONCE ),
-        'feeds'    => hws_sitemap_feeds_rows( 'feed' ),
-        'sitemaps' => hws_sitemap_feeds_rows( 'sitemap' ),
+        'nonce' => wp_create_nonce( HWS_AJAX_NONCE ),
+        'kind'  => $kind,
+        'rows'  => hws_sitemap_feeds_rows( $kind ),
     ];
     $nocache = hws_sitemaps_nocache_enabled();
     ?>
@@ -166,34 +175,36 @@ function render_tab_sitemaps(): void {
 
         <div class="hws-sf-head">
             <div>
-                <h2>Sitemaps &amp; Feeds</h2>
-                <p>Every RSS feed and sitemap this site serves, whether each one works, and what it contains.</p>
+                <?php if ( 'feed' === $kind ) : ?>
+                    <h2>RSS Feeds</h2>
+                    <p>Every RSS feed this site serves, whether each one works, and what it contains. Turn a feed off to make its address answer "not found" and remove it from the page head. Feeds are on until turned off.</p>
+                <?php else : ?>
+                    <h2>Sitemaps</h2>
+                    <p>Every XML sitemap search engines read to find the site's pages, whether each one works, and what it lists. Rank Math builds them when it is active.</p>
+                <?php endif; ?>
                 <div class="hws-sf-summary" data-role="summary"></div>
             </div>
             <button type="button" class="hpc-button" data-action="check-all">Check everything</button>
         </div>
 
         <section class="hws-sf-section">
-            <h3>Feeds</h3>
-            <p>Turn a feed off to make its address answer "not found" and remove it from the page head. Feeds are on until turned off.</p>
-            <div data-list="feed"></div>
-        </section>
-
-        <section class="hws-sf-section">
-            <h3>Sitemaps</h3>
-            <p>What search engines read to find every page. Rank Math builds them when it is active.</p>
-            <div data-list="sitemap"></div>
+            <div data-list="<?php echo esc_attr( $kind ); ?>"></div>
         </section>
 
         <section class="hws-sf-section">
             <h3>Tools</h3>
             <div class="hws-sf-tools">
-                <?php echo CoreUi::toggle( 'hws_sitemaps_nocache', $nocache, 'Never cache sitemaps', [ 'id' => 'hws-sf-nocache', 'tooltip' => 'LiteSpeed serves sitemaps fresh every time, so new articles show up straight away.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php if ( 'sitemap' === $kind ) : ?>
+                    <?php echo CoreUi::toggle( 'hws_sitemaps_nocache', $nocache, 'Never cache sitemaps', [ 'id' => 'hws-sf-nocache', 'tooltip' => 'LiteSpeed serves sitemaps fresh every time, so new articles show up straight away.' ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php endif; ?>
                 <div class="hpc-actions">
-                    <button type="button" class="hpc-button secondary" data-action="purge">Clear cached sitemaps and feeds</button>
+                    <button type="button" class="hpc-button secondary" data-action="purge"><?php echo esc_html( 'feed' === $kind ? 'Clear cached feeds' : 'Clear cached sitemaps' ); ?></button>
                     <button type="button" class="hpc-button secondary" data-action="flush">Refresh web addresses</button>
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap' ), 'Rank Math sitemap settings' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                    <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-general#setting-panel-others' ), 'Rank Math feed text' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php if ( 'feed' === $kind ) : ?>
+                        <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-general#setting-panel-others' ), 'Rank Math feed text' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php else : ?>
+                        <?php echo CoreUi::external_link( admin_url( 'admin.php?page=rank-math-options-sitemap' ), 'Rank Math sitemap settings' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                    <?php endif; ?>
                 </div>
                 <div class="hws-sf-notice" data-role="tools-notice" role="status" aria-live="polite"></div>
             </div>
@@ -335,15 +346,15 @@ function render_tab_sitemaps(): void {
             root.querySelector('[data-role="summary"]').textContent = parts.join(' · ');
         }
 
-        ['feed', 'sitemap'].forEach(function(kind){
-            var list = root.querySelector('[data-list="' + kind + '"]');
+        (function(){
+            var list = root.querySelector('[data-list="' + data.kind + '"]');
             var group = null;
-            (kind === 'feed' ? data.feeds : data.sitemaps).forEach(function(row){
+            data.rows.forEach(function(row){
                 if (row.group !== group) { group = row.group; var g = document.createElement('div'); g.className = 'hws-sf-group'; g.textContent = group; list.appendChild(g); }
                 var el = document.createElement('div'); el.className = 'hws-sf-row'; el._row = row;
-                rows[kind + ':' + row.key] = el; list.appendChild(el); render(row);
+                rows[data.kind + ':' + row.key] = el; list.appendChild(el); render(row);
             });
-        });
+        })();
 
         root.addEventListener('click', function(e){
             var el = e.target.closest('.hws-sf-row');
@@ -363,7 +374,7 @@ function render_tab_sitemaps(): void {
             if (action === 'purge' || action === 'flush') {
                 var notice = root.querySelector('[data-role="tools-notice"]');
                 notice.className = 'hws-sf-notice'; notice.textContent = 'Working…';
-                post(action === 'purge' ? 'hws_sitemap_purge_litespeed' : 'hws_sitemap_flush_permalinks', {})
+                post(action === 'purge' ? 'hws_sitemap_purge_litespeed' : 'hws_sitemap_flush_permalinks', { kind: data.kind })
                     .then(function(d){ notice.textContent = d.message; })
                     .catch(function(err){ notice.className = 'hws-sf-notice error'; notice.textContent = err.message; });
             }

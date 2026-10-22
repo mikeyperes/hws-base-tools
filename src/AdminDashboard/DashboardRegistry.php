@@ -75,7 +75,7 @@ final class DashboardRegistry {
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'brand-templates', 'website-types', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -201,7 +201,8 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'database-optimization', 'Database Optimization', [ \HWS\BaseTools\DatabaseOptimization\DatabaseOptimizationModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'mail-authentication', 'Mail Authentication', 'hws_base_tools\\render_tab_mail_authentication', [ 'settings-dashboard-mail-authentication.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps & Feeds', 'hws_base_tools\\render_tab_sitemaps', [
+        $this->add( new DashboardModuleDefinition( 'rss-feeds', 'RSS Feeds', 'hws_base_tools\\render_tab_rss_feeds', [ 'settings-dashboard-sitemaps.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'sitemaps', 'Sitemaps', 'hws_base_tools\\render_tab_sitemaps', [
             'settings-dashboard-site-profile.php',
             'settings-dashboard-sitemaps.php',
         ] ) );
