@@ -122,6 +122,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Style:** `.hws-footer-inline-injection`, `.hws-footer-text--<template>`.
 - **Code:** `src/FrontendContent/legacy-footer-text.php`
 
+### Breadcrumbs
+- **Does:** a breadcrumb bar ("Home » Section » Article") right under the site header, built from Rank Math breadcrumbs (a plain trail when Rank Math is off). Moved here from SMP Publication Integration 2.5.25.
+- **Switch:** WP Admin → Settings → HWS Base Tools → Breadcrumbs (`options-general.php?page=hws-core-tools&tab=breadcrumbs`), option `hws_base_tools_breadcrumbs`. Off by default. Design `style` `bc-b1`…`bc-b6`, accent/background/text colour, font size, hide on the home page, hide on category archives, hide per post type, custom CSS.
+- **Carry-over:** a site that had SMP's breadcrumbs switched on gets its SMP look (style, colours, size, hidden types and posts, CSS) copied once; a site that had them off stays off.
+- **Use:** automatic under the header while on. `[hws_breadcrumbs style=""]` (and the old `[smp_breadcrumbs]`) places it manually; a visible manual bar stops the automatic one.
+- **Style:** `.hws-breadcrumbs-band`, `.hws-breadcrumbs.smpi-bc-<style>`, `.smpi-breadcrumb-link`, `.smpi-breadcrumb-separator`, `.smpi-breadcrumb-current` (the old SMP classes stay so existing custom CSS keeps working); variables `--smpi-bc-accent`, `--smpi-bc-background`, `--smpi-bc-text`, `--smpi-bc-font-size`.
+- **Code:** `src/Breadcrumbs/`
+
 ### Page layout styling
 - **Does:** a site-wide page layout style applied through body classes.
 - **Switch:** `hws_page_layout_style`.
@@ -315,6 +323,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.22.0
+
+- New Breadcrumbs section in the sidebar (Site & Brand): the breadcrumb bar under the header moved here from SMP Publication Integration, switched off by default. A site that had SMP breadcrumbs on keeps its look; every other site shows nothing until it is switched on.
 
 ### 13.21.2
 
