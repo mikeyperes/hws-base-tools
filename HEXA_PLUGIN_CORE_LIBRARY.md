@@ -36,7 +36,7 @@ Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
 
-Current release: 3.33.0
+Current release: 3.34.2
 ```
 
 Do not rename these.

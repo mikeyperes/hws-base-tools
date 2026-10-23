@@ -316,6 +316,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.21.2
+
+- Bundles Hexa WP Core 3.34.2: after Core copies itself into every Hexa plugin on a site, it loads the home page once and puts every copy back if the site stopped loading.
+
 ### 13.21.1
 
 - Add Hexa Cloud Services and HexaTiger website links to the hidden admin access message, plus WhatsApp support at +1 415-212-9449. Keep the domain-specific email subject, HTTP 404 and no-cache behavior. Bundles Hexa WP Core 3.34.1.
