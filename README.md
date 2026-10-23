@@ -10,7 +10,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ## Features
 
 ### Hidden admin access message
-- **Does:** logged-out visitors to `/wp-admin/` see a Hexa Cloud Services notice linking to `https://hexacloudservices.com/` and `https://hexatiger.com/`, plus email and WhatsApp support. The email goes to `support@hexacloudservices.com`; its subject starts with the site's canonical domain, followed by ` - Login URL Request`. "Message 24/7 support. Click here." links to `https://wa.me/14152129449` (+1 415-212-9449). The page keeps HTTP 404, disables caching, and never exposes the masked login URL.
+- **Does:** logged-out visitors to `/wp-admin/` see a Hexa Cloud Services notice linking to `https://hexacloudservices.com/` and `https://hexatiger.com/`, plus email and WhatsApp support. Every link opens in a new tab, and the closing sentence links both HexaTiger and Hexa Cloud Services. The email goes to `support@hexacloudservices.com`; its subject starts with the site's canonical domain, followed by ` - Login URL Request`. "Message 24/7 support. Click here." links to `https://wa.me/14152129449` (+1 415-212-9449). The page keeps HTTP 404, disables caching, and never exposes the masked login URL.
 - **Switch:** Settings → HWS Base Tools → Security → Masked Login; masking and "Hide /wp-admin/ from guests" enabled (`hws_login_mask_options`).
 - **Use:** automatic; logged-in access and existing management-tool exceptions are preserved.
 - **Example:** [Message HTML and link behavior](docs/hidden-admin-access.md).
@@ -323,6 +323,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.22.1
+
+- Open every hidden admin access message link in a new tab, and link both HexaTiger and Hexa Cloud Services in the closing sentence.
 
 ### 13.22.0
 

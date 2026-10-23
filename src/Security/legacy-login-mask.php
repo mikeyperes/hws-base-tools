@@ -614,15 +614,16 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
         $title = esc_html__( 'Login URL changed', 'hws-base-tools' );
         $message = '<h1>' . $title . '</h1><p>' . sprintf(
                 esc_html__( 'The WordPress login URL has been changed by %s for security and performance.', 'hws-base-tools' ),
-                '<a href="' . esc_url( 'https://hexacloudservices.com/' ) . '">Hexa Cloud Services</a>'
+                '<a href="' . esc_url( 'https://hexacloudservices.com/' ) . '" target="_blank" rel="noopener noreferrer">Hexa Cloud Services</a>'
             ) . '</p><p>' . sprintf(
                 esc_html__( 'Please email %s to request the correct login URL or help with emergency access.', 'hws-base-tools' ),
-                '<a href="' . esc_url( $mailto ) . '">support@hexacloudservices.com</a>'
-            ) . '</p><p><a href="' . esc_url( 'https://wa.me/14152129449' ) . '">'
+                '<a href="' . esc_url( $mailto ) . '" target="_blank" rel="noopener noreferrer">support@hexacloudservices.com</a>'
+            ) . '</p><p><a href="' . esc_url( 'https://wa.me/14152129449' ) . '" target="_blank" rel="noopener noreferrer">'
             . esc_html__( 'Message 24/7 support. Click here.', 'hws-base-tools' )
             . '</a></p><p>' . sprintf(
-                esc_html__( 'Visit %s.', 'hws-base-tools' ),
-                '<a href="' . esc_url( 'https://hexatiger.com/' ) . '">HexaTiger</a>'
+                esc_html__( 'Visit both %1$s and %2$s for more info.', 'hws-base-tools' ),
+                '<a href="' . esc_url( 'https://hexatiger.com/' ) . '" target="_blank" rel="noopener noreferrer">HexaTiger</a>',
+                '<a href="' . esc_url( 'https://hexacloudservices.com/' ) . '" target="_blank" rel="noopener noreferrer">Hexa Cloud Services</a>'
             ) . '</p>';
 
         nocache_headers();
