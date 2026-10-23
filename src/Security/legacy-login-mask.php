@@ -612,11 +612,17 @@ if (in_array($req, $legacy, true) || in_array(rtrim($req,'/').'/', $legacy, true
         $mailto = 'mailto:support@hexacloudservices.com?subject='
             . rawurlencode( $domain . ' - Login URL Request' );
         $title = esc_html__( 'Login URL changed', 'hws-base-tools' );
-        $message = '<h1>' . $title . '</h1><p>'
-            . esc_html__( 'The WordPress login URL has been changed by Hexa Cloud Services for security and performance.', 'hws-base-tools' )
-            . '</p><p>' . sprintf(
+        $message = '<h1>' . $title . '</h1><p>' . sprintf(
+                esc_html__( 'The WordPress login URL has been changed by %s for security and performance.', 'hws-base-tools' ),
+                '<a href="' . esc_url( 'https://hexacloudservices.com/' ) . '">Hexa Cloud Services</a>'
+            ) . '</p><p>' . sprintf(
                 esc_html__( 'Please email %s to request the correct login URL or help with emergency access.', 'hws-base-tools' ),
                 '<a href="' . esc_url( $mailto ) . '">support@hexacloudservices.com</a>'
+            ) . '</p><p><a href="' . esc_url( 'https://wa.me/14152129449' ) . '">'
+            . esc_html__( 'Message 24/7 support. Click here.', 'hws-base-tools' )
+            . '</a></p><p>' . sprintf(
+                esc_html__( 'Visit %s.', 'hws-base-tools' ),
+                '<a href="' . esc_url( 'https://hexatiger.com/' ) . '">HexaTiger</a>'
             ) . '</p>';
 
         nocache_headers();
