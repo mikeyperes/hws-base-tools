@@ -1,0 +1,41 @@
+
+/* Template scale: desktop, then tablet (1024 px) and phone (767 px). */
+.hws-404--plinth{
+  --min-h:640px; --pad-y:96px; --gutter:32px;
+  --fs-code:208px; --plinth:6px; --plinth-gap:16px;
+  --fs-h1:30px; --fs-text:17px; --btn-h:44px; --btn-fs:15px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --on-primary:var(--brand-bg);
+}
+@supports (color:oklch(from red l c h)){
+  .hws-404--plinth{--on-primary:oklch(from var(--brand-primary) clamp(0,(0.62 - l)*1000,1) 0 0)}
+}
+@media (max-width:1024px){.hws-404--plinth{--min-h:580px;--pad-y:80px;--gutter:24px;--fs-code:172px;--plinth:5px;--plinth-gap:14px;--fs-h1:28px;--fs-text:16px}}
+@media (max-width:767px){.hws-404--plinth{--min-h:520px;--pad-y:64px;--gutter:16px;--fs-code:124px;--plinth:4px;--plinth-gap:12px;--fs-h1:24px;--btn-fs:14.5px}}
+
+.hws-404--plinth,.hws-404--plinth *{box-sizing:border-box}
+.hws-404--plinth{display:flex;align-items:center;justify-content:center;min-height:var(--min-h);padding:var(--pad-y) var(--gutter);
+  background:var(--brand-bg);color:var(--brand-ink);font:400 var(--fs-text)/1.6 var(--font-body);text-align:center;
+  -webkit-font-smoothing:antialiased}
+.hws-404--plinth ::selection{background:var(--brand-primary);color:var(--on-primary)}
+.hws-404--plinth .inner{display:flex;flex-direction:column;align-items:center;max-width:560px}
+
+/* The numeral stands on a short brand-coloured plinth cut to its exact width. */
+.hws-404--plinth .code{position:relative;display:inline-block;margin:0;padding:0 .05em var(--plinth-gap) 0;
+  font:600 var(--fs-code)/.8 var(--font-heading);letter-spacing:-.05em;font-variant-numeric:lining-nums tabular-nums;color:var(--brand-ink)}
+.hws-404--plinth .code::after{content:"";position:absolute;left:.02em;right:.04em;bottom:0;height:var(--plinth);background:var(--brand-primary);
+  transform-origin:left center;animation:hws404-plinth-plinth .9s var(--ease) .15s both}
+
+.hws-404--plinth h1{margin:calc(var(--plinth-gap) + 28px) 0 0;font:600 var(--fs-h1)/1.2 var(--font-heading);letter-spacing:-.015em}
+.hws-404--plinth .text{margin:12px 0 0;max-width:30ch;color:var(--brand-muted);text-wrap:balance}
+.hws-404--plinth .btn{display:inline-flex;align-items:center;justify-content:center;min-height:var(--btn-h);margin-top:36px;padding:0 26px;border-radius:6px;
+  background:var(--brand-ink);color:var(--brand-bg);font:500 var(--btn-fs)/1 var(--font-body);letter-spacing:.005em;text-decoration:none;
+  transition:background-color .25s var(--ease)}
+.hws-404--plinth .btn:hover{background:color-mix(in srgb,var(--brand-ink) 84%,var(--brand-bg))}
+.hws-404--plinth .btn:focus-visible{outline:2px solid var(--brand-primary);outline-offset:3px}
+
+.hws-404--plinth .code,.hws-404--plinth h1,.hws-404--plinth .text,.hws-404--plinth .btn{animation:hws404-plinth-in .7s var(--ease) both}
+.hws-404--plinth h1{animation-delay:.08s}.hws-404--plinth .text{animation-delay:.14s}.hws-404--plinth .btn{animation-delay:.2s}
+@keyframes hws404-plinth-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes hws404-plinth-plinth{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.hws-404--plinth *,.hws-404--plinth *::after{animation:none!important;transition:none!important}}

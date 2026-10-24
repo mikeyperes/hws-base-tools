@@ -1,0 +1,46 @@
+
+/* Template scale: desktop, then tablet (1024 px) and phone (767 px). */
+.hws-404--divider{
+  --min-h:640px; --pad-y:96px; --gutter:32px;
+  --fs-code:132px; --gap:52px; --rule-h:148px;
+  --fs-h1:30px; --fs-text:16.5px; --btn-h:44px; --btn-fs:15px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --rule:color-mix(in srgb,var(--brand-ink) 16%,transparent);
+  --on-primary:var(--brand-bg);
+}
+@supports (color:oklch(from red l c h)){
+  .hws-404--divider{--on-primary:oklch(from var(--brand-primary) clamp(0,(0.62 - l)*1000,1) 0 0)}
+}
+@media (max-width:1024px){.hws-404--divider{--min-h:580px;--pad-y:80px;--gutter:24px;--fs-code:112px;--gap:40px;--rule-h:136px;--fs-h1:27px;--fs-text:16px}}
+@media (max-width:767px){.hws-404--divider{--min-h:520px;--pad-y:64px;--gutter:16px;--fs-code:96px;--gap:28px;--fs-h1:24px;--btn-fs:14.5px}}
+
+.hws-404--divider,.hws-404--divider *{box-sizing:border-box}
+.hws-404--divider{display:flex;align-items:center;justify-content:center;min-height:var(--min-h);padding:var(--pad-y) var(--gutter);
+  background:var(--brand-bg);color:var(--brand-ink);font:400 var(--fs-text)/1.6 var(--font-body);-webkit-font-smoothing:antialiased}
+.hws-404--divider ::selection{background:var(--brand-primary);color:var(--on-primary)}
+
+/* Numeral in the brand colour, a fine rule, then the message: one balanced line across the page. */
+.hws-404--divider .inner{display:grid;grid-template-columns:auto 1px minmax(0,340px);align-items:center;column-gap:var(--gap)}
+.hws-404--divider .code{margin:0;padding-right:.04em;font:600 var(--fs-code)/.8 var(--font-heading);letter-spacing:-.045em;
+  font-variant-numeric:lining-nums tabular-nums;color:var(--brand-primary)}
+.hws-404--divider .rule{width:1px;height:var(--rule-h);background:var(--rule);transform-origin:center;animation:hws404-divider-rule .8s var(--ease) .1s both}
+.hws-404--divider h1{margin:0;font:600 var(--fs-h1)/1.15 var(--font-heading);letter-spacing:-.02em}
+.hws-404--divider .text{margin:10px 0 0;color:var(--brand-muted);text-wrap:balance}
+.hws-404--divider .btn{display:inline-flex;align-items:center;justify-content:center;min-height:var(--btn-h);margin-top:26px;padding:0 24px;border-radius:6px;
+  border:1px solid color-mix(in srgb,var(--brand-ink) 22%,transparent);background:transparent;color:var(--brand-ink);
+  font:500 var(--btn-fs)/1 var(--font-body);text-decoration:none;
+  transition:background-color .25s var(--ease),border-color .25s var(--ease)}
+.hws-404--divider .btn:hover{border-color:var(--brand-ink);background:color-mix(in srgb,var(--brand-ink) 5%,transparent)}
+.hws-404--divider .btn:focus-visible{outline:2px solid var(--brand-primary);outline-offset:3px}
+
+.hws-404--divider .code,.hws-404--divider .msg{animation:hws404-divider-in .7s var(--ease) both}.hws-404--divider .msg{animation-delay:.12s}
+@keyframes hws404-divider-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes hws404-divider-rule{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+
+@media (max-width:767px){
+  .hws-404--divider .inner{grid-template-columns:minmax(0,340px);justify-items:center;row-gap:24px;text-align:center}
+  .hws-404--divider .rule{width:40px;height:1px;animation-name:hws404-divider-rule-x}
+  @keyframes hws404-divider-rule-x{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .hws-404--divider .text{text-wrap:balance}
+}
+@media (prefers-reduced-motion:reduce){.hws-404--divider *{animation:none!important;transition:none!important}}

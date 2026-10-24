@@ -85,6 +85,7 @@ final class CoreIntegration {
             ->add_module( new MaintenanceModeFeature() )
             ->add_module( new TeamTab() )
             ->add_module( new \HWS\BaseTools\Breadcrumbs\Breadcrumbs() )
+            ->add_module( new \HWS\BaseTools\NotFoundPage\NotFoundPage() )
             // Founders: picked once here; Website Identity and SMP read hws_publication_founders().
             ->add_module( new \HWS\BaseTools\Founders\Founders() )
             ->add_module( new \HWS\BaseTools\Founders\FoundersTab() )

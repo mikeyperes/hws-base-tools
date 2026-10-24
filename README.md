@@ -130,6 +130,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Style:** `.hws-breadcrumbs-band`, `.hws-breadcrumbs.smpi-bc-<style>`, `.smpi-breadcrumb-link`, `.smpi-breadcrumb-separator`, `.smpi-breadcrumb-current` (the old SMP classes stay so existing custom CSS keeps working); variables `--smpi-bc-accent`, `--smpi-bc-background`, `--smpi-bc-text`, `--smpi-bc-font-size`.
 - **Code:** `src/Breadcrumbs/`
 
+### 404 page
+- **Does:** replaces the site's "page not found" page with a plain one ("Page not found", one sentence, a button to the homepage) between the site's own header and footer, with a real 404 status. Colours and fonts come from the site's Elementor global colours (primary, text) and fonts (primary, text).
+- **Switch:** WP Admin → Settings → HWS Base Tools → 404 Page (`options-general.php?page=hws-core-tools&tab=404-page`), option `hws_base_tools_404_page`. Off by default. Design `plinth`, `divider` or `headline`; optional brand, text and background colour. The tab warns when Rank Math's redirect fallback sends missing pages elsewhere.
+- **Style:** `.hws-404.hws-404--<design>`; variables `--brand-primary`, `--brand-ink`, `--brand-bg`, `--brand-muted`, `--font-heading`, `--font-body`. HTML in [docs/404-page.md](docs/404-page.md).
+- **Code:** `src/NotFoundPage/`, `templates/404.php`, `assets/frontend/404-<design>.css`
+
 ### Page layout styling
 - **Does:** a site-wide page layout style applied through body classes.
 - **Switch:** `hws_page_layout_style`.
@@ -323,6 +329,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.23.0
+
+- New 404 Page section in the sidebar (Site & Brand): a plain "Page not found" page in the site's colours and fonts, three designs, switched off by default.
 
 ### 13.22.1
 

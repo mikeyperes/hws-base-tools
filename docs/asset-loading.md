@@ -20,6 +20,7 @@ The rule for every HWS and Hexa plugin, and how HWS Base Tools follows it.
 - Reading progress bar: the front end, behind its switch and its own page scope setting (posts, or the entire site).
 - Brand colour variables and font smoothing: every front-end page while on (site-wide styling by design).
 - Breadcrumbs CSS, script and bar template: the front end only, only while the Breadcrumbs switch is on and the current page is not hidden by its settings.
+- 404 page CSS (`404-<design>.css`) and its colour variables: the front end only, only while the 404 Page switch is on and only on a missing page.
 - Team grid CSS: with the first `[hws_team_members]` on a page.
 - Auto load-more script: only when the page's Elementor output carries `hws-auto-load-more` or `smpi-auto-load-more`.
 - Brand template and page layout CSS: only on pages using a brand template or a chosen layout style.
