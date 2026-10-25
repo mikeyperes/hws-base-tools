@@ -185,6 +185,8 @@ function display_settings_pages(): void {
         "actions" => hws_pages_actions(),
         "labels" => [
             "pages_title" => "Site pages",
+            "main_pages_title" => "Essential pages",
+            "main_pages_note" => "Contact, privacy, terms, accessibility, FAQs and RSS: the pages every website needs",
             "pages_heading" => "HWS-owned page assignments",
             "pages_description" => "The pages every website has, each linked to its WordPress page. Their details come from Website Identity: the company or person the site represents, or the website itself. Open a page's Page details to see the details it uses and its default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
             "menus_title" => "Site Page Navigation",
