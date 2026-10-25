@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.31.1
+
+- Pages tab (Hexa WP Core 3.42.1): Edit page and View show a side arrow, as they open in a new tab.
+
 ### 13.31.0
 
 - Pages tab (Hexa WP Core 3.42.0): Founders, Founding Date, Headquarters and Parent Network do not apply to a website that represents a person. On such a site they are greyed out with a note and a link to Website Identity, cannot be switched on, and are not created. A page switched off says it is not part of the site.
