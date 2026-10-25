@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.26.1
+
+- Pages tab (Hexa WP Core 3.38.1): the template box is labelled "What goes into the page" and explains that its line prints the Default page content.
+
 ### 13.26.0
 
 - Pages tab redesigned (Hexa WP Core 3.38.0): one row per company page, pages under About indented under it, and one Page details expander with the page's facts, default content and template. The menu section is only on the Menu Tools tab now.

@@ -3,6 +3,8 @@
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
 
 
+Version 3.38.1 relabels the page list template box "What goes into the page" and explains that a shortcode line prints the Default page content shown above it.
+
 Version 3.38.0 redesigns the `SiteStructureRenderer` page list: one row per page (name, status pill, address, linked page, View / Edit / Apply template / Delete), pages listed with a `parent` key nested under that parent, a page not created yet shown at its address under its parent, and one "Page details" expander holding the page facts, the default content as it reads and the template editor (a plain text box). The old table, the separate detail, default-content and template rows, and the red/green Set badges are gone.
 
 Version 3.37.0: `SiteStructureRenderer` shows an expand/collapse "Default page content" under each page row (the default template, rendered; `show_default_content`, on by default), and `assigned_page_id()` treats a deleted or trashed linked page as not linked, so the row offers Create again.

@@ -204,8 +204,8 @@ final class SiteStructureRenderer {
             ob_start();
             ?>
             <div class="hpc-sp-section hpc-template-editor" data-editor-id="<?php echo esc_attr( $editor_id ); ?>">
-                <h5>Template</h5>
-                <p class="hpc-sp-note">What Create and Apply template put into the page.</p>
+                <h5>What goes into the page</h5>
+                <p class="hpc-sp-note">Create page and Apply template put this into the page. <?php echo false !== strpos( $template, '[' ) && ! empty( $this->config['show_default_content'] ) ? 'A line in [square brackets] prints the Default page content above on the site, filled in from the site\'s details, so it stays up to date. ' : ''; ?>Replace it with your own text to use different wording on this site.</p>
                 <textarea id="<?php echo esc_attr( $editor_id ); ?>" class="large-text code" rows="<?php echo esc_attr( (string) $rows ); ?>"><?php echo esc_textarea( $template ); ?></textarea>
                 <p class="hpc-sp-save"><button type="button" class="button hpc-save-page-template" data-page-key="<?php echo esc_attr( $page_key ); ?>">Save template</button> <span class="hpc-template-status"></span></p>
             </div>
