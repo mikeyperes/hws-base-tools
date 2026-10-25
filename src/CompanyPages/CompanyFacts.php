@@ -10,35 +10,50 @@ use HWS\BaseTools\SiteProfile\SiteIdentity;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The company-page building blocks, for Base Tools' page templates and any page:
+ * The site-page building blocks, for Base Tools' page templates and any page:
  *
- *     [hws_company field="name"]                 one company fact from Website Identity
+ *     [hws_site field="name"]                    one site detail from Website Identity ([hws_company] is the older name)
  *     [hws_if field="mission"]...[/hws_if]       text only when the fact, page or shortcode exists
  *     [hws_page_link key="contact"]              link to a key page from any plugin
  *
- * [hws_company] attributes: format (text, link, raw, year), sep, size, fallback,
+ * [hws_site] attributes: format (text, link, raw, year), sep, size, fallback,
  * before and after (printed only with a value; after="." is skipped when the
- * value already ends in a period). Facts: every Website Identity company field,
+ * value already ends in a period). Details: every Website Identity field for what the site represents (company or person),
  * plus founders (from Base Tools' Founders) and url.
  */
 final class CompanyFacts {
-    public const SHORTCODE      = 'hws_company';
+    public const SHORTCODE      = 'hws_site';
+    /** Older name of [hws_site], kept so existing pages keep working. */
+    public const OLD_SHORTCODE  = 'hws_company';
     public const IF_SHORTCODE   = 'hws_if';
     public const LINK_SHORTCODE = 'hws_page_link';
 
+    /** Person details that stand in for a company detail when the site represents a person. */
+    private const PERSON_FIELDS = [ 'description' => 'bio', 'logo' => 'photo' ];
+
     public static function register(): void {
         add_shortcode( self::SHORTCODE, [ self::class, 'shortcode' ] );
+        add_shortcode( self::OLD_SHORTCODE, [ self::class, 'shortcode' ] );
         add_shortcode( self::IF_SHORTCODE, [ self::class, 'if_shortcode' ] );
         add_shortcode( self::LINK_SHORTCODE, [ self::class, 'link_shortcode' ] );
     }
 
-    /** Raw value: the Website Identity company fact, then a site default. */
+    /**
+     * Raw value of a site detail: from Website Identity for what the site represents (a company
+     * or a person), then the website's own settings (name, address, email, tagline).
+     */
     public static function value( string $field ) {
         $field = sanitize_key( $field );
         if ( 'founders' === $field ) {
             return Founders::user_ids();
         }
-        $value = SiteIdentity::value( 'company.' . $field );
+        $type  = (string) SiteIdentity::value( 'type' );
+        $value = null;
+        if ( 'company' === $type ) {
+            $value = SiteIdentity::value( 'company.' . $field );
+        } elseif ( 'person' === $type ) {
+            $value = SiteIdentity::value( 'person.' . ( self::PERSON_FIELDS[ $field ] ?? $field ) );
+        }
         if ( ! self::empty_value( $value ) ) {
             return $value;
         }
@@ -73,7 +88,7 @@ final class CompanyFacts {
         return esc_html( (string) $atts['before'] ) . $html . esc_html( $after );
     }
 
-    /** Whether a condition holds: a company fact has a value, a key page is linked (any plugin), a shortcode is registered. */
+    /** Whether a condition holds: a site detail has a value, a key page is linked (any plugin), a shortcode is registered. */
     public static function condition( array $atts ): bool {
         $atts = shortcode_atts( [ 'field' => '', 'page' => '', 'shortcode' => '', 'not' => '' ], $atts, self::IF_SHORTCODE );
         $ok   = true;
@@ -109,23 +124,23 @@ final class CompanyFacts {
         return $id && 'publish' === get_post_status( $id ) ? $id : 0;
     }
 
-    /** Plain names for the company facts, as Website Identity labels them. */
+    /** Plain names for the site details, as Website Identity labels them. */
     public const LABELS = [
-        'name' => 'Company name', 'legal_name' => 'Legal name', 'alternate_names' => 'Other names', 'description' => 'Short description',
+        'name' => 'Name', 'legal_name' => 'Legal name', 'job_title' => 'Job title', 'alternate_names' => 'Other names', 'description' => 'Short description',
         'logo' => 'Logo', 'url' => 'Website address', 'founding_date' => 'Founding date', 'founding_location' => 'Founding city',
         'founding_location_url' => 'Founding city link', 'founders' => 'Founders', 'headquarters_city' => 'Headquarters city',
-        'headquarters_address' => 'Headquarters address', 'headquarters_url' => 'Headquarters link', 'parent_name' => 'Parent company',
-        'parent_url' => 'Parent company website', 'email' => 'Email', 'phone' => 'Phone', 'mission' => 'Mission', 'profiles' => 'Social profiles',
+        'headquarters_address' => 'Headquarters address', 'headquarters_url' => 'Headquarters link', 'parent_name' => 'Parent organization',
+        'parent_url' => 'Parent organization website', 'email' => 'Email', 'phone' => 'Phone', 'mission' => 'Mission', 'profiles' => 'Social profiles',
     ];
 
     /**
-     * The company facts a piece of page content uses ([hws_company field] or [hws_if field]),
+     * The site details a piece of page content uses ([hws_site field] or [hws_if field]),
      * as label => value shown as plain text ('' when not set).
      *
      * @return array<string,string>
      */
     public static function used_in( string $html ): array {
-        preg_match_all( '/\[(?:hws_company|hws_if|smp_company|smp_if)\b[^\]]*\bfield=["\']?([a-z_]+)/', $html, $m );
+        preg_match_all( '/\[(?:hws_site|hws_company|hws_if|smp_company|smp_if)\b[^\]]*\bfield=["\']?([a-z_]+)/', $html, $m );
         $out = [];
         foreach ( array_unique( $m[1] ) as $field ) {
             $out[ self::LABELS[ $field ] ?? $field ] = self::plain( $field );
@@ -164,23 +179,29 @@ final class CompanyFacts {
     }
 
     /**
-     * The shortcodes company and publication page content is built from, with what each does.
+     * The shortcodes site and publication page content is built from, with what each does.
      *
      * @return array<int,array<string,string>>
      */
     public static function reference(): array {
-        $items = [ [ 'heading' => 'Company details', 'note' => 'Each one prints a detail from Website Identity. A detail that is not set prints nothing.' ] ];
-        foreach ( self::LABELS as $field => $label ) {
-            if ( in_array( $field, [ 'alternate_names', 'founding_location_url', 'profiles' ], true ) ) {
-                continue;
-            }
-            $items[] = [ 'code' => '[hws_company field="' . $field . '"]', 'description' => $label, 'value' => self::plain( $field ) ];
+        $type   = (string) SiteIdentity::value( 'type' );
+        $fields = [ 'name', 'description', 'url', 'email' ];
+        if ( 'company' === $type ) {
+            $fields = [ 'name', 'legal_name', 'description', 'logo', 'url', 'email', 'phone', 'mission', 'founding_date', 'founding_location', 'founders', 'headquarters_city', 'headquarters_address', 'headquarters_url', 'parent_name', 'parent_url' ];
+        } elseif ( 'person' === $type ) {
+            $fields = [ 'name', 'job_title', 'description', 'logo', 'url', 'email' ];
+        }
+        $what  = [ 'company' => 'a company', 'person' => 'a person' ][ $type ] ?? 'the website itself';
+        $items = [ [ 'heading' => 'Site details', 'note' => 'Each one prints a detail of what this website represents (' . $what . '), set in Website Identity, falling back to the website\'s own name, address, email and tagline. A detail that is not set prints nothing.' ] ];
+        foreach ( $fields as $field ) {
+            $label = 'person' === $type && isset( self::PERSON_FIELDS[ $field ] ) ? [ 'description' => 'Short bio', 'logo' => 'Photo' ][ $field ] : ( self::LABELS[ $field ] ?? $field );
+            $items[] = [ 'code' => '[hws_site field="' . $field . '"]', 'description' => $label, 'value' => self::plain( $field ) ];
         }
         $items[] = [ 'heading' => 'Options and building blocks' ];
-        $items[] = [ 'code' => '[hws_company field="founding_date" format="year"]', 'description' => 'format: text, link, year or raw. before="..." and after="..." add text only when the detail is set.' ];
+        $items[] = [ 'code' => '[hws_site field="founding_date" format="year"]', 'description' => 'format: text, link, year or raw. before="..." and after="..." add text only when the detail is set.' ];
         $items[] = [ 'code' => '[hws_if field="mission"]...[/hws_if]', 'description' => 'Shows the text inside only when the detail is set. Also page="contact" (that page exists) or shortcode="name" (that shortcode is available). Add not="1" for the opposite.' ];
         $items[] = [ 'code' => '[hws_page_link key="contact"]', 'description' => 'A link to a site page from any plugin (about, contact, privacy, dmca, editorial_guidelines, become_contributor and the rest). text="..." changes the link text.' ];
-        $items[] = [ 'code' => '[hws_site_page_template type="about"]', 'description' => 'The whole default text of a company page, filled in from the details above.' ];
+        $items[] = [ 'code' => '[hws_site_page_template type="about"]', 'description' => 'The whole default text of a site page, filled in from the details above.' ];
         $items[] = [ 'heading' => 'Lists' ];
         $items[] = [ 'code' => '[hws_publication_founders]', 'description' => 'The founders, with photo, title and short bio.' ];
         $items[] = [ 'code' => '[hws_team_members]', 'description' => 'The team members, when the Team feature is on.' ];

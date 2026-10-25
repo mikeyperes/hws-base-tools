@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.30.0
+
+- `[hws_site field="..."]` prints a detail of whatever the site represents in Website Identity (a company, a person, or the website itself, falling back to its own name, address, email and tagline). `[hws_company]` still works as the older name. Every default page text uses `[hws_site]`, and the Pages tab is now "Site pages", listing only the details that apply to this site.
+
 ### 13.29.0
 
 - Pages tab (Hexa WP Core 3.41.0): each company page has an on/off switch, one status, its missing details named, and one Edit page or Create page button; Page details holds the linked page, View, Apply template, Delete, the details used, the default content and what goes into the page. Pages that are off are skipped by `wp hws-pages ensure`.

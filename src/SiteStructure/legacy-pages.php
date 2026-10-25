@@ -94,7 +94,7 @@ function hws_pages_manager(): PageStructureManager {
         "reuse_existing_pages" => true,
         "default_templates" => hws_pages_default_templates(),
         "template_getter" => __NAMESPACE__ . "\\hws_pages_stored_template",
-        "facts_getter" => static fn( string $fact ) => \HWS\BaseTools\SiteProfile\SiteIdentity::value( "company." . $fact ),
+        "facts_getter" => static fn( string $fact ) => \HWS\BaseTools\CompanyPages\CompanyFacts::value( $fact ),
         "page_detail_renderer" => __NAMESPACE__ . "\\hws_pages_page_detail_html",
         "logger" => static function( string $message ): void {
             if ( function_exists( __NAMESPACE__ . "\\write_log" ) ) {
@@ -184,9 +184,9 @@ function display_settings_pages(): void {
         "shortcode_reference_title" => "Shortcodes for page content",
         "actions" => hws_pages_actions(),
         "labels" => [
-            "pages_title" => "Company pages",
+            "pages_title" => "Site pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "The pages every company website has, each linked to its WordPress page. Their facts come from Website Identity. Open a page's Page details to see the details it uses and its default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
+            "pages_description" => "The pages every website has, each linked to its WordPress page. Their details come from Website Identity: the company or person the site represents, or the website itself. Open a page's Page details to see the details it uses and its default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",

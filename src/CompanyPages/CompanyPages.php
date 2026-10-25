@@ -20,7 +20,7 @@ defined( 'ABSPATH' ) || exit;
  *   Founding Date, Headquarters, Logo, Parent Network, Team), Contact, Privacy Policy, Terms of
  *   Use, Accessibility, FAQs and RSS Feed. Each page sits under its parent; ensure_pages() sets
  *   them all up (WP-CLI: wp hws-pages ensure).
- * - Wording is in templates/company-pages/, built from [hws_company], [hws_if] and
+ * - Wording is in templates/company-pages/, built from [hws_site], [hws_if] and
  *   [hws_page_link] (CompanyFacts), so it prints only the facts that are filled in.
  * - Other plugins read a link with hws_base_tools_linked_page( '<key>' ); a page of theirs can
  *   name a Base Tools page as its parent (Hexa WP Core resolves it).
@@ -151,9 +151,9 @@ final class CompanyPages implements ModuleInterface {
     public static function facts_used( string $type ): array {
         $html = self::template_html( $type );
         if ( 'headquarters' === $type ) {
-            $html = '[hws_company field="name"][hws_company field="headquarters_city"][hws_company field="headquarters_address"][hws_company field="headquarters_url"][hws_company field="email"]';
+            $html = '[hws_site field="name"][hws_site field="headquarters_city"][hws_site field="headquarters_address"][hws_site field="headquarters_url"][hws_site field="email"]';
         } elseif ( 'logo' === $type ) {
-            $html = '[hws_company field="name"][hws_company field="logo"]';
+            $html = '[hws_site field="name"][hws_site field="logo"]';
         }
         return CompanyFacts::used_in( $html );
     }
