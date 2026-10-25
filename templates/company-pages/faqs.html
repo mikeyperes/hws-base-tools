@@ -1,9 +1,20 @@
-<h2>Frequently asked questions</h2>
-<h2>What is [hws_company field="name"]?</h2>
-[hws_if field="description"]<p>[hws_company field="description"]</p>[/hws_if]
+[hws_if field="description"]<h2>What is [hws_company field="name"]?</h2>
+<p>[hws_company field="description"]</p>[/hws_if]
+[hws_if field="parent_name"]<h2>Who owns [hws_company field="name"]?</h2>
+<p>[hws_company field="name"] is owned and operated by [hws_company field="parent_name" after="."]</p>[/hws_if]
+[hws_if field="founding_date"]<h2>When was [hws_company field="name"] founded?</h2>
+<p>[hws_company field="name"] was founded on [hws_company field="founding_date"][hws_company field="founders" before=" by "].</p>[/hws_if]
+[hws_if field="headquarters_city"]<h2>Where is [hws_company field="name"] based?</h2>
+<p>[hws_company field="name"] is based in [hws_company field="headquarters_city" after="."]</p>[/hws_if]
 <h2>How do I contact you?</h2>
-<p>Email [hws_company field="email"][hws_if page="contact"] or use our [hws_page_link key="contact"] page[/hws_if].</p>
-<h2>How do I report an error?</h2>
-<p>Write to [hws_company field="email"] with the page link and what should change.[hws_if page="corrections_policy"] See our [hws_page_link key="corrections_policy"].[/hws_if]</p>
-[hws_if page="logo"]<h2>Where can I find your logo?</h2>
-<p>Our logo and brand files are on our [hws_page_link key="logo"] page.</p>[/hws_if]
+<p>Email [hws_company field="email"][hws_if page="contact"] or use our [hws_page_link key="contact" text="contact page"][/hws_if].</p>
+<h2>How do I report a mistake?</h2>
+<p>Email [hws_company field="email"] with the page address and what should change.[hws_if page="corrections_policy"] See our [hws_page_link key="corrections_policy"].[/hws_if]</p>
+[hws_if page="become_contributor"]<h2>Can I write for [hws_company field="name"]?</h2>
+<p>Yes. See [hws_page_link key="become_contributor"].</p>[/hws_if]
+[hws_if page="submit_press_release"]<h2>How do I send a press release?</h2>
+<p>See [hws_page_link key="submit_press_release"].</p>[/hws_if]
+[hws_if page="logo"]<h2>Can I use your logo?</h2>
+<p>Our logo and how to use it are on our [hws_page_link key="logo"] page.</p>[/hws_if]
+[hws_if page="rss_feed"]<h2>How do I follow new stories?</h2>
+<p>Add one of our feeds to your news reader. They are listed on our [hws_page_link key="rss_feed"] page.</p>[/hws_if]

@@ -142,6 +142,22 @@ final class CompanyPages implements ModuleInterface {
         return FounderCards::render( [ $user_id ], FounderCards::ATTRIBUTES, [ 'block' => Founders::BLOCK, 'item' => Founders::ITEM, 'style' => Founders::settings()['style'], 'title' => [ Founders::class, 'title' ] ] );
     }
 
+    /**
+     * The company details a page's default content uses, label => value ('' when not set),
+     * for the Pages tab's "Details this page uses".
+     *
+     * @return array<string,string>
+     */
+    public static function facts_used( string $type ): array {
+        $html = self::template_html( $type );
+        if ( 'headquarters' === $type ) {
+            $html = '[hws_company field="name"][hws_company field="headquarters_city"][hws_company field="headquarters_address"][hws_company field="headquarters_url"][hws_company field="email"]';
+        } elseif ( 'logo' === $type ) {
+            $html = '[hws_company field="name"][hws_company field="logo"]';
+        }
+        return CompanyFacts::used_in( $html );
+    }
+
     /** Base Tools' page wording for a page type, from templates/company-pages/<type>.html ('' when none). */
     public static function template_html( string $type ): string {
         $file = dirname( __DIR__, 2 ) . '/templates/company-pages/' . sanitize_key( $type ) . '.html';

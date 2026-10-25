@@ -177,6 +177,10 @@ function display_settings_pages(): void {
         "show_page_details" => true,
         "show_pages" => true,
         "show_menus" => false,
+        "facts_used" => [ \HWS\BaseTools\CompanyPages\CompanyPages::class, "facts_used" ],
+        "facts_edit_url" => \HWS\BaseTools\SiteProfile\SiteIdentity::edit_url(),
+        "shortcode_reference" => \HWS\BaseTools\CompanyPages\CompanyFacts::reference(),
+        "shortcode_reference_title" => "Shortcodes for page content",
         "actions" => hws_pages_actions(),
         "labels" => [
             "pages_title" => "Company pages",

@@ -3,6 +3,8 @@
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
 
 
+Version 3.40.0 adds to the page list: a shortcode reference above it (`shortcode_reference`, rows with optional heading, note and current value; `SiteStructureRenderer::shortcode_items_html()` is public so plugin screens can reuse it) and, per page, the details its content uses with a "N details missing" tag (`facts_used` callback, `facts_edit_url`).
+
 Version 3.39.0 lays the page list out in sections (one per page with pages under it, that page first, then "Other pages") with no indentation: each page under another shows "Under <parent>" next to its address. Each row has a Details button that opens the page facts, the default content as it reads (keeping the page's own styles) and "What goes into the page".
 
 Version 3.38.1 relabels the page list template box "What goes into the page" and explains that a shortcode line prints the Default page content shown above it.

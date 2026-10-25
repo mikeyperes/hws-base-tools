@@ -1,2 +1,4 @@
-<h2>The founders of [hws_company field="name"]</h2>
+[hws_if field="founders"]<p>[hws_company field="name"] was founded[hws_company field="founding_date" before=" on "] by [hws_company field="founders"].</p>[/hws_if]
 [hws_if shortcode="hws_publication_founders"][hws_publication_founders][/hws_if]
+[hws_if field="founders" not="1"]<p>[hws_company field="name"] was founded[hws_company field="founding_date" before=" on "][hws_company field="founding_location" before=" in "].</p>[/hws_if]
+[hws_if page="about"]<p>Learn more on our [hws_page_link key="about"] page.</p>[/hws_if]

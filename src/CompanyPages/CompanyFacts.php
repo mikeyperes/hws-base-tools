@@ -109,6 +109,87 @@ final class CompanyFacts {
         return $id && 'publish' === get_post_status( $id ) ? $id : 0;
     }
 
+    /** Plain names for the company facts, as Website Identity labels them. */
+    public const LABELS = [
+        'name' => 'Company name', 'legal_name' => 'Legal name', 'alternate_names' => 'Other names', 'description' => 'Short description',
+        'logo' => 'Logo', 'url' => 'Website address', 'founding_date' => 'Founding date', 'founding_location' => 'Founding city',
+        'founding_location_url' => 'Founding city link', 'founders' => 'Founders', 'headquarters_city' => 'Headquarters city',
+        'headquarters_address' => 'Headquarters address', 'headquarters_url' => 'Headquarters link', 'parent_name' => 'Parent company',
+        'parent_url' => 'Parent company website', 'email' => 'Email', 'phone' => 'Phone', 'mission' => 'Mission', 'profiles' => 'Social profiles',
+    ];
+
+    /**
+     * The company facts a piece of page content uses ([hws_company field] or [hws_if field]),
+     * as label => value shown as plain text ('' when not set).
+     *
+     * @return array<string,string>
+     */
+    public static function used_in( string $html ): array {
+        preg_match_all( '/\[(?:hws_company|hws_if|smp_company|smp_if)\b[^\]]*\bfield=["\']?([a-z_]+)/', $html, $m );
+        $out = [];
+        foreach ( array_unique( $m[1] ) as $field ) {
+            $out[ self::LABELS[ $field ] ?? $field ] = self::plain( $field );
+        }
+        return $out;
+    }
+
+    /** One fact as short plain text for the admin ('' when not set). */
+    public static function plain( string $field ): string {
+        $value = self::value( $field );
+        if ( self::empty_value( $value ) ) {
+            return '';
+        }
+        if ( 'founders' === $field ) {
+            $names = [];
+            foreach ( (array) $value as $user_id ) {
+                $user = get_user_by( 'id', absint( $user_id ) );
+                if ( $user ) {
+                    $names[] = $user->display_name;
+                }
+            }
+            return implode( ', ', $names );
+        }
+        if ( 'logo' === $field ) {
+            return 'Image set';
+        }
+        if ( 'founding_date' === $field ) {
+            $time = strtotime( (string) $value );
+            return $time ? date_i18n( (string) get_option( 'date_format', 'F j, Y' ), $time ) : (string) $value;
+        }
+        if ( is_array( $value ) ) {
+            return count( array_filter( $value ) ) . ' added';
+        }
+        $text = trim( wp_strip_all_tags( (string) $value ) );
+        return strlen( $text ) > 90 ? substr( $text, 0, 87 ) . '...' : $text;
+    }
+
+    /**
+     * The shortcodes company and publication page content is built from, with what each does.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function reference(): array {
+        $items = [ [ 'heading' => 'Company details', 'note' => 'Each one prints a detail from Website Identity. A detail that is not set prints nothing.' ] ];
+        foreach ( self::LABELS as $field => $label ) {
+            if ( in_array( $field, [ 'alternate_names', 'founding_location_url', 'profiles' ], true ) ) {
+                continue;
+            }
+            $items[] = [ 'code' => '[hws_company field="' . $field . '"]', 'description' => $label, 'value' => self::plain( $field ) ];
+        }
+        $items[] = [ 'heading' => 'Options and building blocks' ];
+        $items[] = [ 'code' => '[hws_company field="founding_date" format="year"]', 'description' => 'format: text, link, year or raw. before="..." and after="..." add text only when the detail is set.' ];
+        $items[] = [ 'code' => '[hws_if field="mission"]...[/hws_if]', 'description' => 'Shows the text inside only when the detail is set. Also page="contact" (that page exists) or shortcode="name" (that shortcode is available). Add not="1" for the opposite.' ];
+        $items[] = [ 'code' => '[hws_page_link key="contact"]', 'description' => 'A link to a site page from any plugin (about, contact, privacy, dmca, editorial_guidelines, become_contributor and the rest). text="..." changes the link text.' ];
+        $items[] = [ 'code' => '[hws_site_page_template type="about"]', 'description' => 'The whole default text of a company page, filled in from the details above.' ];
+        $items[] = [ 'heading' => 'Lists' ];
+        $items[] = [ 'code' => '[hws_publication_founders]', 'description' => 'The founders, with photo, title and short bio.' ];
+        $items[] = [ 'code' => '[hws_team_members]', 'description' => 'The team members, when the Team feature is on.' ];
+        $items[] = [ 'code' => '[hws_rss_feeds]', 'description' => 'Every RSS feed on the site, with a copy button.' ];
+        $items[] = [ 'code' => '[smpi_executive_leadership] [smpi_staff] [smpi_contributors]', 'description' => 'Leadership, staff and contributors, from SMP Publication Integration.' ];
+        $items[] = [ 'code' => '[smp_latest_press_releases count="20"] [smp_press_release_form]', 'description' => 'The newest press releases and the press release form, from SMP Publication Integration.' ];
+        return $items;
+    }
+
     private static function format_value( string $field, $value, array $atts ): string {
         $format = sanitize_key( (string) $atts['format'] );
         $sep    = (string) $atts['sep'];

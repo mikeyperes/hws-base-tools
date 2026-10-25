@@ -330,6 +330,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.28.0
+
+- Company page default texts rewritten for any company website: no repeated title headings, full Privacy Policy (who is responsible, sharing, cookies, retention, rights, children) and Terms of Use (links, liability, governing law), a fuller FAQ, a new Contact text, and fallbacks so Founders and Team never print an empty page. Fixes the Mission Statement link that printed nothing.
+- Pages tab (Hexa WP Core 3.40.0): a shortcode reference at the top lists every company detail shortcode with its current value, and each page's Details shows the details it uses, with a missing-details tag on the row.
+
 ### 13.27.0
 
 - Pages tab (Hexa WP Core 3.39.0): pages in sections (About and its pages, then Other pages), no indentation, a Details button per page, one intro instead of two.
