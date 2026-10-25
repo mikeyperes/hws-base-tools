@@ -22,6 +22,7 @@ final class SiteSetupCommand {
         if ( defined( 'WP_CLI' ) && WP_CLI ) {
             \WP_CLI::add_command( 'hws identity', [ self::class, 'identity' ] );
             \WP_CLI::add_command( 'hws brand', [ self::class, 'brand' ] );
+            \WP_CLI::add_command( 'hws founders', [ self::class, 'founders' ] );
         }
     }
 
@@ -161,6 +162,31 @@ final class SiteSetupCommand {
             set_theme_mod( 'custom_logo', $id );
         }
         \WP_CLI::success( 'Saved ' . $slot . ' (attachment ' . $id . '): ' . wp_get_attachment_url( $id ) );
+    }
+
+    /**
+     * Read or set the founders section title.
+     *
+     * ## OPTIONS
+     *
+     * <action>
+     * : get or set
+     *
+     * [--heading=<heading>]
+     * : The section title over the founders list ("Founders" by default; for example Executives). Empty for none.
+     *
+     * @param array<int,string>    $args
+     * @param array<string,string> $assoc
+     */
+    public static function founders( array $args, array $assoc ): void {
+        $action = $args[0] ?? 'get';
+        if ( 'set' === $action && array_key_exists( 'heading', $assoc ) ) {
+            \HWS\BaseTools\Founders\Founders::update_settings( [ 'heading' => sanitize_text_field( (string) $assoc['heading'] ) ] );
+        } elseif ( 'get' !== $action ) {
+            \WP_CLI::error( 'Use get, or set --heading="...".' );
+        }
+        $settings = \HWS\BaseTools\Founders\Founders::settings();
+        \WP_CLI::line( (string) wp_json_encode( [ 'enabled' => $settings['enabled'], 'heading' => $settings['heading'], 'ids' => $settings['ids'], 'titles' => $settings['titles'] ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
     }
 
     private static function attachment( string $source ): int {

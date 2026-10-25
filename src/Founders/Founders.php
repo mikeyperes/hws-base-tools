@@ -20,6 +20,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Founders implements ModuleInterface {
     public const OPTION    = 'hws_publication_founders';
+    /** Section titles offered on the Founders tab; any other text works too. */
+    public const TITLE_SUGGESTIONS = [ 'Founders', 'Co-Founders', 'Executives', 'Leadership', 'Owners', 'Publishers', 'Our team' ];
     public const SHORTCODE = 'hws_publication_founders';
     public const ALIAS     = 'smpi_founders';
     public const BLOCK     = 'hws-founders';

@@ -12,7 +12,7 @@
 ## Settings
 
 - On/off (off: the shortcode prints nothing; the list is kept and `hws_publication_founders()` still returns it).
-- Section title, "Founders" by default; empty for none.
+- Section title, "Founders" by default; pick a suggestion (Founders, Co-Founders, Executives, Leadership, Owners, Publishers, Our team) or type anything; empty for none. Command line: `wp hws founders set --heading="Executives"`.
 - Style: Cards (default), List, No styling (same markup, no built-in CSS).
 - Option `hws_publication_founders`: `enabled`, `heading`, `ids`, `titles`, `style`, `entity_is_founder`.
 

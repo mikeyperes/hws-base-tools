@@ -156,8 +156,10 @@ final class FoundersTab implements ModuleInterface {
 
             <section>
                 <h3>Section title</h3>
-                <p class="lead">Shown above the founders. "Founders" by default; it can be "Our founders", "Executives" or anything else. Leave it empty for no title.</p>
-                <input type="text" class="regular-text" id="hws-fo-heading" value="<?php echo esc_attr( $settings['heading'] ); ?>" placeholder="Founders">
+                <p class="lead">Shown above the founders. "Founders" by default. Pick a suggestion or type anything; leave it empty for no title.</p>
+                <input type="text" class="regular-text" id="hws-fo-heading" list="hws-fo-heading-options" value="<?php echo esc_attr( $settings['heading'] ); ?>" placeholder="Founders">
+                <datalist id="hws-fo-heading-options"><?php foreach ( Founders::TITLE_SUGGESTIONS as $suggestion ) : ?><option value="<?php echo esc_attr( $suggestion ); ?>"></option><?php endforeach; ?></datalist>
+                <p class="description">Suggestions: <?php echo esc_html( implode( ', ', Founders::TITLE_SUGGESTIONS ) ); ?>.</p>
                 <div class="hws-fo-notice" data-role="heading-notice" role="status" aria-live="polite"></div>
             </section>
 
