@@ -273,12 +273,20 @@ final class PageStructureManager {
         return (string) $this->config['option_prefix'] . $page_key;
     }
 
+    /** The linked page; 0 when none, or when the linked page was deleted or is in the trash. */
     public function assigned_page_id( string $page_key ): int {
         if ( isset( $this->config['assignment_getter'] ) && is_callable( $this->config['assignment_getter'] ) ) {
-            return max( 0, (int) call_user_func( $this->config['assignment_getter'], $page_key ) );
+            $id = max( 0, (int) call_user_func( $this->config['assignment_getter'], $page_key ) );
+        } else {
+            $id = function_exists( 'get_option' ) ? max( 0, (int) get_option( $this->option_key( $page_key ), 0 ) ) : 0;
         }
-
-        return function_exists( 'get_option' ) ? max( 0, (int) get_option( $this->option_key( $page_key ), 0 ) ) : 0;
+        if ( $id > 0 && function_exists( 'get_post_status' ) ) {
+            $status = get_post_status( $id );
+            if ( false === $status || 'trash' === $status ) {
+                return 0;
+            }
+        }
+        return $id;
     }
 
     public function assigned_page( string $page_key ): ?\WP_Post {

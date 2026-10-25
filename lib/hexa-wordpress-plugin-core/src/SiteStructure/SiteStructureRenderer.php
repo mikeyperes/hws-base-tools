@@ -29,6 +29,7 @@ final class SiteStructureRenderer {
                 'show_pages'            => true,
                 'show_menus'            => true,
                 'show_page_details'     => false,
+                'show_default_content'  => true,
                 'lazy_page_workspace'   => false,
                 'actions'               => [],
                 'labels'                => [],
@@ -152,6 +153,7 @@ final class SiteStructureRenderer {
             <td class="hpc-site-page-status"><?php echo $this->status_badge( $is_set, $is_set ? 'Set' : 'Not Set' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
             <td class="hpc-site-page-actions"><?php echo $this->page_actions( $page_id, $page_key, $is_set, $page_data, $parent_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
         </tr>
+        <?php echo $this->render_default_content_row( $page_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         <?php if ( empty( $this->config['lazy_page_workspace'] ) ) : ?>
             <?php echo $this->render_page_detail_row( $page_key, $page_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <?php echo $this->render_template_row( $page_key, $page_data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -159,6 +161,32 @@ final class SiteStructureRenderer {
         <?php foreach ( (array) ( $page_data['children'] ?? [] ) as $child_key => $child_data ) : ?>
             <?php echo $this->render_page_row( (string) $child_key, is_array( $child_data ) ? $child_data : [], $all_pages, $page_key, false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         <?php endforeach; ?>
+        <?php
+
+        return (string) ob_get_clean();
+    }
+
+    /** Expand/collapse: the content a new page gets by default, as it reads on the site. */
+    private function render_default_content_row( string $page_key ): string {
+        if ( empty( $this->config['show_default_content'] ) ) {
+            return '';
+        }
+        $template = $this->manager->default_template( $page_key );
+        if ( '' === trim( $template ) ) {
+            return '';
+        }
+        $html = function_exists( 'do_shortcode' ) ? do_shortcode( $template ) : $template;
+
+        ob_start();
+        ?>
+        <tr class="hpc-site-default-content-row" data-page-key="<?php echo esc_attr( $page_key ); ?>">
+            <td colspan="4" style="padding:0 16px 12px;">
+                <details class="hpc-default-content" style="border:1px solid #e5e7eb;border-radius:8px;background:#fff;">
+                    <summary style="cursor:pointer;padding:10px 14px;font-weight:600;">Default page content</summary>
+                    <div style="border-top:1px solid #e5e7eb;padding:14px;max-height:420px;overflow:auto;"><?php echo wp_kses_post( $html ); ?></div>
+                </details>
+            </td>
+        </tr>
         <?php
 
         return (string) ob_get_clean();

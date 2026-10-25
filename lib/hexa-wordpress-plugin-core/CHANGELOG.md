@@ -2,6 +2,8 @@
 
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
 
+
+Version 3.37.0: `SiteStructureRenderer` shows an expand/collapse "Default page content" under each page row (the default template, rendered; `show_default_content`, on by default), and `assigned_page_id()` treats a deleted or trashed linked page as not linked, so the row offers Create again.
 Version 3.36.1 makes `ensure_page()` prefer a published page at any of a definition's addresses over a draft at its main one (`find_page_by_slug()` and `find_page_by_pattern()` take a status list), so a leftover draft `privacy-policy` no longer wins over the live `privacy-policy-2`. It also notes that 3.36.0 moved `PageRedirects` to the `wp` hook, ahead of redirect plugins that send every 404 home.
 
 Version 3.36.0 lets `ensure_page()` find a page that already exists under another address: a page definition's `slugs` lists alternatives, `*` as a wildcard (`find_page_by_pattern()`), so a site's `her-forward-mission-statement` is linked instead of a second Mission Statement page being created.
