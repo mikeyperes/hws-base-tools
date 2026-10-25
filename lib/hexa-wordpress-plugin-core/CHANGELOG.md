@@ -2,6 +2,8 @@
 
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
 
+Version 3.36.1 makes `ensure_page()` prefer a published page at any of a definition's addresses over a draft at its main one (`find_page_by_slug()` and `find_page_by_pattern()` take a status list), so a leftover draft `privacy-policy` no longer wins over the live `privacy-policy-2`. It also notes that 3.36.0 moved `PageRedirects` to the `wp` hook, ahead of redirect plugins that send every 404 home.
+
 Version 3.36.0 lets `ensure_page()` find a page that already exists under another address: a page definition's `slugs` lists alternatives, `*` as a wildcard (`find_page_by_pattern()`), so a site's `her-forward-mission-statement` is linked instead of a second Mission Statement page being created.
 
 Version 3.35.0 lets one plugin's page sit under another plugin's page. `PageStructureManager::resolve_page_id()` finds a page key in any loaded page manager, then through the `hexa_site_structure_page_id` filter; `ensure_page()` / `ensure_pages()` set pages up in one call (the linked page, else a page already at its slug at any level, else a new page) and move each under its `parent`; `place_under_parent()` moves a page and `PageRedirects` 301s its old address; `missing_facts()` checks a page definition's `required_facts` through the `facts_getter` config.

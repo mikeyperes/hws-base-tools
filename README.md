@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.24.1
+
+- Company pages link the live page when a site has both a live and a draft copy (a live `privacy-policy-2` over a draft `privacy-policy`), and also find Contact at `contact-us` (Hexa WP Core 3.36.1).
+
 ### 13.24.0
 
 - The company pages any website has now live here, each under its parent: About with Mission Statement, Founders and a profile page per founder, Founding Date, Headquarters, Logo, Parent Network and Team; plus Contact, Privacy Policy, Terms of Use, Accessibility, FAQs and RSS Feed. Existing pages are kept and moved, with their old addresses redirecting (Hexa WP Core 3.36.0).
