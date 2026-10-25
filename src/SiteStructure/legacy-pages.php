@@ -159,7 +159,6 @@ function hws_pages_page_detail_html( int $page_id ): string {
 }
 
 function display_settings_pages(): void {
-    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>The pages every company website has. Their facts come from Website Identity. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration, Pages.</p></div>";
 
     if ( ! class_exists( SiteStructureRenderer::class ) || ! class_exists( PageStructureManager::class ) ) {
         echo "<div class=\"notice notice-error\"><p>Hexa WordPress Plugin Core SiteStructure tools are not loaded.</p></div>";
@@ -182,7 +181,7 @@ function display_settings_pages(): void {
         "labels" => [
             "pages_title" => "Company pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "Each company page, linked to its WordPress page. Pages under About sit under it on the site. Open Page details to see the page's default content and template. Menus are on the Menu Tools tab.",
+            "pages_description" => "The pages every company website has, each linked to its WordPress page. Their facts come from Website Identity. Click Details to see a page's default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",

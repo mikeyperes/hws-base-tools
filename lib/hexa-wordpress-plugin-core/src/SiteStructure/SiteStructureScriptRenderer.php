@@ -293,6 +293,13 @@ final class SiteStructureScriptRenderer {
                 filterParentItems($card.find(".hpc-structure-parent"), $(this).val());
             });
 
+            $root.on("click", ".hpc-sp-toggle", function() {
+                var $btn = $(this);
+                var open = $btn.attr("aria-expanded") !== "true";
+                $btn.attr("aria-expanded", open ? "true" : "false");
+                $("#" + $btn.attr("aria-controls")).prop("hidden", !open);
+            });
+
             $root.on("change", ".hpc-site-page-select", function() {
                 var $select = $(this);
                 var $row = $select.closest(".hpc-site-page-row");

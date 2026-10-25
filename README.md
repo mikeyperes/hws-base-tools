@@ -330,6 +330,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.27.0
+
+- Pages tab (Hexa WP Core 3.39.0): pages in sections (About and its pages, then Other pages), no indentation, a Details button per page, one intro instead of two.
+- Company page wording keeps the styles of shortcodes it contains (the Founders page's cards printed their CSS as text).
+
 ### 13.26.1
 
 - Pages tab (Hexa WP Core 3.38.1): the template box is labelled "What goes into the page" and explains that its line prints the Default page content.

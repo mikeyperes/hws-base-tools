@@ -3,6 +3,8 @@
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
 
 
+Version 3.39.0 lays the page list out in sections (one per page with pages under it, that page first, then "Other pages") with no indentation: each page under another shows "Under <parent>" next to its address. Each row has a Details button that opens the page facts, the default content as it reads (keeping the page's own styles) and "What goes into the page".
+
 Version 3.38.1 relabels the page list template box "What goes into the page" and explains that a shortcode line prints the Default page content shown above it.
 
 Version 3.38.0 redesigns the `SiteStructureRenderer` page list: one row per page (name, status pill, address, linked page, View / Edit / Apply template / Delete), pages listed with a `parent` key nested under that parent, a page not created yet shown at its address under its parent, and one "Page details" expander holding the page facts, the default content as it reads and the template editor (a plain text box). The old table, the separate detail, default-content and template rows, and the red/green Set badges are gone.
