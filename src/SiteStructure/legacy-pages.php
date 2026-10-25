@@ -96,6 +96,9 @@ function hws_pages_manager(): PageStructureManager {
         "template_getter" => __NAMESPACE__ . "\\hws_pages_stored_template",
         "facts_getter" => static fn( string $fact ) => \HWS\BaseTools\CompanyPages\CompanyFacts::value( $fact ),
         "page_detail_renderer" => __NAMESPACE__ . "\\hws_pages_page_detail_html",
+        "site_type" => static fn(): string => (string) \HWS\BaseTools\SiteProfile\SiteIdentity::value( "type" ),
+        "site_type_labels" => [ "company" => "a company or organization", "person" => "a person", "none" => "neither a company nor a person" ],
+        "site_type_edit_url" => \HWS\BaseTools\SiteProfile\SiteIdentity::edit_url(),
         "logger" => static function( string $message ): void {
             if ( function_exists( __NAMESPACE__ . "\\write_log" ) ) {
                 write_log( "[HWS Pages] " . $message );
