@@ -146,23 +146,20 @@ function hws_pages_page_detail_html( int $page_id ): string {
     $status = (string) $post->post_status;
     $status_obj = get_post_status_object( $status );
     $status_label = $status_obj ? (string) $status_obj->label : ucfirst( $status );
-    $edit_url = (string) get_edit_post_link( $page_id, "raw" );
     $view_url = (string) get_permalink( $page_id );
     $modified = get_the_modified_date( "M j, Y g:i a", $page_id );
     $author = get_the_author_meta( "display_name", (int) $post->post_author );
 
-    return "<div class=\"hws-pages-detail\" style=\"display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 12px;border:1px solid #dbeafe;background:#eff6ff;border-radius:8px;\">"
-        . "<strong>Owned by HWS Base Tools</strong>"
-        . "<span>Status: <code>" . esc_html( $status_label ) . "</code></span>"
-        . "<span>Author: <code>" . esc_html( $author ?: "unknown" ) . "</code></span>"
-        . "<span>Modified: <code>" . esc_html( $modified ) . "</code></span>"
-        . "<a class=\"button button-small\" target=\"_blank\" rel=\"noopener\" href=\"" . esc_url( $edit_url ) . "\">Edit</a>"
-        . "<a class=\"button button-small\" target=\"_blank\" rel=\"noopener\" href=\"" . esc_url( $view_url ) . "\">View</a>"
+    return "<div class=\"hws-pages-detail\">"
+        . "<span>Status: <strong>" . esc_html( $status_label ) . "</strong></span>"
+        . "<span>Author: <strong>" . esc_html( $author ?: "unknown" ) . "</strong></span>"
+        . "<span>Last changed: <strong>" . esc_html( $modified ) . "</strong></span>"
+        . "<span>Address: <strong>" . esc_html( (string) wp_make_link_relative( $view_url ) ) . "</strong></span>"
         . "</div>";
 }
 
 function display_settings_pages(): void {
-    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>Company pages any website has: About and the pages under it (Mission Statement, Founders and one profile page per founder, Founding Date, Headquarters, Logo, Parent Network, Team), plus Contact, Privacy Policy, Terms of Use, Accessibility, FAQs and RSS Feed. Their facts come from Website Identity. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration, Pages, which shows these read-only.</p></div>";
+    echo "<div class=\"hws-pages-intro\"><h2>Site Pages</h2><p>The pages every company website has. Their facts come from Website Identity. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration, Pages.</p></div>";
 
     if ( ! class_exists( SiteStructureRenderer::class ) || ! class_exists( PageStructureManager::class ) ) {
         echo "<div class=\"notice notice-error\"><p>Hexa WordPress Plugin Core SiteStructure tools are not loaded.</p></div>";
@@ -180,12 +177,12 @@ function display_settings_pages(): void {
         "template_editor_rows" => 8,
         "show_page_details" => true,
         "show_pages" => true,
-        "show_menus" => true,
+        "show_menus" => false,
         "actions" => hws_pages_actions(),
         "labels" => [
-            "pages_title" => "Shared Site Pages",
+            "pages_title" => "Company pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "Create a published page or assign an existing page for each company page. Pages under About are placed under it automatically.",
+            "pages_description" => "Each company page, linked to its WordPress page. Pages under About sit under it on the site. Open Page details to see the page's default content and template. Menus are on the Menu Tools tab.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",
