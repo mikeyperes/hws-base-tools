@@ -201,13 +201,10 @@ final class SiteStructureRenderer {
                 </div>
                 <div class="hpc-sp-buttons">
                     <span class="hpc-site-page-actions"><?php echo $this->page_actions( $page_id, $page_key, $is_set, $page_data, $parent_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-                    <?php if ( '' !== $more ) : ?>
-                        <button type="button" class="button button-small hpc-sp-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $body_id ); ?>">Details</button>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php if ( '' !== $more ) : ?>
-                <div class="hpc-sp-body" id="<?php echo esc_attr( $body_id ); ?>" hidden><?php echo $more; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+                <details class="hpc-sp-more" id="<?php echo esc_attr( $body_id ); ?>"><summary>Page details</summary><div class="hpc-sp-body"><?php echo $more; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div></details>
             <?php endif; ?>
         </div>
         <?php foreach ( (array) ( $page_data['children'] ?? [] ) as $child_key => $child_data ) : ?>
@@ -288,7 +285,7 @@ final class SiteStructureRenderer {
         if ( empty( $items ) ) {
             return '';
         }
-        return '<div class="hpc-sp-shortcodes"><h4>' . esc_html( $title ) . '</h4>' . self::shortcode_items_html( $items ) . '</div>';
+        return '<details class="hpc-sp-shortcodes"><summary>' . esc_html( $title ) . '</summary>' . self::shortcode_items_html( $items ) . '</details>';
     }
 
     /**
@@ -332,16 +329,15 @@ final class SiteStructureRenderer {
             .hpc-sp-list{border:1px solid #dcdcde;border-radius:8px;background:#fff;overflow:hidden}
             .hpc-sp{border-top:1px solid #f0f0f1;padding:12px 16px}
             .hpc-sp:first-child{border-top:0}
-            .hpc-sp-head{display:grid;grid-template-columns:minmax(220px,1fr) minmax(200px,280px) minmax(300px,auto);gap:16px;align-items:center}
-            .hpc-sp-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+            .hpc-sp-head{display:grid;grid-template-columns:minmax(320px,1fr) 260px 270px;gap:20px;align-items:center}
+            .hpc-sp-title{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
             .hpc-sp-title strong{font-size:14px}
-            .hpc-sp-path{margin-top:3px;color:#646970;font-size:12px;word-break:break-all}
+            .hpc-sp-path{margin-top:3px;color:#646970;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
             .hpc-sp-under{margin-left:8px;padding-left:8px;border-left:1px solid #dcdcde}
             .hpc-sp-link select{width:100%;max-width:none}
-            .hpc-sp-buttons{display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
-            .hpc-site-page-actions{display:inline-flex;gap:6px;flex-wrap:wrap}
+            .hpc-sp-buttons{display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:nowrap}
+            .hpc-site-page-actions{display:inline-flex;gap:6px;flex-wrap:nowrap}
             .hpc-site-page-actions .hpc-delete-page{color:#b32d2e;border-color:#e6b6b6}
-            .hpc-sp-toggle[aria-expanded="true"]{background:#f0f0f1}
             .hpc-sp-status{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;line-height:18px}
             .hpc-sp-status--on{background:#e7f6ec;color:#16632d}
             .hpc-sp-status--off{background:#fcf0e3;color:#8a4b0f}
@@ -351,7 +347,9 @@ final class SiteStructureRenderer {
             .hpc-sp-facts li span{color:#646970;min-width:120px}
             .hpc-sp-facts strong{font-weight:600;word-break:break-word}
             .hpc-sp-missing{color:#8a4b0f}
-            .hpc-sp-shortcodes{margin:0 0 24px;padding:14px 16px;background:#fff;border:1px solid #dcdcde;border-radius:8px}
+            .hpc-sp-shortcodes{margin:0 0 24px;padding:12px 16px;background:#fff;border:1px solid #dcdcde;border-radius:8px}
+            .hpc-sp-shortcodes > summary{cursor:pointer;font-size:14px;font-weight:600}
+            .hpc-sp-shortcodes[open] > summary{margin-bottom:12px}
             .hpc-sp-shortcodes h4{margin:0 0 10px;font-size:14px}
             .hpc-sp-shortcodes ul{display:grid;gap:8px;margin:0}
             .hpc-sp-shortcodes li{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:16px;margin:0;font-size:13px;align-items:baseline}
@@ -360,8 +358,9 @@ final class SiteStructureRenderer {
             .hpc-sp-shortcodes h5:first-of-type{margin-top:0}
             .hpc-sp-shortcodes li.hpc-sp-sc--value{grid-template-columns:minmax(220px,340px) 170px 1fr}
             .hpc-sp-shortcodes li strong,.hpc-sp-shortcodes li em{word-break:break-word}
-            .hpc-sp-body[hidden]{display:none}
-            .hpc-sp-body{display:grid;gap:0;margin-top:12px;border:1px solid #dcdcde;border-radius:6px;overflow:hidden}
+                        .hpc-sp-more{margin-top:6px}
+            .hpc-sp-more summary{cursor:pointer;color:#2271b1;font-size:12px;font-weight:600;width:max-content}
+            .hpc-sp-body{display:grid;gap:0;margin-top:10px;border:1px solid #dcdcde;border-radius:6px;overflow:hidden}
             .hpc-sp-part{padding:14px 16px;background:#f6f7f7;border-top:1px solid #dcdcde}
             .hpc-sp-part:first-child{border-top:0}
             .hpc-sp-part h5{margin:0 0 4px;font-size:13px;color:#1d2327}

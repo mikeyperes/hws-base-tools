@@ -185,7 +185,7 @@ function display_settings_pages(): void {
         "labels" => [
             "pages_title" => "Company pages",
             "pages_heading" => "HWS-owned page assignments",
-            "pages_description" => "The pages every company website has, each linked to its WordPress page. Their facts come from Website Identity. Click Details to see a page's default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
+            "pages_description" => "The pages every company website has, each linked to its WordPress page. Their facts come from Website Identity. Open a page's Page details to see the details it uses and its default content. Publication pages (staff, masthead, policies, press releases) are in SMP Publication Integration; menus are on the Menu Tools tab.",
             "menus_title" => "Site Page Navigation",
             "menus_heading" => "Attach shared page groups to menus",
             "menus_description" => "Create menus, add custom menu items, attach individual assigned pages, or attach HWS site page blueprints.",

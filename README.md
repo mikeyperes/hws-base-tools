@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.28.1
+
+- Pages tab (Hexa WP Core 3.40.1): Page details is an expand/collapse again, rows line up, and the shortcode list is collapsed until opened.
+
 ### 13.28.0
 
 - Company page default texts rewritten for any company website: no repeated title headings, full Privacy Policy (who is responsible, sharing, cookies, retention, rights, children) and Terms of Use (links, liability, governing law), a fuller FAQ, a new Contact text, and fallbacks so Founders and Team never print an empty page. Fixes the Mission Statement link that printed nothing.
