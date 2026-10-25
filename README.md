@@ -337,6 +337,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.34.1
+
+- `wp hws identity` loads the site type list itself, so `--site-type` works from the command line.
+
 ### 13.34.0
 
 - Site setup commands: `wp hws identity get|set` saves the Website Identity and site type, `wp hws brand set` saves a Brand Assets slot from an attachment or image file, and `wp hws brand favicon` makes the favicon and site icon from a slot. Parent organizations take several entries, one per line.

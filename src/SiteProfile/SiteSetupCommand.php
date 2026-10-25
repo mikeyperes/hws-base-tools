@@ -49,6 +49,9 @@ final class SiteSetupCommand {
      * @param array<string,string> $assoc
      */
     public static function identity( array $args, array $assoc ): void {
+        if ( ! function_exists( 'hws_base_tools\\hws_site_type_options' ) ) {
+            require_once __DIR__ . '/legacy-site-profile.php';
+        }
         $action = $args[0] ?? 'get';
         if ( 'get' === $action ) {
             $out = SiteIdentity::get();
