@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.32.0
+
+- Pages tab (Hexa WP Core 3.43.0): the shortcode list is a clear table per group (Detail, Current value, Shortcode), with a Copy button on every shortcode.
+
 ### 13.31.1
 
 - Pages tab (Hexa WP Core 3.42.1): Edit page and View show a side arrow, as they open in a new tab.
