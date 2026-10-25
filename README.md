@@ -330,6 +330,11 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.33.0
+
+- About, Founders, Team and Contact are custom-design pages (Hexa WP Core 3.44.0): still found, linked and placed under About, but created as empty drafts and never filled with the default text; the site redesign builds their design. New founder profile pages also wait as drafts.
+- `[hws_faqs]...[/hws_faqs]` turns the questions inside (a heading, then its answer) into a minimalist list that opens on click, in the site's own fonts and colors. The FAQs page uses it.
+
 ### 13.32.0
 
 - Pages tab (Hexa WP Core 3.43.0): the shortcode list is a clear table per group (Detail, Current value, Shortcode), with a Copy button on every shortcode.

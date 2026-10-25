@@ -27,6 +27,7 @@ final class CompanyFacts {
     public const OLD_SHORTCODE  = 'hws_company';
     public const IF_SHORTCODE   = 'hws_if';
     public const LINK_SHORTCODE = 'hws_page_link';
+    public const FAQS_SHORTCODE = 'hws_faqs';
 
     /** Person details that stand in for a company detail when the site represents a person. */
     private const PERSON_FIELDS = [ 'description' => 'bio', 'logo' => 'photo' ];
@@ -36,6 +37,7 @@ final class CompanyFacts {
         add_shortcode( self::OLD_SHORTCODE, [ self::class, 'shortcode' ] );
         add_shortcode( self::IF_SHORTCODE, [ self::class, 'if_shortcode' ] );
         add_shortcode( self::LINK_SHORTCODE, [ self::class, 'link_shortcode' ] );
+        add_shortcode( self::FAQS_SHORTCODE, [ self::class, 'faqs_shortcode' ] );
     }
 
     /**
@@ -106,6 +108,36 @@ final class CompanyFacts {
 
     public static function if_shortcode( $atts, $content = '' ): string {
         return self::condition( (array) $atts ) ? do_shortcode( (string) $content ) : '';
+    }
+
+    /**
+     * [hws_faqs]<h2>Question</h2><p>Answer</p>...[/hws_faqs]: the questions inside as a minimalist
+     * list that opens on click (one <details> per question), in the site's own fonts and colors.
+     * Text before the first question stays as an intro; shortcodes inside run first.
+     */
+    public static function faqs_shortcode( $atts, $content = '' ): string {
+        $parts = preg_split( '#<h[23][^>]*>(.*?)</h[23]>#is', do_shortcode( (string) $content ), -1, PREG_SPLIT_DELIM_CAPTURE );
+        $items = '';
+        for ( $i = 1, $n = count( $parts ); $i < $n; $i += 2 ) {
+            $question = trim( (string) $parts[ $i ] );
+            $answer   = trim( (string) ( $parts[ $i + 1 ] ?? '' ) );
+            if ( '' === trim( wp_strip_all_tags( $question ) ) ) {
+                continue;
+            }
+            $items .= '<details class="hws-faq"><summary>' . wp_kses_post( $question ) . '</summary><div class="hws-faq__answer">' . $answer . '</div></details>';
+        }
+        $intro = trim( (string) ( $parts[0] ?? '' ) );
+        return self::faqs_styles() . '<div class="hws-faqs">' . ( '' !== trim( wp_strip_all_tags( $intro ) ) ? '<div class="hws-faqs__intro">' . $intro . '</div>' : '' ) . $items . '</div>';
+    }
+
+    /** The FAQ list's few styles, printed once with the first list. */
+    private static function faqs_styles(): string {
+        static $printed = false;
+        if ( $printed ) {
+            return '';
+        }
+        $printed = true;
+        return '<style id="hws-faqs-css">.hws-faqs{border-top:1px solid rgba(127,127,127,.25)}.hws-faqs__intro{padding:0 0 16px}.hws-faq{border-bottom:1px solid rgba(127,127,127,.25)}.hws-faq summary{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;cursor:pointer;font-weight:600;list-style:none}.hws-faq summary::-webkit-details-marker{display:none}.hws-faq summary::after{content:"+";flex:0 0 auto;font-weight:400}.hws-faq[open] summary::after{content:"-"}.hws-faq__answer{padding:0 0 18px}.hws-faq__answer > :first-child{margin-top:0}.hws-faq__answer > :last-child{margin-bottom:0}</style>';
     }
 
     public static function link_shortcode( $atts ): string {
@@ -201,6 +233,7 @@ final class CompanyFacts {
         $items[] = [ 'code' => '[hws_site field="founding_date" format="year"]', 'description' => 'format: text, link, year or raw. before="..." and after="..." add text only when the detail is set.' ];
         $items[] = [ 'code' => '[hws_if field="mission"]...[/hws_if]', 'description' => 'Shows the text inside only when the detail is set. Also page="contact" (that page exists) or shortcode="name" (that shortcode is available). Add not="1" for the opposite.' ];
         $items[] = [ 'code' => '[hws_page_link key="contact"]', 'description' => 'A link to a site page from any plugin (about, contact, privacy, dmca, editorial_guidelines, become_contributor and the rest). text="..." changes the link text.' ];
+        $items[] = [ 'code' => '[hws_faqs]...[/hws_faqs]', 'description' => 'Questions inside (each a heading followed by its answer) shown as a minimalist list that opens on click. The FAQs page uses it.' ];
         $items[] = [ 'code' => '[hws_site_page_template type="about"]', 'description' => 'The whole default text of a site page, filled in from the details above.' ];
         $items[] = [ 'heading' => 'Lists' ];
         $items[] = [ 'code' => '[hws_publication_founders]', 'description' => 'The founders, with photo, title and short bio.' ];
