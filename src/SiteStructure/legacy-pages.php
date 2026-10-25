@@ -72,6 +72,7 @@ function hws_pages_actions(): array {
         "apply_template" => "hws_site_pages_apply_template",
         "page_details" => "hws_site_pages_page_details",
         "update_page_slug" => "hws_site_pages_update_page_slug",
+        "toggle_page" => "hws_site_pages_toggle_page",
     ];
 }
 

@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.29.0
+
+- Pages tab (Hexa WP Core 3.41.0): each company page has an on/off switch, one status, its missing details named, and one Edit page or Create page button; Page details holds the linked page, View, Apply template, Delete, the details used, the default content and what goes into the page. Pages that are off are skipped by `wp hws-pages ensure`.
+
 ### 13.28.1
 
 - Pages tab (Hexa WP Core 3.40.1): Page details is an expand/collapse again, rows line up, and the shortcode list is collapsed until opened.
