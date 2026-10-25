@@ -330,6 +330,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.33.1
+
+- Apply template on a page built with Elementor now shows the default text: the page leaves Elementor's builder mode, and its Elementor design stays saved (Hexa WP Core 3.44.1).
+
 ### 13.33.0
 
 - About, Founders, Team and Contact are custom-design pages (Hexa WP Core 3.44.0): still found, linked and placed under About, but created as empty drafts and never filled with the default text; the site redesign builds their design. New founder profile pages also wait as drafts.
