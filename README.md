@@ -55,6 +55,13 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Safe during startup:** read during plugin startup (before ACF has started), the lookup returns the stored option values instead of reading fields, so an early caller can never start ACF too early and crash the site.
 - **Code:** `src/SiteProfile/SiteIdentity.php`, `src/SiteProfile/site-identity-functions.php`
 
+### Site setup commands
+- **Does:** saves the Website Identity and Brand Assets from WP-CLI, so setup workflows fill them through the plugin instead of the admin screens.
+- **Use:** `wp hws identity get` (JSON, with the site type); `wp hws identity set --type=company --site-type=news_outlet --name="..." --legal_name="..." --description="..." --url="..." --founding_date="2021-01-10" --founding_location="..." --headquarters_city="..." --parent_name="A | B | C" --email="..." --phone="" --mission="..." --profiles="url | url"` (any company key; lists take one item per line or " | "; an empty value clears it; founders come from the Founders tab); `wp hws brand set <slot> <attachment-id|file>` (slots: logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark; files are imported to the media library; 1:1 slots need a square image; logo also sets WordPress' custom logo); `wp hws brand favicon --from=logo_1x1` (sets the Website Settings favicon and WordPress' site icon from that slot).
+- **Parent organizations:** several, one per line; read back as one "A, B, C" line.
+- **Logo routes for HTML and Elementor:** `[site_logo key="logo"]` / `[site_logo key="logo_1x1" output="url"]` (see Site logo and brand assets) for any saved slot; `[hws_site_identity field="logo"]` for the identity logo; the favicon is WordPress' site icon.
+- **Code:** `src/SiteProfile/SiteSetupCommand.php`
+
 ### Founders
 - **Does:** the website's founders, its own definition in HWS Base Tools, separate from the Primary Entity and from Website Identity (which reads it). Founders tab (`options-general.php?page=hws-core-tools&tab=founders`): on/off, section title ("Founders" by default), the people (user search, drag to order, an optional title each, one-column editor), style (Cards, List, No styling) with a live example, the HTML structure, a plugin breakdown and the shortcode breakdown. When the Primary Entity is a person marked as a founder, that person is included automatically, first; more founders are added by hand. A company Primary Entity is never on the list, so its founders (any number) are picked separately. Founding date and city are not part of founders (they are company basics). Stored in option `hws_publication_founders`; on first read it is seeded from SMP's `smpi_founders`, else Website Identity's old founders field.
 - **Use (shortcode):** `[hws_publication_founders]` with `style`, `columns`, `ids`, `limit`, `hide="photo,title,bio,link"`, `link`, `bio_words`, `photo_size`, `heading` (tag for each name), `section_title` (`none` hides it), `section_tag`. Prints only the founders, never the founding date; prints nothing while off. `[smpi_founders]` is an alias for pages built with SMP's shortcode and keeps the `smpi-founders` / `smpi-founder` class names.
@@ -329,6 +336,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.34.0
+
+- Site setup commands: `wp hws identity get|set` saves the Website Identity and site type, `wp hws brand set` saves a Brand Assets slot from an attachment or image file, and `wp hws brand favicon` makes the favicon and site icon from a slot. Parent organizations take several entries, one per line.
 
 ### 13.33.1
 
