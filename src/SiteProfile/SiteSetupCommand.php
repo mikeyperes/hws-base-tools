@@ -40,7 +40,7 @@ final class SiteSetupCommand {
      * : news_outlet, podcast_website, personal_website, company_website, ecommerce_website or other.
      *
      * [--<field>=<value>]
-     * : Any company key (name, legal_name, description, url, founding_date, founding_location,
+     * : Any company key (name, legal_name, description, website (the url key), founding_date, founding_location,
      * headquarters_city, headquarters_address, parent_name, parent_url, email, phone, mission,
      * profiles, logo). Lists (alternate_names, profiles, parent_name, parent_url) take one item per
      * line or items separated by " | ". An empty value clears the key.
@@ -76,6 +76,9 @@ final class SiteSetupCommand {
             }
             update_option( 'hws_site_type', $assoc['site-type'] );
         }
+        if ( isset( $assoc['website'] ) ) {
+            $assoc['url'] = $assoc['website'];
+        }
         $saved = [];
         foreach ( SiteIdentity::COMPANY_KEYS as $key ) {
             if ( ! array_key_exists( $key, $assoc ) || 'founders' === $key ) {
@@ -88,6 +91,14 @@ final class SiteSetupCommand {
             update_option( 'options_' . SiteIdentity::COMPANY . '_' . $key, 'logo' === $key ? (int) $value : $value );
             update_option( '_options_' . SiteIdentity::COMPANY . '_' . $key, 'field_hws_identity_' . $key );
             $saved[] = $key;
+        }
+        if ( $saved ) {
+            // The group row ties the saved keys to the Website Identity form.
+            update_option( 'options_' . SiteIdentity::COMPANY, '' );
+            update_option( '_options_' . SiteIdentity::COMPANY, 'field_' . SiteIdentity::COMPANY );
+        }
+        if ( isset( $assoc['type'] ) ) {
+            update_option( '_options_' . SiteIdentity::CHOICE, 'field_' . SiteIdentity::CHOICE );
         }
         \WP_CLI::success( 'Saved: ' . ( $saved ? implode( ', ', $saved ) : 'type only' ) . '.' );
     }
