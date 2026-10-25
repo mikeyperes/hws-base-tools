@@ -86,6 +86,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `wp hws-pages ensure` sets every page up (existing optional pages only). `[site_page_template type="<key>"]` (alias `[hws_site_page_template]`) prints a page's wording from `templates/company-pages/<key>.html`; `[hws_company field="name"]`, `[hws_if field|page|shortcode="..."]...[/hws_if]`, `[hws_page_link key="contact"]` (a key page from any plugin) and `[hws_founder_profile user="ID"]` build it.
 - **Use (PHP):** `CompanyPages::ensure_pages()`; `CompanyPages::page_id( '<key>' )` finds a key page from any plugin; `hws_base_tools_linked_page( '<key>' )` returns Base Tools' linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<key>`; founder pages carry `_hws_founder_user`.
 - **Code:** `src/CompanyPages/CompanyPages.php`, `src/CompanyPages/CompanyFacts.php`, `src/CompanyPages/company-pages-functions.php`, `src/SiteStructure/legacy-pages.php`, `templates/company-pages/`
+- **Last updated:** `[hws_page_updated]` prints the date the current page was last changed; Privacy Policy and Terms of Use show it at the top.
 
 ### Missing company facts notice
 - **Does:** when a linked page (Headquarters, Founding Date) or another plugin's fact page lacks what it needs from Website Identity, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
@@ -336,6 +337,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.35.0
+
+- New `[hws_page_updated]` shortcode; Privacy Policy and Terms of Use show their last-updated date.
 
 ### 13.34.2
 

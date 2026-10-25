@@ -38,6 +38,7 @@ final class CompanyFacts {
         add_shortcode( self::IF_SHORTCODE, [ self::class, 'if_shortcode' ] );
         add_shortcode( self::LINK_SHORTCODE, [ self::class, 'link_shortcode' ] );
         add_shortcode( self::FAQS_SHORTCODE, [ self::class, 'faqs_shortcode' ] );
+        add_shortcode( 'hws_page_updated', [ self::class, 'page_updated_shortcode' ] );
     }
 
     /**
@@ -181,6 +182,15 @@ final class CompanyFacts {
     }
 
     /** One fact as short plain text for the admin ('' when not set). */
+    /** [hws_page_updated] — the date the current page was last changed, in the site's date format. */
+    public static function page_updated_shortcode( $atts ): string {
+        $post = get_post();
+        if ( ! $post ) {
+            return '';
+        }
+        return esc_html( (string) get_the_modified_date( (string) get_option( 'date_format', 'F j, Y' ), $post ) );
+    }
+
     public static function plain( string $field ): string {
         $value = self::value( $field );
         if ( self::empty_value( $value ) ) {
@@ -233,6 +243,7 @@ final class CompanyFacts {
         $items[] = [ 'code' => '[hws_site field="founding_date" format="year"]', 'description' => 'format: text, link, year or raw. before="..." and after="..." add text only when the detail is set.' ];
         $items[] = [ 'code' => '[hws_if field="mission"]...[/hws_if]', 'description' => 'Shows the text inside only when the detail is set. Also page="contact" (that page exists) or shortcode="name" (that shortcode is available). Add not="1" for the opposite.' ];
         $items[] = [ 'code' => '[hws_page_link key="contact"]', 'description' => 'A link to a site page from any plugin (about, contact, privacy, dmca, editorial_guidelines, become_contributor and the rest). text="..." changes the link text.' ];
+        $items[] = [ 'code' => '[hws_page_updated]', 'description' => 'The date this page was last changed. Privacy Policy and Terms of Use use it.' ];
         $items[] = [ 'code' => '[hws_faqs]...[/hws_faqs]', 'description' => 'Questions inside (each a heading followed by its answer) shown as a minimalist list that opens on click. The FAQs page uses it.' ];
         $items[] = [ 'code' => '[hws_site_page_template type="about"]', 'description' => 'The whole default text of a site page, filled in from the details above.' ];
         $items[] = [ 'heading' => 'Lists' ];
