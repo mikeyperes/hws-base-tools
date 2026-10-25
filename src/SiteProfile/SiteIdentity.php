@@ -151,7 +151,9 @@ final class SiteIdentity implements ModuleInterface {
             if ( in_array( $key, [ 'alternate_names', 'profiles' ], true ) ) {
                 $value = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ?: [] ) ) );
             } elseif ( 'parent_name' === $key ) {
-                $value = implode( ', ', array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ?: [] ) ) );
+                $parts = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ?: [] ) ) );
+                $last  = count( $parts ) > 1 ? ' and ' . array_pop( $parts ) : '';
+                $value = implode( ', ', $parts ) . $last;
             } elseif ( in_array( $key, [ 'logo', 'photo', 'user' ], true ) ) {
                 $value = is_array( $value ) ? (int) ( $value['ID'] ?? $value['id'] ?? 0 ) : (int) $value;
             } elseif ( 'founders' === $key ) {
@@ -161,6 +163,10 @@ final class SiteIdentity implements ModuleInterface {
                 $value = is_scalar( $value ) ? trim( (string) $value ) : '';
             }
             $out[ $key ] = $value;
+        }
+        // An address that is only the city adds nothing: pages show the city once.
+        if ( isset( $out['headquarters_address'], $out['headquarters_city'] ) && '' !== $out['headquarters_address'] && 0 === strcasecmp( trim( (string) $out['headquarters_address'] ), trim( (string) $out['headquarters_city'] ) ) ) {
+            $out['headquarters_address'] = '';
         }
         return $out;
     }
