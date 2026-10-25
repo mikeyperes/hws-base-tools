@@ -136,6 +136,11 @@ function hws_site_page_template_shortcode( $atts ): string {
     if ( "logo" === $type ) {
         return wp_kses_post( \HWS\BaseTools\CompanyPages\CompanyPages::logo_html() );
     }
+    // Company pages with wording in templates/company-pages/ (About, Founders, Privacy Policy and the rest).
+    $file_template = "" !== $type ? \HWS\BaseTools\CompanyPages\CompanyPages::template_html( $type ) : "";
+    if ( "" !== $file_template ) {
+        return wp_kses_post( do_shortcode( $file_template ) );
+    }
     $definition = "" !== $type ? hws_site_page_template_definition( $type ) : [];
     return $definition ? wp_kses_post( do_shortcode( hws_site_page_template_html( $type, $definition ) ) ) : "";
 }

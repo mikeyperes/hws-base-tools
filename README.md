@@ -74,15 +74,15 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[founder id="title" size="medium" output="grid" columns="4" class="" loading="lazy"]`; `[hws_profile_photos user_id="0" size="medium" output="grid" columns="4" class="" loading="lazy"]`.
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
 
-### Company pages: Contact, Headquarters, Logo
-- **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns three company pages any website has: Contact, Headquarters and Logo. Each has its page type, its template and its page link here. Headquarters and Logo templates read Website Identity and print only the facts that are filled in (city with its link, address, contact email, Contact page link, logo, brand files), never a half sentence. Publication standard pages (Terms of Use, Privacy Policy, FAQs, DMCA and every policy) stay in SMP Publication Integration, which shows these three read-only.
-- **Use:** `[site_page_template type="contact|headquarters|logo"]` (alias `[hws_site_page_template]`); older types `privacy|terms|brand_assets|faqs` still render for pages that already use them.
-- **Use (PHP):** `hws_base_tools_linked_page( 'contact'|'headquarters'|'logo' )` returns the linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<type>`.
-- **Code:** `src/CompanyPages/CompanyPages.php`, `src/CompanyPages/company-pages-functions.php`, `src/SiteStructure/legacy-pages.php`
+### Company pages
+- **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns the pages any website has: About, with Mission Statement, Founders (plus one profile page per founder), Founding Date, Headquarters, Logo, Parent Network (optional) and Team under it; Contact, Privacy Policy, Terms of Use, Accessibility, FAQs and RSS Feed at the top level. Each page sits under its parent; a page already at its usual address (or an alternative such as `her-forward-mission-statement`) is linked with its content kept, and a moved page's old address redirects (Hexa WP Core). Wording prints only the Website Identity facts that are filled in. Publication pages (newsroom people, editorial policies, DMCA, press releases) belong to SMP Publication Integration, whose pages can sit under these.
+- **Use:** `wp hws-pages ensure` sets every page up (existing optional pages only). `[site_page_template type="<key>"]` (alias `[hws_site_page_template]`) prints a page's wording from `templates/company-pages/<key>.html`; `[hws_company field="name"]`, `[hws_if field|page|shortcode="..."]...[/hws_if]`, `[hws_page_link key="contact"]` (a key page from any plugin) and `[hws_founder_profile user="ID"]` build it.
+- **Use (PHP):** `CompanyPages::ensure_pages()`; `CompanyPages::page_id( '<key>' )` finds a key page from any plugin; `hws_base_tools_linked_page( '<key>' )` returns Base Tools' linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<key>`; founder pages carry `_hws_founder_user`.
+- **Code:** `src/CompanyPages/CompanyPages.php`, `src/CompanyPages/CompanyFacts.php`, `src/CompanyPages/company-pages-functions.php`, `src/SiteStructure/legacy-pages.php`, `templates/company-pages/`
 
 ### Missing company facts notice
-- **Does:** when another plugin has a fact page switched on but Website Identity lacks what it needs, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
-- **Extend:** filter `hws_base_tools_pages_in_use` (`key => label`); SMP Publication Integration adds `headquarters` and `founding_date` when those pages are on.
+- **Does:** when a linked page (Headquarters, Founding Date) or another plugin's fact page lacks what it needs from Website Identity, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
+- **Extend:** filter `hws_base_tools_pages_in_use` (`key => label`); a page definition's `required_facts` is checked by Hexa WP Core's `missing_facts()`.
 - **Code:** `src/CompanyPages/CompanyPages.php`
 
 ### Team
@@ -329,6 +329,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.24.0
+
+- The company pages any website has now live here, each under its parent: About with Mission Statement, Founders and a profile page per founder, Founding Date, Headquarters, Logo, Parent Network and Team; plus Contact, Privacy Policy, Terms of Use, Accessibility, FAQs and RSS Feed. Existing pages are kept and moved, with their old addresses redirecting (Hexa WP Core 3.36.0).
 
 ### 13.23.0
 

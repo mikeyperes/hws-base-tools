@@ -7,9 +7,8 @@ use Hexa\PluginCore\SiteStructure\SiteStructureRenderer;
 defined( "ABSPATH" ) || exit;
 
 /**
- * Company pages any website has: Contact, Headquarters and Logo (HWS\BaseTools\CompanyPages).
- * Publication standard pages (Terms of Use, Privacy Policy, FAQs and every other policy or
- * publication page) belong to SMP Publication Integration, which shows these three read-only.
+ * Company pages any website has (HWS\BaseTools\CompanyPages). Publication pages (newsroom
+ * people, editorial policies, press releases) belong to SMP Publication Integration.
  */
 function hws_pages_page_definitions(): array {
     return \HWS\BaseTools\CompanyPages\CompanyPages::definitions();
@@ -20,7 +19,7 @@ function hws_pages_menu_structures(): array {
         "footer" => [
             "title" => "Footer Site Pages",
             "description" => "Generic site pages commonly linked from the footer.",
-            "page_keys" => [ "contact", "headquarters", "logo" ],
+            "page_keys" => [ "about", "contact", "privacy", "terms", "accessibility", "faqs", "rss_feed" ],
         ],
     ];
 }
@@ -77,7 +76,11 @@ function hws_pages_actions(): array {
 }
 
 function hws_pages_manager(): PageStructureManager {
-    return new PageStructureManager( [
+    static $manager = null;
+    if ( $manager instanceof PageStructureManager ) {
+        return $manager;
+    }
+    $manager = new PageStructureManager( [
         "pages" => hws_pages_page_definitions(),
         "menu_structures" => hws_pages_menu_structures(),
         "option_prefix" => "hws_site_page_assignment_",
@@ -90,6 +93,7 @@ function hws_pages_manager(): PageStructureManager {
         "reuse_existing_pages" => true,
         "default_templates" => hws_pages_default_templates(),
         "template_getter" => __NAMESPACE__ . "\\hws_pages_stored_template",
+        "facts_getter" => static fn( string $fact ) => \HWS\BaseTools\SiteProfile\SiteIdentity::value( "company." . $fact ),
         "page_detail_renderer" => __NAMESPACE__ . "\\hws_pages_page_detail_html",
         "logger" => static function( string $message ): void {
             if ( function_exists( __NAMESPACE__ . "\\write_log" ) ) {
@@ -102,6 +106,7 @@ function hws_pages_manager(): PageStructureManager {
             "support" => [ "support", "help", "footer", "contact" ],
         ],
     ] );
+    return $manager;
 }
 
 function hws_register_pages_ajax(): void {
