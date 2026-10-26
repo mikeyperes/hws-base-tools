@@ -16,6 +16,7 @@ defined( 'ABSPATH' ) || exit;
  *   wp hws identity set --type=company --site-type=news_outlet --name="Strive Mag" ...
  *   wp hws brand set logo_1x1 /path/to/square.png
  *   wp hws brand get
+ *   wp hws brand favicon <attachment-id|file>
  *   wp hws brand favicon --from=logo_1x1
  */
 final class SiteSetupCommand {
@@ -117,10 +118,10 @@ final class SiteSetupCommand {
      * : logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1 or logo_text_dark (for set).
      *
      * [<source>]
-     * : An attachment ID or an image file path (imported into the media library). 1:1 slots need a square image.
+     * : An attachment ID or an image file path (imported into the media library). 1:1 slots and the favicon need a square image.
      *
      * [--from=<slot>]
-     * : For favicon: the slot to make it from (default logo_1x1).
+     * : For favicon without its own image: the slot to make it from (default logo_1x1).
      *
      * @param array<int,string>    $args
      * @param array<string,string> $assoc
@@ -142,10 +143,20 @@ final class SiteSetupCommand {
             return;
         }
         if ( 'favicon' === $action ) {
-            $slot = \hws_base_tools\hws_normalize_brand_asset_key( (string) ( $assoc['from'] ?? 'logo_1x1' ) );
-            $id   = \hws_base_tools\hws_get_brand_asset_attachment_id( $slot );
-            if ( $id <= 0 ) {
-                \WP_CLI::error( 'Save ' . $slot . ' first.' );
+            if ( '' !== (string) ( $args[1] ?? '' ) ) {
+                // The favicon is its own design (the brand's initial), so it can come from its own image.
+                $id   = self::attachment( (string) $args[1] );
+                $meta = wp_get_attachment_metadata( $id );
+                if ( empty( $meta['width'] ) || (int) $meta['width'] !== (int) ( $meta['height'] ?? 0 ) ) {
+                    \WP_CLI::error( 'The favicon needs a square image.' );
+                }
+                $slot = 'its own image';
+            } else {
+                $slot = \hws_base_tools\hws_normalize_brand_asset_key( (string) ( $assoc['from'] ?? 'logo_1x1' ) );
+                $id   = \hws_base_tools\hws_get_brand_asset_attachment_id( $slot );
+                if ( $id <= 0 ) {
+                    \WP_CLI::error( 'Save ' . $slot . ' first.' );
+                }
             }
             $branding = (array) ( Field::get( 'branding', 'option', false ) ?: [] );
             $branding['favicon'] = $id;
