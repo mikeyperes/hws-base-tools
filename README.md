@@ -57,7 +57,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### Site setup commands
 - **Does:** saves the Website Identity and Brand Assets from WP-CLI, so setup workflows fill them through the plugin instead of the admin screens.
-- **Use:** `wp hws identity get` (JSON, with the site type); `wp hws identity set --type=company --site-type=news_outlet --name="..." --legal_name="..." --description="..." --website="..." --founding_date="2021-01-10" --founding_location="..." --headquarters_city="..." --parent_name="A | B | C" --email="..." --phone="" --mission="..." --profiles="url | url"` (any company key; lists take one item per line or " | "; an empty value clears it; founders come from the Founders tab); `wp hws brand set <slot> <attachment-id|file>` (slots: logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark; files are imported to the media library; 1:1 slots need a square image; logo also sets WordPress' custom logo); `wp hws brand favicon --from=logo_1x1` (sets the Website Settings favicon and WordPress' site icon from that slot); `wp hws founders get|set --heading="Executives"` (the founders section title).
+- **Use:** `wp hws identity get` (JSON, with the site type); `wp hws identity set --type=company --site-type=news_outlet --name="..." --legal_name="..." --description="..." --website="..." --founding_date="2021-01-10" --founding_location="..." --headquarters_city="..." --parent_name="A | B | C" --email="..." --phone="" --mission="..." --profiles="url | url"` (any company key; lists take one item per line or " | "; an empty value clears it; founders come from the Founders tab); `wp hws brand get` (JSON: every Brand Assets slot, the favicon and the site icon, each with id, url, width and height; 0 and empty when unset); `wp hws brand set <slot> <attachment-id|file>` (slots: logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark; files are imported to the media library; 1:1 slots need a square image; logo also sets WordPress' custom logo); `wp hws brand favicon --from=logo_1x1` (sets the Website Settings favicon and WordPress' site icon from that slot); `wp hws founders get|set --heading="Executives"` (the founders section title).
 - **Parent organizations:** several, one per line; read back as one "A, B and C" line.
 - **Logo routes for HTML and Elementor:** `[site_logo key="logo"]` / `[site_logo key="logo_1x1" output="url"]` (see Site logo and brand assets) for any saved slot; `[hws_site_identity field="logo"]` for the identity logo; the favicon is WordPress' site icon.
 - **Code:** `src/SiteProfile/SiteSetupCommand.php`
@@ -360,7 +360,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ### 13.34.0
 
-- Site setup commands: `wp hws identity get|set` saves the Website Identity and site type, `wp hws brand set` saves a Brand Assets slot from an attachment or image file, and `wp hws brand favicon` makes the favicon and site icon from a slot. Parent organizations take several entries, one per line.
+- Site setup commands: `wp hws identity get|set` saves the Website Identity and site type, `wp hws brand get` reads every Brand Assets slot, favicon and site icon, `wp hws brand set` saves a Brand Assets slot from an attachment or image file, and `wp hws brand favicon` makes the favicon and site icon from a slot. Parent organizations take several entries, one per line.
 
 ### 13.33.1
 

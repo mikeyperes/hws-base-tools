@@ -15,6 +15,7 @@ defined( 'ABSPATH' ) || exit;
  *   wp hws identity get
  *   wp hws identity set --type=company --site-type=news_outlet --name="Strive Mag" ...
  *   wp hws brand set logo_1x1 /path/to/square.png
+ *   wp hws brand get
  *   wp hws brand favicon --from=logo_1x1
  */
 final class SiteSetupCommand {
@@ -105,12 +106,12 @@ final class SiteSetupCommand {
     }
 
     /**
-     * Save a Brand Assets slot, or make the favicon from one.
+     * Read the Brand Assets slots, save one, or make the favicon from one.
      *
      * ## OPTIONS
      *
      * <action>
-     * : set or favicon
+     * : get, set or favicon
      *
      * [<slot>]
      * : logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1 or logo_text_dark (for set).
@@ -129,6 +130,17 @@ final class SiteSetupCommand {
             \WP_CLI::error( 'Brand Assets are not loaded.' );
         }
         $action = $args[0] ?? '';
+        if ( 'get' === $action ) {
+            $out = [];
+            foreach ( array_keys( \hws_base_tools\hws_get_brand_asset_definitions() ) as $slot ) {
+                $out[ $slot ] = self::asset( \hws_base_tools\hws_get_brand_asset_attachment_id( $slot ) );
+            }
+            $branding       = (array) ( Field::get( 'branding', 'option', false ) ?: [] );
+            $out['favicon'] = self::asset( (int) ( $branding['favicon'] ?? 0 ) );
+            $out['site_icon'] = self::asset( (int) get_option( 'site_icon', 0 ) );
+            \WP_CLI::line( (string) wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+            return;
+        }
         if ( 'favicon' === $action ) {
             $slot = \hws_base_tools\hws_normalize_brand_asset_key( (string) ( $assoc['from'] ?? 'logo_1x1' ) );
             $id   = \hws_base_tools\hws_get_brand_asset_attachment_id( $slot );
@@ -143,7 +155,7 @@ final class SiteSetupCommand {
             return;
         }
         if ( 'set' !== $action ) {
-            \WP_CLI::error( 'Use set or favicon.' );
+            \WP_CLI::error( 'Use get, set or favicon.' );
         }
         $slot       = \hws_base_tools\hws_normalize_brand_asset_key( (string) ( $args[1] ?? '' ) );
         $definition = \hws_base_tools\hws_get_brand_asset_definition( $slot );
@@ -187,6 +199,16 @@ final class SiteSetupCommand {
         }
         $settings = \HWS\BaseTools\Founders\Founders::settings();
         \WP_CLI::line( (string) wp_json_encode( [ 'enabled' => $settings['enabled'], 'heading' => $settings['heading'], 'ids' => $settings['ids'], 'titles' => $settings['titles'] ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
+    }
+
+    /** One saved image as id, url and size; empty when the slot is unset or the file is gone. */
+    private static function asset( int $id ): array {
+        $url = $id > 0 ? wp_get_attachment_url( $id ) : false;
+        if ( ! $url ) {
+            return [ 'id' => 0, 'url' => '', 'width' => 0, 'height' => 0 ];
+        }
+        $meta = (array) wp_get_attachment_metadata( $id );
+        return [ 'id' => $id, 'url' => $url, 'width' => (int) ( $meta['width'] ?? 0 ), 'height' => (int) ( $meta['height'] ?? 0 ) ];
     }
 
     private static function attachment( string $source ): int {
