@@ -350,6 +350,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.40.2
+
+- Team members list: `photo_size` picks the photo file (default `medium_large`), and every photo carries a sizes hint for its column width, so the browser loads the smallest file that fills the card.
+
 ### 13.40.1
 
 - Card photos: the browser-chosen size hint (auto) is set only on natively lazy images, so script-lazy or eager cards no longer download the full original.

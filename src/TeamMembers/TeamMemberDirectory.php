@@ -61,12 +61,19 @@ final class TeamMemberDirectory {
                 'orderby'       => (string) $page['orderby'],
                 'design'        => (string) $page['design'],
                 'roles_first'   => (string) $page['roles_first'],
+                'photo_size'    => 'medium_large',
             ],
             $atts,
             self::SHORTCODE
         );
 
         $style = self::normalize_style( (string) $atts['style'] );
+        // The photo file a card loads: any registered size (photo_size="medium"), with a sizes hint for the
+        // card's real width so the browser picks the smallest file that fills it.
+        $size = sanitize_key( (string) $atts['photo_size'] );
+        self::$photo_size = in_array( $size, get_intermediate_image_sizes(), true ) || 'full' === $size ? $size : 'medium_large';
+        $cols = max( 1, (int) $atts['columns'] );
+        self::$photo_sizes_hint = '(max-width: 767px) 100vw, (max-width: 1024px) 50vw, ' . (int) ceil( 1200 / $cols ) . 'px';
         $limit = self::normalize_limit( $atts['limit'] );
 
         $order = 'DESC' === strtoupper( (string) $atts['order'] ) ? 'DESC' : 'ASC';
@@ -351,6 +358,10 @@ final class TeamMemberDirectory {
     /**
      * @return array<string,mixed>
      */
+    /** The photo size and sizes hint of the list being rendered (render() sets them). */
+    private static string $photo_size = 'medium_large';
+    private static string $photo_sizes_hint = '';
+
     private static function item_from_post( \WP_Post $post ): array {
         $post_id = (int) $post->ID;
         $name = trim( (string) get_the_title( $post ) );
@@ -366,13 +377,14 @@ final class TeamMemberDirectory {
         if ( $image_id ) {
             $image_html = wp_get_attachment_image(
                 $image_id,
-                'medium_large',
+                self::$photo_size,
                 false,
-                [
+                array_filter( [
+                    'sizes'    => self::$photo_sizes_hint,
                     'alt'      => $name,
                     'loading'  => 'lazy',
                     'decoding' => 'async',
-                ]
+                ] )
             );
         }
 
