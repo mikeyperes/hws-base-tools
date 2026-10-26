@@ -121,7 +121,7 @@ final class SharedContentTypes {
             self::definition( self::TEAM_MEMBER, 'Team Member', 'Team Members', 'team-member', 'Reusable team and leadership profiles.', [
                 'menu_icon' => 'dashicons-groups', 'menu_position' => 23,
                 'supports' => [ 'title', 'author', 'editor', 'excerpt', 'thumbnail', 'revisions', 'page-attributes', 'custom-fields' ],
-                'has_archive' => 'team', 'rewrite' => [ 'with_front' => false ],
+                'has_archive' => false, 'rewrite' => [ 'with_front' => false ],
             ], [
                 [
                     'id' => 'team-member-fields', 'label' => 'Team Member Fields', 'group_key' => 'group_64b3a05760b1a',

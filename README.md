@@ -9,6 +9,18 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Team landing page
+- **Does:** Team Member profiles have no post-type archive, so a real Team page at `/team/` remains the landing page for `[hws_team_members]`. Individual profile URLs remain available, matching Services' landing-page behavior. Flush rewrite rules after upgrading an existing site.
+- **Code:** `src/ContentTypes/SharedContentTypes.php`.
+
+### Responsive card photo renditions
+- **Does:** registers the uncropped 600px `hws-card` rendition. WordPress includes it in compatible responsive image candidates without enlarging small originals. Elementor Loop Grid, Loop Carousel, Posts and Archive Posts widgets derive medium-card `sizes` from their own columns, gaps, breakpoints and boxed container; native lazy images also use automatic slot sizing. No publication-specific classes, layout changes or front-end assets are needed.
+- **Use:** keep `medium` for desktop card boxes up to 360px, or `medium_large` for wider lead cards. Run `wp media regenerate --image_size=hws-card --only-missing --skip-delete --yes` once for existing attachments. New uploads generate it automatically.
+- **Extend:** `hws_base_tools_card_image_sizes` accepts the calculated sizes and Elementor list widget for layouts that override native grid geometry.
+- **Details:** [Card image renditions](docs/card-image-renditions.md).
+- **Code:** `src/FrontendContent/CardImageRenditions.php`.
+
+
 ### Hidden admin access message
 - **Does:** logged-out visitors to `/wp-admin/` see a Hexa Cloud Services notice linking to `https://hexacloudservices.com/` and `https://hexatiger.com/`, plus email and WhatsApp support. Every link opens in a new tab, and the closing sentence links both HexaTiger and Hexa Cloud Services. The email goes to `support@hexacloudservices.com`; its subject starts with the site's canonical domain, followed by ` - Login URL Request`. "Message 24/7 support. Click here." links to `https://wa.me/14152129449` (+1 415-212-9449). The page keeps HTTP 404, disables caching, and never exposes the masked login URL.
 - **Switch:** Settings → HWS Base Tools → Security → Masked Login; masking and "Hide /wp-admin/ from guests" enabled (`hws_login_mask_options`).
@@ -337,6 +349,11 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.40.0
+
+- Add a proportional 600px card photo rendition and responsive Elementor card image slot declarations, including optimizer-added lazy loading.
+- Team Member profiles no longer reserve `/team/` as an archive, preserving the real Team landing page.
 
 ### 13.36.0
 

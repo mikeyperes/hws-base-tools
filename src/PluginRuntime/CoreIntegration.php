@@ -93,6 +93,7 @@ final class CoreIntegration {
             ->add_module( new FeaturedImageRequirement() )
             ->add_module( new ReadingProgress() )
             ->add_module( new FontSmoothing() )
+            ->add_module( new \HWS\BaseTools\FrontendContent\CardImageRenditions() )
             ->add_module( new FeedSwitches() )
             ->add_module( new FeedSitemapSettings() )
             ->add_module( new FeedListShortcode() )

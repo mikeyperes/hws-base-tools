@@ -123,6 +123,10 @@ $expect( SharedContentTypes::enable( SharedContentTypes::SERVICES ), 'services o
 SharedContentTypes::register_enabled();
 $expect( isset( $registered['services'] ), 'enabled services registers' );
 $expect( false === $definitions['services']['has_archive'], 'services preserves the static landing page' );
+$expect( false === $definitions['team-member']['has_archive'], 'team members preserve the static Team landing page' );
+$expect( SharedContentTypes::enable( SharedContentTypes::TEAM_MEMBER ), 'team member option can be enabled' );
+SharedContentTypes::register_enabled();
+$expect( isset( $registered['team-member'] ) && false === $registered['team-member']['has_archive'], 'registered team members cannot take over the Team page' );
 
 $count = count( $registered );
 $expect( ! SharedContentTypes::register_type( SharedContentTypes::ORGANIZATION ), 'legacy Organization requests remain non-registering' );
