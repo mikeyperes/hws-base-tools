@@ -58,9 +58,10 @@ final class CardImageRenditions implements ModuleInterface {
             if ( ! $tags->get_attribute( 'srcset' ) && ! $tags->get_attribute( 'data-srcset' ) ) {
                 continue;
             }
-            // Optimizers can add native lazy loading after Elementor renders.
-            // Eager images ignore auto and use the following responsive fallback.
-            $value = 'auto, ' . $sizes;
+            // "auto" is only valid on a natively lazy image. A browser that sees it on any other image (one an
+            // optimizer lazy-loads by script, or an eager one) can pick the largest file, so it is added only
+            // when the image already carries loading="lazy".
+            $value = 'lazy' === strtolower( (string) $tags->get_attribute( 'loading' ) ) ? 'auto, ' . $sizes : $sizes;
             $tags->set_attribute( 'sizes', $value );
             if ( null !== $tags->get_attribute( 'data-sizes' ) ) {
                 $tags->set_attribute( 'data-sizes', $value );

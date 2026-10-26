@@ -350,6 +350,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.40.1
+
+- Card photos: the browser-chosen size hint (auto) is set only on natively lazy images, so script-lazy or eager cards no longer download the full original.
+
 ### 13.40.0
 
 - Add a proportional 600px card photo rendition and responsive Elementor card image slot declarations, including optimizer-added lazy loading.
