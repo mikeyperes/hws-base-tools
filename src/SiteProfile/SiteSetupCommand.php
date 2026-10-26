@@ -136,8 +136,8 @@ final class SiteSetupCommand {
             foreach ( array_keys( \hws_base_tools\hws_get_brand_asset_definitions() ) as $slot ) {
                 $out[ $slot ] = self::asset( \hws_base_tools\hws_get_brand_asset_attachment_id( $slot ) );
             }
-            $branding       = (array) ( Field::get( 'branding', 'option', false ) ?: [] );
-            $out['favicon'] = self::asset( (int) ( $branding['favicon'] ?? 0 ) );
+            // The raw group value is keyed by field keys, so the favicon is read as its own sub field by name.
+            $out['favicon'] = self::asset( (int) Field::get( 'branding_favicon', 'option', false ) );
             $out['site_icon'] = self::asset( (int) get_option( 'site_icon', 0 ) );
             \WP_CLI::line( (string) wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
             return;
@@ -158,10 +158,12 @@ final class SiteSetupCommand {
                     \WP_CLI::error( 'Save ' . $slot . ' first.' );
                 }
             }
-            $branding = (array) ( Field::get( 'branding', 'option', false ) ?: [] );
-            $branding['favicon'] = $id;
-            Field::update( 'branding', $branding, 'option' );
+            // Only the favicon sub field is written; the group's other settings stay as they are.
+            Field::update( 'branding_favicon', $id, 'option' );
             update_option( 'site_icon', $id );
+            if ( (int) Field::get( 'branding_favicon', 'option', false ) !== $id ) {
+                \WP_CLI::error( 'The favicon did not save to Brand Assets (attachment ' . $id . ').' );
+            }
             \WP_CLI::success( 'Favicon and site icon set from ' . $slot . ' (attachment ' . $id . ').' );
             return;
         }

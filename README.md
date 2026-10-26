@@ -350,6 +350,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.40.3
+
+- `wp hws brand favicon` saves the Brand Assets favicon as its own field and confirms it, and `get` reads it back; the branding group's other settings are no longer rewritten.
+
 ### 13.40.2
 
 - Team members list: `photo_size` picks the photo file (default `medium_large`), and every photo carries a sizes hint for its column width, so the browser loads the smallest file that fills the card.
