@@ -91,6 +91,7 @@ final class CoreIntegration {
             ->add_module( new \HWS\BaseTools\Founders\FoundersTab() )
             ->add_module( new DiscussionPolicy() )
             ->add_module( new FeaturedImageRequirement() )
+            ->add_module( new \HWS\BaseTools\BrandAssets\DefaultFeaturedImage() )
             ->add_module( new ReadingProgress() )
             ->add_module( new FontSmoothing() )
             ->add_module( new \HWS\BaseTools\FrontendContent\CardImageRenditions() )

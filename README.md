@@ -53,6 +53,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** `[site_logo key="logo" size="full" output="img" width="" height="" class="" alt="" loading="lazy" style=""]` (alias `[hws_brand_asset]`, `type=""` also accepted); `output="url"` returns the URL. Pass `loading="eager"` in headers.
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
+
+### Default featured image
+
+A Brand Assets slot for one 1200x630 image. While it holds an image, every post without its own featured image shows it on the site (cards, article pages and link previews read it as the featured image); nothing is saved to posts, editors still see the post as having none, and clearing the slot turns it off. Set it with `wp hws brand set default_featured <attachment-id-or-file>`; other post types can opt in through the `hws_base_tools_default_featured_image_post_types` filter.
 ### Brand asset gallery
 - **Does:** the saved Brand gallery as a responsive grid, URL list or ID list.
 - **Use:** `[brand_asset_gallery size="medium" output="grid|urls|ids" columns="4" class="" loading="lazy"]` (alias `[site_gallery]`).
@@ -351,6 +355,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.41.0
+
+- Brand Assets has a Default featured image slot (1200x630). While it holds an image, any post without its own featured image shows it on the site; nothing is saved to posts and an empty slot changes nothing.
 
 ### 13.40.8
 

@@ -289,6 +289,13 @@ function hws_get_brand_asset_definitions(): array {
 			'core' => '',
 			'description' => 'Horizontal text logo prepared for dark backgrounds.',
 		],
+		'default_featured' => [
+			'label' => 'Default featured image',
+			'option' => 'hws_brand_asset_default_featured_id',
+			'legacy_options' => [],
+			'core' => '',
+			'description' => '1200x630 image shown on the site for any post without its own featured image. Never saved to posts; empty means off.',
+		],
 	];
 }
 

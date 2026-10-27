@@ -115,7 +115,7 @@ final class SiteSetupCommand {
      * : get, set or favicon
      *
      * [<slot>]
-     * : logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1 or logo_text_dark (for set).
+     * : logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark or default_featured (for set).
      *
      * [<source>]
      * : An attachment ID or an image file path (imported into the media library). 1:1 slots and the favicon need a square image.
@@ -180,6 +180,12 @@ final class SiteSetupCommand {
             $meta = wp_get_attachment_metadata( $id );
             if ( empty( $meta['width'] ) || (int) $meta['width'] !== (int) ( $meta['height'] ?? 0 ) ) {
                 \WP_CLI::error( 'A 1:1 slot needs a square image.' );
+            }
+        }
+        if ( 'default_featured' === $slot ) {
+            $meta = wp_get_attachment_metadata( $id );
+            if ( (int) ( $meta['width'] ?? 0 ) !== 1200 || (int) ( $meta['height'] ?? 0 ) !== 630 ) {
+                \WP_CLI::error( 'The default featured image needs to be 1200x630.' );
             }
         }
         update_option( $definition['option'], $id );
