@@ -200,15 +200,52 @@ final class SiteSetupCommand {
      * [--heading=<heading>]
      * : The section title over the founders list ("Founders" by default; for example Executives). Empty for none.
      *
+     * [--users=<ids>]
+     * : The founders in order, as user IDs separated by commas (replaces the list).
+     *
+     * [--titles=<titles>]
+     * : Each founder's title, in the same order, separated by " | " (for example "Executive | Executive").
+     *
+     * [--enabled=<on>]
+     * : 1 to show the founders list, 0 to hide it.
+     *
      * @param array<int,string>    $args
      * @param array<string,string> $assoc
      */
     public static function founders( array $args, array $assoc ): void {
         $action = $args[0] ?? 'get';
-        if ( 'set' === $action && array_key_exists( 'heading', $assoc ) ) {
-            \HWS\BaseTools\Founders\Founders::update_settings( [ 'heading' => sanitize_text_field( (string) $assoc['heading'] ) ] );
+        if ( 'set' === $action ) {
+            $changes = [];
+            if ( array_key_exists( 'heading', $assoc ) ) {
+                $changes['heading'] = sanitize_text_field( (string) $assoc['heading'] );
+            }
+            if ( array_key_exists( 'users', $assoc ) ) {
+                $ids = array_values( array_unique( array_filter( array_map( 'absint', explode( ',', (string) $assoc['users'] ) ) ) ) );
+                foreach ( $ids as $id ) {
+                    if ( ! get_userdata( $id ) ) {
+                        \WP_CLI::error( "No user with ID {$id}." );
+                    }
+                }
+                $changes['ids'] = $ids;
+                if ( array_key_exists( 'titles', $assoc ) ) {
+                    $titles = array_map( 'trim', explode( '|', (string) $assoc['titles'] ) );
+                    $changes['titles'] = [];
+                    foreach ( $ids as $i => $id ) {
+                        $changes['titles'][ $id ] = sanitize_text_field( (string) ( $titles[ $i ] ?? '' ) );
+                    }
+                }
+            } elseif ( array_key_exists( 'titles', $assoc ) ) {
+                \WP_CLI::error( '--titles needs --users, so each title has its founder.' );
+            }
+            if ( array_key_exists( 'enabled', $assoc ) ) {
+                $changes['enabled'] = (bool) absint( $assoc['enabled'] );
+            }
+            if ( ! $changes ) {
+                \WP_CLI::error( 'Use set with --heading, --users, --titles or --enabled.' );
+            }
+            \HWS\BaseTools\Founders\Founders::update_settings( $changes );
         } elseif ( 'get' !== $action ) {
-            \WP_CLI::error( 'Use get, or set --heading="...".' );
+            \WP_CLI::error( 'Use get or set.' );
         }
         $settings = \HWS\BaseTools\Founders\Founders::settings();
         \WP_CLI::line( (string) wp_json_encode( [ 'enabled' => $settings['enabled'], 'heading' => $settings['heading'], 'ids' => $settings['ids'], 'titles' => $settings['titles'] ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
