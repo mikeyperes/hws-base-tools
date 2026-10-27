@@ -115,7 +115,7 @@ final class SiteSetupCommand {
      * : get, set or favicon
      *
      * [<slot>]
-     * : logo, logo_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark or default_featured (for set).
+     * : logo, logo_1x1, logo_artistic_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark or default_featured (for set).
      *
      * [<source>]
      * : An attachment ID or an image file path (imported into the media library). 1:1 slots and the favicon need a square image.

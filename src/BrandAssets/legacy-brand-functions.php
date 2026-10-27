@@ -261,6 +261,13 @@ function hws_get_brand_asset_definitions(): array {
 			'core' => '',
 			'description' => 'Square logo variant for social profiles, avatars, and app tiles.',
 		],
+		'logo_artistic_1x1' => [
+			'label' => 'Logo 1:1 artistic',
+			'option' => 'hws_brand_asset_logo_artistic_1x1_id',
+			'legacy_options' => [],
+			'core' => '',
+			'description' => 'Square logo with artistic brand depth (framing, accent shapes, texture) for social posts and square showcases.',
+		],
 		'logo_text' => [
 			'label' => 'Logo with text',
 			'option' => 'hws_brand_asset_logo_text_id',

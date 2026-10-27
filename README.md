@@ -54,6 +54,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
 
+
+### Logo 1:1 artistic
+
+A Brand Assets slot for a square logo with artistic brand depth (framing, accent shapes, texture), beside the basic Logo 1:1. Set it with `wp hws brand set logo_artistic_1x1 <attachment-id-or-file>`; it must be square.
 ### Default featured image
 
 A Brand Assets slot for one 1200x630 image. While it holds an image, every post without its own featured image shows it on the site (cards, article pages and link previews read it as the featured image); nothing is saved to posts, editors still see the post as having none, and clearing the slot turns it off. Set it with `wp hws brand set default_featured <attachment-id-or-file>`; other post types can opt in through the `hws_base_tools_default_featured_image_post_types` filter.
@@ -355,6 +359,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.42.0
+
+- Brand Assets has a Logo 1:1 artistic slot for a square logo with artistic brand depth; the command line refuses a non-square image for it.
 
 ### 13.41.0
 
