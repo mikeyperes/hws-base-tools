@@ -353,11 +353,10 @@ function hws_get_recent_fatal_errors( $limit = 100 ) {
             continue;
         }
 
-        $lines = file( $log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES );
+        // Bound the read before splitting: a large log must never fill PHP's memory.
+        $content = hws_get_log_tail( $log_file, 500, 1048576 );
+        $lines = preg_split( "/\r\n|\n|\r/", $content, -1, PREG_SPLIT_NO_EMPTY );
         if ( ! $lines ) continue;
-
-        // Get last 500 lines
-        $lines = array_slice( $lines, -500 );
 
         foreach ( $lines as $line ) {
             foreach ( $patterns as $pattern ) {
@@ -1948,7 +1947,7 @@ function render_site_profile_panel(): void {
  * Get log file tail
  */
 function hws_get_log_tail( $path, $lines = 100, $max_bytes = 524288 ) {
-    if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
+    if ( ! is_file( $path ) || ! is_readable( $path ) ) {
         return 'Log file not found or not readable.';
     }
 
@@ -1967,10 +1966,14 @@ function hws_get_log_tail( $path, $lines = 100, $max_bytes = 524288 ) {
 
     $read_bytes = min( $size, $max_bytes );
     if ( $read_bytes < $size ) {
-        fseek( $handle, -$read_bytes, SEEK_END );
+        if ( 0 !== fseek( $handle, -$read_bytes, SEEK_END ) ) {
+            fclose( $handle );
+            return 'Log file not readable.';
+        }
     }
 
-    $content = stream_get_contents( $handle );
+    // A growing file must not extend this read beyond the calculated byte budget.
+    $content = stream_get_contents( $handle, $read_bytes );
     fclose( $handle );
 
     if ( false === $content || '' === $content ) {

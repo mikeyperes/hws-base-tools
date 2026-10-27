@@ -1,5 +1,13 @@
 # HWS Base Tools Bug Log
 
+## HWS-BASE-BUG-007 - Fatal-error viewer loaded entire logs into memory
+
+- Severity: High
+- Symptom: The fatal-error viewer called file() on every log before selecting its last 500 lines. A multi-gigabyte log could exhaust PHP or host memory. The affected site had an approximately 98 GiB log; invocation by the original crash process has not been established.
+- Cause: The line limit was applied after an unbounded full-file read. The existing tail helper also read until EOF after seeking, allowing concurrent file growth to exceed its intended byte budget.
+- Patch: Reuse the existing tail helper with a 1 MiB read budget and 500-line limit before parsing errors. The helper requires a regular readable file, refuses a failed seek, and passes the byte budget directly to stream_get_contents().
+- Guard: Both error viewers share the bounded reader; file size and concurrent growth cannot expand a read beyond the caller's byte budget. Incident attribution remains separate from this source-level defect.
+
 ## HWS-BASE-BUG-006 — Client draft links expired during article review
 
 - Severity: High

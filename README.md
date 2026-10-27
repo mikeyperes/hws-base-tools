@@ -209,6 +209,8 @@ Rule: admin CSS and JS load only in the admin and only on the screens that use t
 
 ## Internals
 
+Log viewers read bounded tails rather than whole files. The fatal-error viewer inspects at most 1 MiB and 500 lines per regular log file; the shared tail reader enforces its byte budget even while a log grows (`src/AdminDashboard/legacy-dashboard.php`).
+
 Admin-only switches on the Features tab: admin bar for non-admins (`disable_non_admin_admin_bar`), SVG uploads, lowercase upload names, custom RSS feeds and tag feed limit, noindex for AMP and feeds, LiteSpeed JS combine, Rank Math sitemap cache, ACF source tracker, login masking (Settings → Masked Login), View As user impersonation (`enable_hws_user_impersonation`).
 
 Auto-Update All Plugins (`enable_auto_update_plugins`) and Auto-Update All Themes (`enable_auto_update_themes`) load in every context, including WordPress background update runs and WP-CLI, so every plugin and theme updates automatically; plugins on GPL Vault's do-not-update list (`gplvault_blocked_plugins`) are skipped.
@@ -349,6 +351,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.40.5
+
+- Fatal-error viewers now read a bounded 1 MiB tail, capped at 500 lines, so large or growing logs cannot be loaded into PHP memory in full.
 
 ### 13.40.3
 
