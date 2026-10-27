@@ -38,7 +38,7 @@ final class Founders implements ModuleInterface {
         add_shortcode( self::ALIAS, [ self::class, 'alias_shortcode' ] );
     }
 
-    /** @return array{enabled:bool,heading:string,ids:int[],titles:array<int,string>,style:string} */
+    /** @return array{enabled:bool,heading:string,ids:int[],titles:array<int,string>,pages:array<int,int>,photos:array<int,int>,style:string} */
     public static function settings(): array {
         $saved = get_option( self::OPTION, null );
         if ( ! is_array( $saved ) ) {
@@ -50,11 +50,23 @@ final class Founders implements ModuleInterface {
         foreach ( (array) ( $saved['titles'] ?? [] ) as $id => $title ) {
             $titles[ absint( $id ) ] = sanitize_text_field( (string) $title );
         }
+        $maps = [];
+        foreach ( [ 'pages', 'photos' ] as $key ) {
+            $maps[ $key ] = [];
+            foreach ( (array) ( $saved[ $key ] ?? [] ) as $id => $post ) {
+                if ( absint( $post ) > 0 ) {
+                    $maps[ $key ][ absint( $id ) ] = absint( $post );
+                }
+            }
+        }
         return [
             'enabled' => ! empty( $saved['enabled'] ),
             'heading' => isset( $saved['heading'] ) ? sanitize_text_field( (string) $saved['heading'] ) : 'Founders',
             'ids'     => array_values( array_unique( array_filter( array_map( 'absint', (array) ( $saved['ids'] ?? [] ) ) ) ) ),
             'titles'  => $titles,
+            // Per founder: their profile page (page ID) and chosen portrait (attachment ID).
+            'pages'   => $maps['pages'],
+            'photos'  => $maps['photos'],
             'style'   => isset( FounderCards::STYLES[ $style ] ) ? $style : 'cards',
             // The Primary Entity, when it is a person, is marked as a founder here.
             'entity_is_founder' => ! empty( $saved['entity_is_founder'] ),
@@ -125,6 +137,18 @@ final class Founders implements ModuleInterface {
         return array_values( array_unique( array_filter( array_merge( [ $auto ], self::manual_ids() ) ) ) );
     }
 
+    /** The founder's profile page when one is set and published, else their author archive. */
+    public static function profile_url( int $id ): string {
+        $page = (int) ( self::settings()['pages'][ $id ] ?? 0 );
+        return $page > 0 && 'publish' === get_post_status( $page ) ? (string) get_permalink( $page ) : (string) get_author_posts_url( $id );
+    }
+
+    /** The founder's chosen portrait (attachment ID), 0 when none is set. */
+    public static function photo_id( int $id ): int {
+        $photo = (int) ( self::settings()['photos'][ $id ] ?? 0 );
+        return $photo > 0 && wp_attachment_is_image( $photo ) ? $photo : 0;
+    }
+
     public static function title( int $id ): string {
         return (string) ( self::settings()['titles'][ $id ] ?? '' );
     }
@@ -142,7 +166,7 @@ final class Founders implements ModuleInterface {
                 'user_id' => $id,
                 'name'    => (string) $user->display_name,
                 'title'   => self::title( $id ),
-                'url'     => (string) get_author_posts_url( $id ),
+                'url'     => self::profile_url( $id ),
                 'bio'     => (string) get_the_author_meta( 'description', $id ),
                 'photo'   => FounderCards::photo_url( $id, 'medium' ),
             ];

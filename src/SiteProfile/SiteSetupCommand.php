@@ -209,6 +209,12 @@ final class SiteSetupCommand {
      * [--enabled=<on>]
      * : 1 to show the founders list, 0 to hide it.
      *
+     * [--profile=<user-page>]
+     * : A founder's profile page, as user ID and page ID (12:129446). Their card links there instead of their author archive. Page 0 clears it.
+     *
+     * [--photo=<user-image>]
+     * : A founder's portrait, as user ID and an attachment ID or image file (12:129450). Their card shows it instead of their avatar. 0 clears it.
+     *
      * @param array<int,string>    $args
      * @param array<string,string> $assoc
      */
@@ -240,15 +246,38 @@ final class SiteSetupCommand {
             if ( array_key_exists( 'enabled', $assoc ) ) {
                 $changes['enabled'] = (bool) absint( $assoc['enabled'] );
             }
+            $founder_ids = $changes['ids'] ?? \HWS\BaseTools\Founders\Founders::user_ids();
+            $settings    = \HWS\BaseTools\Founders\Founders::settings();
+            foreach ( [ 'profile' => 'pages', 'photo' => 'photos' ] as $flag => $key ) {
+                if ( ! array_key_exists( $flag, $assoc ) ) {
+                    continue;
+                }
+                [ $user, $value ] = array_pad( explode( ':', (string) $assoc[ $flag ], 2 ), 2, '' );
+                $user = absint( $user );
+                if ( ! in_array( $user, $founder_ids, true ) ) {
+                    \WP_CLI::error( "User {$user} is not a founder." );
+                }
+                if ( 'profile' === $flag && '0' !== $value && 'page' !== get_post_type( (int) $value ) ) {
+                    \WP_CLI::error( 'Give a page ID for --profile.' );
+                }
+                $post = '0' === $value ? 0 : ( 'photo' === $flag ? self::attachment( $value ) : (int) $value );
+                $map  = $settings[ $key ];
+                if ( $post > 0 ) {
+                    $map[ $user ] = $post;
+                } else {
+                    unset( $map[ $user ] );
+                }
+                $changes[ $key ] = $map;
+            }
             if ( ! $changes ) {
-                \WP_CLI::error( 'Use set with --heading, --users, --titles or --enabled.' );
+                \WP_CLI::error( 'Use set with --heading, --users, --titles, --enabled, --profile or --photo.' );
             }
             \HWS\BaseTools\Founders\Founders::update_settings( $changes );
         } elseif ( 'get' !== $action ) {
             \WP_CLI::error( 'Use get or set.' );
         }
         $settings = \HWS\BaseTools\Founders\Founders::settings();
-        \WP_CLI::line( (string) wp_json_encode( [ 'enabled' => $settings['enabled'], 'heading' => $settings['heading'], 'ids' => $settings['ids'], 'titles' => $settings['titles'] ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
+        \WP_CLI::line( (string) wp_json_encode( [ 'enabled' => $settings['enabled'], 'heading' => $settings['heading'], 'ids' => $settings['ids'], 'titles' => $settings['titles'], 'pages' => $settings['pages'], 'photos' => $settings['photos'] ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
     }
 
     /** One saved image as id, url and size; empty when the slot is unset or the file is gone. */

@@ -37,10 +37,13 @@ final class FounderCards {
     /** @var array<string,bool> */
     private static array $printed = [];
 
-    /** Profile photo: a plugin may supply it (filter hws_publication_founders_photo_url), else the user's avatar. */
+    /** Profile photo: a plugin may supply it (filter hws_publication_founders_photo_url), else the founder's chosen portrait, else the user's avatar. */
     public static function photo_url( int $id, string $size ): string {
         $pixels = [ 'thumbnail' => 150, 'medium' => 300, 'medium_large' => 768, 'large' => 1024 ];
         $url    = (string) apply_filters( 'hws_publication_founders_photo_url', '', $id, $size );
+        if ( '' === $url && Founders::photo_id( $id ) > 0 ) {
+            $url = (string) wp_get_attachment_image_url( Founders::photo_id( $id ), $size );
+        }
         if ( '' === $url ) {
             $url = (string) get_avatar_url( $id, [ 'size' => $pixels[ $size ] ?? 300 ] );
         }
@@ -78,7 +81,7 @@ final class FounderCards {
         foreach ( $users as $user ) {
             $id    = (int) $user->ID;
             $name  = (string) $user->display_name;
-            $url   = get_author_posts_url( $id );
+            $url   = Founders::profile_url( $id );
             $title = isset( $list['title'] ) && is_callable( $list['title'] ) ? trim( (string) call_user_func( $list['title'], $id ) ) : '';
             $bio   = $words > 0 ? wp_trim_words( wp_strip_all_tags( (string) get_the_author_meta( 'description', $id ) ), $words, '…' ) : '';
             $photo = self::photo_url( $id, (string) $atts['photo_size'] );
