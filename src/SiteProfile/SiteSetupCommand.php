@@ -89,7 +89,7 @@ final class SiteSetupCommand {
             }
             $value = (string) $assoc[ $key ];
             if ( in_array( $key, SiteIdentity::LIST_KEYS, true ) ) {
-                $value = implode( "\n", array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n|\s\|\s/', $value ) ?: [] ) ) );
+                $value = implode( "\n", SiteIdentity::list_values( $value ) );
             }
             update_option( 'options_' . SiteIdentity::COMPANY . '_' . $key, 'logo' === $key ? (int) $value : $value );
             update_option( '_options_' . SiteIdentity::COMPANY . '_' . $key, 'field_hws_identity_' . $key );
@@ -206,8 +206,8 @@ final class SiteSetupCommand {
      * [--titles=<titles>]
      * : Each founder's title, in the same order, separated by " | " (for example "Executive | Executive").
      *
-     * [--enabled=<on>]
-     * : 1 to show the founders list, 0 to hide it.
+     * [--enabled=<value>]
+     * : on, yes, true or 1 to show the founders list; off, no, false or 0 to hide it.
      *
      * [--profile=<user-page>]
      * : A founder's profile page, as user ID and page ID (12:129446). Their card links there instead of their author archive. Page 0 clears it.
@@ -244,7 +244,11 @@ final class SiteSetupCommand {
                 \WP_CLI::error( '--titles needs --users, so each title has its founder.' );
             }
             if ( array_key_exists( 'enabled', $assoc ) ) {
-                $changes['enabled'] = (bool) absint( $assoc['enabled'] );
+                $enabled = filter_var( trim( (string) $assoc['enabled'] ), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+                if ( null === $enabled || '' === trim( (string) $assoc['enabled'] ) ) {
+                    \WP_CLI::error( '--enabled must be on, yes, true, 1, off, no, false or 0.' );
+                }
+                $changes['enabled'] = $enabled;
             }
             $founder_ids = $changes['ids'] ?? \HWS\BaseTools\Founders\Founders::user_ids();
             $settings    = \HWS\BaseTools\Founders\Founders::settings();

@@ -284,7 +284,8 @@ final class CompanyFacts {
             return 'text' === $format ? esc_html( $email ) : '<a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
         }
         if ( in_array( $field, [ 'url', 'parent_url', 'headquarters_url', 'founding_location_url' ], true ) ) {
-            return 'link' === $format ? '<a href="' . esc_url( (string) $value ) . '">' . esc_html( (string) $value ) . '</a>' : esc_url( (string) $value );
+            $urls = array_map( static fn( $url ): string => 'link' === $format ? '<a href="' . esc_url( (string) $url ) . '">' . esc_html( (string) $url ) . '</a>' : esc_url( (string) $url ), (array) $value );
+            return implode( esc_html( $sep ), $urls );
         }
         if ( is_array( $value ) ) {
             return esc_html( implode( $sep, array_filter( array_map( 'strval', $value ) ) ) );

@@ -30,8 +30,8 @@ final class SiteIdentity implements ModuleInterface {
     /** Basics keys per type, in form order (read API returns exactly these). */
     public const COMPANY_KEYS = [ 'name', 'legal_name', 'alternate_names', 'description', 'logo', 'url', 'founding_date', 'founding_location', 'founding_location_url', 'founders', 'headquarters_city', 'headquarters_address', 'headquarters_url', 'parent_name', 'parent_url', 'email', 'phone', 'mission', 'profiles' ];
     public const PERSON_KEYS  = [ 'name', 'user', 'job_title', 'bio', 'photo', 'profiles' ];
-    /** Keys saved one item per line. Parent organizations read back as one "A, B, C" line. */
-    public const LIST_KEYS    = [ 'alternate_names', 'profiles', 'parent_name' ];
+    /** Keys saved one item per line and returned as ordered lists. Parent names and URLs use matching positions. */
+    public const LIST_KEYS    = [ 'alternate_names', 'profiles', 'parent_name', 'parent_url' ];
 
     public function register(): void {
         require_once __DIR__ . '/site-identity-functions.php';
@@ -63,7 +63,7 @@ final class SiteIdentity implements ModuleInterface {
 
     /**
      * The saved identity: [ 'type' => company|person|none|'', 'company' => [...], 'person' => [...] ].
-     * Images are attachment IDs, users are user IDs, alternate names and profiles are lists.
+     * Images are attachment IDs, users are user IDs; alternate names, profiles, parent names and parent URLs are lists.
      *
      * @return array<string,mixed>
      */
@@ -143,17 +143,21 @@ final class SiteIdentity implements ModuleInterface {
         return $out;
     }
 
+    /** One item per line or pipe, shared by the CLI and read API, including legacy saved values.
+     * @return array<int,string>
+     */
+    public static function list_values( mixed $value ): array {
+        $values = is_array( $value ) ? $value : preg_split( '/\r\n|\r|\n|\s*\|\s*/', (string) $value );
+        return array_values( array_filter( array_map( 'trim', array_map( 'strval', $values ?: [] ) ), static fn( string $item ): bool => '' !== $item ) );
+    }
+
     /** @param array<string,mixed> $raw @param array<int,string> $keys @return array<string,mixed> */
     private static function normalize( array $raw, array $keys ): array {
         $out = [];
         foreach ( $keys as $key ) {
             $value = $raw[ $key ] ?? '';
-            if ( in_array( $key, [ 'alternate_names', 'profiles' ], true ) ) {
-                $value = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ?: [] ) ) );
-            } elseif ( 'parent_name' === $key ) {
-                $parts = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ?: [] ) ) );
-                $last  = count( $parts ) > 1 ? ' and ' . array_pop( $parts ) : '';
-                $value = implode( ', ', $parts ) . $last;
+            if ( in_array( $key, self::LIST_KEYS, true ) ) {
+                $value = self::list_values( $value );
             } elseif ( in_array( $key, [ 'logo', 'photo', 'user' ], true ) ) {
                 $value = is_array( $value ) ? (int) ( $value['ID'] ?? $value['id'] ?? 0 ) : (int) $value;
             } elseif ( 'founders' === $key ) {
@@ -192,7 +196,7 @@ final class SiteIdentity implements ModuleInterface {
             [ 'key' => 'field_hws_identity_headquarters_address', 'label' => 'Headquarters address', 'name' => 'headquarters_address', 'type' => 'textarea', 'rows' => 2, 'new_lines' => '' ],
             $text( 'headquarters_url', 'Headquarters city Wikipedia page', 'The headquarters city\'s Wikipedia page (https://en.wikipedia.org/wiki/...). Used in the schema.', 'url' ),
             $text( 'parent_name', 'Parent organizations', 'One per line.', 'textarea' ),
-            $text( 'parent_url', 'Parent company link', '', 'url' ),
+            $lines( 'parent_url', 'Parent organization links', 'One URL per line, in the same order as the parent organizations.' ),
             $text( 'email', 'Contact email', '', 'email' ),
             $text( 'phone', 'Phone' ),
             [ 'key' => 'field_hws_identity_mission', 'label' => 'Mission', 'name' => 'mission', 'type' => 'textarea', 'rows' => 4, 'new_lines' => '', 'instructions' => 'One paragraph.' ],
