@@ -16,13 +16,9 @@ function custom_wp_admin_logo(): void {
 }
 
 function hws_render_custom_login_logo(): void {
-    $logo_url = function_exists( __NAMESPACE__ . '\\hws_get_brand_asset_url' )
-        ? hws_get_brand_asset_url( 'logo_text' )
-        : '';
-
-    if ( '' === $logo_url ) {
-        $logo_url = (string) get_site_icon_url();
-    }
+    $logo_url = function_exists( __NAMESPACE__ . '\\hws_get_login_logo_source' )
+        ? hws_get_login_logo_source()['url']
+        : (string) get_site_icon_url();
 
     if ( '' === $logo_url ) {
         return;

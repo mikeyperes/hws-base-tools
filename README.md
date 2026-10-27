@@ -58,6 +58,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 ### Logo 1:1 artistic
 
 A Brand Assets slot for a square logo with artistic brand depth (framing, accent shapes, texture), beside the basic Logo 1:1. Set it with `wp hws brand set logo_artistic_1x1 <attachment-id-or-file>`; it must be square.
+
+### Login screen logo
+
+The WordPress login screen shows the first Brand Assets logo that is set: Logo with text, then Logo, then the Site Icon. The Brand Assets dashboard shows which one is used and whether it is on. Switch it with the Custom Login Logo feature or `wp hws brand login on|off`; `wp hws brand login get` reads the state and source back.
 ### Default featured image
 
 A Brand Assets slot for one 1200x630 image. While it holds an image, every post without its own featured image shows it on the site (cards, article pages and link previews read it as the featured image); nothing is saved to posts, editors still see the post as having none, and clearing the slot turns it off. Set it with `wp hws brand set default_featured <attachment-id-or-file>`; other post types can opt in through the `hws_base_tools_default_featured_image_post_types` filter.
@@ -359,6 +363,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.43.0
+
+- One login logo source for the login screen, the dashboard and WP-CLI: Logo with text, then Logo, then the Site Icon. The dashboard now says which one is used and whether the feature is on. `wp hws brand login on|off|get` switches it and reads it back.
 
 ### 13.42.0
 

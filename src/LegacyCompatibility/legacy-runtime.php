@@ -793,18 +793,18 @@ function get_snippets($type = "")
     [
         'id' => 'enable_wp_admin_logo',
         'name' => 'Custom Login Logo',
-        'description' => 'Replaces the WordPress logo on the login screen with your site icon.',
+        'description' => 'Replaces the WordPress logo on the login screen with the brand logo (Logo with text, then Logo, then the Site Icon).',
         'info' => function() {
-            $logo_url = get_site_icon_url();
+            $logo_url = function_exists( 'hws_base_tools\\hws_get_login_logo_source' ) ? \hws_base_tools\hws_get_login_logo_source()['url'] : get_site_icon_url();
             $thumbnail = $logo_url ? '<img src="' . esc_url($logo_url) . '" style="max-width:100px; display:block; margin-top:10px;" alt="Custom Logo Thumbnail" onclick="event.stopPropagation();">' : '';
 
             if ($logo_url) {
-                return 'Uses your Site Icon as the login logo.<br>' .
+                return 'Uses the Brand Assets logo shown below.<br>' .
                        '<span onclick="event.stopPropagation();">' . $thumbnail . '</span><br>' .
                        '<a href="' . esc_url($logo_url) . '" target="_blank">View Image</a> | ' .
                        '<a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">Change Icon</a>';
             } else {
-                return '⚠️ No site icon set. <a href="' . esc_url(admin_url('options-general.php')) . '" target="_blank">Set one in Settings → General</a>';
+                return '⚠️ No logo set. Add one in Brand Assets.';
             }
         },
         'function' => 'custom_wp_admin_logo',

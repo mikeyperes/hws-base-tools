@@ -112,7 +112,7 @@ final class SiteSetupCommand {
      * ## OPTIONS
      *
      * <action>
-     * : get, set or favicon
+     * : get, set, favicon or login (login takes on, off or get)
      *
      * [<slot>]
      * : logo, logo_1x1, logo_artistic_1x1, logo_text, logo_dark, logo_dark_1x1, logo_text_dark or default_featured (for set).
@@ -167,8 +167,20 @@ final class SiteSetupCommand {
             \WP_CLI::success( 'Favicon and site icon set from ' . $slot . ' (attachment ' . $id . ').' );
             return;
         }
+        if ( 'login' === $action ) {
+            $state = (string) ( $args[1] ?? 'get' );
+            if ( in_array( $state, [ 'on', 'off' ], true ) ) {
+                update_option( 'enable_wp_admin_logo', 'on' === $state ? '1' : '0' );
+            } elseif ( 'get' !== $state ) {
+                \WP_CLI::error( 'Use login on, off or get.' );
+            }
+            $source = \hws_base_tools\hws_get_login_logo_source();
+            $out    = [ 'enabled' => (bool) get_option( 'enable_wp_admin_logo', false ), 'source' => $source['slot'], 'url' => $source['url'] ];
+            \WP_CLI::line( (string) wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+            return;
+        }
         if ( 'set' !== $action ) {
-            \WP_CLI::error( 'Use get, set or favicon.' );
+            \WP_CLI::error( 'Use get, set, favicon or login.' );
         }
         $slot       = \hws_base_tools\hws_normalize_brand_asset_key( (string) ( $args[1] ?? '' ) );
         $definition = \hws_base_tools\hws_get_brand_asset_definition( $slot );

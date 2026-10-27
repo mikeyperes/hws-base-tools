@@ -3591,7 +3591,9 @@ function render_site_icon_panel() {
 }
 
 function render_login_logo_panel() {
-    $icon_url  = has_site_icon() ? get_site_icon_url( 512 ) : '';
+    $source    = hws_get_login_logo_source();
+    $icon_url  = $source['url'];
+    $enabled   = (bool) get_option( 'enable_wp_admin_logo', false );
     $login_url = hws_get_login_screen_url();
     ?>
     <div class="hws-panel" id="hws-brand-login-logo-panel">
@@ -3609,7 +3611,7 @@ function render_login_logo_panel() {
                 <div style="min-width:0;">
                     <div style="padding:14px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;min-width:0;">
                         <strong style="display:block;margin-bottom:8px;">WordPress login screen</strong>
-                        <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">The login screen uses the current WordPress Site Icon automatically. Change the site icon above to change the login logo.</p>
+                        <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">The login screen shows the first Brand Assets logo that is set: Logo with text, then Logo, then the Site Icon. It is switched on in Features (Custom Login Logo) or with <code>wp hws brand login on</code>.</p>
                         <div style="display:grid;gap:10px;font-size:12.5px;min-width:0;">
                             <div>
                                 <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Source PNG</label>
@@ -3619,7 +3621,8 @@ function render_login_logo_panel() {
                                 <label style="display:block;font-weight:600;font-size:12px;margin-bottom:4px;">Login URL</label>
                                 <?php echo hws_asset_external_link( $login_url ); ?>
                             </div>
-                            <div>Status: <span id="hws-login-logo-status" style="color:<?php echo $icon_url ? '#00a32a' : '#d63638'; ?>;"><?php echo $icon_url ? 'Active' : 'Needs a Site Icon'; ?></span></div>
+                            <div>Uses: <strong><?php echo esc_html( $source['label'] ?: 'nothing yet' ); ?></strong></div>
+                            <div>Status: <span id="hws-login-logo-status" style="color:<?php echo ( $icon_url && $enabled ) ? '#00a32a' : '#d63638'; ?>;"><?php echo ! $icon_url ? 'Needs a logo' : ( $enabled ? 'Active' : 'Off' ); ?></span></div>
                         </div>
                     </div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;">

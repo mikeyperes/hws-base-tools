@@ -306,6 +306,24 @@ function hws_get_brand_asset_definitions(): array {
 	];
 }
 
+/**
+ * The login screen logo and where it comes from, in order: Logo with text,
+ * Logo, then the Site Icon. Shared by the login screen, the dashboard and WP-CLI.
+ *
+ * @return array{url:string,slot:string,label:string}
+ */
+function hws_get_login_logo_source(): array {
+	foreach ( [ 'logo_text' => 'Logo with text', 'logo' => 'Logo' ] as $slot => $label ) {
+		$url = hws_get_brand_asset_url( $slot );
+		if ( '' !== $url ) {
+			return [ 'url' => $url, 'slot' => $slot, 'label' => $label ];
+		}
+	}
+	$icon = (string) get_site_icon_url( 512 );
+
+	return [ 'url' => $icon, 'slot' => '' !== $icon ? 'site_icon' : '', 'label' => '' !== $icon ? 'Site Icon' : '' ];
+}
+
 function hws_normalize_brand_asset_key( string $key ): string {
 	$key = sanitize_key( $key );
 	$aliases = [
