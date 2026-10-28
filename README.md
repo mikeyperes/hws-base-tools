@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.7
+
+- A Loop Grid whose first story uses an alternate (lead story) template no longer repeats the lead on every "Load more" or infinite-scroll batch: add the CSS class `hws-lead-first-page` to the Loop Grid and only the first batch has the lead. Details in `docs/loop-lead-first-page.md`.
+
 ### 13.45.6
 
 - `[hws_rss_feeds]` rows: the address can wrap after each slash, a count of one carries `is-one` so a page can say "1 post", and `icon="solid"` draws the filled feed glyph (the outlined one stays the default).
