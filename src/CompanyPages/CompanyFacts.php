@@ -255,6 +255,14 @@ final class CompanyFacts {
         return $items;
     }
 
+    /** Place facts and the field holding each one's reference page (Wikipedia). */
+    private const PLACE_LINKS = [ 'founding_location' => 'founding_location_url', 'headquarters_city' => 'headquarters_url' ];
+
+    /** A place name linked to its reference page in a new tab, or the plain name when there is no link. */
+    public static function place_link( string $name_html, string $url ): string {
+        return '' !== $url ? '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . $name_html . '</a>' : $name_html;
+    }
+
     private static function format_value( string $field, $value, array $atts ): string {
         $format = sanitize_key( (string) $atts['format'] );
         $sep    = (string) $atts['sep'];
@@ -284,8 +292,13 @@ final class CompanyFacts {
             return 'text' === $format ? esc_html( $email ) : '<a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
         }
         if ( in_array( $field, [ 'url', 'parent_url', 'headquarters_url', 'founding_location_url' ], true ) ) {
-            $urls = array_map( static fn( $url ): string => 'link' === $format ? '<a href="' . esc_url( (string) $url ) . '">' . esc_html( (string) $url ) . '</a>' : esc_url( (string) $url ), (array) $value );
+            $urls = array_map( static fn( $url ): string => 'link' === $format ? '<a href="' . esc_url( (string) $url ) . '"' . ( 'url' === $field ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( (string) $url ) . '</a>' : esc_url( (string) $url ), (array) $value );
             return self::join_list( $urls, esc_html( $sep ) );
+        }
+        // A place always links to its reference page (Wikipedia), in a new tab, whenever that link is set.
+        if ( isset( self::PLACE_LINKS[ $field ] ) && ! in_array( $format, [ 'text', 'raw' ], true ) ) {
+            $company = (array) ( SiteIdentity::get()['company'] ?? [] );
+            return self::place_link( esc_html( wp_strip_all_tags( (string) $value ) ), (string) ( $company[ self::PLACE_LINKS[ $field ] ] ?? '' ) );
         }
         if ( is_array( $value ) ) {
             return self::join_list( array_map( 'esc_html', array_filter( array_map( 'strval', $value ) ) ), esc_html( $sep ) );

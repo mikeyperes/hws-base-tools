@@ -248,7 +248,7 @@ final class CompanyPages implements ModuleInterface {
         $city = esc_html( (string) $c['headquarters_city'] );
         $html = '<h2>Where ' . $name . ' is based</h2>';
         if ( '' !== $city ) {
-            $place = '' !== (string) $c['headquarters_url'] ? '<a href="' . esc_url( (string) $c['headquarters_url'] ) . '">' . $city . '</a>' : $city;
+            $place = CompanyFacts::place_link( $city, (string) $c['headquarters_url'] );
             $html .= '<p>' . $name . ' is headquartered in ' . $place . '.</p>';
         }
         if ( '' !== (string) $c['headquarters_address'] ) {
