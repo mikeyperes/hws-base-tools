@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.6
+
+- `[hws_rss_feeds]` rows: the address can wrap after each slash, a count of one carries `is-one` so a page can say "1 post", and `icon="solid"` draws the filled feed glyph (the outlined one stays the default).
+
 ### 13.45.5
 
 - `[hws_rss_feeds only="categories"]` (and `only="tags"`) lists one feed per category or tag that has posts, a parent followed by its own sub-categories (those rows carry `is-child`), instead of one example row.

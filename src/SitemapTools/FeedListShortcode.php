@@ -58,7 +58,7 @@ final class FeedListShortcode implements ModuleInterface {
     }
 
     public static function render( $atts = [] ): string {
-        $atts = shortcode_atts( [ 'only' => '', 'exclude' => '', 'hide' => '', 'style' => 'default' ], (array) $atts, self::SHORTCODE );
+        $atts = shortcode_atts( [ 'only' => '', 'exclude' => '', 'hide' => '', 'style' => 'default', 'icon' => 'outline' ], (array) $atts, self::SHORTCODE );
         $list = static fn( string $value ): array => array_values( array_filter( array_map( 'sanitize_title', array_map( 'trim', explode( ',', $value ) ) ) ) );
         $hide = array_intersect( $list( (string) $atts['hide'] ), self::PARTS );
         $show = static fn( string $part ): bool => ! in_array( $part, $hide, true );
@@ -75,17 +75,22 @@ final class FeedListShortcode implements ModuleInterface {
             $total = is_callable( $feed['total'] ) ? (int) call_user_func( $feed['total'] ) : null;
             $rows .= '<li class="hws-rss-feed hws-rss-feed--' . esc_attr( $slug ) . ( $item['depth'] ? ' is-child' : '' ) . '">';
             if ( $show( 'icon' ) ) {
-                $rows .= '<span class="hws-rss-feed__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M3 10.5a10.5 10.5 0 0 1 10.5 10.5M3 4a17 17 0 0 1 17 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></span>';
+                // icon="solid" draws the filled feed glyph; the default stays the outlined one.
+                $glyph  = 'solid' === $atts['icon']
+                    ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" focusable="false"><circle cx="6.18" cy="17.82" r="2.18"/><path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9z"/></svg>'
+                    : '<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M3 10.5a10.5 10.5 0 0 1 10.5 10.5M3 4a17 17 0 0 1 17 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+                $rows .= '<span class="hws-rss-feed__icon" aria-hidden="true">' . $glyph . '</span>';
             }
             $rows .= '<span class="hws-rss-feed__body">';
             if ( $show( 'title' ) ) {
                 $rows .= '<a class="hws-rss-feed__title" href="' . esc_url( $feed['url'] ) . '">' . esc_html( $feed['label'] ) . '</a>';
             }
             if ( $show( 'count' ) && null !== $total ) {
-                $rows .= ' <span class="hws-rss-feed__count">' . esc_html( number_format_i18n( $total ) ) . '</span>';
+                $rows .= ' <span class="hws-rss-feed__count' . ( 1 === $total ? ' is-one' : '' ) . '">' . esc_html( number_format_i18n( $total ) ) . '</span>';
             }
             if ( $show( 'url' ) ) {
-                $rows .= '<span class="hws-rss-feed__url">' . esc_html( $feed['url'] ) . '</span>';
+                // A break point after each slash lets a long address wrap at a slash on a narrow screen.
+                $rows .= '<span class="hws-rss-feed__url">' . str_replace( '/', '/<wbr>', esc_html( $feed['url'] ) ) . '</span>';
             }
             $rows .= '</span>';
             if ( $show( 'copy' ) ) {
