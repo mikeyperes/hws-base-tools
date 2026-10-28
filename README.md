@@ -461,7 +461,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ### 13.30.0
 
-- `[hws_site field="..."]` prints a detail of whatever the site represents in Website Identity (a company, a person, or the website itself, falling back to its own name, address, email and tagline). `[hws_company]` still works as the older name. Every default page text uses `[hws_site]`, and the Pages tab is now "Site pages", listing only the details that apply to this site.
+- `[hws_site field="..."]` prints a detail of whatever the site represents in Website Identity (a company, a person, or the website itself, falling back to its own name, address, email and tagline). `[hws_company]` still works as the older name. A list (founders, parent companies) reads as plain English, "A and B" or "A, B and C", unless `sep="..."` sets a separator. Every default page text uses `[hws_site]`, and the Pages tab is now "Site pages", listing only the details that apply to this site.
 
 ### 13.29.0
 

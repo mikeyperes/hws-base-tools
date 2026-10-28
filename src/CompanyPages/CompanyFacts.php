@@ -74,7 +74,7 @@ final class CompanyFacts {
     }
 
     public static function shortcode( $atts ): string {
-        $atts  = shortcode_atts( [ 'field' => 'name', 'format' => '', 'sep' => ', ', 'size' => 'medium', 'fallback' => '', 'before' => '', 'after' => '' ], (array) $atts, self::SHORTCODE );
+        $atts  = shortcode_atts( [ 'field' => 'name', 'format' => '', 'sep' => '', 'size' => 'medium', 'fallback' => '', 'before' => '', 'after' => '' ], (array) $atts, self::SHORTCODE );
         $field = sanitize_key( (string) $atts['field'] );
         $value = self::value( $field );
         if ( self::empty_value( $value ) ) {
@@ -204,7 +204,7 @@ final class CompanyFacts {
                     $names[] = $user->display_name;
                 }
             }
-            return implode( ', ', $names );
+            return self::join_list( $names, '' );
         }
         if ( 'logo' === $field ) {
             return 'Image set';
@@ -277,7 +277,7 @@ final class CompanyFacts {
                 $url     = $profile ? (string) get_permalink( $profile ) : (string) get_author_posts_url( $user->ID );
                 $names[] = 'text' === $format ? esc_html( $user->display_name ) : '<a href="' . esc_url( $url ) . '">' . esc_html( $user->display_name ) . '</a>';
             }
-            return implode( esc_html( $sep ), $names );
+            return self::join_list( $names, esc_html( $sep ) );
         }
         if ( 'email' === $field ) {
             $email = sanitize_email( (string) $value );
@@ -285,12 +285,26 @@ final class CompanyFacts {
         }
         if ( in_array( $field, [ 'url', 'parent_url', 'headquarters_url', 'founding_location_url' ], true ) ) {
             $urls = array_map( static fn( $url ): string => 'link' === $format ? '<a href="' . esc_url( (string) $url ) . '">' . esc_html( (string) $url ) . '</a>' : esc_url( (string) $url ), (array) $value );
-            return implode( esc_html( $sep ), $urls );
+            return self::join_list( $urls, esc_html( $sep ) );
         }
         if ( is_array( $value ) ) {
-            return esc_html( implode( $sep, array_filter( array_map( 'strval', $value ) ) ) );
+            return self::join_list( array_map( 'esc_html', array_filter( array_map( 'strval', $value ) ) ), esc_html( $sep ) );
         }
         return in_array( $field, [ 'mission', 'description', 'headquarters_address' ], true ) ? wp_kses_post( nl2br( (string) $value ) ) : esc_html( wp_strip_all_tags( (string) $value ) );
+    }
+
+    /**
+     * Joins a list as plain English ("A and B", "A, B and C") unless a separator is given (sep="...").
+     *
+     * @param array<int,string> $items Already escaped items.
+     */
+    public static function join_list( array $items, string $sep ): string {
+        $items = array_values( array_filter( $items, static fn( $item ): bool => '' !== (string) $item ) );
+        if ( '' !== $sep || count( $items ) < 2 ) {
+            return implode( $sep, $items );
+        }
+        $last = (string) array_pop( $items );
+        return implode( ', ', $items ) . ' and ' . $last;
     }
 
     private static function empty_value( $value ): bool {
