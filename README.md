@@ -53,6 +53,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** automatic, one small style in the page head (`#hws-font-smoothing`). Never add the same rule in Elementor or the theme.
 - **Code:** `src/FrontendContent/FontSmoothing.php`
 
+### Skip to content link
+- **Does:** the Hello Elementor theme's hidden "Skip to content" link (for keyboard and screen reader users) points at a spot only Hello's own page layout has. On pages with an Elementor Pro header, Base Tools prints an empty anchor right after the header and points the link to it, so it always lands on the page content. Nothing visible changes; always on.
+- **Code:** `src/FrontendContent/SkipLinkTarget.php`
+
 ### Reading progress bar
 - **Does:** a progress line at the top of the page that fills as the visitor scrolls.
 - **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
@@ -377,6 +381,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.45.3
+
+- The "Skip to content" link now lands on the page content on pages with an Elementor Pro header.
 
 ### 13.45.2
 

@@ -22,6 +22,7 @@ use HWS\BaseTools\MaintenanceMode\MaintenanceModeFeature;
 use HWS\BaseTools\TeamMembers\TeamTab;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\FontSmoothing;
+use HWS\BaseTools\FrontendContent\SkipLinkTarget;
 use HWS\BaseTools\FrontendContent\SearchBoxFeature;
 use HWS\BaseTools\FrontendContent\DiscussionPolicy;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
@@ -94,6 +95,7 @@ final class CoreIntegration {
             ->add_module( new \HWS\BaseTools\BrandAssets\DefaultFeaturedImage() )
             ->add_module( new ReadingProgress() )
             ->add_module( new FontSmoothing() )
+            ->add_module( new SkipLinkTarget() )
             ->add_module( new \HWS\BaseTools\FrontendContent\CardImageRenditions() )
             ->add_module( new FeedSwitches() )
             ->add_module( new FeedSitemapSettings() )
