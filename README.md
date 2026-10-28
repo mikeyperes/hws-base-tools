@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.13
+
+- Images in a `hws-eager` widget also carry `data-no-lazy="1"`, so LiteSpeed Cache skips every one of them even when its parent-class exclusion only covers part of the widget.
+
 ### 13.45.12
 
 - Quick Start's plugin-stack check lists SMP Verified Profiles as optional and no longer reports it as missing when it is not installed (SMP runs without it).

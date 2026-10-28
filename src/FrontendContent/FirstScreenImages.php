@@ -9,7 +9,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Photos on the first screen must not lazy-load. WordPress adds loading="lazy" to every image it draws, including the
  * ones an Elementor widget or a shortcode inside it prints. Adding the CSS class hws-eager to that widget (Advanced,
- * CSS Classes) makes its images load at once: loading="eager", and fetchpriority="high" on the first of them.
+ * CSS Classes) makes its images load at once: loading="eager", data-no-lazy (so LiteSpeed Cache skips them) and
+ * fetchpriority="high" on the first of them.
  */
 final class FirstScreenImages implements ModuleInterface {
     public const CSS_CLASS = 'hws-eager';
@@ -36,6 +37,10 @@ final class FirstScreenImages implements ModuleInterface {
             $tag = (string) preg_replace( '/\sloading=("|\')lazy\1/i', ' loading="eager"', $m[0] );
             if ( $first && false === stripos( $tag, 'fetchpriority=' ) ) {
                 $tag = (string) preg_replace( '/<img\b/i', '<img fetchpriority="high"', $tag, 1 );
+            }
+            // The cache plugin leaves an image alone when it carries data-no-lazy, however its parent is marked.
+            if ( false === stripos( $tag, 'data-no-lazy' ) ) {
+                $tag = (string) preg_replace( '/<img\b/i', '<img data-no-lazy="1"', $tag, 1 );
             }
             $first = false;
             return $tag;
