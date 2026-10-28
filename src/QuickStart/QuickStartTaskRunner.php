@@ -278,8 +278,10 @@ final class QuickStartTaskRunner {
                 'smp-verified-profiles/smp-verified-profiles.php'             => 'SMP Verified Profiles',
             ] as $file => $name ) {
                 $status = PluginProvisioner::plugin_status_by_file( $file );
-                $rows[] = [ 'plugin' => $name, 'file' => $file, 'installed' => ! empty( $status['installed'] ), 'active' => ! empty( $status['active'] ), 'licensed' => 'not-required' ];
-                if ( empty( $status['installed'] ) || empty( $status['active'] ) ) {
+                // SMP Verified Profiles is an optional integration: SMP runs without it, so it is listed but never missing.
+                $optional = 'smp-verified-profiles/smp-verified-profiles.php' === $file;
+                $rows[]   = [ 'plugin' => $name, 'file' => $file, 'installed' => ! empty( $status['installed'] ), 'active' => ! empty( $status['active'] ), 'licensed' => 'not-required', 'optional' => $optional ];
+                if ( ! $optional && ( empty( $status['installed'] ) || empty( $status['active'] ) ) ) {
                     $missing[] = $name;
                 }
             }

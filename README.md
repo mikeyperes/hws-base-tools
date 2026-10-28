@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.12
+
+- Quick Start's plugin-stack check lists SMP Verified Profiles as optional and no longer reports it as missing when it is not installed (SMP runs without it).
+
 ### 13.45.11
 
 - `hws-lead-first-page` clears the widget's saved display settings (Elementor's own reset) after dropping the alternate templates, so the lead story really is left out of the second and later batches.
