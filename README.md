@@ -382,6 +382,14 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.11
+
+- `hws-lead-first-page` clears the widget's saved display settings (Elementor's own reset) after dropping the alternate templates, so the lead story really is left out of the second and later batches.
+
+### 13.45.10
+
+- The `hws-lead-first-page` Loop Grid class now works: the page number is read without building the widget's display settings first, so the lead story is dropped on the second and later batches.
+
 ### 13.45.9
 
 - `[hws_rss_feeds]` addresses break after each path slash, not after the two slashes of `https://`.
