@@ -107,6 +107,7 @@ final class CoreIntegration {
             ->add_module( new LoginLinkFallback() )
             ->add_module( new \HWS\BaseTools\ContentTypes\PageCollections() )
             ->add_module( new \HWS\BaseTools\FrontendContent\LoopLeadFirstPage() )
+            ->add_module( new \HWS\BaseTools\FrontendContent\FirstScreenImages() )
             ->add_module( SharedContentTypes::registry() )
             ->add_module( SharedAcfStructures::registry() )
             ->add_module( UserProfileGalleryDetails::module() )

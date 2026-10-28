@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.8
+
+- Photos on the first screen can skip lazy loading: add the CSS class `hws-eager` to the Elementor widget that draws them (or holds the shortcode that does) and its images load at once, the first with high priority. Details in `docs/first-screen-images.md`.
+
 ### 13.45.7
 
 - A Loop Grid whose first story uses an alternate (lead story) template no longer repeats the lead on every "Load more" or infinite-scroll batch: add the CSS class `hws-lead-first-page` to the Loop Grid and only the first batch has the lead. Details in `docs/loop-lead-first-page.md`.
