@@ -9,6 +9,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Page collections and magazine issue queries
+- **Does:** adds native Page Collections to pages, with editor, Quick Edit, bulk edit and REST support. Classification changes term relationships only, leaving page content, parent, date, featured image and URL intact. There is no public collection archive or added front-end output.
+- **Use:** Pages → Page Collections: create **Magazine issues** with slug `magazine-issues`. Assign it to each issue page using the page editor or Pages bulk edit. Any site can use additional collections for other editorial groups.
+- **Elementor Pro:** Loop Grid → Query: Source **Pages**, Query ID `hws_magazine_issues`; set Items Per Page to **8** and use no additional include filters. Published marked pages are ordered by publication date descending, then ID descending for ties. Size and pagination remain widget controls. An empty collection returns no pages.
+- **Loop item:** use dynamic Featured Image linked to Post URL, Post Title and Post Date. The query does not create cover images. A View more button may link to an existing magazine landing page or a page with the same query and pagination; it does not create that landing page.
+- **Details:** [Page collections](docs/page-collections.md).
+- **Code:** `src/ContentTypes/PageCollections.php`.
+
 ### Team landing page
 - **Does:** Team Member profiles have no post-type archive, so a real Team page at `/team/` remains the landing page for `[hws_team_members]`. Individual profile URLs remain available, matching Services' landing-page behavior. Flush rewrite rules after upgrading an existing site.
 - **Code:** `src/ContentTypes/SharedContentTypes.php`.

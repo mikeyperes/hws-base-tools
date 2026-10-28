@@ -35,3 +35,7 @@ curl -s "https://<site>/?nocache=1" | grep -oE '(href|src)="[^"]*(hws-base-tools
 ```
 
 Check at least the home page, an article, an archive that uses the feature, and for the admin a Base Tools tab plus Dashboard and Posts (signed in, with the browser's cookie). An asset that appears where its feature is not used is a bug.
+
+## Page collections
+
+Page Collections adds no CSS, JavaScript or front-end markup on the homepage, articles, collection loops or admin screens. Native WordPress taxonomy controls provide the admin interface.
