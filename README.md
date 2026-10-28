@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.9
+
+- `[hws_rss_feeds]` addresses break after each path slash, not after the two slashes of `https://`.
+
 ### 13.45.8
 
 - Photos on the first screen can skip lazy loading: add the CSS class `hws-eager` to the Elementor widget that draws them (or holds the shortcode that does) and its images load at once, the first with high priority. Details in `docs/first-screen-images.md`.

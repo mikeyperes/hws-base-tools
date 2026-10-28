@@ -89,8 +89,8 @@ final class FeedListShortcode implements ModuleInterface {
                 $rows .= ' <span class="hws-rss-feed__count' . ( 1 === $total ? ' is-one' : '' ) . '">' . esc_html( number_format_i18n( $total ) ) . '</span>';
             }
             if ( $show( 'url' ) ) {
-                // A break point after each slash lets a long address wrap at a slash on a narrow screen.
-                $rows .= '<span class="hws-rss-feed__url">' . str_replace( '/', '/<wbr>', esc_html( $feed['url'] ) ) . '</span>';
+                // A break point after each path slash (not the two after https:) lets a long address wrap on a narrow screen.
+                $rows .= '<span class="hws-rss-feed__url">' . preg_replace( '#(?<!/)/(?!/)#', '/<wbr>', esc_html( $feed['url'] ) ) . '</span>';
             }
             $rows .= '</span>';
             if ( $show( 'copy' ) ) {
