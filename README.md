@@ -9,6 +9,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Elementor custom font import
+- **Does:** administrator-only `wp hws elementor font import <family> <file-or-https-url> --weight=400 --style=normal --user=<administrator>` imports WOFF2 and WOFF into native Elementor Pro Custom Fonts. Variable files are preserved byte-for-byte, including optical-size axes; import each required CSS weight/style separately.
+- **Safety:** validates the container signature, length and header; allows only that validated file during its sideload. No global upload MIME changes, REST route or front-end assets. Requires `manage_options` and `upload_files`.
+- **Repeat builds:** an identical face is a no-op. `--replace` changes only that weight/style/format and preserves other faces and old attachments.
+- **Details:** [Custom font command](docs/elementor-custom-fonts.md).
+
 ### Page collections and magazine issue queries
 - **Does:** adds native Page Collections to pages, with editor, Quick Edit, bulk edit and REST support. Classification changes term relationships only, leaving page content, parent, date, featured image and URL intact. There is no public collection archive or added front-end output.
 - **Use:** Pages → Page Collections: create **Magazine issues** with slug `magazine-issues`. Assign it to each issue page using the page editor or Pages bulk edit. Any site can use additional collections for other editorial groups.
@@ -371,6 +377,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.45.0
+- Add administrator-only Elementor Pro WOFF/WOFF2 CLI imports, preserving variable font axes with a file-scoped upload exception.
 
 ### 13.43.0
 

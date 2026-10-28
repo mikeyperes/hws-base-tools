@@ -99,6 +99,7 @@ final class CoreIntegration {
             ->add_module( new FeedSitemapSettings() )
             ->add_module( new FeedListShortcode() )
             ->add_module( new ExternalPublishingModule() )
+            ->add_module( new \HWS\BaseTools\ElementorFonts\CustomFontModule() )
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )
             ->add_module( new LoginLinkFallback() )
