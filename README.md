@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.5
+
+- `[hws_rss_feeds only="categories"]` (and `only="tags"`) lists one feed per category or tag that has posts, a parent followed by its own sub-categories (those rows carry `is-child`), instead of one example row.
+
 ### 13.45.4
 
 - `[hws_site]` takes `index="0"`, `index="1"` and so on to print one entry of a list (one parent organization, one founder) on its own, so a page can lay the entries out separately.

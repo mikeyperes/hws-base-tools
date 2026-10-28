@@ -69,9 +69,11 @@ final class FeedListShortcode implements ModuleInterface {
         }
 
         $rows = '';
-        foreach ( $feeds as $slug => $feed ) {
+        foreach ( self::expand( $feeds ) as $item ) {
+            $slug  = $item['slug'];
+            $feed  = $item['feed'];
             $total = is_callable( $feed['total'] ) ? (int) call_user_func( $feed['total'] ) : null;
-            $rows .= '<li class="hws-rss-feed hws-rss-feed--' . esc_attr( $slug ) . '">';
+            $rows .= '<li class="hws-rss-feed hws-rss-feed--' . esc_attr( $slug ) . ( $item['depth'] ? ' is-child' : '' ) . '">';
             if ( $show( 'icon' ) ) {
                 $rows .= '<span class="hws-rss-feed__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M3 10.5a10.5 10.5 0 0 1 10.5 10.5M3 4a17 17 0 0 1 17 17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></span>';
             }
@@ -96,6 +98,39 @@ final class FeedListShortcode implements ModuleInterface {
         return ( $styled ? self::styles() : '' )
             . '<ul class="hws-rss-feeds' . ( $styled ? ' hws-rss-feeds--default' : '' ) . '">' . $rows . '</ul>'
             . ( $show( 'copy' ) ? self::copy_script() : '' );
+    }
+
+    /**
+     * Turns the "each category" and "each tag" entries into one row per category or tag that has posts, a parent
+     * followed by its own sub-categories (depth 1 and deeper rows get is-child). Every other feed stays one row.
+     *
+     * @param array<string,array<string,mixed>> $feeds
+     * @return array<int,array{slug:string,feed:array<string,mixed>,depth:int}>
+     */
+    private static function expand( array $feeds ): array {
+        $items = [];
+        foreach ( $feeds as $slug => $feed ) {
+            $taxonomy = 'categories' === $slug ? 'category' : ( 'tags' === $slug ? 'post_tag' : '' );
+            $terms    = $taxonomy && ! empty( $feed['example'] ) ? get_terms( [ 'taxonomy' => $taxonomy, 'hide_empty' => true, 'orderby' => 'name' ] ) : [];
+            if ( is_wp_error( $terms ) || ! $terms ) {
+                $items[] = [ 'slug' => $slug, 'feed' => $feed, 'depth' => 0 ];
+                continue;
+            }
+            $ids      = wp_list_pluck( $terms, 'term_id' );
+            $children = [];
+            foreach ( $terms as $term ) {
+                $children[ in_array( (int) $term->parent, array_map( 'intval', $ids ), true ) ? (int) $term->parent : 0 ][] = $term;
+            }
+            $walk = static function ( int $parent, int $depth ) use ( &$walk, &$items, $children, $slug, $feed, $taxonomy ): void {
+                foreach ( $children[ $parent ] ?? [] as $term ) {
+                    $count   = (int) $term->count;
+                    $items[] = [ 'slug' => $slug, 'depth' => $depth, 'feed' => [ 'url' => (string) get_term_feed_link( $term->term_id, $taxonomy ), 'label' => $term->name, 'total' => static fn() => $count ] + $feed ];
+                    $walk( (int) $term->term_id, $depth + 1 );
+                }
+            };
+            $walk( 0, 0 );
+        }
+        return $items;
     }
 
     private static function styles(): string {
