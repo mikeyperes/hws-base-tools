@@ -74,9 +74,13 @@ final class CompanyFacts {
     }
 
     public static function shortcode( $atts ): string {
-        $atts  = shortcode_atts( [ 'field' => 'name', 'format' => '', 'sep' => '', 'size' => 'medium', 'fallback' => '', 'before' => '', 'after' => '' ], (array) $atts, self::SHORTCODE );
+        $atts  = shortcode_atts( [ 'field' => 'name', 'format' => '', 'sep' => '', 'index' => '', 'size' => 'medium', 'fallback' => '', 'before' => '', 'after' => '' ], (array) $atts, self::SHORTCODE );
         $field = sanitize_key( (string) $atts['field'] );
         $value = self::value( $field );
+        // index="0", "1", ... prints one entry of a list (one parent organization, one founder) on its own.
+        if ( '' !== (string) $atts['index'] && is_array( $value ) ) {
+            $value = array_slice( array_values( $value ), max( 0, (int) $atts['index'] ), 1 );
+        }
         if ( self::empty_value( $value ) ) {
             return esc_html( (string) $atts['fallback'] );
         }

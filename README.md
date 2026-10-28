@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.4
+
+- `[hws_site]` takes `index="0"`, `index="1"` and so on to print one entry of a list (one parent organization, one founder) on its own, so a page can lay the entries out separately.
+
 ### 13.45.3
 
 - The "Skip to content" link now lands on the page content on pages with an Elementor Pro header.
@@ -482,7 +486,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ### 13.30.0
 
-- `[hws_site field="..."]` prints a detail of whatever the site represents in Website Identity (a company, a person, or the website itself, falling back to its own name, address, email and tagline). `[hws_company]` still works as the older name. A list (founders, parent companies) reads as plain English, "A and B" or "A, B and C", unless `sep="..."` sets a separator. Every default page text uses `[hws_site]`, and the Pages tab is now "Site pages", listing only the details that apply to this site.
+- `[hws_site field="..."]` prints a detail of whatever the site represents in Website Identity (a company, a person, or the website itself, falling back to its own name, address, email and tagline). `[hws_company]` still works as the older name. A list (founders, parent companies) reads as plain English, "A and B" or "A, B and C", unless `sep="..."` sets a separator; `index="0"`, `index="1"` and so on print one entry of the list on its own. Every default page text uses `[hws_site]`, and the Pages tab is now "Site pages", listing only the details that apply to this site.
 
 ### 13.29.0
 
