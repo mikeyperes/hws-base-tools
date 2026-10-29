@@ -382,6 +382,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.14
+
+- The Founding Date page shows only the founding date and place; the founders sentence is removed.
+
 ### 13.45.13
 
 - Images in a `hws-eager` widget also carry `data-no-lazy="1"`, so LiteSpeed Cache skips every one of them even when its parent-class exclusion only covers part of the widget.
