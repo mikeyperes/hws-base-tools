@@ -63,7 +63,7 @@ final class RankMathSitemapCache {
         }
 
         foreach ( self::sitemap_urls( $post_id ) as $url ) {
-            do_action( 'litespeed_purge_url', $url );
+            \HWS\BaseTools\LiteSpeed\LiteSpeedPurge::url_quietly( $url );
         }
 
         return array_values( array_unique( $evicted ) );

@@ -75,7 +75,7 @@ final class FeaturedImageBackfill {
 
             foreach ( array_unique( $post_ids ) as $post_id ) {
                 do_action( 'litespeed_purge_post', $post_id );
-                do_action( 'litespeed_purge_url', get_permalink( $post_id ) );
+                \HWS\BaseTools\LiteSpeed\LiteSpeedPurge::url_quietly( get_permalink( $post_id ) );
 
                 if ( defined( 'RANK_MATH_VERSION' ) || class_exists( '\\RankMath\\Plugin' ) ) {
                     RankMathSitemapCache::evict_for_post( $post_id );

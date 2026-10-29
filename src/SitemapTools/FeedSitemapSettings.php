@@ -191,7 +191,7 @@ final class FeedSitemapSettings implements ModuleInterface {
             }
         }
         foreach ( array_unique( array_filter( $urls ) ) as $url ) {
-            do_action( 'litespeed_purge_url', $url );
+            \HWS\BaseTools\LiteSpeed\LiteSpeedPurge::url_quietly( $url );
         }
     }
 
