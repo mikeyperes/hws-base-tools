@@ -165,3 +165,11 @@ with `.hls.hls`, or use `style="none"` and style the box from scratch.
   same CSS under `selector`.
 - One page only: the look attributes (`accent`, `radius`, ...) set the
   properties for that one box.
+
+## People directories
+
+`[hws_search profile="people" directory="people"]` opts into a users profile supplied by SMP; `directory` also accepts `byline`, `contributor`, or `staff`. No provider means no output, rather than all WordPress users. Only names/public slugs are searchable. The form appears only for more than ten eligible people, regardless of filtered result count. Small lists retain pagination with the form hidden.
+
+`hws_base_tools_people_directory` receives an empty directory and a directory key. Return `ids`, `groups` (`byline`, `contributor`, `staff` arrays), `render_item` callable, `key`, `per_page` (1–50), `pagination` (`load_more`, `numbered`, `infinite`), optional `search` and `search_style`. SMP calls `hws_base_tools_render_people_search` with the same contract for each people shortcode. Exact ID membership is intersected with Core's required roles throughout item, count and filter queries. The query scope exists only during this render and is removed in `finally`; private accounts are never inferred from a role alone.
+
+Core handles GET fallback, live typing, filter changes, request cancellation, loading/error/empty states, clear and pagination. Wrapper `.hws-people-directory` contains the normal `hls-*` form, `.hls-results > .hls-list > .hls-item` and `.hls-more` or `.hls-pages`; each item contains SMP's person row. Use `--hls-*` search properties or SMP's `style="none"` for site styling. Search CSS/JavaScript is emitted only with the feature, never site-wide.

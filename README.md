@@ -16,7 +16,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Style:** Core `hls-*` classes and `--hls-*` properties; wrapper `hws-people-directory`.
 - **Example:** [People directory markup and integration](docs/hws-search.md#people-directories).
 - **Extend:** `hws_base_tools_people_directory` supplies exact public IDs, groups and renderer; `hws_base_tools_render_people_search` renders an owner-supplied directory.
-- **Code:** `src/FrontendContent/PeopleSearchProfile.php`.
+- **Code:** `src/FrontendContent/PeopleSearchProfile.php`; exact-list query scoping preserves saved/newest-story order beyond 1,000 people without callback-sort truncation.
 
 
 ### Elementor custom font import

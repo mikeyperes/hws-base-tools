@@ -39,3 +39,7 @@ Check at least the home page, an article, an archive that uses the feature, and 
 ## Page collections
 
 Page Collections adds no CSS, JavaScript or front-end markup on the homepage, articles, collection loops or admin screens. Native WordPress taxonomy controls provide the admin interface.
+
+## People directory rows
+
+People search and pagination emit Core search CSS/JavaScript only with the opted-in shortcode. SMP row CSS is emitted with the first styled row per block; `style="none"` omits SMP CSS. No new assets are loaded on home pages, articles or admin tabs without these shortcodes; existing assets remain unchanged.

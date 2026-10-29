@@ -106,6 +106,7 @@ final class SearchBoxFeature implements ModuleInterface {
     }
 
     public function register(): void {
+        add_filter( 'hws_base_tools_render_people_search', static fn( $html, array $directory ): string => PeopleSearchProfile::render( $directory ), 10, 2 );
         add_action( SearchRegistry::REGISTER_ACTION, [ self::class, 'register_profile' ] );
         add_filter( SearchContext::SEARCH_TYPES_FILTER, [ self::class, 'search_post_types' ] );
         add_action( 'init', [ self::class, 'register_shortcodes' ] );
@@ -164,6 +165,10 @@ final class SearchBoxFeature implements ModuleInterface {
     public static function render_shortcode( $attributes = [] ): string {
         if ( ! class_exists( SearchBox::class ) ) {
             return '';
+        }
+
+        if ( is_array( $attributes ) && 'people' === ( $attributes['profile'] ?? '' ) ) {
+            return PeopleSearchProfile::render( (array) apply_filters( 'hws_base_tools_people_directory', [], sanitize_key( (string) ( $attributes['directory'] ?? 'people' ) ) ) );
         }
 
         $attributes = shortcode_atts(
