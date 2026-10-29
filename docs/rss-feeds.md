@@ -50,3 +50,10 @@ Printed once per page as `<style id="hws-rss-feeds-css">`. It inherits the site'
 - **One feed different:** target `.hws-rss-feed--<id>`.
 
 Code: `src/SitemapTools/FeedListShortcode.php`.
+
+
+## Select navigation feeds
+
+`[hws_rss_feeds only="categories" menu="header" style="none"]` lists only populated category taxonomy items in that menu, in menu order, once each. `menu` accepts a menu ID, slug, name, or registered location. Custom links and non-taxonomy items are ignored; descendants are included only when explicitly present in the menu. An unknown or empty menu produces no category rows, never the full category list.
+
+`[hws_rss_feeds only="categories" terms="news,entrepreneurs,Leadership"]` selects populated terms by ID, slug or exact name, in the supplied order. `only="tags"` applies the same selection to tags. With both selectors, `terms` narrows the menu selection and retains menu order. Disabled feeds remain disabled. Attributes are opt-in; existing shortcodes retain their behavior. Feed HTML and assets are unchanged.

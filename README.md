@@ -9,6 +9,13 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### RSS feeds from navigation or selected terms
+- **Does:** Lists only the populated category or tag feeds selected by a navigation menu or explicit term IDs, slugs or names, in selection order. Unknown selectors return no term rows.
+- **Use:** `[hws_rss_feeds only="categories" menu="header"]` or `[hws_rss_feeds only="categories" terms="news,entrepreneurs"]`. Both selectors together intersect; existing feed settings remain respected.
+- **Switch:** Opt-in shortcode attributes; no change to existing pages.
+- **Details:** [RSS feed selection and markup](docs/rss-feeds.md#select-navigation-feeds).
+- **Code:** `src/SitemapTools/FeedListShortcode.php`.
+
 ### People directory search
 - **Does:** Searches public people by name with Byline writers, Contributors and Staff filters from SMP's configured lists; supports load more, infinite loading and numbered pages.
 - **Switch:** Opt in with `profile="people"` or an SMP people list's `layout="rows"`; existing post searches are unchanged. Search appears only above ten eligible people.

@@ -58,7 +58,7 @@ final class FeedListShortcode implements ModuleInterface {
     }
 
     public static function render( $atts = [] ): string {
-        $atts = shortcode_atts( [ 'only' => '', 'exclude' => '', 'hide' => '', 'style' => 'default', 'icon' => 'outline' ], (array) $atts, self::SHORTCODE );
+        $atts = shortcode_atts( [ 'only' => '', 'exclude' => '', 'hide' => '', 'style' => 'default', 'icon' => 'outline', 'menu' => '', 'terms' => '' ], (array) $atts, self::SHORTCODE );
         $list = static fn( string $value ): array => array_values( array_filter( array_map( 'sanitize_title', array_map( 'trim', explode( ',', $value ) ) ) ) );
         $hide = array_intersect( $list( (string) $atts['hide'] ), self::PARTS );
         $show = static fn( string $part ): bool => ! in_array( $part, $hide, true );
@@ -69,7 +69,7 @@ final class FeedListShortcode implements ModuleInterface {
         }
 
         $rows = '';
-        foreach ( self::expand( $feeds ) as $item ) {
+        foreach ( self::expand( $feeds, (string) $atts['menu'], (string) $atts['terms'] ) as $item ) {
             $slug  = $item['slug'];
             $feed  = $item['feed'];
             $total = is_callable( $feed['total'] ) ? (int) call_user_func( $feed['total'] ) : null;
@@ -112,11 +112,22 @@ final class FeedListShortcode implements ModuleInterface {
      * @param array<string,array<string,mixed>> $feeds
      * @return array<int,array{slug:string,feed:array<string,mixed>,depth:int}>
      */
-    private static function expand( array $feeds ): array {
+    private static function expand( array $feeds, string $menu = '', string $named_terms = '' ): array {
         $items = [];
         foreach ( $feeds as $slug => $feed ) {
             $taxonomy = 'categories' === $slug ? 'category' : ( 'tags' === $slug ? 'post_tag' : '' );
-            $terms    = $taxonomy && ! empty( $feed['example'] ) ? get_terms( [ 'taxonomy' => $taxonomy, 'hide_empty' => true, 'orderby' => 'name' ] ) : [];
+            $terms    = $taxonomy && '' === trim( $menu ) && '' === trim( $named_terms ) && ! empty( $feed['example'] ) ? get_terms( [ 'taxonomy' => $taxonomy, 'hide_empty' => true, 'orderby' => 'name' ] ) : [];
+            if ( $taxonomy && ( '' !== trim( $menu ) || '' !== trim( $named_terms ) ) ) {
+                // Explicit selectors never fall back to every category or an example feed.
+                $terms = self::selected_terms( $taxonomy, $menu, $named_terms );
+                foreach ( $terms as $term ) {
+                    $count = (int) $term->count;
+                    $url = get_term_feed_link( $term->term_id, $taxonomy );
+                    if ( is_wp_error( $url ) || ! $url ) { continue; }
+                    $items[] = [ 'slug' => $slug, 'depth' => 0, 'feed' => [ 'url' => (string) $url, 'label' => $term->name, 'total' => static fn() => $count ] + $feed ];
+                }
+                continue;
+            }
             if ( is_wp_error( $terms ) || ! $terms ) {
                 $items[] = [ 'slug' => $slug, 'feed' => $feed, 'depth' => 0 ];
                 continue;
@@ -136,6 +147,34 @@ final class FeedListShortcode implements ModuleInterface {
             $walk( 0, 0 );
         }
         return $items;
+    }
+
+    /** Menu order, or explicit term order. With both selectors, terms narrow the menu. */
+    private static function selected_terms( string $taxonomy, string $menu, string $named_terms ): array {
+        $selected = [];
+        if ( '' !== trim( $menu ) ) {
+            $locations = get_nav_menu_locations();
+            $object = wp_get_nav_menu_object( $locations[ $menu ] ?? $menu );
+            if ( ! $object ) { return []; }
+            foreach ( wp_get_nav_menu_items( $object->term_id ) ?: [] as $item ) {
+                // Resolve only real taxonomy menu items, never arbitrary custom/external URLs.
+                if ( 'taxonomy' !== $item->type || $taxonomy !== $item->object ) { continue; }
+                $term = get_term( (int) $item->object_id, $taxonomy );
+                if ( $term instanceof \WP_Term && $term->count > 0 ) {
+                    $selected[ $term->term_id ] = $term;
+                }
+            }
+        }
+        if ( '' !== trim( $named_terms ) ) {
+            $named = [];
+            foreach ( array_filter( array_map( 'trim', explode( ',', $named_terms ) ) ) as $value ) {
+                $term = ctype_digit( $value ) ? get_term( (int) $value, $taxonomy ) : get_term_by( 'slug', $value, $taxonomy );
+                if ( ! $term || is_wp_error( $term ) ) { $term = get_term_by( 'name', $value, $taxonomy ); }
+                if ( $term instanceof \WP_Term && $term->count > 0 ) { $named[ $term->term_id ] = $term; }
+            }
+            $selected = '' !== trim( $menu ) ? array_intersect_key( $selected, $named ) : $named;
+        }
+        return array_values( $selected );
     }
 
     private static function styles(): string {
