@@ -166,7 +166,7 @@ final class CompanyFacts {
         'name' => 'Name', 'legal_name' => 'Legal name', 'job_title' => 'Job title', 'alternate_names' => 'Other names', 'description' => 'Short description',
         'logo' => 'Logo', 'url' => 'Website address', 'founding_date' => 'Founding date', 'founding_location' => 'Founding city',
         'founding_location_url' => 'Founding city link', 'founders' => 'Founders', 'headquarters_city' => 'Headquarters city',
-        'headquarters_address' => 'Headquarters address', 'headquarters_url' => 'Headquarters link', 'parent_name' => 'Parent organization',
+        'headquarters_address' => 'Headquarters address', 'headquarters_url' => 'Headquarters link', 'parent_name' => 'Parent network', 'service_provider_name' => 'Service providers', 'service_provider_url' => 'Service provider links',
         'parent_url' => 'Parent organization website', 'email' => 'Email', 'phone' => 'Phone', 'mission' => 'Mission', 'profiles' => 'Social profiles',
     ];
 
@@ -295,7 +295,7 @@ final class CompanyFacts {
             $email = sanitize_email( (string) $value );
             return 'text' === $format ? esc_html( $email ) : '<a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
         }
-        if ( in_array( $field, [ 'url', 'parent_url', 'headquarters_url', 'founding_location_url' ], true ) ) {
+        if ( in_array( $field, [ 'url', 'parent_url', 'service_provider_url', 'headquarters_url', 'founding_location_url' ], true ) ) {
             $urls = array_map( static fn( $url ): string => 'link' === $format ? '<a href="' . esc_url( (string) $url ) . '"' . ( 'url' === $field ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( (string) $url ) . '</a>' : esc_url( (string) $url ), (array) $value );
             return self::join_list( $urls, esc_html( $sep ) );
         }

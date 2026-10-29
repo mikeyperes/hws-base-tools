@@ -9,6 +9,16 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### People directory search
+- **Does:** Searches public people by name with Byline writers, Contributors and Staff filters from SMP's configured lists; supports load more, infinite loading and numbered pages.
+- **Switch:** Opt in with `profile="people"` or an SMP people list's `layout="rows"`; existing post searches are unchanged. Search appears only above ten eligible people.
+- **Use:** `[hws_search profile="people" directory="people"]`; directory may be `people`, `byline`, `contributor` or `staff`.
+- **Style:** Core `hls-*` classes and `--hls-*` properties; wrapper `hws-people-directory`.
+- **Example:** [People directory markup and integration](docs/hws-search.md#people-directories).
+- **Extend:** `hws_base_tools_people_directory` supplies exact public IDs, groups and renderer; `hws_base_tools_render_people_search` renders an owner-supplied directory.
+- **Code:** `src/FrontendContent/PeopleSearchProfile.php`.
+
+
 ### Elementor custom font import
 - **Does:** administrator-only `wp hws elementor font import <family> <file-or-https-url> --weight=400 --style=normal --user=<administrator>` imports WOFF2 and WOFF into native Elementor Pro Custom Fonts. Variable files are preserved byte-for-byte, including optical-size axes; import each required CSS weight/style separately.
 - **Safety:** validates the container signature, length and header; allows only that validated file during its sideload. No global upload MIME changes, REST route or front-end assets. Requires `manage_options` and `upload_files`.
@@ -124,6 +134,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
 
 ### Company pages
+- **Parent Network:** describes network membership without asserting ownership or operation. Website Identity keeps `parent_name` / `parent_url` separate from ordered `service_provider_name` / `service_provider_url` lists; `[hws_site field="service_provider_name"]` and `[hws_site field="service_provider_url" format="link"]` expose providers. Empty sections are omitted; all facts remain site settings, never template literals.
 - **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns the pages any website has: About, with Mission Statement, Founders (plus one profile page per founder), Founding Date, Headquarters, Logo, Parent Network (optional) and Team under it; Contact, Privacy Policy, Cookie Policy, Terms of Use, Accessibility, FAQs and RSS Feed at the top level. Each page sits under its parent; a page already at its usual address (or an alternative such as `her-forward-mission-statement`) is linked with its content kept, and a moved page's old address redirects (Hexa WP Core). Wording prints only the Website Identity facts that are filled in. A founding city or headquarters city always links to its Wikipedia page (its link in Website Identity), opening in a new tab, in every page text and in `[hws_site]`; `format="text"` prints the plain name. Publication pages (newsroom people, editorial policies, DMCA, press releases) belong to SMP Publication Integration, whose pages can sit under these.
 - **Use:** `wp hws-pages ensure` sets every page up (existing optional pages only). `[site_page_template type="<key>"]` (alias `[hws_site_page_template]`) prints a page's wording from `templates/company-pages/<key>.html`; `[hws_company field="name"]`, `[hws_if field|page|shortcode="..."]...[/hws_if]`, `[hws_page_link key="contact"]` (a key page from any plugin) and `[hws_founder_profile user="ID"]` build it.
 - **Use (PHP):** `CompanyPages::ensure_pages()`; `CompanyPages::page_id( '<key>' )` finds a key page from any plugin; `hws_base_tools_linked_page( '<key>' )` returns Base Tools' linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<key>`; founder pages carry `_hws_founder_user`.
@@ -381,6 +392,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.45.17
+- Separate parent networks from service providers in Website Identity and the generic Parent Network template, without inferring ownership or operation. Bundles Hexa WP Core 3.46.2.
 
 ### 13.45.16
 

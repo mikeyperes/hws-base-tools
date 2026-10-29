@@ -28,10 +28,10 @@ final class SiteIdentity implements ModuleInterface {
     public const TYPES     = [ 'company' => 'A company', 'person' => 'A person', 'none' => 'Neither' ];
 
     /** Basics keys per type, in form order (read API returns exactly these). */
-    public const COMPANY_KEYS = [ 'name', 'legal_name', 'alternate_names', 'description', 'logo', 'url', 'founding_date', 'founding_location', 'founding_location_url', 'founders', 'headquarters_city', 'headquarters_address', 'headquarters_url', 'parent_name', 'parent_url', 'email', 'phone', 'mission', 'profiles' ];
+    public const COMPANY_KEYS = [ 'name', 'legal_name', 'alternate_names', 'description', 'logo', 'url', 'founding_date', 'founding_location', 'founding_location_url', 'founders', 'headquarters_city', 'headquarters_address', 'headquarters_url', 'parent_name', 'parent_url', 'service_provider_name', 'service_provider_url', 'email', 'phone', 'mission', 'profiles' ];
     public const PERSON_KEYS  = [ 'name', 'user', 'job_title', 'bio', 'photo', 'profiles' ];
     /** Keys saved one item per line and returned as ordered lists. Parent names and URLs use matching positions. */
-    public const LIST_KEYS    = [ 'alternate_names', 'profiles', 'parent_name', 'parent_url' ];
+    public const LIST_KEYS    = [ 'alternate_names', 'profiles', 'parent_name', 'parent_url', 'service_provider_name', 'service_provider_url' ];
 
     public function register(): void {
         require_once __DIR__ . '/site-identity-functions.php';
@@ -195,8 +195,10 @@ final class SiteIdentity implements ModuleInterface {
             $text( 'headquarters_city', 'Headquarters city' ),
             [ 'key' => 'field_hws_identity_headquarters_address', 'label' => 'Headquarters address', 'name' => 'headquarters_address', 'type' => 'textarea', 'rows' => 2, 'new_lines' => '' ],
             $text( 'headquarters_url', 'Headquarters city Wikipedia page', 'The headquarters city\'s Wikipedia page (https://en.wikipedia.org/wiki/...). Used in the schema.', 'url' ),
-            $text( 'parent_name', 'Parent organizations', 'One per line.', 'textarea' ),
+            $text( 'parent_name', 'Parent network', 'Network organizations only, one per line. List service providers separately below.', 'textarea' ),
             $lines( 'parent_url', 'Parent organization links', 'One URL per line, in the same order as the parent organizations.' ),
+            $lines( 'service_provider_name', 'Service providers', 'One per line. Providing services does not establish ownership or operation.' ),
+            $lines( 'service_provider_url', 'Service provider links', 'One URL per line, in the same order as the service providers.' ),
             $text( 'email', 'Contact email', '', 'email' ),
             $text( 'phone', 'Phone' ),
             [ 'key' => 'field_hws_identity_mission', 'label' => 'Mission', 'name' => 'mission', 'type' => 'textarea', 'rows' => 4, 'new_lines' => '', 'instructions' => 'One paragraph.' ],
