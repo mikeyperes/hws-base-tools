@@ -32,7 +32,7 @@ final class PeopleSearchProfile {
             'load_mode' => $directory['pagination'] ?? 'load_more',
             'sorts' => [ 'directory' => [ 'type' => 'field', 'field' => 'name', 'label' => 'Directory order',
             ] ],
-            'labels' => [ 'placeholder' => 'Search people', 'results_one' => '%d person', 'results_many' => '%d people' ],
+            'labels' => [ 'search' => ( $directory['search_label'] ?? '' ) ?: 'Search', 'placeholder' => ( $directory['placeholder'] ?? '' ) ?: 'Search people', 'results_one' => '%d person', 'results_many' => '%d people' ],
             'class' => 'hws-people-directory',
         ] );
         // Core restricts by role. Intersect every query (including totals) with the exact public list too.
@@ -50,7 +50,7 @@ final class PeopleSearchProfile {
             remove_action( 'pre_get_users', $restrict );
         }
         // Pagination still works for small lists; the search form itself is shown only above ten people.
-        if ( count( $ids ) <= 10 || false === ( $directory['search'] ?? true ) ) {
+        if ( ( count( $ids ) <= 10 && 'always' !== ( $directory['search'] ?? true ) ) || false === ( $directory['search'] ?? true ) ) {
             $html = str_replace( '<form class="hls ', '<form hidden class="hls ', $html );
         }
         return $html;

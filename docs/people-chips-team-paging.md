@@ -19,3 +19,7 @@ Markup: `.hls-filters > fieldset.hls-chips > legend` names the group; each `labe
 Wrapper `.hws-team-search` contains `.hls` search and `.hls-results`; each `.hls-list > .hls-item` holds existing `.hws-team-directory` and `.hws-team-card` markup. `.hls-more` is the next batch link; status is announced by `.hls-status`. State uses `hs` (profile), `hq` (name), `hp` (batch), and `hf[group][]` (people group). GET URLs work without JavaScript; the existing scoped search script upgrades them to in-place updates, aborts superseded requests and exposes retryable errors.
 
 Assets are emitted only when these shortcodes render. Existing page and article defaults do not enable chips or team paging. No media is created or modified.
+
+## Search text and small lists
+
+`placeholder="Search people by name"` sets the visible hint; `search_label="Search people by name"` sets the accessible input label. Empty values retain the old text. `search="always"` keeps the form visible even for ten or fewer people; omitted/auto keeps the old size rule, and `search="0"` hides it. Both publication people-list shortcodes and `[hws_search profile="people" ...]` accept these attributes.

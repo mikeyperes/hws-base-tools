@@ -174,6 +174,11 @@ final class SearchBoxFeature implements ModuleInterface {
             $directory = (array) apply_filters( 'hws_base_tools_people_directory', [], sanitize_key( (string) ( $attributes['directory'] ?? 'people' ) ) );
             $directory['filter_layout'] = $attributes['filter_layout'] ?? 'dropdown';
             $directory['search_style'] = $attributes['style'] ?? self::style();
+            foreach ( [ 'placeholder', 'search_label', 'search', 'per_page', 'pagination' ] as $key ) {
+                if ( isset( $attributes[$key] ) ) {
+                    $directory[$key] = 'search' === $key && in_array( (string) $attributes[$key], [ '0', 'no', 'false', 'none' ], true ) ? false : $attributes[$key];
+                }
+            }
             return PeopleSearchProfile::render( $directory );
         }
 

@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- **People search text and visibility:** `placeholder` and `search_label` customize field text; `search="always"` keeps search visible on small lists. All defaults remain unchanged.
+
 - **People chips and team paging:** opt-in `filter_layout="chips"` on people search; `[hws_team_members per_page="10" pagination="load_more" search="1" design="none"]` searches team-post names and pages them. `directory="team"` routes to team posts. [Markup and binding](docs/people-chips-team-paging.md).
 
 - Plugin updates use published release-tag artifacts through Hexa WP Core 3.46.3, with no branch-archive fallback.
