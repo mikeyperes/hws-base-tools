@@ -124,11 +124,11 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`, fields in `src/AcfFields/user-profile-2025.php`
 
 ### Company pages
-- **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns the pages any website has: About, with Mission Statement, Founders (plus one profile page per founder), Founding Date, Headquarters, Logo, Parent Network (optional) and Team under it; Contact, Privacy Policy, Terms of Use, Accessibility, FAQs and RSS Feed at the top level. Each page sits under its parent; a page already at its usual address (or an alternative such as `her-forward-mission-statement`) is linked with its content kept, and a moved page's old address redirects (Hexa WP Core). Wording prints only the Website Identity facts that are filled in. A founding city or headquarters city always links to its Wikipedia page (its link in Website Identity), opening in a new tab, in every page text and in `[hws_site]`; `format="text"` prints the plain name. Publication pages (newsroom people, editorial policies, DMCA, press releases) belong to SMP Publication Integration, whose pages can sit under these.
+- **Does:** the Pages tab (`options-general.php?page=hws-core-tools&tab=pages`) owns the pages any website has: About, with Mission Statement, Founders (plus one profile page per founder), Founding Date, Headquarters, Logo, Parent Network (optional) and Team under it; Contact, Privacy Policy, Cookie Policy, Terms of Use, Accessibility, FAQs and RSS Feed at the top level. Each page sits under its parent; a page already at its usual address (or an alternative such as `her-forward-mission-statement`) is linked with its content kept, and a moved page's old address redirects (Hexa WP Core). Wording prints only the Website Identity facts that are filled in. A founding city or headquarters city always links to its Wikipedia page (its link in Website Identity), opening in a new tab, in every page text and in `[hws_site]`; `format="text"` prints the plain name. Publication pages (newsroom people, editorial policies, DMCA, press releases) belong to SMP Publication Integration, whose pages can sit under these.
 - **Use:** `wp hws-pages ensure` sets every page up (existing optional pages only). `[site_page_template type="<key>"]` (alias `[hws_site_page_template]`) prints a page's wording from `templates/company-pages/<key>.html`; `[hws_company field="name"]`, `[hws_if field|page|shortcode="..."]...[/hws_if]`, `[hws_page_link key="contact"]` (a key page from any plugin) and `[hws_founder_profile user="ID"]` build it.
 - **Use (PHP):** `CompanyPages::ensure_pages()`; `CompanyPages::page_id( '<key>' )` finds a key page from any plugin; `hws_base_tools_linked_page( '<key>' )` returns Base Tools' linked page ID or 0; `hws_base_tools_pages_url()` is the Pages tab. Links are stored in `hws_site_page_assignment_<key>`; founder pages carry `_hws_founder_user`.
 - **Code:** `src/CompanyPages/CompanyPages.php`, `src/CompanyPages/CompanyFacts.php`, `src/CompanyPages/company-pages-functions.php`, `src/SiteStructure/legacy-pages.php`, `templates/company-pages/`
-- **Last updated:** `[hws_page_updated]` prints the date the current page was last changed; Privacy Policy and Terms of Use show it at the top.
+- **Last updated:** `[hws_page_updated]` prints the date the current page was last changed; Privacy Policy, Cookie Policy and Terms of Use show it at the top.
 
 ### Missing company facts notice
 - **Does:** when a linked page (Headquarters, Founding Date) or another plugin's fact page lacks what it needs from Website Identity, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
@@ -381,6 +381,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.45.16
+
+- New standard page: Cookie Policy (`cookie-policy`), with default text on which cookies the site uses and how to control them, linking to the Privacy Policy.
 
 ### 13.45.15
 

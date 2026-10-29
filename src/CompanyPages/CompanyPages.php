@@ -188,6 +188,7 @@ final class CompanyPages implements ModuleInterface {
             'team'                => [ 'title' => 'Team', 'slug' => 'team', 'slugs' => [ 'our-team' ], 'description' => 'Everyone on Base Tools\' Team list.' ] + $custom + $about,
             'contact'             => [ 'title' => 'Contact', 'slug' => 'contact', 'slugs' => [ 'contact-us' ], 'description' => 'Generic: any website. The public contact page.', 'template' => true ] + $custom,
             'privacy'             => [ 'title' => 'Privacy Policy', 'slug' => 'privacy-policy', 'slugs' => [ 'privacy', 'privacy-policy-*' ], 'description' => 'What visitor data is collected and how it is used.', 'template' => true ],
+            'cookies'             => [ 'title' => 'Cookie Policy', 'slug' => 'cookie-policy', 'slugs' => [ 'cookies', 'cookie-policy-*' ], 'description' => 'Which cookies the website uses and how to control them.', 'template' => true ],
             'terms'               => [ 'title' => 'Terms of Use', 'slug' => 'terms-of-use', 'slugs' => [ 'terms', 'terms-and-conditions', 'terms-of-use-*' ], 'description' => 'The rules for using the website.', 'template' => true ],
             'accessibility'       => [ 'title' => 'Accessibility', 'slug' => 'accessibility', 'description' => 'The accessibility commitment and how to report a barrier.', 'template' => true ],
             'faqs'                => [ 'title' => 'FAQs', 'slug' => 'faqs', 'slugs' => [ 'faq' ], 'description' => 'Common visitor questions.', 'template' => true ],
