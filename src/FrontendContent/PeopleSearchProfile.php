@@ -45,7 +45,7 @@ final class PeopleSearchProfile {
         };
         add_action( 'pre_get_users', $restrict );
         try {
-            $html = SearchBox::render( $profile, [ 'style' => $directory['search_style'] ?? SearchBoxFeature::style() ] );
+            $html = SearchBox::render( $profile, [ 'style' => ( $directory['search_style'] ?? '' ) ?: SearchBoxFeature::style(), 'filter_layout' => $directory['filter_layout'] ?? 'dropdown' ] );
         } finally {
             remove_action( 'pre_get_users', $restrict );
         }

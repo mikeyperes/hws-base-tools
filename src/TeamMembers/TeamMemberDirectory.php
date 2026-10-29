@@ -62,6 +62,10 @@ final class TeamMemberDirectory {
                 'design'        => (string) $page['design'],
                 'roles_first'   => (string) $page['roles_first'],
                 'photo_size'    => 'medium_large',
+                'per_page' => '0',
+                'pagination' => 'load_more',
+                'search' => '1',
+                'search_style' => 'none',
             ],
             $atts,
             self::SHORTCODE
@@ -113,6 +117,10 @@ final class TeamMemberDirectory {
             ];
         }
 
+        if ( (int) $atts['per_page'] > 0 ) {
+            return self::render_search( $query_args, $atts );
+        }
+
         $items = self::query_items( $query_args, (string) $atts['roles_first'], $limit );
         if ( ! $items ) {
             return '';
@@ -127,6 +135,40 @@ final class TeamMemberDirectory {
             false,
             self::normalize_design( (string) $atts['design'] )
         );
+    }
+
+    /** Opt-in team-post directory using the shared search and paging component. */
+    private static function render_search( array $query_args, array $atts ): string {
+        $query_args['posts_per_page'] = -1;
+        $items = self::query_items( $query_args, (string) $atts['roles_first'], PHP_INT_MAX );
+        $ids = array_column( $items, 'id' );
+        $profile = 'team-' . substr( md5( wp_json_encode( $atts ) ), 0, 12 );
+        \Hexa\PluginCore\Search\SearchRegistry::register( $profile, [
+            'source' => 'posts', 'post_types' => [ self::POST_TYPE ], 'fields' => [ 'title' ], 'context' => false,
+            'per_page' => max( 1, min( 100, (int) $atts['per_page'] ) ),
+            'load_mode' => $atts['pagination'], 'class' => 'hws-team-search',
+            'sorts' => [ 'directory' => [ 'type' => 'callback', 'label' => 'Directory order',
+                'callback' => static fn( array $matches ): array => array_values( array_intersect( $ids, $matches ) ),
+            ] ],
+            'labels' => [ 'placeholder' => 'Search team by name', 'results_one' => '%d team member', 'results_many' => '%d team members' ],
+            'render_item' => static function ( int $id ) use ( $atts ): string {
+                $post = get_post( $id );
+                return $post instanceof \WP_Post ? self::render_items( [ self::item_from_post( $post ) ], self::normalize_style( (string) $atts['style'] ), 1,
+                    self::attribute_enabled( $atts['show_excerpt'] ), self::attribute_enabled( $atts['link_profiles'] ), false, self::normalize_design( (string) $atts['design'] ) ) : '';
+            },
+        ] );
+        $restrict = static function ( $query ) use ( $ids ): void {
+            if ( self::POST_TYPE === $query->get( 'post_type' ) || [ self::POST_TYPE ] === $query->get( 'post_type' ) ) {
+                $query->set( 'post__in', $ids ?: [ 0 ] );
+            }
+        };
+        add_action( 'pre_get_posts', $restrict );
+        try {
+            $html = \Hexa\PluginCore\Search\SearchBox::render( $profile, [ 'style' => $atts['search_style'] ] );
+        } finally {
+            remove_action( 'pre_get_posts', $restrict );
+        }
+        return self::attribute_enabled( $atts['search'] ) ? $html : str_replace( '<form class="hls ', '<form hidden class="hls ', $html );
     }
 
     /** @return array<int,array<string,mixed>> Display items, roles first, cut to $limit. */

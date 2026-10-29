@@ -43,3 +43,7 @@ Page Collections adds no CSS, JavaScript or front-end markup on the homepage, ar
 ## People directory rows
 
 People search and pagination emit Core search CSS/JavaScript only with the opted-in shortcode. SMP row CSS is emitted with the first styled row per block; `style="none"` omits SMP CSS. No new assets are loaded on home pages, articles or admin tabs without these shortcodes; existing assets remain unchanged.
+
+## People chips and team paging
+
+Opt-in controls reuse Core SearchBox inline assets only at rendered search forms. Chip decoration is scoped to `.hls` and omitted with `none`. Team cards retain their shortcode-scoped styles; no new global files are enqueued. Home, ordinary article and unrelated admin screens gain no assets.

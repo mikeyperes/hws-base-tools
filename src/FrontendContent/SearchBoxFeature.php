@@ -168,7 +168,13 @@ final class SearchBoxFeature implements ModuleInterface {
         }
 
         if ( is_array( $attributes ) && 'people' === ( $attributes['profile'] ?? '' ) ) {
-            return PeopleSearchProfile::render( (array) apply_filters( 'hws_base_tools_people_directory', [], sanitize_key( (string) ( $attributes['directory'] ?? 'people' ) ) ) );
+            if ( 'team' === ( $attributes['directory'] ?? '' ) ) {
+                return ( new \HWS\BaseTools\TeamMembers\TeamMemberDirectory() )->render_shortcode( array_merge( [ 'per_page' => 10, 'search' => '1' ], $attributes ) );
+            }
+            $directory = (array) apply_filters( 'hws_base_tools_people_directory', [], sanitize_key( (string) ( $attributes['directory'] ?? 'people' ) ) );
+            $directory['filter_layout'] = $attributes['filter_layout'] ?? 'dropdown';
+            $directory['search_style'] = $attributes['style'] ?? self::style();
+            return PeopleSearchProfile::render( $directory );
         }
 
         $attributes = shortcode_atts(
