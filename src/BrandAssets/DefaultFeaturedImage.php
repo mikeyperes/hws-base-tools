@@ -17,13 +17,16 @@ final class DefaultFeaturedImage implements ModuleInterface {
     public const SLOT       = 'default_featured';
     public const POST_TYPES = [ 'post' ];
 
+    /** True while the stand-in is being looked up, so a plugin that asks for a featured image during that lookup (FIFU does, inside get_attached_file) cannot loop back into it. */
+    private static bool $resolving = false;
+
     public function register(): void {
         add_filter( 'post_thumbnail_id', [ self::class, 'fallback' ], 20, 2 );
     }
 
     /** @param int|false $thumbnail_id */
     public static function fallback( $thumbnail_id, $post ) {
-        if ( $thumbnail_id || ( is_admin() && ! wp_doing_ajax() ) ) {
+        if ( $thumbnail_id || self::$resolving || ( is_admin() && ! wp_doing_ajax() ) ) {
             return $thumbnail_id;
         }
 
@@ -32,7 +35,12 @@ final class DefaultFeaturedImage implements ModuleInterface {
             return $thumbnail_id;
         }
 
-        $default = self::attachment_id();
+        self::$resolving = true;
+        try {
+            $default = self::attachment_id();
+        } finally {
+            self::$resolving = false;
+        }
 
         return $default ?: $thumbnail_id;
     }
@@ -44,7 +52,8 @@ final class DefaultFeaturedImage implements ModuleInterface {
 
         $id = \hws_base_tools\hws_get_brand_asset_attachment_id( self::SLOT );
 
-        return $id && wp_attachment_is_image( $id ) ? $id : 0;
+        // The stored MIME type is enough to know it is an image; it needs no file lookup, which other plugins filter.
+        return $id && str_starts_with( (string) get_post_mime_type( $id ), 'image/' ) ? $id : 0;
     }
 
     /** @return string[] */
