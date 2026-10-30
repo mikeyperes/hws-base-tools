@@ -66,7 +66,8 @@ final class CompanyFacts {
             case 'url':
                 return home_url( '/' );
             case 'email':
-                return get_option( 'admin_email' );
+                // Never the WordPress admin email on a public page: the site's own info@ address instead.
+                return "info@" . preg_replace( "/^www\./", "", (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
             case 'description':
                 return get_bloginfo( 'description' );
         }

@@ -408,6 +408,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.24
+
+- The public email never falls back to the WordPress admin email: with none saved, pages show info@ and the site's own domain.
+
 ### 13.45.17
 - Separate parent networks from service providers in Website Identity and the generic Parent Network template, without inferring ownership or operation. Bundles Hexa WP Core 3.46.2.
 
