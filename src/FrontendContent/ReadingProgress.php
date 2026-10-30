@@ -16,6 +16,7 @@ final class ReadingProgress implements ModuleInterface {
     public const FRONT_PAGE_OPTION = 'hws_reading_progress_front_page';
     public const POST_TYPES_OPTION = 'hws_reading_progress_post_types';
     public const STYLE_OPTION = 'hws_reading_progress_style';
+    public const GLOW_OPTION = 'hws_reading_progress_glow';
     public const COLOR_OPTION = 'hws_reading_progress_color';
     public const MIGRATION_OPTION = 'hws_reading_progress_smp_migration';
     public const DEFAULT_SCOPE = 'posts';
@@ -169,7 +170,7 @@ final class ReadingProgress implements ModuleInterface {
         return is_string( $color ) && '' !== $color ? strtolower( $color ) : self::DEFAULT_COLOR;
     }
 
-    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string} */
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool} */
     public static function settings(): array {
         $legacy_scope = self::normalize_scope( (string) get_option( self::SCOPE_OPTION, self::DEFAULT_SCOPE ) );
         $missing = '__hws_reading_progress_missing__';
@@ -188,10 +189,11 @@ final class ReadingProgress implements ModuleInterface {
             'post_types'  => $post_types,
             'style'       => self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) ),
             'color'       => self::normalize_color( (string) get_option( self::COLOR_OPTION, self::DEFAULT_COLOR ) ),
+            'glow'        => self::normalize_boolean( get_option( self::GLOW_OPTION, false ) ),
         ];
     }
 
-    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string} */
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool} */
     public static function save_settings( array $settings ): array {
         $legacy_scope = self::normalize_scope( (string) ( $settings['scope'] ?? self::DEFAULT_SCOPE ) );
         $entire_site = array_key_exists( 'entire_site', $settings )
@@ -211,6 +213,7 @@ final class ReadingProgress implements ModuleInterface {
             'post_types'  => $post_types,
             'style'       => self::normalize_style( (string) ( $settings['style'] ?? self::DEFAULT_STYLE ) ),
             'color'       => self::normalize_color( (string) ( $settings['color'] ?? self::DEFAULT_COLOR ) ),
+            'glow'        => self::normalize_boolean( $settings['glow'] ?? get_option( self::GLOW_OPTION, false ) ),
         ];
 
         update_option( self::SCOPE_OPTION, $normalized['scope'], false );
@@ -219,6 +222,7 @@ final class ReadingProgress implements ModuleInterface {
         update_option( self::POST_TYPES_OPTION, $normalized['post_types'], false );
         update_option( self::STYLE_OPTION, $normalized['style'], false );
         update_option( self::COLOR_OPTION, $normalized['color'], false );
+        update_option( self::GLOW_OPTION, $normalized['glow'], false );
 
         return $normalized;
     }
@@ -291,7 +295,7 @@ final class ReadingProgress implements ModuleInterface {
     public static function preview_html( string $style ): string {
         $style = self::normalize_style( $style );
 
-        return '<span class="hws-reading-progress-preview hws-reading-progress--' . esc_attr( $style ) . '" style="--hws-reading-progress-scale:.68;--hws-reading-progress-value:68%"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></span>';
+        return '<span class="hws-reading-progress-preview hws-reading-progress--' . esc_attr( $style ) . ( self::settings()['glow'] ? ' hws-reading-progress--glow-enabled' : '' ) . '" style="--hws-reading-progress-scale:.68;--hws-reading-progress-value:68%"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></span>';
     }
 
     public static function preview_css(): string {
@@ -331,7 +335,7 @@ final class ReadingProgress implements ModuleInterface {
         $variables = '--hws-reading-progress-scale:0;--hws-reading-progress-value:0%;' . self::color_variables( $settings['color'] );
         $aria_label = is_singular( 'post' ) ? 'Article reading progress' : 'Page reading progress';
 
-        echo '<div id="hws-reading-progress" class="hws-reading-progress hws-reading-progress--' . esc_attr( $settings['style'] ) . '" role="progressbar" aria-label="' . esc_attr( $aria_label ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="' . esc_attr( $variables ) . '"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></div>';
+        echo '<div id="hws-reading-progress" class="hws-reading-progress hws-reading-progress--' . esc_attr( $settings['style'] ) . ( $settings['glow'] ? ' hws-reading-progress--glow-enabled' : '' ) . '" role="progressbar" aria-label="' . esc_attr( $aria_label ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="' . esc_attr( $variables ) . '"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></div>';
         self::$markup_rendered = true;
     }
 
@@ -472,7 +476,8 @@ final class ReadingProgress implements ModuleInterface {
             . '.hws-reading-progress__track{overflow:hidden;position:relative}'
             . '.hws-reading-progress__fill{background:var(--hws-reading-progress-color,#00ff41);height:100%;transform:scaleX(var(--hws-reading-progress-scale,0));transform-origin:0 50%;transition:transform .08s linear}'
             . '.hws-reading-progress--thin .hws-reading-progress__track{background:transparent;height:2px}'
-            . '.hws-reading-progress--thin .hws-reading-progress__fill{box-shadow:0 0 12px var(--hws-reading-progress-glow,rgba(0,255,65,.55))}'
+            . '.hws-reading-progress--thin .hws-reading-progress__fill{box-shadow:none}'
+            . '.hws-reading-progress--thin.hws-reading-progress--glow-enabled .hws-reading-progress__fill{box-shadow:0 0 12px var(--hws-reading-progress-glow,rgba(0,255,65,.55))}'
             . '.hws-reading-progress--track .hws-reading-progress__track{background:var(--hws-reading-progress-soft,rgba(37,99,235,.18));height:5px}'
             . '.hws-reading-progress--glow .hws-reading-progress__track{background:transparent;height:3px;overflow:visible}'
             . '.hws-reading-progress--glow .hws-reading-progress__fill{box-shadow:0 0 5px var(--hws-reading-progress-color,#00ff41),0 0 18px var(--hws-reading-progress-glow,rgba(0,255,65,.55))}'

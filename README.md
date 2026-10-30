@@ -84,7 +84,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### Reading progress bar
 - **Does:** a progress line at the top of the page that fills as the visitor scrolls.
-- **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
+- **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Thin-line glow `hws_reading_progress_glow`: boolean, off by default, switchable per site; affects only `thin`, with matching live admin previews. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
 - **Use:** automatic, printed right after `<body>`. Never build a second progress bar on a page; configure this one.
 - **Use inline:** `[hws_reading_progress label="Read" class=""]` adds a themeable track and percentage, synchronized by the same scroll listener as the top bar. An empty label omits it. It respects the existing feature switch and page scope.
 - **Style:** `#hws-reading-progress.hws-reading-progress--<style>`, `.hws-reading-progress__track`, `.hws-reading-progress__fill`; variables `--hws-reading-progress-color`, `--hws-reading-progress-soft`, `--hws-reading-progress-glow`.
@@ -407,6 +407,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.45.25
+- Make the thin reading-progress glow optional and off by default, with a per-site setting and matching previews. Other designs are unchanged.
 
 ### 13.45.24
 

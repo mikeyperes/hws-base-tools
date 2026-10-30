@@ -157,6 +157,7 @@ reading_progress_expect(
         'post_types'  => [ 'post' ],
         'style'       => 'segmented',
         'color'       => '#a1b2c3',
+        'glow'        => false,
     ] === $saved,
     'supported settings save in normalized form'
 );
@@ -200,3 +201,11 @@ reading_progress_expect(
 );
 
 echo "PASS: HWS owns reading progress settings, migration, previews, Core color control, and frontend runtime.\n";
+
+reading_progress_expect( false === ReadingProgress::settings()['glow'], 'glow defaults off' );
+ReadingProgress::save_settings( [ 'glow' => '1' ] );
+reading_progress_expect( true === ReadingProgress::settings()['glow'], 'glow can be enabled per site' );
+reading_progress_expect( str_contains( ReadingProgress::preview_html( 'thin' ), 'hws-reading-progress--glow-enabled' ), 'preview reflects enabled glow' );
+ReadingProgress::save_settings( [ 'glow' => '0' ] );
+reading_progress_expect( false === ReadingProgress::settings()['glow'], 'glow can be switched off again' );
+reading_progress_expect( ! str_contains( ReadingProgress::preview_html( 'thin' ), 'hws-reading-progress--glow-enabled' ), 'preview reflects disabled glow' );

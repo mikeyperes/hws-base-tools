@@ -229,6 +229,12 @@ function hws_render_reading_progress_settings(): void {
             </div>
         </div>
 
+        <div>
+            <strong>Thin-line glow</strong>
+            <label><input type="checkbox" name="hws_reading_progress_glow" data-hws-feature-field="glow" <?php checked( $settings['glow'] ); ?>> Enable the thin top line's glow</label>
+            <p class="description">Off by default. Applies only to Thin top line; other designs keep their own appearance.</p>
+        </div>
+
         <?php
         echo ColorControl::render(
             [
@@ -501,6 +507,7 @@ function hws_output_feature_card_scripts(): void {
                 front_page: $settings.find('[data-hws-feature-field="front_page"]').is(':checked') ? '1' : '0',
                 post_types: $settings.find('[data-hws-feature-field="post_types"]:checked').map(function() { return this.value; }).get(),
                 style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
+                glow: $settings.find('[data-hws-feature-field="glow"]').is(':checked') ? '1' : '0',
                 color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || '',
                 min_width: $settings.find('[data-hws-feature-field="min_width"]').val() || '0',
                 min_height: $settings.find('[data-hws-feature-field="min_height"]').val() || '0',
@@ -529,6 +536,10 @@ function hws_output_feature_card_scripts(): void {
         $(document).off('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]').on('change.hwsReadingProgressStyle', '[data-hws-feature-field="style"]', function() {
             $(this).closest('.hws-reading-progress-style-list').find('.hws-reading-progress-style-option').removeClass('is-selected');
             $(this).closest('.hws-reading-progress-style-option').addClass('is-selected');
+        });
+
+        $(document).off('change.hwsReadingProgressGlow', '[data-hws-feature-field="glow"]').on('change.hwsReadingProgressGlow', '[data-hws-feature-field="glow"]', function() {
+            $(this).closest('.hws-reading-progress-settings').find('.hws-reading-progress-preview').toggleClass('hws-reading-progress--glow-enabled', this.checked);
         });
 
         function syncReadingProgressTargets($settings) {
@@ -651,6 +662,7 @@ function ajax_hws_feature_save_settings(): void {
                 'front_page'  => ! empty( $_POST['front_page'] ),
                 'post_types'  => array_map( 'sanitize_key', $post_types ),
                 'style'       => isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '',
+                'glow'        => ! empty( $_POST['glow'] ),
                 'color'       => isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '',
             ]
         );
