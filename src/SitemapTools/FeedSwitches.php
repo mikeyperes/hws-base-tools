@@ -30,7 +30,7 @@ final class FeedSwitches implements ModuleInterface {
             return;
         }
         // With comments off, every comments feed (site-wide and each post's) is off too.
-        $comments_off = is_comment_feed() && DiscussionPolicy::comments_disabled();
+        $comments_off = self::is_wordpress_comment_feed() && DiscussionPolicy::comments_disabled();
         if ( ! $comments_off ) {
             if ( ! SitemapFeedRegistry::disabled() ) {
                 return;
@@ -47,6 +47,21 @@ final class FeedSwitches implements ModuleInterface {
         header( 'Content-Type: text/plain; charset=UTF-8' );
         echo 'This feed is turned off.';
         exit;
+    }
+
+    /**
+     * WordPress also flags a plugin's own feed type (add_feed) as a comments
+     * feed when it is requested on a single record, such as Hexa PR Wire's
+     * ?feed=rss_publication&publication=<slug>. Only WordPress's own feed
+     * types are real comments feeds.
+     */
+    private static function is_wordpress_comment_feed(): bool {
+        if ( ! is_comment_feed() ) {
+            return false;
+        }
+        $type = (string) get_query_var( 'feed' );
+        return in_array( $type, [ '', 'feed', 'rss', 'rss2', 'rdf', 'atom' ], true )
+            || $type === get_default_feed();
     }
 
     public static function show_posts_feed_link( $show ): bool {
