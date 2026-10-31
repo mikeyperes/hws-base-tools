@@ -419,6 +419,14 @@ function hws_get_monitored_plugins() {
         ],
 
         // === OPTIONAL ===
+        'hexa-motion-graphics/hexa-motion-graphics.php' => [
+            'name'        => 'Hexa Motion Graphics',
+            'should_be'   => 'active',
+            'auto_update' => true,
+            'download'    => 'https://github.com/mikeyperes/hexa-motion-graphics',
+            'category'    => 'optional',
+            'pro'         => false,
+        ],
         'regenerate-thumbnails/regenerate-thumbnails.php' => [
             'name'        => 'Regenerate Thumbnails',
             'should_be'   => 'inactive',

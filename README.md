@@ -413,6 +413,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.28
+
+- Hexa Motion Graphics, the motion art widget the website design guidelines use, is on the optional plugin list, so the plugin checks and checklist show it instead of "not on any list".
+
 ### 13.45.27
 
 - A site now has one primary website type plus any number of secondary ones, set on the Website Profile panel or with `--secondary-site-types`; Hexa PR Wire Distributor and Verified Profiles are new website types, so every HWS website guideline layer is a selectable type.
