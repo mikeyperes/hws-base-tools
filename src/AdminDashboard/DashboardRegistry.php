@@ -284,6 +284,7 @@ final class DashboardRegistry {
             'hws_footer_text_'                   => [ 'settings-dashboard-footer-text.php' ],
             'hws_toggle_ui_cleanup'              => [ 'settings-dashboard-ui-cleanup.php' ],
             'hws_ui_cleanup_bulk'                => [ 'settings-dashboard-ui-cleanup.php' ],
+            'hws_save_site_type'                 => [ 'settings-dashboard-site-profile.php' ],
             'hws_sitemap_'                       => [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
             'hws_content_cleanup_'               => [ 'settings-dashboard-cleanup.php' ],
             'hws_backup_file_cleanup_'           => [ 'settings-dashboard-cleanup.php' ],

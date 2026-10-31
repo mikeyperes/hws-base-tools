@@ -413,6 +413,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.45.29
+
+- Fixed: Save Website Type on the Website Profile panel returned "AJAX error" and saved nothing, because the save request did not load the website type functions. It now loads them, so the primary and secondary website types save from the dashboard.
+
 ### 13.45.28
 
 - Hexa Motion Graphics, the motion art widget the website design guidelines use, is on the optional plugin list, so the plugin checks and checklist show it instead of "not on any list".
