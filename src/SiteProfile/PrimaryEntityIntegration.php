@@ -23,11 +23,13 @@ final class PrimaryEntityIntegration {
                 'entity_option' => 'hws_primary_entity', 'site_type_option' => 'hws_site_type',
                 'site_types' => [
                     'news_outlet' => 'News Outlet', 'podcast_website' => 'Podcast Website', 'personal_website' => 'Personal Website',
-                    'company_website' => 'Company Website', 'ecommerce_website' => 'e-Commerce Website', 'other' => 'Other',
+                    'company_website' => 'Company Website', 'ecommerce_website' => 'e-Commerce Website',
+                    'hexa_pr_wire' => 'Hexa PR Wire Distributor', 'verified_profiles' => 'Verified Profiles', 'other' => 'Other',
                 ],
                 'site_entity_types' => [
                     'news_outlet' => 'publication', 'podcast_website' => 'publication', 'personal_website' => 'person',
-                    'company_website' => 'organization', 'ecommerce_website' => 'organization', 'other' => 'person',
+                    'company_website' => 'organization', 'ecommerce_website' => 'organization',
+                    'hexa_pr_wire' => 'organization', 'verified_profiles' => 'organization', 'other' => 'person',
                 ],
                 'allow_entity_type_selection' => false, 'allow_empty_site_type' => true,
                 'site_type_placeholder' => 'Select website type',

@@ -1911,11 +1911,31 @@ function render_site_profile_panel(): void {
                     </div>
                 </div>
             </div>
+            <fieldset id="hws-secondary-site-types" style="margin-top:16px;">
+                <legend style="font-weight:600;margin-bottom:6px;">Also runs as (secondary website types)</legend>
+                <p style="margin:0 0 8px;color:#50575e;font-size:13px;">Any number besides the primary type, for example a news outlet that also runs a podcast and the Hexa PR Wire distributor.</p>
+                <?php $secondary = hws_get_secondary_site_types(); ?>
+                <?php foreach ( hws_site_type_options() as $value => $label ) : ?>
+                    <?php if ( 'other' === $value ) { continue; } ?>
+                    <label style="display:inline-flex;align-items:center;gap:6px;margin:0 16px 6px 0;">
+                        <input type="checkbox" value="<?php echo esc_attr( $value ); ?>" <?php checked( in_array( $value, $secondary, true ) ); ?> <?php disabled( $site_type, $value ); ?>>
+                        <?php echo esc_html( $label ); ?>
+                    </label>
+                <?php endforeach; ?>
+            </fieldset>
         </div>
     </div>
 
     <script>
     jQuery(function($) {
+        $('#hws-site-type').on('change', function() {
+            var primary = $(this).val();
+            $('#hws-secondary-site-types input').each(function() {
+                var isPrimary = this.value === primary;
+                $(this).prop('disabled', isPrimary);
+                if (isPrimary) { $(this).prop('checked', false); }
+            });
+        });
         $('#hws-save-site-type').on('click', function() {
             var $button = $(this);
             var $status = $('#hws-site-type-status');
@@ -1924,7 +1944,8 @@ function render_site_profile_panel(): void {
             $.post(ajaxurl, {
                 action: 'hws_save_site_type',
                 nonce: hwsNonce,
-                site_type: $('#hws-site-type').val() || ''
+                site_type: $('#hws-site-type').val() || '',
+                secondary_site_types: $('#hws-secondary-site-types input:checked').map(function() { return this.value; }).get()
             }, function(response) {
                 if (!response || !response.success) {
                     $status.text('Save failed.');
@@ -2079,10 +2100,7 @@ function render_summary_section() {
     // ========================================
 
     // Red flag plugins
-    $red_flag_plugins = [
-        'wp-file-manager/file-manager.php' => 'WP File Manager',
-        'duplicator/duplicator.php' => 'Duplicator',
-    ];
+    $red_flag_plugins = array_map( static fn( array $info ): string => (string) $info['name'], hws_get_red_flag_plugins() );
 
     $red_flags = [];
     foreach ( $red_flag_plugins as $plugin_path => $plugin_name ) {
@@ -2546,11 +2564,13 @@ function ajax_save_site_type() {
     $site_type = isset( $_POST['site_type'] ) ? hws_sanitize_site_type( (string) wp_unslash( $_POST['site_type'] ) ) : '';
 
     update_option( HWS_SITE_TYPE_OPTION, $site_type, false );
+    $secondary = hws_set_secondary_site_types( isset( $_POST['secondary_site_types'] ) ? array_map( 'strval', (array) wp_unslash( $_POST['secondary_site_types'] ) ) : [] );
 
     wp_send_json_success(
         [
             'site_type' => $site_type,
-            'label'     => hws_get_site_type_label( $site_type ),
+            'secondary' => $secondary,
+            'label'     => hws_get_site_type_label( $site_type ) . ( $secondary ? ' + ' . implode( ', ', array_map( 'hws_base_tools\\hws_get_site_type_label', $secondary ) ) : '' ),
         ]
     );
 }

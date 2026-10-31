@@ -40,7 +40,11 @@ final class SiteSetupCommand {
      * : company, person or none.
      *
      * [--site-type=<site-type>]
-     * : news_outlet, podcast_website, personal_website, company_website, ecommerce_website or other.
+     * : The primary site type: news_outlet, podcast_website, personal_website, company_website, ecommerce_website,
+     * hexa_pr_wire, verified_profiles or other.
+     *
+     * [--secondary-site-types=<site-types>]
+     * : Any number of other site types, separated by commas; an empty value clears them.
      *
      * [--<field>=<value>]
      * : Any company key (name, legal_name, description, website (the url key), founding_date, founding_location,
@@ -59,6 +63,7 @@ final class SiteSetupCommand {
         if ( 'get' === $action ) {
             $out = SiteIdentity::get();
             $out['site_type'] = function_exists( 'hws_base_tools\\hws_get_site_type' ) ? \hws_base_tools\hws_get_site_type() : (string) get_option( 'hws_site_type', '' );
+            $out['secondary_site_types'] = function_exists( 'hws_base_tools\\hws_get_secondary_site_types' ) ? \hws_base_tools\hws_get_secondary_site_types() : [];
             \WP_CLI::line( (string) wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
             return;
         }
@@ -78,6 +83,16 @@ final class SiteSetupCommand {
                 \WP_CLI::error( 'Unknown site type: ' . $assoc['site-type'] );
             }
             update_option( 'hws_site_type', $assoc['site-type'] );
+        }
+        if ( isset( $assoc['secondary-site-types'] ) ) {
+            $wanted  = array_filter( array_map( 'trim', explode( ',', (string) $assoc['secondary-site-types'] ) ) );
+            $options = \hws_base_tools\hws_site_type_options();
+            foreach ( $wanted as $type ) {
+                if ( ! isset( $options[ $type ] ) ) {
+                    \WP_CLI::error( 'Unknown site type: ' . $type );
+                }
+            }
+            \hws_base_tools\hws_set_secondary_site_types( $wanted );
         }
         if ( isset( $assoc['website'] ) ) {
             $assoc['url'] = $assoc['website'];

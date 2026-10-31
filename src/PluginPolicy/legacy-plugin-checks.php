@@ -92,7 +92,11 @@ function hws_hexa_plugin_is_compatible( array $plugin, ?string $site_type = null
         return true;
     }
 
-    $site_type = null === $site_type ? hws_get_site_type() : hws_sanitize_site_type( $site_type );
+    if ( null === $site_type ) {
+        // Any of the site's site types (the primary and every secondary one) makes the plugin compatible.
+        return [] !== array_intersect( hws_get_site_types(), $allowed_site_types );
+    }
+    $site_type = hws_sanitize_site_type( $site_type );
 
     return '' !== $site_type && in_array( $site_type, $allowed_site_types, true );
 }
@@ -405,14 +409,6 @@ function hws_get_monitored_plugins() {
             'category'    => 'essential',
             'pro'         => false,
         ],
-        'wp-sweep/wp-sweep.php' => [
-            'name'        => 'WP-Sweep',
-            'should_be'   => 'inactive',
-            'auto_update' => true,
-            'download'    => 'https://wordpress.org/plugins/wp-sweep/',
-            'category'    => 'optional',
-            'pro'         => false,
-        ],
         'google-site-kit/google-site-kit.php' => [
             'name'        => 'Site Kit by Google',
             'should_be'   => 'active',
@@ -423,14 +419,6 @@ function hws_get_monitored_plugins() {
         ],
 
         // === OPTIONAL ===
-        'wp-optimize/wp-optimize.php' => [
-            'name'        => 'WP Optimize',
-            'should_be'   => 'inactive',
-            'auto_update' => true,
-            'download'    => 'https://wordpress.org/plugins/wp-optimize/',
-            'category'    => 'optional',
-            'pro'         => false,
-        ],
         'regenerate-thumbnails/regenerate-thumbnails.php' => [
             'name'        => 'Regenerate Thumbnails',
             'should_be'   => 'inactive',
@@ -459,6 +447,18 @@ function hws_get_red_flag_plugins() {
         'jet-engine/jet-engine.php' => [
             'name'   => 'JetEngine',
             'reason' => 'Not recommended for Hexa sites - remove to avoid overlapping content-type, field, and query systems',
+        ],
+        'wp-optimize/wp-optimize.php' => [
+            'name'   => 'WP Optimize',
+            'reason' => 'Replaced by HWS Base Tools - remove',
+        ],
+        'wp-sweep/wp-sweep.php' => [
+            'name'   => 'WP-Sweep',
+            'reason' => 'Replaced by HWS Base Tools - remove',
+        ],
+        'wp-user-avatars/wp-user-avatars.php' => [
+            'name'   => 'WP User Avatars',
+            'reason' => 'Replaced by Simple Local Avatars, which HWS Base Tools requires - remove',
         ],
     ];
 }
