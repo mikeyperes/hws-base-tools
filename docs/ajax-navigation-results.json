@@ -1,0 +1,420 @@
+{
+  "recorded": "2026-11-01 00:45:28 EST",
+  "status": "built; release withheld; feature disabled",
+  "release": "13.47.0 NOT published",
+  "tested_installed_version": "13.46.1 with unreleased candidate changes",
+  "browser": "System Google Chrome 156.0.8078.79",
+  "php_tests": {
+    "final_unit": 59,
+    "final_wordpress_parser": 6,
+    "existing_suite_earlier": {
+      "passed": 817,
+      "failed": 0
+    }
+  },
+  "urls": [
+    {
+      "url": "https://podcast.michaelperes.com/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 192,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/a-conversation-with-craig-guarraci/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 101,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/profile/craig-guarraci/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 49,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/voices/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 103,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/episodes/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 204,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/about/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 37,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/category/technology/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 116,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/?s=technology",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 66,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    },
+    {
+      "url": "https://podcast.michaelperes.com/contact/",
+      "http": 200,
+      "source_title_meta_canonical_match": true,
+      "swapped_metadata_body_widget_differences": [],
+      "widget_instances": 32,
+      "all_widget_ready_hooks": true,
+      "mobile_menu": "pass",
+      "one_document": true,
+      "one_page_changed": true,
+      "one_stub_page_view": true
+    }
+  ],
+  "history": [
+    {
+      "action": "back",
+      "url": "https://podcast.michaelperes.com/",
+      "token": "matrix-one-document",
+      "scroll": 650,
+      "events": 11
+    },
+    {
+      "action": "forward",
+      "url": "https://podcast.michaelperes.com/about/",
+      "token": "matrix-one-document",
+      "scroll": 0,
+      "events": 12
+    }
+  ],
+  "pageerrors": [],
+  "console_errors": [
+    {
+      "swap": true,
+      "error": "Framing 'https://www.google.com/' violates the following report-only Content Security Policy directive: \"frame-ancestors 'self'\". The violation has been logged, but no further action has been taken.\n"
+    }
+  ],
+  "fallbacks": [],
+  "widget_ready_instances": 937,
+  "optimized": {
+    "settings": {
+      "js_min": true,
+      "css_min": true,
+      "js_combine": false,
+      "css_combine": false,
+      "js_defer": 0
+    },
+    "restored_to_original": true,
+    "routes": [
+      {
+        "url": "https://podcast.michaelperes.com/about/",
+        "differences": [],
+        "one_document": true,
+        "events": 1,
+        "stub_page_views": 1,
+        "minified_css": 16,
+        "minified_js": 16
+      },
+      {
+        "url": "https://podcast.michaelperes.com/episodes/",
+        "differences": [],
+        "one_document": true,
+        "events": 2,
+        "stub_page_views": 2,
+        "minified_css": 20,
+        "minified_js": 17
+      },
+      {
+        "url": "https://podcast.michaelperes.com/",
+        "differences": [],
+        "one_document": true,
+        "events": 3,
+        "stub_page_views": 3,
+        "minified_css": 21,
+        "minified_js": 15
+      }
+    ],
+    "pageerrors": [],
+    "console_errors": [],
+    "repeated_script_requests": [],
+    "overlapping_visits": {
+      "name": "overlapping visits",
+      "pass": true,
+      "url": "https://podcast.michaelperes.com/voices/"
+    }
+  },
+  "category_filter": {
+    "errors": [],
+    "consoleErrors": [],
+    "labels": [
+      "Entrepreneurship",
+      "Education",
+      "Business",
+      "Science",
+      "\n\t\t\t\tAll\t\t\t"
+    ],
+    "count": 5,
+    "active": "true",
+    "before": 9,
+    "after": 2,
+    "changed": true,
+    "requests": [
+      {
+        "status": 200,
+        "url": "https://podcast.michaelperes.com/wp-json/elementor-pro/v1/refresh-loop"
+      }
+    ],
+    "pass": true,
+    "token": "category-swap",
+    "effects": {
+      "sticky": 0,
+      "motion": 0
+    }
+  },
+  "sticky_motion_fixture": {
+    "errors": [],
+    "consoleErrors": [],
+    "rounds": [
+      {
+        "sticky": true,
+        "stickyInstances": 1,
+        "motion": true,
+        "token": "effects-document",
+        "before": "height: 100px; background: blue; --translateY: -57.89999999999999px; --e-transform-transition-duration: 100ms; transform: translateY(var(--translateY));",
+        "after": "height: 100px; background: blue; --translateY: -6.720000000000006px; --e-transform-transition-duration: 100ms; transform: translateY(var(--translateY));",
+        "motionChanged": true,
+        "cleaned": true
+      },
+      {
+        "sticky": true,
+        "stickyInstances": 1,
+        "motion": true,
+        "token": "effects-document",
+        "before": "height: 100px; background: blue; --translateY: -57.89999999999999px; --e-transform-transition-duration: 100ms; transform: translateY(var(--translateY));",
+        "after": "height: 100px; background: blue; --translateY: -6.720000000000006px; --e-transform-transition-duration: 100ms; transform: translateY(var(--translateY));",
+        "motionChanged": true,
+        "cleaned": true
+      }
+    ],
+    "pass": true
+  },
+  "permanent_elementor_menu": {
+    "errors": [],
+    "consoleErrors": [],
+    "openBefore": "true",
+    "after": {
+      "sameNode": true,
+      "open": "true",
+      "readyCalls": 0,
+      "token": "permanent-widget"
+    },
+    "closedAfter": "false",
+    "pass": true
+  },
+  "behavior": {
+    "checks": [
+      {
+        "name": "homepage filters after round trip",
+        "pass": true,
+        "filtered": {
+          "visible": 3,
+          "total": 6,
+          "pressed": "true"
+        },
+        "empty": 0,
+        "token": "preserved"
+      },
+      {
+        "name": "history scroll restoration and analytics",
+        "pass": true,
+        "prior": 650,
+        "back": {
+          "url": "/",
+          "scroll": 650,
+          "token": "preserved",
+          "events": 2,
+          "views": 2
+        },
+        "forward": {
+          "url": "/about/",
+          "scroll": 0,
+          "token": "preserved",
+          "events": 3,
+          "views": 3
+        }
+      },
+      {
+        "name": "ordered assets once, page CSS removed",
+        "pass": true,
+        "first": {
+          "order": [
+            "a",
+            "after-a",
+            "b",
+            "after-b"
+          ],
+          "a": 1,
+          "b": 1,
+          "color": "rgb(1, 2, 3)"
+        },
+        "second": {
+          "order": [
+            "a",
+            "after-a",
+            "b",
+            "after-b"
+          ],
+          "a": 1,
+          "b": 1
+        },
+        "removed": true
+      },
+      {
+        "name": "GET search form remains native",
+        "pass": true,
+        "url": "https://podcast.michaelperes.com/?s=technology"
+      },
+      {
+        "name": "target blank and external origin",
+        "pass": true
+      }
+    ],
+    "errors": [],
+    "console_errors": []
+  },
+  "interaction_checks": [
+    {
+      "name": "permanent node and event order",
+      "pass": true,
+      "sameNode": true,
+      "state": 123,
+      "order": [
+        "will",
+        "changed"
+      ],
+      "token": "preserved"
+    },
+    {
+      "name": "popup after swap",
+      "pass": true,
+      "visible": 1,
+      "closed": true,
+      "token": "preserved"
+    },
+    {
+      "name": "contact form on direct load",
+      "pass": false,
+      "invalid": 1,
+      "response": [
+        "Invalid form, reCAPTCHA validation failed.",
+        "reCAPTCHA V3 validation failed, suspected as abusive usageYour submission failed because of an error."
+      ],
+      "turboForms": "off"
+    },
+    {
+      "name": "native POST bypasses Turbo",
+      "pass": true,
+      "method": "POST",
+      "document": true
+    },
+    {
+      "name": "path exclusion",
+      "pass": true,
+      "documentRequest": true
+    },
+    {
+      "name": "area opt out",
+      "pass": true,
+      "documentRequest": false
+    },
+    {
+      "name": "link opt out",
+      "pass": true,
+      "documentRequest": false
+    },
+    {
+      "name": "file",
+      "pass": true,
+      "documentRequest": true
+    },
+    {
+      "name": "admin bar",
+      "pass": true,
+      "documentRequest": false
+    },
+    {
+      "name": "HTTP error fallback",
+      "pass": true,
+      "native": true
+    },
+    {
+      "name": "timeout fallback",
+      "pass": true,
+      "native": true
+    }
+  ],
+  "contact_submission": {
+    "status": "NOT successful",
+    "direct_and_swap_same_error": true,
+    "error": "reCAPTCHA V3 validation failed, suspected as abusive usage",
+    "turbo_form_interception": "off",
+    "site_captcha_unchanged": true
+  },
+  "final_navigation_enabled": false,
+  "release_blockers": [
+    "Automated contact submission rejected by existing reCAPTCHA on direct and swapped loads.",
+    "One Google report-only frame-ancestors message in the full matrix console."
+  ],
+  "fixtures": "Popup, motion/sticky, permanent menu, asset order, POST, exclusions and failures used disposable browser response/DOM fixtures. No live Elementor documents were changed."
+}
