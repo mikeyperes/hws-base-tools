@@ -87,6 +87,8 @@ final class CoreIntegration {
             ->add_module( new TeamTab() )
             ->add_module( new \HWS\BaseTools\Breadcrumbs\Breadcrumbs() )
             ->add_module( new \HWS\BaseTools\NotFoundPage\NotFoundPage() )
+            // Payments: the one Stripe connection other HWS plugins charge through; off by default.
+            ->add_module( new \HWS\BaseTools\Payments\PaymentsModule() )
             // Founders: picked once here; Website Identity and SMP read hws_publication_founders().
             ->add_module( new \HWS\BaseTools\Founders\Founders() )
             ->add_module( new \HWS\BaseTools\Founders\FoundersTab() )

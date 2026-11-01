@@ -67,6 +67,11 @@
 - **Use:** `( new AjaxActionRegistry( [ capability, nonce_action, nonce_field ] ) )->register( [ 'action' => [ 'callback' => fn( AjaxRequest $r ) => [...] ] ] )`; `AjaxRequest::key()` and friends read input; throw `AjaxFailure` for a clean error.
 - **Code:** `src/WpAdminAjax/` (docs: `docs/wp-admin-ajax.md`)
 
+### API key fields
+- **Does:** a real field for any service's API key: save (encrypted through the credential store), remove, and a Test key button that calls the service and says plainly whether the key is active, rejected or unreachable, with the service's own setup steps under it. Saving refuses a key the test rejects.
+- **Use:** `ApiKeyFields::register( new ApiKeyField( id, slug, key_name, label, verifier, steps[], placeholder, help_url, help_label ) )`, then `ApiKeyFields::render( id )` on the screen and `ApiKeyFields::value( id )` in code. A verifier implements `ApiKeyVerifier::verify( string ): ApiKeyCheck`; `HttpApiKeyVerifier` covers services with one read-only endpoint (set `endpoint()`, and optionally `headers()`, `shape_error()`, `on_active()`).
+- **Code:** `src/ApiKeys/` (AJAX actions `hexa_core_api_key_save`, `_delete`, `_test`)
+
 ### Activity log
 - **Does:** a collapsible dark log of what a job did, kept for the page, for a while (transient) or until cleared (option).
 - **Use:** `new ActivityLogConfig( [ id, title, storage => STORAGE_PAGE|STORAGE_TRANSIENT|STORAGE_PERMANENT, storage_key, collapsed ] )`, `( new ActivityLogger( $config ) )->add( new ActivityLogEntry( $message, $context, $actor, $source, null, 'info' ) )`, `( new ActivityLogRenderer( $config ) )->render( $logger->all() )`.

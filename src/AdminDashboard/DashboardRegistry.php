@@ -75,7 +75,7 @@ final class DashboardRegistry {
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'breadcrumbs', '404-page', 'brand-templates', 'website-types', 'founders', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'team', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'maintenance-mode', 'external-publishing', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'maintenance-mode', 'external-publishing', 'payments', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -197,6 +197,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'maintenance-mode', 'Maintenance Mode', [ \HWS\BaseTools\MaintenanceMode\MaintenanceModeAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'external-publishing', 'External Publishing', [ \HWS\BaseTools\ExternalPublishing\ExternalPublishingModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
+        $this->add( new DashboardModuleDefinition( 'payments', 'Payments', [ \HWS\BaseTools\Payments\PaymentsTab::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'litespeed', 'LiteSpeed', [ \HWS\BaseTools\LiteSpeed\LiteSpeedModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'database-optimization', 'Database Optimization', [ \HWS\BaseTools\DatabaseOptimization\DatabaseOptimizationModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'system-checks', 'System Checks', 'hws_base_tools\\display_settings_system_checks', [ 'settings-dashboard-system-checks.php' ] ) );

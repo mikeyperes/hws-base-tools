@@ -134,6 +134,11 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Use (PHP):** `hws_get_site_type()` (primary), `hws_get_secondary_site_types()`, `hws_get_site_types()` (primary first), `hws_site_has_type( 'podcast_website' )`.
 - **Code:** `src/SiteProfile/legacy-site-profile.php` (options `hws_site_type`, `hws_site_types_secondary`)
 
+### Payments (Stripe)
+- **Does:** the one Stripe connection every HWS plugin charges through (SMP Verified Profiles, SMP Contributor Network). Payments tab (`options-general.php?page=hws-core-tools&tab=payments`): a switch, off by default; when on, the secret key, publishable key and webhook signing secret, each with how to get it in Stripe and a Test key button (Hexa WP Core API key fields), the mode (test or live) and the webhook address. While off, nothing can charge and the webhook address does not exist.
+- **Use (PHP):** `\HWS\BaseTools\Payments\Stripe::ready()`, `::checkout( [ 'price', 'mode' => 'payment|subscription', 'success_url', 'cancel_url', 'email', 'metadata' ] )` (returns the Checkout session with its `url`), `::request( $method, $path, $params )`; listen to `do_action( 'hws_base_tools_stripe_event', array $event )` for each signature-checked webhook event at `/wp-json/hws/v1/stripe/webhook`.
+- **Code:** `src/Payments/`
+
 ### Founders
 - **Does:** the website's founders, its own definition in HWS Base Tools, separate from the Primary Entity and from Website Identity (which reads it). Founders tab (`options-general.php?page=hws-core-tools&tab=founders`): on/off, section title ("Founders" by default), the people (user search, drag to order, an optional title each, one-column editor), style (Cards, List, No styling) with a live example, the HTML structure, a plugin breakdown and the shortcode breakdown. When the Primary Entity is a person marked as a founder, that person is included automatically, first; more founders are added by hand. A company Primary Entity is never on the list, so its founders (any number) are picked separately. Founding date and city are not part of founders (they are company basics). Each founder may also have a profile page and a portrait (set with `wp hws founders set`): cards and the read API then link to that page and show that portrait. Stored in option `hws_publication_founders`; on first read it is seeded from SMP's `smpi_founders`, else Website Identity's old founders field.
 - **Use (shortcode):** `[hws_publication_founders]` with `style`, `columns`, `ids`, `limit`, `hide="photo,title,bio,link"`, `link`, `bio_words`, `photo_size`, `heading` (tag for each name), `section_title` (`none` hides it), `section_tag`. Prints only the founders, never the founding date; prints nothing while off. `[smpi_founders]` is an alias for pages built with SMP's shortcode and keeps the `smpi-founders` / `smpi-founder` class names.
@@ -412,6 +417,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.46.0
+
+- Added: Payments tab with one Stripe connection (off by default) for every HWS plugin that takes payments: three keys with setup steps and a Test key button, Checkout sessions, and signature-checked webhook events. Bundles Hexa WP Core 3.47.0, which adds API key fields and the general key test.
 
 ### 13.45.29
 
