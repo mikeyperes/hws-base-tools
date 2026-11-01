@@ -23,10 +23,16 @@ function browserTest(){
  const wait=()=>new Promise((resolve,reject)=>{let t=setTimeout(()=>reject(Error('page-changed timeout')),8000);document.addEventListener('hws:page-changed',()=>{clearTimeout(t);resolve()},{once:true})});
  const visit=async path=>{const done=wait();document.querySelector('a[href="'+path+'"]').click();await done};
  try{
+ window.elementorProFrontend={modules:{taxonomyFilter:{refreshLoopWidget(){window.cleanupRefreshes=(window.cleanupRefreshes||0)+1;history.pushState(null,null,location.href)}}}};
+ window.elementorFrontend={elementsHandler:{runReadyTrigger(){},addHandler(Type,options){return new Type(options)}}};
+ window.dispatchEvent(new CustomEvent('elementor/frontend/init'));
+ class FilterHandler{constructor(options){this.$element=options.$element}onDestroy(){elementorProFrontend.modules.taxonomyFilter.refreshLoopWidget()}}
+ elementorFrontend.elementsHandler.addHandler(FilterHandler,{$element:[document.querySelector('#content')]});
+ const initialHistoryLength=history.length;
  const bar=document.querySelector('#player'),audio=bar.querySelector('audio'),frame=bar.querySelector('iframe'),win=frame.contentWindow,epoch=win.epoch,doc=document;
  await audio.play();await delay(100);let position=audio.currentTime;
  const check=async path=>{await delay(150);assert(document===doc,'document replaced');assert(document.querySelector('#player')===bar,'permanent node replaced');assert(frame.contentWindow===win&&win.epoch===epoch,'iframe browsing context reloaded');assert(!audio.paused&&audio.currentTime>position,'audio stopped/reset');position=audio.currentTime;assert(document.querySelector('h1').textContent===path,'wrong destination content: '+document.querySelector('h1').textContent);assert(location.pathname+location.search===path,'wrong destination URL: '+location.href)};
- await visit('/two');await check('/two');history.replaceState(null,'',location.href);await visit('/three');await check('/three');await visit('/one');await check('/one');
+ await visit('/two');await check('/two');assert(history.length===initialHistoryLength+1,'Elementor teardown added duplicate history');assert(!window.cleanupRefreshes,'Elementor teardown refreshed old loop');history.replaceState(null,'',location.href);await visit('/three');await check('/three');await visit('/one');await check('/one');
  let done=wait();history.back();await done;await check('/three');
  done=wait();history.back();await done;await check('/two');
  done=wait();history.forward();await done;await check('/three');

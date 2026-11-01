@@ -78,3 +78,6 @@ Turbo owns requests, GET forms, redirects, history and scroll. The before-render
 
 ## Empty-state history restoration (13.48.1)
 Other widgets or native entries can leave a history entry without Turbo metadata. Turbo normally updates only its bookkeeping when that entry is restored, without rendering it. The adapter waits for that bookkeeping and uses Turbo.visit with replace to render the restored URL without adding another entry. Turbo-owned entries keep their ordinary restore path.
+
+## Elementor taxonomy cleanup (13.48.2)
+TaxonomyFilter.onDestroy removes its filter from the shared loop store and normally refreshes the loop, which also pushes a null-state URL. During navigation teardown the adapter suppresses only refreshLoopWidget, retaining the normal store cleanup. User-triggered filter changes outside teardown still use the original refresh. This prevents outgoing widgets from creating duplicate history entries or fetching old page results after Turbo has advanced the URL.

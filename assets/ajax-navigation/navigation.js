@@ -10,6 +10,7 @@
     const initialized = new WeakSet();
     const handlersByNode = new WeakMap();
     const responses = new Map();
+    let tearingDown = false;
     let incoming = null, target = location.href, timer, visiting = false, initial = true, previous = location.href, failed = false, visitSequence = 0;
     const api = window.HwsAjaxNavigation = { version: '1', adapters: new Map(), lastVisit: null };
     api.register = (name, adapter) => api.adapters.set(name, adapter);
@@ -75,7 +76,23 @@
     if (window.jQuery) window.jQuery(window).on('elementor/frontend/init.hwsAjax', trackElementor);
     // jQuery may load later in the head. Elementor emits a native CustomEvent too.
     window.addEventListener('elementor/frontend/init', trackElementor);
+    function trackLoopFilters() {
+        const filters = window.elementorProFrontend?.modules?.taxonomyFilter;
+        if (!filters || filters.hwsAjaxTracked || typeof filters.refreshLoopWidget !== 'function') return;
+        const refresh = filters.refreshLoopWidget;
+        filters.refreshLoopWidget = function (...args) {
+            // TaxonomyFilter.onDestroy removes its filter from the shared store.
+            // Its usual refresh also requests old content and pushes a new URL.
+            // Those effects belong to user filter changes, never page teardown.
+            if (tearingDown) return;
+            return refresh.apply(this, args);
+        };
+        filters.hwsAjaxTracked = true;
+    }
     function teardown() {
+        trackLoopFilters();
+        tearingDown = true;
+        try {
         document.querySelectorAll('.elementor[data-elementor-id]').forEach(node => {
             if (!node.closest('[data-turbo-permanent][id]')) initialized.delete(node);
         });
@@ -92,6 +109,9 @@
             if (doc.$element?.[0]?.closest('[data-turbo-permanent][id]')) continue;
             doc.onDestroy?.();
             delete manager.documents[id];
+        }
+        } finally {
+            tearingDown = false;
         }
     }
     function restartElementor() {
