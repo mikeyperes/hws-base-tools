@@ -4,7 +4,9 @@
 
 ## Outcome
 
-Built and tested, but 13.47.0 is **not released**. The feature is OFF on podcast.michaelperes.com. The existing version header remains 13.46.1 until the acceptance gate passes; this is an unreleased source candidate, not a 13.46.1 distribution release. No tag or GitHub Release was created.
+HWS Base Tools 13.47.0 is approved for release by the parent. AJAX Navigation remains OFF on podcast.michaelperes.com. The parent lifted the prior acceptance gate for the known site conditions below; they are not defects of this feature. Real GA4 delivery is out of scope until the site is connected. The validation records below were collected before the release version bump.
+
+Release approval recorded: 2026-11-01 01:02:02 EST
 
 ## Browser and scope
 
@@ -61,10 +63,12 @@ Direct and swapped metadata, body classes, widgets and sampled typography matche
 
 Before: no navigation assets existed in the plugin. After, while OFF: zero on homepage, article, feature page and admin tab. While ON: eligible public homepage, episode/article and feature pages receive the local adapter plus local Turbo and one settings object; the admin tab receives no Turbo or navigation runtime. No new frontend CSS file is added. Assets have content-based cache versions.
 
-## Checks that prevent release
+## Known site conditions
 
-1. A real contact-form submission was attempted both after a swap and on a direct load. Both reached Elementor and returned the same existing error: `reCAPTCHA V3 validation failed, suspected as abusive usage`. Required-field validation and normal Elementor POST ownership worked, but successful delivery is unverified. CAPTCHA was not bypassed or reconfigured.
-2. The full nine-page matrix logged one external Google message: `Framing https://www.google.com/ violates the following report-only Content Security Policy directive: frame-ancestors self`. It states no action was taken, but the requested strict zero-console-error condition was not met. The optimized repeat had zero console errors.
+1. Automated contact-form submissions reached Elementor and returned `reCAPTCHA V3 validation failed, suspected as abusive usage`. The parent confirms the same rejection with the feature on and off and accepts it as a site condition, not a feature defect. Required-field validation and normal Elementor POST ownership worked. Successful email delivery is not claimed; CAPTCHA was not bypassed or reconfigured.
+2. Google emitted `Framing https://www.google.com/ violates the following report-only Content Security Policy directive: frame-ancestors self`. The browser states no action was taken. The parent confirms this report-only message with the feature on and off and accepts it as a site condition, not a feature defect. The exception applies to this known message; JavaScript exceptions or new feature errors are not waived.
+
+These observations no longer prevent the authorized 13.47.0 release. Analytics hook acceptance is covered by stub gtag/GTM tests; real GA4 delivery is explicitly outside scope until Site Kit is connected.
 
 The initial implementation response-resume defect and later detached Elementor loop callback defect were fixed in this task and retested. They are not open blockers. A global CAPTCHA/security change is outside the feature scope and was not made.
 

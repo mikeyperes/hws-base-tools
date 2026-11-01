@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- **AJAX Navigation (acceptance candidate, off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). Release 13.47.0 remains gated on the complete live acceptance matrix.
+- **AJAX Navigation (off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). [Live acceptance results and known site conditions](docs/ajax-navigation-acceptance.md).
 
 - **Default featured image loop fix:** the stand-in image no longer loops with plugins that ask for a featured image while a file is looked up (FIFU), which had run every page out of memory.
 - **People search text and visibility:** `placeholder` and `search_label` customize field text; `search="always"` keeps search visible on small lists. All defaults remain unchanged.
@@ -419,6 +419,13 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.47.0
+
+- Added: opt-in AJAX Navigation built on locally bundled Turbo Drive 8.0.23, with a Core settings tab, excluded paths, safe normal-load fallbacks, ordered page assets, synchronized metadata and Elementor Core/Pro lifecycle handling.
+- Added: permanent element support, page lifecycle events, gtag/GTM hooks without duplicate page views, and protection against competing podcast-player navigation.
+- Verified: direct and swapped page types, widget behavior, history and scroll, permanent state, asset ordering, PHP guards and LiteSpeed JS/CSS minification. Known reCAPTCHA and Google report-only console conditions are documented and accepted by the parent; real GA4 delivery is outside acceptance scope.
+- Bundles Hexa WP Core 3.47.0. AJAX Navigation remains off by default and is installed off on podcast.michaelperes.com.
 
 ### 13.46.1
 

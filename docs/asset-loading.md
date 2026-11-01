@@ -48,6 +48,6 @@ People search and pagination emit Core search CSS/JavaScript only with the opted
 
 Opt-in controls reuse Core SearchBox inline assets only at rendered search forms. Chip decoration is scoped to `.hls` and omitted with `none`. Team cards retain their shortcode-scoped styles; no new global files are enqueued. Home, ordinary article and unrelated admin screens gain no assets.
 
-## AJAX Navigation (acceptance candidate)
+## AJAX Navigation
 
 Off: no navigation assets on the homepage, article, feature page or admin tab. On: public eligible homepage, article and feature pages load exactly `assets/ajax-navigation/navigation.js` and local Turbo `assets/ajax-navigation/vendor/turbo.js`, plus a small settings object. No CSS is added. Excluded requests, logged-in visitors and pages blocked by competing podcast-player navigation load neither. The admin tab loads existing Core UI components and one tab-local save handler, never Turbo. Script exclusions needed for LiteSpeed are in [AJAX Navigation](ajax-navigation.md).

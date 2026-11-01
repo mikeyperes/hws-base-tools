@@ -1,4 +1,4 @@
-# AJAX Navigation (acceptance candidate)
+# AJAX Navigation
 
 This feature is off by default. Enable it in Base Tools > Operations > AJAX Navigation only after testing the site. The tab uses the existing Core tab registry, cards, toggle and protected AJAX controller. Settings live in `hws_base_tools_ajax_navigation`; only administrators can save them.
 
@@ -60,11 +60,11 @@ Select one analytics owner in the tab. Manual (the default) calls `gtag('event',
 
 The module automatically excludes `assets/ajax-navigation/navigation.js` and `assets/ajax-navigation/vendor/turbo.js` from JavaScript optimization, defer and delay through LiteSpeed filters while enabled. Keep Elementor's per-page configuration and widget scripts in document order; disable combining of page-dependent scripts if necessary. CSS aggregation must not combine different pages into a permanently retained stylesheet. Minification is acceptable when it preserves script attributes and execution order. Purge caches when toggling the feature or changing exclusions. A response containing deferred `text/litespeed` script blocks falls back to a full load rather than pretending those scripts ran. Record the exact tested settings in the acceptance report.
 
-## Known limits and release gate
+## Known limits and accepted site conditions
 
 Plugins that initialize only on DOMContentLoaded must register lifecycle adapters. Replaying all DOMContentLoaded or window load handlers would create double bindings, so these events are deliberately not replayed. Unknown widgets, third-party scripts, consent systems, CSP nonces, automatic popups and code snippets need site-specific verification. AJAX navigation owned by another plugin must be disabled before enabling this one. This feature does not make every arbitrary plugin compatible automatically.
 
-The podcast site's initial baseline has another player-owned AJAX navigation setting enabled and Site Kit Analytics unconnected. Analytics acceptance uses the expressly authorized stub gtag; it does not claim real GA4 delivery. The startup guard enforces one navigation owner. Browser acceptance temporarily disables player navigation and restores its original value when Base Tools is turned off. Do not publish 13.47.0 until every requested check passes. See the [acceptance report](ajax-navigation-acceptance.md) and [machine-readable results](ajax-navigation-results.json) for actual outcomes and release blockers.
+The podcast site's initial baseline has another player-owned AJAX navigation setting enabled and Site Kit Analytics unconnected. Analytics acceptance uses the expressly authorized stub gtag; it does not claim real GA4 delivery. The startup guard enforces one navigation owner. Browser acceptance temporarily disables player navigation and restores its original value when Base Tools is turned off. The parent approved the 13.47.0 release with the existing reCAPTCHA rejection and Google report-only console message recorded as known site conditions, not feature defects. Real GA4 delivery remains outside scope. See the [acceptance report](ajax-navigation-acceptance.md) and [machine-readable results](ajax-navigation-results.json) for actual outcomes and release blockers.
 
 ## Automated tests
 

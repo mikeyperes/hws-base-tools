@@ -1,7 +1,7 @@
 {
   "recorded": "2026-11-01 00:45:28 EST",
-  "status": "built; release withheld; feature disabled",
-  "release": "13.47.0 NOT published",
+  "status": "parent approved release; feature remains disabled",
+  "release": "13.47.0",
   "tested_installed_version": "13.46.1 with unreleased candidate changes",
   "browser": "System Google Chrome 156.0.8078.79",
   "php_tests": {
@@ -412,10 +412,6 @@
     "site_captcha_unchanged": true
   },
   "final_navigation_enabled": false,
-  "release_blockers": [
-    "Automated contact submission rejected by existing reCAPTCHA on direct and swapped loads.",
-    "One Google report-only frame-ancestors message in the full matrix console."
-  ],
   "fixtures": "Popup, motion/sticky, permanent menu, asset order, POST, exclusions and failures used disposable browser response/DOM fixtures. No live Elementor documents were changed.",
   "analytics_and_ownership_followup": {
     "recorded": "2026-11-01 00:57:41 EST",
@@ -704,5 +700,23 @@
     },
     "real_ga4_delivery": "Out of scope by explicit user decision",
     "eta_correction": "The earlier 19:30 EST ETA was a time-zone mistake."
-  }
+  },
+  "release_approval": {
+    "recorded": "2026-11-01 01:02:02 EST",
+    "authority": "Explicit parent instruction to release now",
+    "real_ga4_delivery": "Out of scope until site connection"
+  },
+  "known_site_conditions": [
+    {
+      "condition": "Automated contact submission rejected by existing reCAPTCHA on direct and swapped loads.",
+      "accepted_by_parent": true,
+      "parent_confirms_feature_on_off_identical": true
+    },
+    {
+      "condition": "One Google report-only frame-ancestors message in the full matrix console.",
+      "accepted_by_parent": true,
+      "parent_confirms_feature_on_off_identical": true
+    }
+  ],
+  "release_blockers": []
 }
