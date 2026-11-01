@@ -75,3 +75,6 @@ The [analytics and navigation ownership follow-up](ajax-navigation-followup.md) 
 ## 13.48.0 renderer and forms
 
 Turbo owns requests, GET forms, redirects, history and scroll. The before-render adapter removes incoming permanent transfer candidates before Turbo builds its transfer map, restores their markers inside the render callback, and calls the public Turbo.morphBodyElements renderer. Turbo morphing skips current permanent nodes without detaching them. Elementor page-owned roots are marked for reattachment before teardown, including roots that morphing retains. Form responses are captured before Turbo promotes a successful GET submission into a visit.
+
+## Empty-state history restoration (13.48.1)
+Other widgets or native entries can leave a history entry without Turbo metadata. Turbo normally updates only its bookkeeping when that entry is restored, without rendering it. The adapter waits for that bookkeeping and uses Turbo.visit with replace to render the restored URL without adding another entry. Turbo-owned entries keep their ordinary restore path.

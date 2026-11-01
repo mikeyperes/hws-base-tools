@@ -26,12 +26,14 @@ function browserTest(){
  const bar=document.querySelector('#player'),audio=bar.querySelector('audio'),frame=bar.querySelector('iframe'),win=frame.contentWindow,epoch=win.epoch,doc=document;
  await audio.play();await delay(100);let position=audio.currentTime;
  const check=async path=>{await delay(150);assert(document===doc,'document replaced');assert(document.querySelector('#player')===bar,'permanent node replaced');assert(frame.contentWindow===win&&win.epoch===epoch,'iframe browsing context reloaded');assert(!audio.paused&&audio.currentTime>position,'audio stopped/reset');position=audio.currentTime;assert(document.querySelector('h1').textContent===path,'wrong destination content: '+document.querySelector('h1').textContent);assert(location.pathname+location.search===path,'wrong destination URL: '+location.href)};
- await visit('/two');await check('/two');await visit('/three');await check('/three');await visit('/one');await check('/one');
+ await visit('/two');await check('/two');history.replaceState(null,'',location.href);await visit('/three');await check('/three');await visit('/one');await check('/one');
  let done=wait();history.back();await done;await check('/three');
+ done=wait();history.back();await done;await check('/two');
+ done=wait();history.forward();await done;await check('/three');
  done=wait();history.forward();await done;await check('/one');
  done=wait();document.querySelector('form[method=get]').requestSubmit();await done;await check('/search?s=Craig');
  const form=document.querySelector('#post');let native=false;form.addEventListener('submit',event=>{native=form.dataset.turbo==='false';event.preventDefault()});form.requestSubmit();assert(native,'POST was allowed through Turbo');
- document.body.dataset.result='pass';document.querySelector('#result').textContent='PASS: three clicks, GET search, native POST, back/forward, connected iframe and advancing real audio';
+ document.body.dataset.result='pass';document.querySelector('#result').textContent='PASS: three clicks, GET search, native POST, empty-state and normal back/forward, connected iframe and advancing real audio';
  }catch(error){document.body.dataset.result='fail';document.querySelector('#result').textContent=error.stack||String(error)}
  },{once:true});
 }

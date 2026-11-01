@@ -283,6 +283,16 @@
             form.setAttribute('data-turbo', 'false');
         }
     }, true);
+    // Other widgets and native history entries may have no Turbo restoration state.
+    // Turbo normally updates only its bookkeeping for these entries, leaving stale
+    // page content. Render the restored URL through its public visit API instead.
+    window.addEventListener('popstate', event => {
+        if (event.state?.turbo) return;
+        queueMicrotask(() => {
+            if (!window.Turbo || excluded(location.href)) return;
+            window.Turbo.visit(location.href, { action: 'replace' });
+        });
+    });
     window.addEventListener('error', () => { if (visiting) fallback(target, 'script-error'); });
     window.addEventListener('unhandledrejection', () => { if (visiting) fallback(target, 'script-rejection'); });
 })();
