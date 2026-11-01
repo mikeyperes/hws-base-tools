@@ -90,8 +90,9 @@ final class Stripe {
 
     /**
      * A Stripe Checkout session for a one-off payment or a subscription.
-     * $args: price (a Stripe price ID), mode (payment|subscription), success_url,
-     * cancel_url, email, metadata (stored on the session and its subscription).
+     * $args: price (a Stripe price ID), or amount (in cents) with currency (default usd),
+     * name and, for a subscription, interval (month|year); mode (payment|subscription),
+     * success_url, cancel_url, email, metadata (stored on the session and its subscription).
      *
      * @param array<string,mixed> $args
      * @return array<string,mixed>|\WP_Error The session, with its `url` to send the buyer to.
@@ -100,7 +101,7 @@ final class Stripe {
         $mode   = 'subscription' === ( $args['mode'] ?? '' ) ? 'subscription' : 'payment';
         $params = [
             'mode'        => $mode,
-            'line_items'  => [ [ 'price' => (string) ( $args['price'] ?? '' ), 'quantity' => 1 ] ],
+            'line_items'  => [ self::line_item( $args, $mode ) ],
             'success_url' => (string) ( $args['success_url'] ?? home_url( '/' ) ),
             'cancel_url'  => (string) ( $args['cancel_url'] ?? home_url( '/' ) ),
             'metadata'    => (array) ( $args['metadata'] ?? [] ),
@@ -113,6 +114,28 @@ final class Stripe {
         }
 
         return self::request( 'POST', 'checkout/sessions', $params );
+    }
+
+    /**
+     * One Checkout line: a saved Stripe price, or a set amount.
+     *
+     * @param array<string,mixed> $args
+     * @return array<string,mixed>
+     */
+    private static function line_item( array $args, string $mode ): array {
+        if ( ! empty( $args['price'] ) ) {
+            return [ 'price' => (string) $args['price'], 'quantity' => 1 ];
+        }
+        $data = [
+            'currency'     => strtolower( (string) ( $args['currency'] ?? 'usd' ) ),
+            'unit_amount'  => max( 0, (int) ( $args['amount'] ?? 0 ) ),
+            'product_data' => [ 'name' => (string) ( $args['name'] ?? get_bloginfo( 'name' ) ) ],
+        ];
+        if ( 'subscription' === $mode ) {
+            $data['recurring'] = [ 'interval' => 'month' === ( $args['interval'] ?? '' ) ? 'month' : 'year' ];
+        }
+
+        return [ 'price_data' => $data, 'quantity' => 1 ];
     }
 
     /**

@@ -136,7 +136,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 
 ### Payments (Stripe)
 - **Does:** the one Stripe connection every HWS plugin charges through (SMP Verified Profiles, SMP Contributor Network). Payments tab (`options-general.php?page=hws-core-tools&tab=payments`): a switch, off by default; when on, the secret key, publishable key and webhook signing secret, each with how to get it in Stripe and a Test key button (Hexa WP Core API key fields), the mode (test or live) and the webhook address. While off, nothing can charge and the webhook address does not exist.
-- **Use (PHP):** `\HWS\BaseTools\Payments\Stripe::ready()`, `::checkout( [ 'price', 'mode' => 'payment|subscription', 'success_url', 'cancel_url', 'email', 'metadata' ] )` (returns the Checkout session with its `url`), `::request( $method, $path, $params )`; listen to `do_action( 'hws_base_tools_stripe_event', array $event )` for each signature-checked webhook event at `/wp-json/hws/v1/stripe/webhook`.
+- **Use (PHP):** `\HWS\BaseTools\Payments\Stripe::ready()`, `::checkout( [ 'price' | 'amount' (cents) + 'currency' + 'name' + 'interval' (month|year), 'mode' => 'payment|subscription', 'success_url', 'cancel_url', 'email', 'metadata' ] )` (returns the Checkout session with its `url`), `::request( $method, $path, $params )`; listen to `do_action( 'hws_base_tools_stripe_event', array $event )` for each signature-checked webhook event at `/wp-json/hws/v1/stripe/webhook`.
 - **Code:** `src/Payments/`
 
 ### Founders
@@ -417,6 +417,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.46.1
+
+- Added: Stripe Checkout can charge a set amount (with currency, name and, for a subscription, monthly or yearly) instead of a saved Stripe price, for prices that differ per person such as a council member's own price.
 
 ### 13.46.0
 
