@@ -51,3 +51,7 @@ Opt-in controls reuse Core SearchBox inline assets only at rendered search forms
 ## AJAX Navigation
 
 Off: no navigation assets on the homepage, article, feature page or admin tab. On: public eligible homepage, article and feature pages load exactly `assets/ajax-navigation/navigation.js` and local Turbo `assets/ajax-navigation/vendor/turbo.js`, plus a small settings object. No CSS is added. Excluded requests, logged-in visitors and pages blocked by competing podcast-player navigation load neither. The admin tab loads existing Core UI components and one tab-local save handler, never Turbo. Script exclusions needed for LiteSpeed are in [AJAX Navigation](ajax-navigation.md).
+
+## Form protection
+
+Off by default. A protected form render enqueues only assets/form-protection/protection.js; pages without a supported form get no asset. No frontend CSS. Turnstile adds its provider script only when configured and a protected form renders. Form protection admin UI uses Core assets only when its tab opens. The protection script is excluded from LiteSpeed combine/delay/defer while enabled, so challenges are ready for native form submission.

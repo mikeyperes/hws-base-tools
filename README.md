@@ -9,6 +9,13 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Form protection
+- **Does:** one default-off per-site switch adds honeypot and signed minimum-fill-time checks to Elementor Pro, Contact Form 7, Gravity Forms and WPForms through their native validation/spam hooks. Optional Cloudflare Turnstile uses protected keys.
+- **Admin:** Security, Form protection. Three-second minimum; 14-day retention, at most 5,000 blocked attempts.
+- **Read:** `wp hws forms blocked` and the administrator-only `/wp-json/hws-base-tools/v1/form-protection/blocked` endpoint expose time, form, IP and reason, with no submission contents or secrets.
+- **Details:** [Settings, native hooks, markup, privacy and tests](docs/form-protection.md). [Acceptance evidence](docs/form-protection-acceptance.md).
+
+
 - **AJAX Navigation (off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). [Live acceptance results and known site conditions](docs/ajax-navigation-acceptance.md).
 
 - **Default featured image loop fix:** the stand-in image no longer loops with plugins that ask for a featured image while a file is looked up (FIFU), which had run every page out of memory.

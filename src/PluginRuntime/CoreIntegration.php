@@ -108,6 +108,7 @@ final class CoreIntegration {
             ->add_module( new RankMathSchemaSetting() )
             ->add_module( new UserImpersonationFeature() )
             ->add_module( new LoginLinkFallback() )
+            ->add_module( new \HWS\BaseTools\FormProtection\FormProtectionModule() )
             ->add_module( new \HWS\BaseTools\ContentTypes\PageCollections() )
             ->add_module( new \HWS\BaseTools\FrontendContent\LoopLeadFirstPage() )
             ->add_module( new \HWS\BaseTools\FrontendContent\FirstScreenImages() )
