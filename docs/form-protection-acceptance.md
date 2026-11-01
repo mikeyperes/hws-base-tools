@@ -14,4 +14,4 @@
 
 The full existing plugin suite was also run. It stopped in tests/plugin-policy-unit.php with: FAIL temporary WP-Sweep cleanup tooling stays out of the Quick Start required stack (10 passed, 1 failed). That unrelated policy was preserved and reported to the parent session.
 
-Reproduction: prepare the canonical tests/Fixtures/form-protection-setup.php fixture on an authorized HWS-owned site, then run tests/form-protection-browser.mjs through server 236's managed Playwright with HWS_FORM_TEST_DOMAIN and HWS_FORM_PLUGIN_PATH. Its finally block removes fixtures and restores the original switch. Never use a client site or an external send as the test.
+Reproduction: prepare the canonical tests/fixtures/form-protection-setup.php fixture on an authorized HWS-owned site, then run tests/form-protection-browser.mjs through server 236's managed Playwright with HWS_FORM_TEST_DOMAIN and HWS_FORM_PLUGIN_PATH. Its finally block removes fixtures and restores the original switch. Never use a client site or an external send as the test.

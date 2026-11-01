@@ -50,7 +50,7 @@ try{
 finally{
  await browser.close();
  try{
-  const raw=wp(['eval-file',root+'/tests/Fixtures/form-protection-cleanup.php']);
+  const raw=wp(['eval-file',root+'/tests/fixtures/form-protection-cleanup.php']);
   evidence.cleanup=JSON.parse(raw.slice(raw.indexOf('HWS_ACCEPTANCE:')+15));
   if(!evidence.cleanup.cleaned||evidence.cleanup.protection_enabled)throw new Error('Fixture cleanup did not restore protection off.');
  }catch(error){failure=error;evidence.cleanup_error=error.message;}
