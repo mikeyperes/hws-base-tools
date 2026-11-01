@@ -9,6 +9,7 @@
     const instances = new Set();
     const initialized = new WeakSet();
     const handlersByNode = new WeakMap();
+    const responses = new Map();
     let incoming = null, target = location.href, timer, visiting = false, initial = true, previous = location.href, failed = false, visitSequence = 0;
     const api = window.HwsAjaxNavigation = { version: '1', adapters: new Map(), lastVisit: null };
     api.register = (name, adapter) => api.adapters.set(name, adapter);
@@ -75,6 +76,9 @@
     // jQuery may load later in the head. Elementor emits a native CustomEvent too.
     window.addEventListener('elementor/frontend/init', trackElementor);
     function teardown() {
+        document.querySelectorAll('.elementor[data-elementor-id]').forEach(node => {
+            if (!node.closest('[data-turbo-permanent][id]')) initialized.delete(node);
+        });
         emit('will-change', { from: previous, to: target });
         api.adapters.forEach(adapter => adapter.before?.());
         for (const instance of instances) {
@@ -186,30 +190,40 @@
         catch { event.preventDefault(); fallback(event.detail.url, 'invalid-url'); }
     });
     document.addEventListener('turbo:visit', event => {
-        target = event.detail.url; incoming = null; visiting = true; failed = false; visitSequence++;
+        target = event.detail.url; incoming = responses.get(new URL(target).href.split('#')[0]) || null; visiting = true; failed = false; visitSequence++;
         clearTimeout(timer); timer = setTimeout(() => fallback(target, 'timeout'), config.timeout || 12000);
     });
     document.addEventListener('turbo:before-fetch-response', event => {
-        if (!visiting) return;
         const response = event.detail.fetchResponse.response, sequence = visitSequence;
-        incoming = (async () => {
+        if (!response.headers.get('content-type')?.includes('text/html') || event.target.closest?.('turbo-frame')) return;
+        const snapshot = (async () => {
             if (!response.ok || new URL(response.url).origin !== location.origin) throw new Error('HTTP response rejected');
             const doc = new DOMParser().parseFromString(await response.clone().text(), 'text/html');
             if (!doc.querySelector('meta[name="hws-ajax-navigation"][content="1"]') || doc.querySelector('#wpadminbar') || doc.querySelector('script[type="text/litespeed"]')) throw new Error('Destination requires a normal load');
             return doc;
         })();
-        incoming.catch(error => { if (sequence === visitSequence) fallback(response.url || target, error.message); });
+        const responseUrl = new URL(response.url).href.split('#')[0];
+        responses.set(responseUrl, snapshot);
+        while (responses.size > 4) responses.delete(responses.keys().next().value);
+        if (visiting && responseUrl === new URL(target).href.split('#')[0]) incoming = snapshot;
+        snapshot.catch(error => { if (sequence === visitSequence) fallback(response.url || target, error.message); });
     });
     document.addEventListener('turbo:fetch-request-error', event => { if (event.detail.error?.name !== 'AbortError') fallback(target, 'network-error'); });
     document.addEventListener('turbo:before-render', event => {
         event.preventDefault();
-        const render = event.detail.render, snapshot = incoming;
+        const snapshot = incoming;
+        // Turbo's default renderer transfers permanent nodes after the render callback.
+        // Remove incoming transfer candidates before its map is built. Morph restores
+        // their attributes and excludes the still-connected current permanent nodes.
+        const permanent = [...event.detail.newBody.querySelectorAll('[data-turbo-permanent][id]')];
+        permanent.forEach(node => node.removeAttribute('data-turbo-permanent'));
         if (!snapshot) { fallback(target, 'missing-snapshot'); return; }
         event.detail.render = async (...args) => {
             try {
                 const doc = await snapshot;
                 teardown();
-                await render(...args);
+                permanent.forEach(node => node.setAttribute('data-turbo-permanent', ''));
+                window.Turbo.morphBodyElements(...args);
                 pageHead(doc);
                 await executeAssets(doc);
                 await new Promise(resolve => setTimeout(resolve, 50));
@@ -242,13 +256,33 @@
     document.addEventListener('DOMContentLoaded', () => {
         remember(); trackElementor();
         if (!window.Turbo) return;
-        window.Turbo.config.forms.mode = 'off';
+        window.Turbo.config.forms.mode = 'on';
         window.Turbo.config.drive.prefetch = false;
         window.Turbo.cache.exemptPageFromCache();
         document.querySelectorAll('.elementor[data-elementor-id]').forEach(node => initialized.add(node));
     }, { once: true });
-    // Disable form interception immediately, even if a form is submitted before DOM ready.
-    document.addEventListener('submit', event => { event.target.setAttribute('data-turbo', 'false'); }, true);
+    // Turbo owns GET form requests and visits. Mutating forms remain native.
+    document.addEventListener('submit', event => {
+        const form = event.target, submitter = event.submitter;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (form.hasAttribute('data-hws-native-form')) {
+            const original = form.getAttribute('data-hws-native-form');
+            if (original === '__absent__') form.removeAttribute('data-turbo');
+            else form.setAttribute('data-turbo', original);
+            form.removeAttribute('data-hws-native-form');
+        }
+        const method = (submitter?.getAttribute('formmethod') || form.getAttribute('method') || 'get').toLowerCase();
+        const action = submitter?.getAttribute('formaction') || form.getAttribute('action') || location.href;
+        let safe = false;
+        try {
+            safe = method === 'get' && !excluded(action) && !form.closest(optOut) && !submitter?.closest(optOut)
+                && (!((submitter?.getAttribute('formtarget')) || form.target) || ((submitter?.getAttribute('formtarget')) || form.target) === '_self');
+        } catch { /* Invalid actions use native submission. */ }
+        if (!safe && form.getAttribute('data-turbo') !== 'false') {
+            form.setAttribute('data-hws-native-form', form.getAttribute('data-turbo') ?? '__absent__');
+            form.setAttribute('data-turbo', 'false');
+        }
+    }, true);
     window.addEventListener('error', () => { if (visiting) fallback(target, 'script-error'); });
     window.addEventListener('unhandledrejection', () => { if (visiting) fallback(target, 'script-rejection'); });
 })();

@@ -55,3 +55,6 @@ Off: no navigation assets on the homepage, article, feature page or admin tab. O
 ## Form protection
 
 Off by default. A protected form render enqueues only assets/form-protection/protection.js; pages without a supported form get no asset. No frontend CSS. Turnstile adds its provider script only when configured and a protected form renders. Form protection admin UI uses Core assets only when its tab opens. The protection script is excluded from LiteSpeed combine/delay/defer while enabled, so challenges are ready for native form submission.
+
+## AJAX navigation 13.48.0
+No new asset handles. Home, article and feature pages load the same Turbo/navigation pair only when eligible navigation is enabled; admin AJAX Navigation retains its existing settings assets. The adapter now morphs public bodies with connected permanent nodes and lets Turbo own safe GET forms. POST/admin exclusions are unchanged.

@@ -21,7 +21,7 @@ All logged-in visitors use normal navigation, including administrators, editors,
 <div class="no-ajax"><a href="/special/">Normal navigation</a></div>
 ```
 
-All forms retain native/plugin-owned submission. Turbo form interception is disabled, including GET search forms. Ordinary links to search results remain eligible. A PHP integration can return false from `hws_base_tools_ajax_navigation_allowed` to require a full load.
+Eligible same-origin GET search/filter forms use Turbo form visits, including submitter overrides. POST, cross-origin, excluded, opt-out and non-self target forms retain native/plugin-owned submission. Custom form handlers may still prevent default submission. A PHP integration can return false from `hws_base_tools_ajax_navigation_allowed` to require a full load.
 
 ## Permanent elements
 
@@ -29,7 +29,7 @@ All forms retain native/plugin-owned submission. Turbo form interception is disa
 <div id="my-persistent-player" data-turbo-permanent>Player content</div>
 ```
 
-The exact stable, unique ID and permanent attribute must appear on both pages. Turbo preserves the actual DOM node, event handlers and state. A permanent element's scripts should initialize on its initial page only. Elementor handlers beneath permanent nodes are not destroyed.
+The exact stable, unique ID and permanent attribute must appear on both pages. The adapter uses Turbo morphing and excludes matching permanent nodes from transfer. They remain connected at their existing location, preserving audio and iframe browsing contexts as well as handlers and state. Keep permanent nodes in a stable parent outside page content; permanent ancestors are also retained. A permanent element's scripts should initialize on its initial page only. Elementor handlers beneath permanent nodes are not destroyed.
 
 ## JavaScript event API
 
@@ -71,3 +71,7 @@ The podcast site's initial baseline has another player-owned AJAX navigation set
 `php tests/ajax-navigation-unit.php` checks defaults, path boundaries, malformed exclusions, encoded control paths, request guards, commerce endpoints, extension opt-out and inert-script output. Browser testing must independently compare direct and swapped pages and exercise interactive widgets, failures, permanent nodes, scroll, focus and analytics.
 
 The [analytics and navigation ownership follow-up](ajax-navigation-followup.md) records the later isolated browser tests and conflict notice proof.
+
+## 13.48.0 renderer and forms
+
+Turbo owns requests, GET forms, redirects, history and scroll. The before-render adapter removes incoming permanent transfer candidates before Turbo builds its transfer map, restores their markers inside the render callback, and calls the public Turbo.morphBodyElements renderer. Turbo morphing skips current permanent nodes without detaching them. Elementor page-owned roots are marked for reattachment before teardown, including roots that morphing retains. Form responses are captured before Turbo promotes a successful GET submission into a visit.

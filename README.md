@@ -16,7 +16,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Details:** [Settings, native hooks, markup, privacy and tests](docs/form-protection.md). [Acceptance evidence](docs/form-protection-acceptance.md).
 
 
-- **AJAX Navigation (off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). [Live acceptance results and known site conditions](docs/ajax-navigation-acceptance.md).
+- **AJAX Navigation (off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, connected permanent media and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). [Live acceptance results and known site conditions](docs/ajax-navigation-acceptance.md).
 
 - **Default featured image loop fix:** the stand-in image no longer loops with plugins that ask for a featured image while a file is looked up (FIFU), which had run every page out of memory.
 - **People search text and visibility:** `placeholder` and `search_label` customize field text; `search="always"` keeps search visible on small lists. All defaults remain unchanged.
@@ -426,6 +426,12 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.48.0
+- Allow eligible same-origin GET search/filter forms through Turbo; keep POST and opt-out forms native.
+- Morph with Turbo while permanent media stays connected, preserving iframe browsing contexts.
+- Reattach retained Elementor document roots after lifecycle cleanup.
+- Bundle Hexa WP Core 3.47.1.
 
 ### 13.47.0
 
