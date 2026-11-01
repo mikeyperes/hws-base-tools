@@ -222,7 +222,21 @@ final class CompanyPages implements ModuleInterface {
                 $missing[ (string) $label ] = $facts;
             }
         }
+        // A mission is 3 to 4 sentences: a one-line slogan is reported as unfinished, never accepted.
+        $sentences = self::mission_sentences();
+        if ( $sentences > 0 && $sentences < 3 ) {
+            $missing['Mission Statement'][] = sprintf( 'a mission of 3 to 4 sentences (it has %d)', $sentences );
+        }
         return $missing;
+    }
+
+    /** Sentences in the saved mission (0 when none). */
+    public static function mission_sentences(): int {
+        $text = trim( wp_strip_all_tags( (string) CompanyFacts::value( 'mission' ) ) );
+        if ( '' === $text ) {
+            return 0;
+        }
+        return count( preg_split( '/(?<=[.!?])\s+(?=\S)/u', $text, -1, PREG_SPLIT_NO_EMPTY ) );
     }
 
     /** Error notice at the top of Base Tools' own admin pages only. */

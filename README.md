@@ -176,7 +176,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Last updated:** `[hws_page_updated]` prints the date the current page was last changed; Privacy Policy, Cookie Policy and Terms of Use show it at the top.
 
 ### Missing company facts notice
-- **Does:** when a linked page (Headquarters, Founding Date) or another plugin's fact page lacks what it needs from Website Identity, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city.
+- **Does:** when a linked page (Headquarters, Founding Date) or another plugin's fact page lacks what it needs from Website Identity, Base Tools shows a red notice at the top of its admin pages naming the page and the missing facts, with a button to Website Identity. Headquarters needs a headquarters city or address; Founding Date (company sites only) needs the founding date and the founding city. A saved mission shorter than 3 sentences is also listed ("a mission of 3 to 4 sentences"), so a one-line slogan never passes.
 - **Extend:** filter `hws_base_tools_pages_in_use` (`key => label`); a page definition's `required_facts` is checked by Hexa WP Core's `missing_facts()`.
 - **Code:** `src/CompanyPages/CompanyPages.php`
 
