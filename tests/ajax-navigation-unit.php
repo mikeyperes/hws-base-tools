@@ -44,4 +44,22 @@ check(Settings::sanitize(['analytics'=>'bad'])['analytics']==='manual','Reject i
 check(AjaxNavigationModule::optimization_exclusions(['existing.js'])===['existing.js','assets/ajax-navigation/navigation.js','assets/ajax-navigation/vendor/turbo.js'],'Optimizer exclusions preserve existing paths');
 check(str_contains(AjaxNavigationModule::track_runtime('<script src="turbo.js"></script>','hws-turbo'),'data-turbo-track="reload"'),'Runtime changes require document reload');
 check(AjaxNavigationModule::track_runtime('<script src="other.js"></script>','other')==='<script src="other.js"></script>','Do not mark unrelated assets');
+// A missing/inactive player must never block another WordPress site.
+check(!AjaxNavigationModule::navigation_conflict(), 'No conflict without podcast plugin');
+eval('namespace SMP\\Podcast\\Settings; final class PlaybackSettings { public static function get(): array { return $GLOBALS["player_settings"] ?? []; } }');
+foreach ([[false,false,false],[false,true,false],[true,false,false],[true,true,true]] as [$enabled,$ajax,$blocked]) {
+    $GLOBALS['player_settings']=['enabled'=>$enabled,'ajax_navigation'=>$ajax];
+    check(AjaxNavigationModule::navigation_conflict()===$blocked, 'Player ownership truth table');
+}
+$_SERVER['REQUEST_METHOD']='GET';
+check(!AjaxNavigationModule::allowed(),'Both enabled must refuse startup');
+$GLOBALS['player_settings']['ajax_navigation']=false;
+check(AjaxNavigationModule::allowed(),'Base Tools starts when player navigation is off');
+$GLOBALS['actions']=[];
+function do_action($name, ...$args) { $GLOBALS['actions'][]=$name; }
+AjaxNavigationModule::player_settings_changed(['enabled'=>true,'ajax_navigation'=>false],['enabled'=>true,'ajax_navigation'=>true]);
+check($GLOBALS['actions']===['litespeed_purge_all'],'Player navigation change invalidates cached pages');
+$GLOBALS['actions']=[];
+AjaxNavigationModule::player_settings_changed(['enabled'=>true,'ajax_navigation'=>true,'skip_back'=>15],['enabled'=>true,'ajax_navigation'=>true,'skip_back'=>30]);
+check($GLOBALS['actions']===[],'Unrelated player setting does not purge navigation cache');
 echo "AJAX navigation: $checks checks passed\n";

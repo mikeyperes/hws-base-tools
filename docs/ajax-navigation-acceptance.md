@@ -71,3 +71,7 @@ The initial implementation response-resume defect and later detached Elementor l
 ## Evidence
 
 The machine-readable [results](ajax-navigation-results.json) record per-URL outcomes and fixture results. Raw browser scripts, console traces, JSON results and request-scoped receipts remain in `/tmp/ajax-1-evidence/` on server 236. This folder is disposable evidence, not plugin source.
+
+## Later analytics and ownership follow-up
+
+See the [follow-up report](ajax-navigation-followup.md) for eight later isolated swaps, GTM and absent-provider tests, the competing-navigation startup guard and its admin notice. Real GA4 delivery is explicitly outside acceptance scope. The original page matrix above remains the historical record of that run.

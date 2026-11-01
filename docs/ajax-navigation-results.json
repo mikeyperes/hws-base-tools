@@ -416,5 +416,293 @@
     "Automated contact submission rejected by existing reCAPTCHA on direct and swapped loads.",
     "One Google report-only frame-ancestors message in the full matrix console."
   ],
-  "fixtures": "Popup, motion/sticky, permanent menu, asset order, POST, exclusions and failures used disposable browser response/DOM fixtures. No live Elementor documents were changed."
+  "fixtures": "Popup, motion/sticky, permanent menu, asset order, POST, exclusions and failures used disposable browser response/DOM fixtures. No live Elementor documents were changed.",
+  "analytics_and_ownership_followup": {
+    "recorded": "2026-11-01 00:57:41 EST",
+    "scope": "Analytics hook acceptance and single navigation owner",
+    "php_unit_checks_passed": 68,
+    "analytics": {
+      "scenarios": [
+        {
+          "mode": "gtag",
+          "swaps": [
+            {
+              "token": "analytics-one-document",
+              "changes": 1,
+              "calls": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ]
+              ],
+              "layer": null,
+              "gtagExists": true,
+              "layerExists": false,
+              "url": "https://podcast.michaelperes.com/about/",
+              "title": "About | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            },
+            {
+              "token": "analytics-one-document",
+              "changes": 2,
+              "calls": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ],
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/voices/",
+                    "page_title": "Guests & Voices | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/about/"
+                  }
+                ]
+              ],
+              "layer": null,
+              "gtagExists": true,
+              "layerExists": false,
+              "url": "https://podcast.michaelperes.com/voices/",
+              "title": "Guests & Voices | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            }
+          ],
+          "errors": [],
+          "consoleErrors": [],
+          "initial": {
+            "calls": 0,
+            "layer": 0,
+            "playerNavigation": "",
+            "base": true
+          },
+          "pass": true
+        },
+        {
+          "mode": "gtm",
+          "swaps": [
+            {
+              "token": "analytics-one-document",
+              "changes": 1,
+              "calls": [],
+              "layer": [
+                {
+                  "event": "page_view",
+                  "page_location": "https://podcast.michaelperes.com/about/",
+                  "page_title": "About | The Michael Peres Podcast",
+                  "page_referrer": "https://podcast.michaelperes.com/"
+                }
+              ],
+              "gtagExists": false,
+              "layerExists": true,
+              "url": "https://podcast.michaelperes.com/about/",
+              "title": "About | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            },
+            {
+              "token": "analytics-one-document",
+              "changes": 2,
+              "calls": [],
+              "layer": [
+                {
+                  "event": "page_view",
+                  "page_location": "https://podcast.michaelperes.com/about/",
+                  "page_title": "About | The Michael Peres Podcast",
+                  "page_referrer": "https://podcast.michaelperes.com/"
+                },
+                {
+                  "event": "page_view",
+                  "page_location": "https://podcast.michaelperes.com/voices/",
+                  "page_title": "Guests & Voices | The Michael Peres Podcast",
+                  "page_referrer": "https://podcast.michaelperes.com/about/"
+                }
+              ],
+              "gtagExists": false,
+              "layerExists": true,
+              "url": "https://podcast.michaelperes.com/voices/",
+              "title": "Guests & Voices | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            }
+          ],
+          "errors": [],
+          "consoleErrors": [],
+          "initial": {
+            "calls": 0,
+            "layer": 0,
+            "playerNavigation": "",
+            "base": true
+          },
+          "pass": true
+        },
+        {
+          "mode": "both",
+          "swaps": [
+            {
+              "token": "analytics-one-document",
+              "changes": 1,
+              "calls": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ]
+              ],
+              "layer": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ]
+              ],
+              "gtagExists": true,
+              "layerExists": true,
+              "url": "https://podcast.michaelperes.com/about/",
+              "title": "About | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            },
+            {
+              "token": "analytics-one-document",
+              "changes": 2,
+              "calls": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ],
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/voices/",
+                    "page_title": "Guests & Voices | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/about/"
+                  }
+                ]
+              ],
+              "layer": [
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/about/",
+                    "page_title": "About | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/"
+                  }
+                ],
+                [
+                  "event",
+                  "page_view",
+                  {
+                    "page_location": "https://podcast.michaelperes.com/voices/",
+                    "page_title": "Guests & Voices | The Michael Peres Podcast",
+                    "page_referrer": "https://podcast.michaelperes.com/about/"
+                  }
+                ]
+              ],
+              "gtagExists": true,
+              "layerExists": true,
+              "url": "https://podcast.michaelperes.com/voices/",
+              "title": "Guests & Voices | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            }
+          ],
+          "errors": [],
+          "consoleErrors": [],
+          "initial": {
+            "calls": 0,
+            "layer": 0,
+            "playerNavigation": "",
+            "base": true
+          },
+          "pass": true
+        },
+        {
+          "mode": "neither",
+          "swaps": [
+            {
+              "token": "analytics-one-document",
+              "changes": 1,
+              "calls": [],
+              "layer": null,
+              "gtagExists": false,
+              "layerExists": false,
+              "url": "https://podcast.michaelperes.com/about/",
+              "title": "About | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            },
+            {
+              "token": "analytics-one-document",
+              "changes": 2,
+              "calls": [],
+              "layer": null,
+              "gtagExists": false,
+              "layerExists": false,
+              "url": "https://podcast.michaelperes.com/voices/",
+              "title": "Guests & Voices | The Michael Peres Podcast",
+              "documents": 1,
+              "pass": true
+            }
+          ],
+          "errors": [],
+          "consoleErrors": [],
+          "initial": {
+            "calls": 0,
+            "layer": 0,
+            "playerNavigation": "",
+            "base": true
+          },
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    "conflict": {
+      "turbo": false,
+      "base": false,
+      "runtimeScripts": 0,
+      "marker": false,
+      "reload": "reload",
+      "player": "1",
+      "http": 200,
+      "pass": true
+    },
+    "tab_notice_rendered": true,
+    "base_allowed_with_player_navigation_off": true,
+    "final_state": {
+      "base_enabled": false,
+      "player_enabled": true,
+      "player_ajax_navigation": true
+    },
+    "real_ga4_delivery": "Out of scope by explicit user decision",
+    "eta_correction": "The earlier 19:30 EST ETA was a time-zone mistake."
+  }
 }

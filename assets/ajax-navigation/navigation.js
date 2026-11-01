@@ -166,8 +166,13 @@
     }
     function analytics() {
         // Choose one owner: manual calls here, or GA4's own history measurement.
-        if (config.analytics !== 'history' && typeof window.gtag === 'function') {
-            window.gtag('event', 'page_view', { page_location: location.href, page_title: document.title, page_referrer: previous });
+        if (config.analytics === 'history') return;
+        const page = { page_location: location.href, page_title: document.title, page_referrer: previous };
+        if (typeof window.gtag === 'function') {
+            // gtag owns its dataLayer queue too; do not send the same page view twice.
+            window.gtag('event', 'page_view', page);
+        } else if (Array.isArray(window.dataLayer)) {
+            window.dataLayer.push({ event: 'page_view', ...page });
         }
     }
     document.addEventListener('turbo:click', event => {

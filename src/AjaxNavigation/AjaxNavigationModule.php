@@ -11,6 +11,7 @@ use HWS\BaseTools\PluginRuntime\PluginMetadata;
 final class AjaxNavigationModule implements ModuleInterface {
     public function register(): void {
         add_action('template_redirect', [self::class, 'prepare'], 0);
+        add_action('update_option_smp_podcast_playback_settings', [self::class, 'player_settings_changed'], 10, 2);
         add_filter('litespeed_optimize_js_excludes', [self::class, 'optimization_exclusions']);
         add_filter('litespeed_optm_js_defer_exc', [self::class, 'optimization_exclusions']);
         add_filter('script_loader_tag', [self::class, 'track_runtime'], 10, 2);
@@ -19,11 +20,28 @@ final class AjaxNavigationModule implements ModuleInterface {
     }
 
     public static function allowed(): bool {
-        if (!Settings::get()['enabled'] || is_admin() || is_user_logged_in() || is_feed() || is_preview() || is_404() || is_embed() || is_trackback()) return false;
+        if (!Settings::get()['enabled'] || self::navigation_conflict() || is_admin() || is_user_logged_in() || is_feed() || is_preview() || is_404() || is_embed() || is_trackback()) return false;
         if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return false;
         if (Settings::excluded($_SERVER['REQUEST_URI'] ?? '/', Settings::get()['excluded_paths'])) return false;
         foreach (['is_cart', 'is_checkout', 'is_account_page'] as $fn) if (function_exists($fn) && $fn()) return false;
         return (bool) apply_filters('hws_base_tools_ajax_navigation_allowed', true);
+    }
+
+    /** Only an enabled player with its navigation switch on owns navigation. */
+    public static function navigation_conflict(): bool {
+        if (!class_exists(\SMP\Podcast\Settings\PlaybackSettings::class)) return false;
+        $player = \SMP\Podcast\Settings\PlaybackSettings::get();
+        return !empty($player['enabled']) && !empty($player['ajax_navigation']);
+    }
+
+    public static function player_settings_changed(mixed $before, mixed $after): void {
+        if (!Settings::get()['enabled']) return;
+        $before = is_array($before) ? $before : [];
+        $after = is_array($after) ? $after : [];
+        if (($before['enabled'] ?? false) !== ($after['enabled'] ?? false)
+            || ($before['ajax_navigation'] ?? true) !== ($after['ajax_navigation'] ?? true)) {
+            do_action('litespeed_purge_all');
+        }
     }
 
     public static function prepare(): void {
@@ -80,6 +98,9 @@ final class AjaxNavigationModule implements ModuleInterface {
         $settings = Settings::sanitize(['analytics' => $request->text('analytics', 'manual', 'post'), 'enabled' => $request->bool('enabled', false, 'post'), 'excluded_paths' => $request->raw('excluded_paths', '', 'post')]);
         update_option(Settings::OPTION, $settings, false);
         do_action('litespeed_purge_all');
-        return ['message' => 'AJAX navigation settings saved. Page caches cleared.', 'settings' => $settings];
+        $blocked = $settings['enabled'] && self::navigation_conflict();
+        return ['message' => $blocked
+            ? 'Settings saved, but AJAX navigation is blocked: turn off the podcast player AJAX navigation setting first.'
+            : 'AJAX navigation settings saved. Page caches cleared.', 'settings' => $settings, 'blocked' => $blocked];
     }
 }

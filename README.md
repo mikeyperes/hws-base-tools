@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- **AJAX Navigation (acceptance candidate, off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). Release 13.47.0 remains gated on the complete live acceptance matrix.
+- **AJAX Navigation (acceptance candidate, off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, permanent elements and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). Release 13.47.0 remains gated on the complete live acceptance matrix.
 
 - **Default featured image loop fix:** the stand-in image no longer loops with plugins that ask for a featured image while a file is looked up (FIFU), which had run every page out of memory.
 - **People search text and visibility:** `placeholder` and `search_label` customize field text; `search="always"` keeps search visible on small lists. All defaults remain unchanged.
