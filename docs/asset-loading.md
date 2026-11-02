@@ -62,3 +62,8 @@ No new asset handles. Home, article and feature pages load the same Turbo/naviga
 ## Display Conditions
 
 No frontend or editor assets added. Core admin UI assets load only when the Display Conditions tab renders.
+
+
+## Form protection independent checks (13.53.0)
+
+Before: `hws-form-protection` on enabled forms and the Turnstile SDK when configured; no protection assets on ordinary pages or the admin. After: `hws-form-protection` only when an actual protected form needs a signed token or selected bot provider. Honeypot/header-only forms load no JavaScript. The script loads exactly the selected provider SDK (Turnstile explicit-render API or reCAPTCHA v3 API), once, and only from actual form markup. Home and article pages without forms still load no protection assets; the Form protection admin tab uses its scoped inline save handler and Core UI assets, never provider SDKs. A form on a home/article page follows the same per-form rule.

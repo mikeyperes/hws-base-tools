@@ -35,7 +35,7 @@ try{
   return (await response).json();
  };
  await load();await fill();
- await form().locator('[name="hws_form_website"]').evaluate(el=>{el.value='bot-filled-field';});
+ await form().locator('[name^="hws_form_honeypots["]').evaluate(el=>{el.value='bot-filled-field';});
  const bot=await submit();if(bot.status!=='spam')throw new Error('Bot-style post was not blocked: '+JSON.stringify(bot));
  await page.screenshot({path:path.join(out,'form-protection-bot.png'),fullPage:false});
  await load();await page.waitForTimeout(3300);await fill();

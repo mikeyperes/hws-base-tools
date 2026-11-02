@@ -20,10 +20,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Display Conditions**: opt-in named site conditions, native Elementor visibility, WP-CLI management and a report-first JetEngine migration. [Documentation](docs/display-conditions.md).
 
 ### Form protection
-- **Does:** one default-off per-site switch adds honeypot and signed minimum-fill-time checks to Elementor Pro, Contact Form 7, Gravity Forms and WPForms through their native validation/spam hooks. Optional Cloudflare Turnstile uses protected keys.
-- **Admin:** Security, Form protection. Three-second minimum; 14-day retention, at most 5,000 blocked attempts.
-- **Read:** `wp hws forms blocked` and the administrator-only `/wp-json/hws-base-tools/v1/form-protection/blocked` endpoint expose time, form, IP and reason, with no submission contents or secrets.
-- **Details:** [Settings, native hooks, markup, privacy and tests](docs/form-protection.md). [Acceptance evidence](docs/form-protection-acceptance.md).
+- **Does:** independent honeypot, signed minimum-fill-time and browser-header checks reject only the current submission in Elementor Pro, Contact Form 7, Gravity Forms and WPForms. One bot check selects none, Cloudflare Turnstile or invisible reCAPTCHA v3; both providers can never run together.
+- **Switch:** master switch remains off on new sites; independent switches and provider choice are in Security, Form protection, saved in `hws_base_tools_form_protection` and exposed by `wp hws forms protection status|set`.
+- **Defaults:** two distinct stable honeypot names per form; three-second minimum; header check off until enabled; Turnstile selected at first key setup; reCAPTCHA score 0.5. Both secrets use Core's protected credential store and are refused in CLI arguments.
+- **Read:** `wp hws forms blocked` and the administrator-only `/wp-json/hws-base-tools/v1/form-protection/blocked` endpoint expose only time, form, IP and reason. `wp hws forms signals` reads missing-language signals, which never reject a submission.
+- **Use:** automatic native validation; no firewall, redirects, site-wide blocks or external notification changes.
+- **Code:** `src/FormProtection/` and form-scoped `assets/form-protection/protection.js`.
+- **Details:** [Settings, native hooks, markup, reason codes and tests](docs/form-protection.md). [Acceptance evidence](docs/form-protection-acceptance.md).
+
 
 
 - **AJAX Navigation (off by default):** locally bundled Turbo Drive, safe exclusions, ordered assets, connected permanent media, empty-state history restoration, teardown-safe Elementor filters and a page lifecycle API. Includes an AJAX Navigation settings tab, a guard against competing podcast-player navigation, gtag/GTM hooks without duplicate events, and PHP tests. [Integration, opt-outs and known limits](docs/ajax-navigation.md). [Live acceptance results and known site conditions](docs/ajax-navigation-acceptance.md).
@@ -436,6 +440,13 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.53.0
+- Added independent two-field honeypots, signed fill-time and per-header validation switches across all four native form integrations.
+- Added mutually exclusive Turnstile / invisible reCAPTCHA v3 with protected secrets, host/action verification and configurable score threshold.
+- Kept the Form protection tab working with plain single-column controls and expanded status/set CLI commands and reason logs. Missing Accept-Language is a non-blocking signal.
+- Added 132 passing unit checks and private Elementor acceptance fixtures with no notification actions. Bundles Hexa WP Core 3.48.2.
+
 
 ### 13.48.6
 - Card photos: the boxed container width is read from the current document's saved element tree, so it also applies when Elementor's element cache renders list widgets after their containers.
