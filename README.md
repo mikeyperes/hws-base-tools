@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Instant Indexing diagnostics, root key verification, recent response codes and one-page IndexNow test. [Endpoints](docs/instant-indexing-engine.md).
+
 - Direct protected Google Search Console engine, sitemap submission, URL inspection and explicit Indexing API errors. [Endpoints](docs/search-console-engine.md).
 
 - Shared Core sitemap recommendation engine, saved conditions and explicit Rank Math administrator actions. [Endpoints](docs/sitemap-engine.md).
