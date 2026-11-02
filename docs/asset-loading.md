@@ -67,3 +67,5 @@ No frontend or editor assets added. Core admin UI assets load only when the Disp
 ## Form protection independent checks (13.53.0)
 
 Before: `hws-form-protection` on enabled forms and the Turnstile SDK when configured; no protection assets on ordinary pages or the admin. After: `hws-form-protection` only when an actual protected form needs a signed token or selected bot provider. Honeypot/header-only forms load no JavaScript. The script loads exactly the selected provider SDK (Turnstile explicit-render API or reCAPTCHA v3 API), once, and only from actual form markup. Home and article pages without forms still load no protection assets; the Form protection admin tab uses its scoped inline save handler and Core UI assets, never provider SDKs. A form on a home/article page follows the same per-form rule.
+
+13.53.1 registers the protection script before Elementor replays cached document handles without enqueueing it globally. Protected form widgets render dynamically; settings saves clear Elementor markup through its public API. This fixes a reproduced second-load failure where cached fields appeared without any protection script.

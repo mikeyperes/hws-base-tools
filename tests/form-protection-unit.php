@@ -2,7 +2,7 @@
 declare(strict_types=1);
 define('ABSPATH',__DIR__.'/fixture/');
 define('ARRAY_A','ARRAY_A');
-$checks=0;$failures=[];$options=[];$hooks=[];$routes=[];$assets=[];$admin=true;$scheduled=[];
+$checks=0;$failures=[];$options=[];$hooks=[];$routes=[];$assets=[];$registered=[];$admin=true;$scheduled=[];
 function expect_form($ok,$message){global$checks,$failures;$checks++;echo($ok?'PASS ':'FAIL ').$message."\n";if(!$ok)$failures[]=$message;}
 function get_option($key,$default=false){global$options;return $options[$key]??$default;}
 function update_option($key,$value,$autoload=null){global$options;$options[$key]=$value;return true;}
@@ -22,6 +22,7 @@ function add_filter($key,$cb,$priority=10,$args=1){add_action($key,$cb,$priority
 function do_action($key,...$args){global$hooks;foreach($hooks[$key]??[]as$cb)$cb(...$args);}
 function register_rest_route($ns,$route,$args){global$routes;$routes[$route]=$args;}
 function __return_true(){return true;}
+function wp_register_script($key,...$args){global$registered;$registered[$key]=$args;}
 function wp_enqueue_script($key,...$args){global$assets;$assets[]=$key;}
 function wp_localize_script(...$args){}
 function plugins_url($p,$file){return 'https://example.com/plugins/'.$p;}
@@ -168,4 +169,10 @@ expect_form(!str_contains(FormProtectionModule::markup('wpforms:4'),'<input')&&$
 $options[Settings::OPTION]=Settings::sanitize(['enabled'=>true,'bot_check'=>'recaptcha','recaptcha_site_key'=>'public']);$markup=FormProtectionModule::markup('wpforms:4');
 expect_form(str_contains($markup,'g-recaptcha-response')&&!str_contains($markup,'data-hws-turnstile'),'only selected provider markup rendered');
 foreach(['turnstile_missing','turnstile_invalid','recaptcha_missing','recaptcha_invalid','recaptcha_score']as$reason){$before=count($wpdb->rows);AttemptLog::record('wpforms:4','192.0.2.1',$reason);expect_form(count($wpdb->rows)===$before+1,'provider reason logged: '.$reason);}
+$options[Settings::OPTION]=Settings::sanitize(['enabled'=>true]);$assets=[];FormProtectionModule::register_assets();
+expect_form(isset($registered['hws-form-protection'])&&$assets===[],'cached Elementor asset handles are registered without globally enqueueing');
+expect_form(FormProtectionModule::elementor_dynamic(false,['widgetType'=>'form']),'protected Elementor forms render dynamically instead of caching protection fields');
+expect_form(!FormProtectionModule::elementor_dynamic(false,['widgetType'=>'heading']),'unrelated Elementor widgets keep caching');
+$options[Settings::OPTION]=Settings::sanitize(['enabled'=>false]);
+expect_form(!FormProtectionModule::elementor_dynamic(false,['widgetType'=>'form']),'disabled protection preserves native Elementor caching');
 echo $checks.' checks, '.count($failures)." failures\n";exit($failures?1:0);

@@ -44,7 +44,7 @@ Order: honeypots, token/time, headers, selected provider. Only the first rejecti
 </div>
 ```
 
-The example names are illustrative; actual names are deterministic per form. Markup has no visual styling to override. Provider widgets render only inside the selected form. Signed challenges are fetched uncached, including for dynamically inserted forms, and renewed on reset. reCAPTCHA executes immediately before submission, then resumes the form plugin's original submit path; provider-load failure displays a retryable error. Turnstile uses explicit per-form rendering and resets on form reset.
+The example names are illustrative; actual names are deterministic per form. Markup has no visual styling to override. Provider widgets render only inside the selected form. Protection assets are registered early without being enqueued globally, so Elementor can replay cached asset handles. Protected form widgets render dynamically; settings saves invalidate Elementor markup through its public cache API. Signed challenges are fetched uncached, including for dynamically inserted forms, and renewed on reset. reCAPTCHA executes immediately before submission, then resumes the form plugin's original submit path; provider-load failure displays a retryable error. Turnstile uses explicit per-form rendering and resets on form reset.
 
 ## Logs and privacy
 

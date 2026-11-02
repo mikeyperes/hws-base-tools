@@ -441,6 +441,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.53.1
+- Fixed Elementor's cached documents dropping protection JavaScript: register cached handles early, render protected form widgets dynamically and clear Elementor's markup cache through its public API when protection settings change.
+- Addresses a reproduced failure on the live private Elementor acceptance fixture; 136 unit checks pass. Bundles Hexa WP Core 3.48.2.
+
 ### 13.53.0
 - Added independent two-field honeypots, signed fill-time and per-header validation switches across all four native form integrations.
 - Added mutually exclusive Turnstile / invisible reCAPTCHA v3 with protected secrets, host/action verification and configurable score threshold.

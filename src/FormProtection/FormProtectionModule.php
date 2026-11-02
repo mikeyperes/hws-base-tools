@@ -7,6 +7,8 @@ use HWS\BaseTools\PluginRuntime\PluginMetadata;
 final class FormProtectionModule implements ModuleInterface {
     private static array $failed=[];
     public function register():void {
+        add_action('wp_enqueue_scripts',[self::class,'register_assets']);
+        add_filter('elementor/element/is_dynamic_content',[self::class,'elementor_dynamic'],10,2);
         add_filter('elementor/widget/render_content',[self::class,'elementor_markup'],10,2);
         add_action('elementor_pro/forms/validation',[self::class,'elementor_validate'],10,2);
         add_filter('wpcf7_form_elements',[self::class,'cf7_markup']);
@@ -72,10 +74,17 @@ final class FormProtectionModule implements ModuleInterface {
         if($s['bot_check']==='recaptcha')$html.='<input type="hidden" name="g-recaptcha-response" value="">';
         return $html.'</div>';
     }
-    public static function assets():void {
-        wp_enqueue_script('hws-form-protection',plugins_url('assets/form-protection/protection.js',PluginMetadata::plugin_file()),[],PluginMetadata::VERSION,true);
+    public static function register_assets():void {
+        $s=Settings::get();if(!$s['enabled']||(!$s['too_fast_enabled']&&$s['bot_check']==='none'))return;
+        // Elementor caches asset handles, so register before it replays cached document assets.
+        wp_register_script('hws-form-protection',plugins_url('assets/form-protection/protection.js',PluginMetadata::plugin_file()),[],PluginMetadata::VERSION,true);
         wp_localize_script('hws-form-protection','hwsFormProtection',['challenge_url'=>rest_url('hws-base-tools/v1/form-protection/challenge')]);
-        // Provider SDKs are loaded by this script only for the selected provider on an actual form.
+    }
+    public static function assets():void {
+        self::register_assets();wp_enqueue_script('hws-form-protection');
+    }
+    public static function elementor_dynamic(bool $dynamic,array $data):bool {
+        return $dynamic||(Settings::get()['enabled']&&($data['widgetType']??'')==='form');
     }
     public static function elementor_markup(string $content,$widget):string {
         if(!Settings::get()['enabled']||$widget->get_name()!=='form')return $content;
@@ -136,5 +145,7 @@ final class FormProtectionModule implements ModuleInterface {
         $safe=$state;unset($safe['site_key'],$safe['recaptcha_site_key']);$log->add(new \Hexa\PluginCore\ActivityLog\ActivityLogEntry('Form protection settings saved',$safe));
         \Hexa\PluginCore\WpCronTasks\WpCronTask::schedule_existing('hws_base_tools_form_protection_prune','daily',null,[],false);
         AttemptLog::prune();
+        // Toggle changes must invalidate Elementor's cached form markup through its public API.
+        if(class_exists('Elementor\\Plugin'))\Elementor\Plugin::$instance->files_manager->clear_cache();
     }
 }
