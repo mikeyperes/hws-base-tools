@@ -40,6 +40,7 @@ final class GoogleClient {
         if (is_wp_error($token)) return ['ok'=>false,'http_code'=>0,'message'=>$token->get_error_message(),'reason'=>$token->get_error_code()];
         $args=['method'=>$method,'timeout'=>25,'redirection'=>0,'headers'=>['Authorization'=>'Bearer '.$token,'Content-Type'=>'application/json']];
         if (null!==$body) $args['body']=wp_json_encode($body);
+        elseif ('PUT'===$method) { $args['body']=''; $args['headers']['Content-Length']='0'; }
         $response=wp_remote_request($url,$args);
         if (is_wp_error($response)) return ['ok'=>false,'http_code'=>0,'message'=>'Google request could not be completed.'];
         $code=wp_remote_retrieve_response_code($response);

@@ -15,6 +15,7 @@ function wp_remote_retrieve_body($r){return $r['body'];}
 function wp_remote_retrieve_response_code($r){return $r['code'];}
 function wp_remote_post($u,$a){global $calls;$calls[]=$u;return ['code'=>200,'body'=>json_encode(['access_token'=>'fixture-token'])];}
 function wp_remote_request($u,$a){global $calls;$calls[]=$u;
+ if ('PUT' === $a['method'] && (($a['headers']['Content-Length']??null)!=='0' || ($a['body']??null)!=='')) throw new RuntimeException('Empty PUT requires Content-Length 0');
  if(strpos($u,'indexing.googleapis.com')!==false)return ['code'=>403,'body'=>json_encode(['error'=>['message'=>'API has not been used or is disabled.','errors'=>[['reason'=>'accessNotConfigured']]]])];
  if(strpos($u,'siteVerification')!==false)return ['code'=>200,'body'=>json_encode(['items'=>[['site'=>['identifier'=>'example.test'],'owners'=>['OWNER@EXAMPLE.TEST']]]])];
  if(substr($u,-9)==='/sitemaps')return ['code'=>200,'body'=>json_encode(['sitemap'=>[['path'=>'https://example.test/sitemap_index.xml','errors'=>'0','warnings'=>'2','lastDownloaded'=>'2026-11-01T00:00:00Z']]])];
@@ -43,6 +44,6 @@ $r=$service->reindex('https://example.test/');
 check($r['http_code']===403 && !$r['accepted'],'403 never success');
 check(strpos($r['message'],'disabled')!==false,'Disabled API visible');
 check($r['reason']==='accessNotConfigured','Google error reason preserved');
-$client=new G;check(!$client->request('https://evil.test/')['ok'],'Arbitrary Google destination rejected');
+$client=new G;check($client->request('https://www.googleapis.com/webmasters/v3/sites/example/sitemaps/example','PUT')['ok'],'Empty Google PUT supported');check(!$client->request('https://evil.test/')['ok'],'Arbitrary Google destination rejected');
 check(!in_array('https://evil.test/',$calls,true),'Secret never sent to foreign host');
 echo "$n Search Console assertions passed\n";
