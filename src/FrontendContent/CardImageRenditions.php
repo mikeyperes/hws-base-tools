@@ -11,6 +11,11 @@ defined( 'ABSPATH' ) || exit;
  */
 final class CardImageRenditions implements ModuleInterface {
     public const SIZE = 'hws-card';
+    /** A loop card never needs a copy wider than medium_large, even on a sharp screen. */
+    public const MAX_CANDIDATE = 768;
+
+    /** @var float[] Boxed width of each Elementor container being rendered, outermost first (0 when not boxed). */
+    private static array $containers = [];
 
     public function register(): void {
         if ( did_action( 'after_setup_theme' ) ) {
@@ -20,6 +25,9 @@ final class CardImageRenditions implements ModuleInterface {
         }
         add_filter( 'image_size_names_choose', [ self::class, 'size_label' ] );
         add_filter( 'elementor/widget/render_content', [ self::class, 'card_sizes' ], 100, 2 );
+        // Elementor widgets carry no parent link, so the enclosing boxed width is tracked while containers render.
+        add_action( 'elementor/frontend/container/before_render', [ self::class, 'enter_container' ] );
+        add_action( 'elementor/frontend/container/after_render', [ self::class, 'leave_container' ] );
     }
 
     public static function register_size(): void {
@@ -62,6 +70,12 @@ final class CardImageRenditions implements ModuleInterface {
             // optimizer lazy-loads by script, or an eager one) can pick the largest file, so it is added only
             // when the image already carries loading="lazy".
             $value = 'lazy' === strtolower( (string) $tags->get_attribute( 'loading' ) ) ? 'auto, ' . $sizes : $sizes;
+            foreach ( [ 'srcset', 'data-srcset' ] as $attr ) {
+                $set = $tags->get_attribute( $attr );
+                if ( is_string( $set ) && '' !== $set ) {
+                    $tags->set_attribute( $attr, self::cap_srcset( $set ) );
+                }
+            }
             $tags->set_attribute( 'sizes', $value );
             if ( null !== $tags->get_attribute( 'data-sizes' ) ) {
                 $tags->set_attribute( 'data-sizes', $value );
@@ -131,24 +145,53 @@ final class CardImageRenditions implements ModuleInterface {
             : $viewport;
     }
 
-    /** @param object $widget */
-    private static function boxed_width( $widget ): float {
-        if ( ! method_exists( $widget, 'get_parent' ) ) {
-            return 0;
+    /** @param object $element Elementor container. */
+    public static function enter_container( $element ): void {
+        $width = 0.0;
+        $settings = is_object( $element ) && method_exists( $element, 'get_settings_for_display' ) ? $element->get_settings_for_display() : [];
+        if ( 'boxed' === ( $settings['content_width'] ?? '' ) ) {
+            $size = $settings['boxed_width'] ?? [];
+            if ( ! is_numeric( $size['size'] ?? null ) && class_exists( '\\Elementor\\Plugin' ) ) {
+                $size = \Elementor\Plugin::$instance->kits_manager->get_active_kit()->get_settings( 'container_width' );
+            }
+            if ( 'px' === ( $size['unit'] ?? 'px' ) && is_numeric( $size['size'] ?? null ) ) {
+                $width = max( 0, (float) $size['size'] );
+            }
         }
-        for ( $parent = $widget->get_parent(); $parent; $parent = $parent->get_parent() ) {
-            $settings = $parent->get_settings_for_display();
-            if ( 'boxed' !== ( $settings['content_width'] ?? '' ) ) {
-                continue;
-            }
-            $width = $settings['boxed_width'] ?? [];
-            if ( ! is_numeric( $width['size'] ?? null ) && class_exists( '\\Elementor\\Plugin' ) ) {
-                $width = \Elementor\Plugin::$instance->kits_manager->get_active_kit()->get_settings( 'container_width' );
-            }
-            if ( 'px' === ( $width['unit'] ?? 'px' ) && is_numeric( $width['size'] ?? null ) ) {
-                return max( 0, (float) $width['size'] );
+        self::$containers[] = $width;
+    }
+
+    public static function leave_container(): void {
+        array_pop( self::$containers );
+    }
+
+    /**
+     * The nearest enclosing boxed container's width, or 0 for a full-width grid.
+     *
+     * @param object $widget
+     */
+    private static function boxed_width( $widget ): float {
+        foreach ( array_reverse( self::$containers ) as $width ) {
+            if ( $width > 0 ) {
+                return $width;
             }
         }
         return 0;
+    }
+
+    /** Drop candidates wider than MAX_CANDIDATE, keeping the smallest when every one is wider. */
+    public static function cap_srcset( string $srcset ): string {
+        $keep = [];
+        $smallest = null;
+        foreach ( array_filter( array_map( 'trim', explode( ',', $srcset ) ) ) as $candidate ) {
+            $width = preg_match( '/\s(\d+)w$/', $candidate, $m ) ? (int) $m[1] : 0;
+            if ( null === $smallest || ( $width && $width < $smallest[1] ) ) {
+                $smallest = [ $candidate, $width ];
+            }
+            if ( ! $width || $width <= self::MAX_CANDIDATE ) {
+                $keep[] = $candidate;
+            }
+        }
+        return implode( ', ', $keep ?: ( $smallest ? [ $smallest[0] ] : [] ) );
     }
 }

@@ -10,11 +10,11 @@ medium through 360px, medium_large for wider cards. The browser can then choose
 For Elementor Loop Grid, Loop Carousel, Posts and Archive Posts, card-sized
 WordPress images (`attachment-medium` or `attachment-hws-card`) receive a
 responsive `sizes` attribute calculated from the list widget's column counts,
-pixel gaps and active breakpoints. A boxed ancestor supplies the content cap;
+pixel gaps and active breakpoints. The nearest boxed container, tracked while Elementor renders containers, supplies the content cap;
 full-width grids retain the viewport bound. Native lazy images additionally
 use `auto` for their actual measured slot. Existing loading priority, image
 ratio, crop, alt text, links, width and height stay intact. Other image sizes
-and widgets retain their own attributes. Processing happens at the list
+and widgets retain their own attributes. Card images offer no srcset candidate wider than 768px (medium_large). Processing happens at the list
 boundary so cached loop-item HTML gets the same correction.
 
 The feature adds no visitor-facing controls or assets. It corrects the existing

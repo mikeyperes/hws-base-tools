@@ -62,7 +62,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/ContentTypes/SharedContentTypes.php`.
 
 ### Responsive card photo renditions
-- **Does:** registers the uncropped 600px `hws-card` rendition. WordPress includes it in compatible responsive image candidates without enlarging small originals. Elementor Loop Grid, Loop Carousel, Posts and Archive Posts widgets derive medium-card `sizes` from their own columns, gaps, breakpoints and boxed container; native lazy images also use automatic slot sizing. No publication-specific classes, layout changes or front-end assets are needed.
+- **Does:** registers the uncropped 600px `hws-card` rendition. WordPress includes it in compatible responsive image candidates without enlarging small originals. Elementor Loop Grid, Loop Carousel, Posts and Archive Posts widgets derive medium-card `sizes` from their own columns, gaps, breakpoints and nearest boxed container (tracked while Elementor renders containers), and offer no copy wider than 768px; native lazy images also use automatic slot sizing. No publication-specific classes, layout changes or front-end assets are needed.
 - **Use:** keep `medium` for desktop card boxes up to 360px, or `medium_large` for wider lead cards. Run `wp media regenerate --image_size=hws-card --only-missing --skip-delete --yes` once for existing attachments. New uploads generate it automatically.
 - **Extend:** `hws_base_tools_card_image_sizes` accepts the calculated sizes and Elementor list widget for layouts that override native grid geometry.
 - **Details:** [Card image renditions](docs/card-image-renditions.md).
@@ -426,6 +426,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.48.5
+- Card photos: the boxed container width now reaches the card `sizes` (Elementor widgets have no parent link, so it is tracked while containers render); cards no longer declare a full-screen-based slot.
+- Card photos: loop cards offer no copy wider than 768px, so sharp screens never download 1024-2048px files for a card.
 
 ### 13.48.2
 - Stop Elementor taxonomy-filter cleanup from refreshing the old loop and adding duplicate history entries during page teardown.
