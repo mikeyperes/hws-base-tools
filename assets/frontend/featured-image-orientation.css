@@ -1,0 +1,9 @@
+/* HWS Base Tools: featured image orientation. Landscape is the design; portrait and square are the fallback. */
+.hws-fi-hero{--hws-fi-ratio:16/9}
+.hws-fi-hero.hws-fi-hero--3x2{--hws-fi-ratio:3/2}
+.hws-fi-hero .elementor-widget-container{aspect-ratio:var(--hws-fi-ratio);display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%}
+.hws-fi-hero .elementor-widget-container>a{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+.hws-fi-hero img.hws-fi-landscape{width:100%!important;height:100%!important;max-width:none!important;aspect-ratio:auto!important;object-fit:cover!important;object-position:var(--hws-fi-focus,50% 50%)}
+.hws-fi-hero img.hws-fi-portrait,.hws-fi-hero img.hws-fi-square{width:auto!important;height:100%!important;max-width:100%!important;aspect-ratio:auto!important;object-fit:contain!important}
+.hws-fi-hero .elementor-widget-container:has(img.hws-fi-portrait,img.hws-fi-square){background:var(--hws-fi-backdrop,color-mix(in srgb,currentColor 7%,transparent))}
+@media (max-width:767px){.hws-fi-hero .elementor-widget-container:has(img.hws-fi-portrait){aspect-ratio:4/5;max-height:70vh}.hws-fi-hero .elementor-widget-container:has(img.hws-fi-square){aspect-ratio:1}}

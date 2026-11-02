@@ -101,6 +101,7 @@ final class CoreIntegration {
             ->add_module( new FontSmoothing() )
             ->add_module( new SkipLinkTarget() )
             ->add_module( new \HWS\BaseTools\FrontendContent\CardImageRenditions() )
+            ->add_module( new \HWS\BaseTools\FrontendContent\FeaturedImageOrientation() )
             ->add_module( new FeedSwitches() )
             ->add_module( new FeedSitemapSettings() )
             ->add_module( new \Hexa\PluginCore\Sitemaps\SitemapModule() )

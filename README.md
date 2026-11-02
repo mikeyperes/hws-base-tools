@@ -71,6 +71,13 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Details:** [Page collections](docs/page-collections.md).
 - **Code:** `src/ContentTypes/PageCollections.php`.
 
+### Featured image orientation
+- **Does:** heroes are designed for a landscape featured photo. When a story's featured photo is portrait or square, it is marked with its shape (`hws-fi-landscape`, `hws-fi-portrait`, `hws-fi-square`, from the photo's saved width and height) and the hero shows it whole on a soft backdrop inside the same box instead of zooming in and cutting it. Landscape photos fill the box. On phones a portrait box turns 4:5, capped at 70% of the screen height. No script.
+- **Use:** add the CSS class `hws-fi-hero` to the hero's Image widget (16:9 box), plus `hws-fi-hero--3x2` for a 3:2 box. Optional variables: `--hws-fi-focus` (photo focus point), `--hws-fi-backdrop` (fallback backdrop).
+- **Settings:** Site & Brand → Featured Image Orientation: one switch for the front page and one for each content type whose single page shows a featured image. All are on by default; nothing changes until a hero carries `hws-fi-hero`.
+- **Details:** [Featured image orientation](docs/featured-image-orientation.md).
+- **Code:** `src/FrontendContent/FeaturedImageOrientation.php`, `assets/frontend/featured-image-orientation.css`.
+
 ### Team landing page
 - **Does:** Team Member profiles have no post-type archive, so a real Team page at `/team/` remains the landing page for `[hws_team_members]`. Individual profile URLs remain available, matching Services' landing-page behavior. Flush rewrite rules after upgrading an existing site.
 - **Code:** `src/ContentTypes/SharedContentTypes.php`.
@@ -440,6 +447,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.54.0
+- Added Featured Image Orientation: landscape-first heroes with a portrait and square fallback, switched per front page and content type single page. Bundles Hexa WP Core 3.48.2.
 
 ### 13.53.2
 - Added verification support for Cloudflare's exact official always-pass development key pair, whose documented response uses example.com with no action. Real widget keys retain strict host/action validation.

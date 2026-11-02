@@ -73,7 +73,7 @@ final class DashboardRegistry {
         $groups = [];
         $definitions = [
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
-            'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'breadcrumbs', '404-page', 'brand-templates', 'website-types', 'founders', 'pages', 'menu-tools', 'footer-text' ],
+            'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'featured-image-orientation', 'breadcrumbs', '404-page', 'brand-templates', 'website-types', 'founders', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'team', 'features', 'search', 'shortcodes', 'comments' ],
             'Operations' => [ 'ajax-navigation', 'maintenance-mode', 'external-publishing', 'payments', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'search-console', 'instant-indexing', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'form-protection', 'masked-login' ],
@@ -186,6 +186,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'review-center', 'Review Center', [ \HWS\BaseTools\ReviewCenter\ReviewCenterModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-assets', 'Brand Assets', 'hws_base_tools\\render_tab_brand_assets' ) );
         $this->add( new DashboardModuleDefinition( 'page-layout-styling', 'Default Page Content', [ \HWS\BaseTools\PageLayoutStyling\PageLayoutAdmin::class, 'render' ] ) );
+        $this->add( new DashboardModuleDefinition( 'featured-image-orientation', 'Featured Image Orientation', [ \HWS\BaseTools\FrontendContent\FeaturedImageOrientation::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'brand-templates', 'Brand Templates', [ \HWS\BaseTools\BrandTemplates\BrandTemplatesAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'pages', 'Pages', 'hws_base_tools\\display_settings_pages', [ 'settings-dashboard-pages.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'features', 'Features', 'hws_base_tools\\display_settings_features', [
