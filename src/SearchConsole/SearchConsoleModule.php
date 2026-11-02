@@ -24,8 +24,8 @@ final class SearchConsoleModule implements ModuleInterface {
             case 'reindex':return $service->reindex(esc_url_raw((string)($input['url']??$input['page']??'')));
             case 'credential':return GoogleClient::save((string)($input['json']??''));
             case 'property':
-                $value=(string)($input['property']??'');$host=wp_parse_url(home_url('/'),PHP_URL_HOST);
-                if($value!=='sc-domain:'.$host && $value!==home_url('/')) return ['ok'=>false,'message'=>'Property must be this site\'s exact domain or URL prefix.'];
+                $value=(string)($input['property']??'');
+                if(!in_array($value,SearchConsoleService::candidates(),true)) return ['ok'=>false,'message'=>'Property must be this site\'s domain, a covering parent domain or HTTPS URL prefix.'];
                 update_option('hws_base_tools_search_console_property',$value,false);return ['ok'=>true,'property'=>$value];
             default:return ['ok'=>false,'message'=>'Unknown Search Console action.'];
         }

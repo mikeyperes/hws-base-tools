@@ -6,7 +6,7 @@ Runtime calls Google directly. No Site Kit or Code service dependency. Signing J
 
 Base path `/wp-json/hws-base-tools/v1/search-console/`.
 
-- GET `status`: no input. Output `{configured,property,console_url,registered:null|boolean,permission?,owners:[],owners_scope,owners_response?,property_response?,sitemaps:[],sitemaps_response?}`. Each sitemap retains Google's path, errors, warnings, lastDownloaded, lastSubmitted, isPending, contents and type. A missing key returns configured=false with an explanation. A 403 is unknown registration, never falsely reported unregistered. Direct verified owners are available only through Site Verification, not a complete delegated Search Console access list.
+- GET `status`: no input. Output `{configured,property,console_url,registered:null|boolean,property_attempts:[],permission?,owners:[],owners_scope,owners_response?,property_response?,sitemaps:[],sitemaps_response?}`. Each sitemap retains Google's path, errors, warnings, lastDownloaded, lastSubmitted, isPending, contents and type. A missing key returns configured=false with an explanation. A 403 is unknown registration, never falsely reported unregistered. Direct verified owners are available only through Site Verification, not a complete delegated Search Console access list.
 - POST `credential`: `{json:"service-account JSON"}` returns `{ok,configured}` or `{ok:false,message}`. Write-only. Do not put secrets in URLs, command arguments, debug logs or screenshots.
 - POST `property`: `{property:"sc-domain:example.com"}` or exact home URL with trailing slash; returns `{ok,property}`. Rejects unrelated properties.
 - POST `submit`: `{id:"index"}` from shared registry; returns `{id,url,ok,http_code,reason,message,data}`. Only this site's registered sitemap URLs are accepted.
@@ -26,3 +26,31 @@ Google uses a signed RS256 OAuth assertion with webmasters, siteverification and
 - https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect
 - https://developers.google.com/site-verification/v1/webResource
 - https://developers.google.com/search/apis/indexing-api/v3/using-api
+
+## Property resolution (13.52.3)
+
+Every service operation discovers the first accessible property in this order:
+the exact host domain property, each successively shorter parent domain property
+(excluding single-label suffixes), then `https://<host>/`. For example,
+`podcast.michaelperes.com` tries `sc-domain:podcast.michaelperes.com`,
+`sc-domain:michaelperes.com`, then `https://podcast.michaelperes.com/`.
+A stored property preference does not bypass this order. The property-setting
+endpoint accepts only these covering candidates; it never creates or verifies
+a Google property.
+
+Resolution is reused within a service instance, including submit-all. Status
+returns the selected `property`, its `console_url`, and ordered
+`property_attempts`. Owners match only the selected property, and sitemaps and
+submission use that property's endpoint. Inspection passes it as `siteUrl`.
+Action results also return `property`. Page and sitemap inputs must still belong
+to this site's exact host, even when a parent domain is selected.
+
+404 and 403 permit trying the next candidate; transport, authentication and
+other provider errors stop discovery. When none succeeds, any unknown/error
+response takes precedence over a definitive not-found response. Submission,
+inspection and reindex do not proceed without an accessible property.
+
+Google's Indexing API accepts a page URL and type, not a Search Console
+property parameter. Reindex therefore checks the resolved property first,
+returns it in the result, then sends the unchanged page notification payload.
+Live acceptance checks use status only; they never submit or reindex a URL.
