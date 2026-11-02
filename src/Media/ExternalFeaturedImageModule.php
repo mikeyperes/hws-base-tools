@@ -29,7 +29,10 @@ final class ExternalFeaturedImageModule implements ModuleInterface {
         require_once ABSPATH . 'wp-admin/includes/media.php';
         require_once ABSPATH . 'wp-admin/includes/image.php';
         $key = (string)($assoc['meta-key'] ?? 'fifu_image_url');
-        $sql = $wpdb->prepare("SELECT DISTINCT p.ID FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id=p.ID WHERE m.meta_key=%s AND m.meta_value<>'' AND p.post_type NOT IN ('attachment','revision')", $key);
+        $fallback = $key === 'fifu_image_url'
+            ? " OR (a.post_author='7777777777' AND a.post_content_filtered REGEXP '^https?://')"
+            : '';
+        $sql = $wpdb->prepare("SELECT DISTINCT p.ID FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} m ON m.post_id=p.ID AND m.meta_key=%s LEFT JOIN {$wpdb->postmeta} t ON t.post_id=p.ID AND t.meta_key='_thumbnail_id' LEFT JOIN {$wpdb->posts} a ON a.ID=CAST(t.meta_value AS UNSIGNED) AND a.post_type='attachment' WHERE (m.meta_value<>'' {$fallback}) AND p.post_type NOT IN ('attachment','revision')", $key);
         if (isset($assoc['post-type'])) {
             $sql .= $wpdb->prepare(' AND p.post_type=%s', $assoc['post-type']);
         }
@@ -37,6 +40,12 @@ final class ExternalFeaturedImageModule implements ModuleInterface {
         $failed = 0;
         foreach ($ids as $id) {
             $url = trim((string)get_post_meta($id, $key, true));
+            if ($url === '' && $key === 'fifu_image_url') {
+                $old = get_post((int)get_post_meta($id, '_thumbnail_id', true));
+                if ($old && $old->post_type === 'attachment' && $old->post_author === '7777777777') {
+                    $url = trim($old->post_content_filtered);
+                }
+            }
             $result = ['post_id'=>(int)$id, 'post_url'=>get_permalink($id), 'source_url'=>$url];
             $temp = null;
             try {
