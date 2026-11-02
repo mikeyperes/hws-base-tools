@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Direct protected Google Search Console engine, sitemap submission, URL inspection and explicit Indexing API errors. [Endpoints](docs/search-console-engine.md).
+
 - Shared Core sitemap recommendation engine, saved conditions and explicit Rank Math administrator actions. [Endpoints](docs/sitemap-engine.md).
 
 - **Display Conditions**: opt-in named site conditions, native Elementor visibility, WP-CLI management and a report-first JetEngine migration. [Documentation](docs/display-conditions.md).

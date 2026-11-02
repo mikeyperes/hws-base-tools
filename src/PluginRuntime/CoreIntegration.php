@@ -105,6 +105,7 @@ final class CoreIntegration {
             ->add_module( new FeedSitemapSettings() )
             ->add_module( new \Hexa\PluginCore\Sitemaps\SitemapModule() )
             ->add_module( new \HWS\BaseTools\SitemapTools\Recommendations() )
+            ->add_module( new \HWS\BaseTools\SearchConsole\SearchConsoleModule() )
             ->add_module( new FeedListShortcode() )
             ->add_module( new ExternalPublishingModule() )
             ->add_module( new \HWS\BaseTools\ElementorFonts\CustomFontModule() )

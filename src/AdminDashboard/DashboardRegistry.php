@@ -75,7 +75,7 @@ final class DashboardRegistry {
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'breadcrumbs', '404-page', 'brand-templates', 'website-types', 'founders', 'pages', 'menu-tools', 'footer-text' ],
             'Content' => [ 'custom-post-types', 'team', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'ajax-navigation', 'maintenance-mode', 'external-publishing', 'payments', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
+            'Operations' => [ 'ajax-navigation', 'maintenance-mode', 'external-publishing', 'payments', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'search-console', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
             'Security' => [ 'form-protection', 'masked-login' ],
             'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
@@ -209,6 +209,7 @@ final class DashboardRegistry {
             'settings-dashboard-site-profile.php',
             'settings-dashboard-sitemaps.php',
         ] ) );
+        $this->add( new DashboardModuleDefinition( 'search-console', 'Search Console', [ \HWS\BaseTools\SearchConsole\SearchConsoleModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'seo', 'SEO & Rank Math', 'hws_base_tools\\render_tab_seo', [ 'settings-dashboard-rank-math-settings.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'cleanup', 'Cleanup', 'hws_base_tools\\display_settings_cleanup', [ 'settings-dashboard-cleanup.php' ] ) );
         $this->add( new DashboardModuleDefinition( 'backups', 'Backups', 'hws_base_tools\\render_tab_backups', [ 'settings-dashboard-backups.php' ] ) );
