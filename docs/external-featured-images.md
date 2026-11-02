@@ -5,3 +5,5 @@ Run `wp hws media import-external-featured --dry-run` before the real command. O
 Assets: none. Registration is CLI-only; no admin or front-end assets or rendering.
 
 The default provider also detects FIFU placeholder thumbnail attachments by their provider author marker and HTTP source in post_content_filtered. This covers records with no fifu_image_url field. An explicitly selected custom meta key does not enable that provider fallback.
+
+Passive SVG artwork is accepted through a strict element/attribute validation pass that rejects scripts, foreign objects, entities, event attributes, inline styles, and external references. A scoped upload MIME filter applies only to the validated sideload and is removed immediately. Native vector dimensions are stored; SVGs scale without raster crop files. Unsupported SVGs preserve the current thumbnail and report an error.

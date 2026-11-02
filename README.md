@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- **Import external featured images:** explicit `wp hws media import-external-featured [--dry-run] [--post-type=<type>] [--meta-key=<key>]` imports source URLs (default `fifu_image_url`, with detection of FIFU placeholder attachments even when their post URL meta is missing) into ordinary WordPress attachments, generates registered sizes, derives filenames and alt text from titles, and reuses local media by URL hash. Prints one JSON result per post. Dead or invalid images leave the current featured image intact. No automatic downloads or visitor output. See [command details](docs/external-featured-images.md).
+- **Import external featured images:** explicit `wp hws media import-external-featured [--dry-run] [--post-type=<type>] [--meta-key=<key>]` imports source URLs (default `fifu_image_url`, with detection of FIFU placeholder attachments even when their post URL meta is missing) into ordinary WordPress attachments, generates registered sizes, derives filenames and alt text from titles, and reuses local media by URL hash. Prints one JSON result per post. Passive SVG artwork is validated and imported with native vector dimensions without enabling SVG uploads globally. Dead or invalid images leave the current featured image intact. No automatic downloads or visitor output. See [command details](docs/external-featured-images.md).
 
 - Sitemap helper exclusions, collision-safe change actions, and company/store-only local business recommendations.
 

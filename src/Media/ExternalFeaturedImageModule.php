@@ -62,7 +62,9 @@ final class ExternalFeaturedImageModule implements ModuleInterface {
                     throw new \RuntimeException('Source returned HTTP ' . $status . '; current featured image preserved.');
                 }
                 $mime = wp_get_image_mime($temp);
-                $extensions = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif','image/avif'=>'avif'];
+                $svg = $mime ? null : $this->svg_dimensions($temp);
+                if ($svg) { $mime = 'image/svg+xml'; }
+                $extensions = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif','image/avif'=>'avif','image/svg+xml'=>'svg'];
                 if (!isset($extensions[$mime])) {
                     throw new \RuntimeException('Response is not a supported image; current featured image preserved.');
                 }
@@ -80,11 +82,22 @@ final class ExternalFeaturedImageModule implements ModuleInterface {
                     if (!$attachment) {
                         $title = wp_strip_all_tags(get_the_title($id));
                         $name = sanitize_title($title) ?: 'featured-image';
-                        $attachment = media_handle_sideload(['name'=>$name . '-' . substr($hash,0,12) . '.' . $extensions[$mime], 'tmp_name'=>$temp], (int)$id, $title);
+                        $svg_mimes = static function(array $mimes): array { $mimes['svg'] = 'image/svg+xml'; return $mimes; };
+                        if ($svg) { add_filter('upload_mimes', $svg_mimes); }
+                        try {
+                            $attachment = media_handle_sideload(['name'=>$name . '-' . substr($hash,0,12) . '.' . $extensions[$mime], 'tmp_name'=>$temp], (int)$id, $title);
+                        } finally {
+                            if ($svg) { remove_filter('upload_mimes', $svg_mimes); }
+                        }
                         if (is_wp_error($attachment)) {
                             throw new \RuntimeException($attachment->get_error_message());
                         }
                         $temp = null;
+                        if ($svg) {
+                            $svg['file'] = get_post_meta($attachment, '_wp_attached_file', true);
+                            $svg['sizes'] = [];
+                            wp_update_attachment_metadata($attachment, $svg);
+                        }
                         update_post_meta($attachment, '_wp_attachment_image_alt', $title);
                     }
                     update_post_meta($attachment, '_hws_external_featured_url_hash', $hash);
@@ -108,6 +121,41 @@ final class ExternalFeaturedImageModule implements ModuleInterface {
         \WP_CLI::line(wp_json_encode(['total'=>count($ids),'failed'=>$failed,'dry_run'=>isset($assoc['dry-run'])]));
         if ($failed) {
             \WP_CLI::halt(1);
+        }
+    }
+
+    /** Accept passive vector artwork only; no global SVG upload setting changes. */
+    private function svg_dimensions(string $file): ?array {
+        if (!class_exists('DOMDocument')) { return null; }
+        $xml = file_get_contents($file);
+        if (!is_string($xml) || stripos($xml, '<svg') === false ||
+            preg_match('/<!DOCTYPE|<!ENTITY|<\?(?!xml)/i', $xml)) { return null; }
+        $doc = new \DOMDocument();
+        $previous = libxml_use_internal_errors(true);
+        try {
+            if (!$doc->loadXML($xml, LIBXML_NONET) || !$doc->documentElement ||
+                $doc->documentElement->localName !== 'svg') { return null; }
+            $tags = ['svg','g','path','defs','rect','circle','ellipse','line','polyline','polygon',
+                'text','tspan','title','desc','linearGradient','radialGradient','stop','clipPath',
+                'mask','use','symbol','pattern','marker'];
+            foreach ($doc->getElementsByTagName('*') as $element) {
+                if (!in_array($element->localName, $tags, true)) { return null; }
+                foreach ($element->attributes as $attr) {
+                    if (stripos($attr->localName, 'on') === 0 ||
+                        in_array($attr->localName, ['base','style'], true) ||
+                        ($attr->localName === 'href' && !str_starts_with($attr->value, '#')) ||
+                        preg_match('/url\(\s*[^#]|javascript:|data:/i', $attr->value)) { return null; }
+                }
+            }
+            $root = $doc->documentElement;
+            $box = preg_split('/[\s,]+/', trim($root->getAttribute('viewBox')));
+            $width = count($box) === 4 ? (float)$box[2] : (float)$root->getAttribute('width');
+            $height = count($box) === 4 ? (float)$box[3] : (float)$root->getAttribute('height');
+            return $width > 0 && $height > 0
+                ? ['width'=>(int)ceil($width), 'height'=>(int)ceil($height)] : null;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
         }
     }
 
