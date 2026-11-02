@@ -184,7 +184,15 @@ final class SitemapFeedRegistry {
 
         $sitemaps = (array) apply_filters( self::SITEMAPS_FILTER, $sitemaps );
 
-        return self::normalise( $sitemaps );
+        // The shared engine is the single registry; retain the legacy extension hook.
+        $shared = [];
+        foreach ( \Hexa\PluginCore\Sitemaps\RecommendationRegistry::lookup()['rows'] as $row ) {
+            $shared[$row['id']] = array_merge($row, ['group'=>implode(', ', $row['recommended_by']), 'available'=>true]);
+        }
+        foreach ($sitemaps as $key=>$entry) {
+            if (!in_array($entry['url'], array_column($shared,'url'), true)) $shared[$key]=$entry;
+        }
+        return self::normalise( $shared );
     }
 
     public static function is_disabled( string $key ): bool {
