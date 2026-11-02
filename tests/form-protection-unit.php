@@ -57,7 +57,7 @@ expect_form($c->reason($token,'wpforms:4',3,999)==='invalid_token','future token
 expect_form($c->reason($token,'wpforms:4',3,8201)==='invalid_token','expired token rejected');
 expect_form($c->reason('','wpforms:4',3,1003)==='missing_token','missing challenge rejected');
 $s=Settings::get();expect_form(!$s['enabled']&&!$s['turnstile_enabled'],'new feature and Turnstile are off by default');
-$providerCalls=0;$p=new Protection($c,function($provider,$v,$settings)use(&$providerCalls){$providerCalls++;return $v==='valid'?null:$provider.'_invalid';});
+$providerCalls=0;$p=new Protection($c,function($provider,$v,$settings)use(&$providerCalls){$providerCalls++;return $v==='valid'?null:($provider==='turnstile'?'turnstile':'recaptcha_invalid');});
 expect_form($p->reason(['hws_form_honeypots'=>array_fill_keys(Honeypots::names('wpforms:4'),'bot')],'wpforms:4',$s,1003)===null,'disabled protection changes no submission');
 $s['enabled']=true;$names=Honeypots::names('wpforms:4');$post=['hws_form_token'=>$token,'hws_form_honeypots'=>array_fill_keys($names,'')];
 expect_form($p->reason($post,'wpforms:4',$s,1003)===null,'normal submission accepted');
@@ -66,7 +66,7 @@ expect_form($p->reason(array_replace($post,['hws_form_honeypots'=>array_fill_key
 expect_form($p->reason(array_replace($post,['hws_form_honeypots'=>[$names[0]=>[]]]),'wpforms:4',$s,1003)==='honeypot','array honeypot is not silently accepted');
 $s['bot_check']='turnstile';
 expect_form($p->reason($post,'wpforms:4',$s,1003)==='turnstile_missing','missing optional Turnstile response blocked when required');
-expect_form($p->reason($post+['cf-turnstile-response'=>'invalid'],'wpforms:4',$s,1003)==='turnstile_invalid','failed Turnstile verification blocked');
+expect_form($p->reason($post+['cf-turnstile-response'=>'invalid'],'wpforms:4',$s,1003)==='turnstile','failed Turnstile verification blocked');
 expect_form($p->reason($post+['cf-turnstile-response'=>'valid'],'wpforms:4',$s,1003)===null,'verified Turnstile accepted');
 expect_form($providerCalls===2,'Turnstile verifier called only with a response when enabled');
 $module=new FormProtectionModule;$module->register();
@@ -148,7 +148,7 @@ $verifier=new BotCheck(function($url,$body)use(&$data,&$requests){$requests[]=[$
 foreach(['turnstile','recaptcha']as$provider){
  $data['action']=BotCheck::action($provider);
  expect_form($verifier->reason($provider,'valid',$off,'example.com','192.0.2.1')===null,'verified provider accepted: '.$provider);
- foreach([null,[],['success'=>false],array_replace($data,['hostname'=>'evil.invalid']),array_replace($data,['action'=>'wrong'])]as$bad){$good=$data;$data=$bad;expect_form($verifier->reason($provider,'bad',$off,'example.com','')===$provider.'_invalid','provider response fails closed: '.$provider);$data=$good;}
+ foreach([null,[],['success'=>false],array_replace($data,['hostname'=>'evil.invalid']),array_replace($data,['action'=>'wrong'])]as$bad){$good=$data;$data=$bad;expect_form($verifier->reason($provider,'bad',$off,'example.com','')===($provider==='turnstile'?'turnstile':'recaptcha_invalid'),'provider response fails closed: '.$provider);$data=$good;}
  expect_form($p->reason([],'wpforms:4',array_replace($off,['bot_check'=>$provider]),1003)===$provider.'_missing','missing provider response: '.$provider);
  expect_form($p->reason([$provider==='turnstile'?'cf-turnstile-response':'g-recaptcha-response'=>[]],'wpforms:4',array_replace($off,['bot_check'=>$provider]),1003)===$provider.'_missing','array provider response rejected: '.$provider);
 }
@@ -175,4 +175,12 @@ expect_form(FormProtectionModule::elementor_dynamic(false,['widgetType'=>'form']
 expect_form(!FormProtectionModule::elementor_dynamic(false,['widgetType'=>'heading']),'unrelated Elementor widgets keep caching');
 $options[Settings::OPTION]=Settings::sanitize(['enabled'=>false]);
 expect_form(!FormProtectionModule::elementor_dynamic(false,['widgetType'=>'form']),'disabled protection preserves native Elementor caching');
+$store=new \Hexa\PluginCore\CredentialVault\CredentialStore;
+$store->store('hws-base-tools','form_turnstile_secret','1x0000000000000000000000000000000AA');
+$data=['success'=>true,'hostname'=>'example.com'];$testSettings=array_replace($off,['site_key'=>'1x00000000000000000000AA']);
+expect_form($verifier->reason('turnstile','XXXX.DUMMY.TOKEN.XXXX',$testSettings,'hexatiger.com','')===null,'official always-pass test pair supports documented fixed hostname and absent action');
+expect_form($verifier->reason('turnstile','dummy',$off,'hexatiger.com','')==='turnstile','test hostname exception never applies to real site keys');
+$data=['success'=>false,'hostname'=>'example.com'];expect_form($verifier->reason('turnstile','dummy',$testSettings,'hexatiger.com','')==='turnstile','failed verification logs legacy turnstile reason even with test site key');
+$store->store('hws-base-tools','form_turnstile_secret','different-secret');$data=['success'=>true,'hostname'=>'example.com'];
+expect_form($verifier->reason('turnstile','dummy',$testSettings,'hexatiger.com','')==='turnstile','test hostname exception requires exact official secret as well as site key');
 echo $checks.' checks, '.count($failures)." failures\n";exit($failures?1:0);

@@ -24,7 +24,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Switch:** master switch remains off on new sites; independent switches and provider choice are in Security, Form protection, saved in `hws_base_tools_form_protection` and exposed by `wp hws forms protection status|set`.
 - **Defaults:** two distinct stable honeypot names per form; three-second minimum; header check off until enabled; Turnstile selected at first key setup; reCAPTCHA score 0.5. Both secrets use Core's protected credential store and are refused in CLI arguments.
 - **Read:** `wp hws forms blocked` and the administrator-only `/wp-json/hws-base-tools/v1/form-protection/blocked` endpoint expose only time, form, IP and reason. `wp hws forms signals` reads missing-language signals, which never reject a submission.
-- **Use:** automatic native validation; no firewall, redirects, site-wide blocks or external notification changes.
+- **Use:** automatic native validation; no firewall, redirects, site-wide blocks or external notification changes. Exact official Cloudflare development key pairs are supported for controlled acceptance tests; real keys retain strict hostname and action checks.
 - **Code:** `src/FormProtection/` and form-scoped `assets/form-protection/protection.js`.
 - **Details:** [Settings, native hooks, markup, reason codes and tests](docs/form-protection.md). [Acceptance evidence](docs/form-protection-acceptance.md).
 
@@ -440,6 +440,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.53.2
+- Added verification support for Cloudflare's exact official always-pass development key pair, whose documented response uses example.com with no action. Real widget keys retain strict host/action validation.
+- Preserved the original turnstile rejection reason for failed server verification. Bundles Hexa WP Core 3.48.2.
 
 ### 13.53.1
 - Fixed Elementor's cached documents dropping protection JavaScript: register cached handles early, render protected form widgets dynamically and clear Elementor's markup cache through its public API when protection settings change.
