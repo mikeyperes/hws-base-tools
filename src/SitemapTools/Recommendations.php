@@ -40,12 +40,6 @@ final class Recommendations implements ModuleInterface {
         $rows['news']['recommended']=$publication && (bool)get_option('hws_base_tools_google_news_approved',false);
         $rows['news']['recommended_by']=[$publication?'SMP Publication':'HWS Base Tools'];
         $rows['news']['google_news_approved']=(bool)get_option('hws_base_tools_google_news_approved',false);
-        $titles=(array)get_option('rank-math-options-titles',[]);
-        $address=(array)($titles['local_address']??[]);
-        $real=!empty($address['streetAddress']) && !empty($address['addressLocality']) && !empty($address['addressCountry']);
-        $rows['local']['recommended']=$real;
-        $rows['local']['recommended_by']=['HWS Base Tools (business address)'];
-        if(isset($rows['post_type_rank_math_locations'])) $rows['post_type_rank_math_locations']['recommended']=$real;
         if(isset($rows['taxonomy_product_tag'])) {$rows['taxonomy_product_tag']['recommended']=false;$rows['taxonomy_product_tag']['recommended_by']=['WooCommerce'];}
         if(isset($rows['taxonomy_product_cat'])) {$rows['taxonomy_product_cat']['recommended']=$has('woocommerce') && $rows['taxonomy_product_cat']['counts']['total'] > $rows['taxonomy_product_cat']['condition']['more_than'];$rows['taxonomy_product_cat']['recommended_by']=['WooCommerce'];}
         foreach ((array)apply_filters('hws_base_tools_sitemaps',[]) as $id=>$extra) {
@@ -53,7 +47,23 @@ final class Recommendations implements ModuleInterface {
             if (in_array($extra['url'],array_column($rows,'url'),true)) continue;
             $rows[$id]=array_merge(['id'=>$id,'label'=>$id,'kind'=>'external','name'=>'','url'=>'','setting'=>'','recommended'=>true,'recommended_by'=>[$extra['group']??'External plugin'],'current'=>false,'available'=>true],$extra);
         }
-        return (array)apply_filters('hws_base_tools_sitemap_recommendations',$rows,$site_type);
+        return self::local_policy((array)apply_filters('hws_base_tools_sitemap_recommendations',$rows,$site_type),$site_type);
+    }
+    public static function local_policy(array $rows,string $site_type): array {
+        $titles=(array)get_option('rank-math-options-titles',[]);
+        $address=(array)($titles['local_address']??[]);
+        $street=trim((string)($address['streetAddress']??''));
+        $has_street=''!==$street && !preg_match('/\b(?:p\.?\s*o\.?\s*box|post office box)\b/i',$street);
+        $complete=$has_street && ''!==trim((string)($address['addressLocality']??'')) && ''!==trim((string)($address['addressCountry']??''));
+        $eligible=in_array($site_type,['company_website','ecommerce_website'],true);
+        $on=$eligible && $complete;
+        if(isset($rows['local'])){
+            $rows['local']['recommended']=$on;
+            $rows['local']['recommended_by']=['HWS Base Tools (company/store with street address)'];
+            $rows['local']['local_business_eligibility']=['site_type'=>$site_type,'eligible_site_type'=>$eligible,'address_option'=>'rank-math-options-titles','address_field'=>'local_address','street_field'=>'streetAddress','present_fields'=>array_keys(array_filter($address,static fn($value)=>is_scalar($value) && ''!==trim((string)$value))),'has_street_address'=>(bool)$has_street,'has_complete_address'=>(bool)$complete];
+        }
+        if(isset($rows['post_type_rank_math_locations']))$rows['post_type_rank_math_locations']['recommended']=$on;
+        return $rows;
     }
     public static function check($result,array $row) {
         if(is_array($result)) return $result;
