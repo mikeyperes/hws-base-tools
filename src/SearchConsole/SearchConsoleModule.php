@@ -20,8 +20,8 @@ final class SearchConsoleModule implements ModuleInterface {
             case 'status':return $service->status();
             case 'submit':return $service->submit(sanitize_key((string)($input['id']??'')));
             case 'submit-all':return $service->submit_all();
-            case 'inspect':return $service->inspect(esc_url_raw((string)($input['url']??'')));
-            case 'reindex':return $service->reindex(esc_url_raw((string)($input['url']??'')));
+            case 'inspect':return $service->inspect(esc_url_raw((string)($input['url']??$input['page']??'')));
+            case 'reindex':return $service->reindex(esc_url_raw((string)($input['url']??$input['page']??'')));
             case 'credential':return GoogleClient::save((string)($input['json']??''));
             case 'property':
                 $value=(string)($input['property']??'');$host=wp_parse_url(home_url('/'),PHP_URL_HOST);

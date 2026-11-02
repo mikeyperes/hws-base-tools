@@ -16,7 +16,7 @@ Base path `/wp-json/hws-base-tools/v1/search-console/`.
 
 AJAX: prefix `hws_base_tools_search_console_` plus status, submit, submit_all, inspect, reindex, credential or property. POST action, nonce and the same fields. Standard `{success,data}` wrapper; inspect inner `data.ok` for provider outcomes.
 
-CLI: `wp hws search-console status|submit|submit-all|inspect|reindex|property`, with `--id`, `--url` or `--property`. `wp hws search-console credential` reads the JSON only from standard input, returns presence-only status. Trusted site operating-system account is the CLI authority. No read-key command exists.
+CLI: `wp hws search-console status|submit|submit-all|inspect|reindex|property`, with `--id`, `--page` or `--property` (`--url` is reserved by WP-CLI itself). `wp hws search-console credential` reads the JSON only from standard input, returns presence-only status. Trusted site operating-system account is the CLI authority. No read-key command exists.
 
 Google uses a signed RS256 OAuth assertion with webmasters, siteverification and indexing scopes. Service tokens remain in request memory. Google API response codes and messages are surfaced; secrets are not returned.
 
