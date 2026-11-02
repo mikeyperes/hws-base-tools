@@ -58,3 +58,7 @@ Off by default. A protected form render enqueues only assets/form-protection/pro
 
 ## AJAX navigation 13.48.0
 No new asset handles. Home, article and feature pages load the same Turbo/navigation pair only when eligible navigation is enabled; admin AJAX Navigation retains its existing settings assets. The adapter now morphs public bodies with connected permanent nodes and lets Turbo own safe GET forms. POST/admin exclusions are unchanged.
+
+## Display Conditions
+
+No frontend or editor assets added. Core admin UI assets load only when the Display Conditions tab renders.

@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- **Display Conditions**: opt-in named site conditions, native Elementor visibility, WP-CLI management and a report-first JetEngine migration. [Documentation](docs/display-conditions.md).
+
 ### Form protection
 - **Does:** one default-off per-site switch adds honeypot and signed minimum-fill-time checks to Elementor Pro, Contact Form 7, Gravity Forms and WPForms through their native validation/spam hooks. Optional Cloudflare Turnstile uses protected keys.
 - **Admin:** Security, Form protection. Three-second minimum; 14-day retention, at most 5,000 blocked attempts.

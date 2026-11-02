@@ -76,6 +76,7 @@ final class CoreIntegration {
         self::$bootstrap
             ->add_module( new LegacyEventBridge() )
             ->add_module( new DashboardAssets() )
+            ->add_module( new \HWS\BaseTools\DisplayConditions\DisplayConditionsModule() )
             ->add_module( new QuickStartModule() )
             ->add_module( new ReviewCenterModule() )
             ->add_module( new LiteSpeedModule() )
