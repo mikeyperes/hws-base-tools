@@ -18,5 +18,5 @@ final class InstantIndexingModule implements ModuleInterface {
             \WP_CLI::line(wp_json_encode('test'===$verb?IndexNowService::test((string)($assoc['page']??'')):IndexNowService::status()));
         });
     }
-    public static function render(): void {echo '<div id="hws-instant-indexing">Instant Indexing engine is ready. Screen design pending.</div>';}
+    public static function render(): void { InstantIndexingScreen::render(); }
 }

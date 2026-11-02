@@ -6,6 +6,7 @@ use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
 use HWS\BaseTools\SitemapTools\FeedListShortcode;
 use HWS\BaseTools\SitemapTools\FeedSitemapSettings;
+use HWS\BaseTools\SitemapTools\RecommendationsPanel;
 use HWS\BaseTools\SitemapTools\SitemapFeedRegistry;
 use HWS\BaseTools\SitemapTools\XmlInspector;
 
@@ -245,7 +246,10 @@ function hws_sitemap_feeds_render( string $kind ): void {
             <button type="button" class="hpc-button" data-action="check-all">Check everything</button>
         </div>
 
+        <?php if ( 'sitemap' === $kind ) { RecommendationsPanel::render(); } ?>
+
         <section class="hws-sf-section">
+            <?php if ( 'sitemap' === $kind ) : ?><h3>Live check</h3><?php endif; ?>
             <div data-list="<?php echo esc_attr( $kind ); ?>"></div>
         </section>
 

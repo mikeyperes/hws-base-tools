@@ -35,5 +35,5 @@ final class SearchConsoleModule implements ModuleInterface {
             register_rest_route('hws-base-tools/v1','/search-console/'.$action,['methods'=>'status'===$action?'GET':'POST','permission_callback'=>static fn()=>current_user_can('manage_options'),'callback'=>static fn($r)=>self::dispatch($action,$r->get_params())]);
         }
     }
-    public static function render(): void {echo '<div id="hws-search-console">Search Console engine is ready. Screen design pending.</div>';}
+    public static function render(): void { SearchConsoleScreen::render(); }
 }
