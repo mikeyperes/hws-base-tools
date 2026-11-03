@@ -11,7 +11,7 @@ defined( "ABSPATH" ) || exit;
  * people, editorial policies, press releases) belong to SMP Publication Integration.
  */
 function hws_pages_page_definitions(): array {
-    return \HWS\BaseTools\CompanyPages\CompanyPages::definitions();
+    return \HWS\BaseTools\Pages\PageTypes::pages();
 }
 
 function hws_pages_menu_structures(): array {
