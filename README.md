@@ -10,7 +10,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ## Features
 
 ### Newsletter signup collector
-- **Does:** collects email signups, optional name and consent, reports duplicates, exports CSV and sends optional signup notices.
+- **Does:** collects email signups, optional name and consent, reports duplicates, pages recent rows, deletes individual subscribers, exports CSV and sends optional signup notices with source metadata.
 - **Switch:** Settings > HWS Base Tools > Newsletter (`hws_base_tools_newsletter`), disabled by default.
 - **Use:** `[hws_newsletter]`; [all parameters, defaults, setup and commands](docs/newsletter.md).
 - **Style:** no CSS by default; simple and rounded options, stable `hws-newsletter__*` classes.

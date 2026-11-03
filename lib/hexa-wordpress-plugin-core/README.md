@@ -18,6 +18,11 @@
 
 ## Features
 
+### Shortcode inline styles
+- **Does:** queues inline CSS by WordPress handle, surviving discarded render expansions and deduplicating late shortcode styles.
+- **Use:** \Hexa\PluginCore\PublicComponents\InlineStyles::enqueue($handle, $css); see [style lifecycle](docs/shortcode-inline-styles.md).
+- **Code:** src/PublicComponents/InlineStyles.php.
+
 ### Collection submissions
 - **Does:** stores normalized, deduplicated per-list submissions with UTC timestamps, safe request metadata, atomic IP rate counters and formula-safe streaming CSV.
 - **Use:** `FrontendForms\SubmissionStore`; see [API and host responsibilities](docs/collection-submissions.md).

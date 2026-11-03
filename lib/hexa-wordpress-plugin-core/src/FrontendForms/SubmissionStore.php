@@ -78,6 +78,11 @@ final class SubmissionStore {
         }
         return ['status'=>'created','id'=>(int)$wpdb->insert_id];
     }
+    /** Hosts must authorize the exact list and row before calling. */
+    public function delete(string $list, int $id): bool {
+        global $wpdb;
+        return $id > 0 && $wpdb->delete($this->table(), ['collection'=>self::collection($list),'id'=>$id]) === 1;
+    }
     public function total(string $list): int {global $wpdb; return (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->table()} WHERE collection=%s",self::collection($list)));}
     public function recent(string $list, int $limit=20, int $before=0): array {
         global $wpdb;

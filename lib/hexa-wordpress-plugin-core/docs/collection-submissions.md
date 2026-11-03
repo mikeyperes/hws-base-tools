@@ -27,3 +27,5 @@ Rate counters use atomic SQL increments, hashed IP/window keys and bounded expir
 CSV writes in 500-row cursor batches and neutralizes spreadsheet formulas, including leading whitespace.
 csv() is an internal primitive; HTTP callers must verify capability and nonce first.
 Run tests/submission-store.php for pure normalization/IP/header/escaping cases; consumer integration tests cover actual WordPress/MySQL storage and endpoints.
+
+Single-row deletion: delete($collection, $id) returns true only when exactly that collection/id row was removed. Hosts must verify administrator capability and a nonce bound to both values.

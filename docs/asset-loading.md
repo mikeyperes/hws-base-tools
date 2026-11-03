@@ -77,7 +77,7 @@ Before: `hws-form-protection` on enabled forms and the Turnstile SDK when config
 ## Newsletter collector
 Disabled: no newsletter frontend assets. Enabled: newsletter.js is enqueued only by a rendered shortcode.
 No newsletter assets on the homepage or an ordinary article without the shortcode.
-No CSS for none; selected simple/rounded CSS appears with the first visible content output per style.
-Offscreen indexer expansion does not consume visible content's style emission.
+No CSS for none; selected simple/rounded CSS is queued once per WordPress handle and printed in the head or footer.
+Discarded indexer expansions leave the WordPress style handle queued for visible output.
 Admin: only the Newsletter tab prints a disabled form preview and its selected CSS; no frontend script.
 Turnstile script loads only when the shortcode has an inherited Turnstile widget.

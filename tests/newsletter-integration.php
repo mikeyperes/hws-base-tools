@@ -15,8 +15,8 @@ try {
  $html=N::render(['list'=>$list,'name'=>'on','consent'=>'on','class'=>'custom','id'=>'nl1']);
  nl_check(strpos($html,'<style>')===false,'default no CSS');
  nl_check(strpos($html,'name="name"')!==false && strpos($html,'name="consent"')!==false && strpos($html,'role="status"')!==false,'name consent and accessible status');
- nl_check(strpos(N::render(['style'=>'simple']),'<style>')!==false,'style printed on use');
- nl_check(strpos(N::render(['style'=>'simple']),'<style>')===false,'style printed once');
+ N::render(['style'=>'simple']);nl_check(wp_style_is('hws-newsletter-simple','enqueued'),'style enqueued on use');
+ N::render(['style'=>'simple']);nl_check(count(wp_styles()->get_data('hws-newsletter-simple','after'))===1,'inline CSS registered once');
  preg_match('/name="config" value="([^"]+)"/',$html,$m);
  $p=['config'=>html_entity_decode($m[1]),'nonce'=>wp_create_nonce('hws_newsletter'),'email'=>'NL1-TEST@EXAMPLE.COM','name'=>'=SUM(1,2)','consent'=>'1','page_url'=>'https://example.com/signup'];
  nl_check(N::decode($p['config'].'tampered')===null,'signed configuration cannot change');
@@ -28,6 +28,7 @@ try {
  $mail=[];$mock=function($pre,$args)use(&$mail){$mail[]=$args;return true;};add_filter('pre_wp_mail',$mock,10,2);
  $r=N::submit($p,$fresh(105));nl_check(!is_wp_error($r)&&$r->get_data()['status']==='created','new signup');
  nl_check(count($mail)===1&&$mail[0]['to']==='nl1-notice@example.com','notification on new signup');
+ foreach(['IP: 192.0.2.105','Page URL: https://example.com/signup','Source: newsletter','admin.php?page=hws-core-tools&tab=newsletter&list='] as $part)nl_check(str_contains($mail[0]['message'],$part),'notification metadata '.$part);
  nl_check(N::submit(array_replace($p,['email'=>'nl1-test@example.com']),$fresh(106))->get_data()['status']==='duplicate','normalized duplicate result');
  nl_check($store->total($list)===1&&count($mail)===1,'duplicate has no row or notification');
  $other=$store->add($list.'-other','nl1-test@example.com');nl_check($other['status']==='created','duplicate scope is per list');
@@ -62,10 +63,83 @@ try {
  wp_set_current_user(1);ob_start();N::admin();$admin=ob_get_clean();nl_check(strpos($admin,'Export CSV')!==false&&strpos($admin,'Exact selected style CSS')!==false,'admin renders export and CSS preview');
  wp_set_current_user(0);ob_start();N::admin();nl_check(ob_get_clean()==='','admin capability guard');wp_set_current_user(1);
  nl_check(N::privacy_erase('nl1-test@example.com')['items_removed']&&$store->total($list)===2,'privacy erasure removes across lists');
+
+ // Real REST dispatcher and admin-post action hooks.
+ $entry=$list.'-entry';$saved_server=$_SERVER;$saved_get=$_GET;$saved_post=$_POST;$saved_request=$_REQUEST;
+ $_SERVER['REMOTE_ADDR']='198.51.100.120';
+ $dispatch=function($method,$path,$params=[]){$r=new WP_REST_Request($method,'/hws-base-tools/v1/'.$path);$r->set_body_params($params);return rest_do_request($r);};
+ $cfg=['list'=>$entry,'name'=>'off','consent'=>'off','source'=>'entry-test','success'=>'Joined'];
+ $payload=['config'=>N::config($cfg),'nonce'=>wp_create_nonce('hws_newsletter'),'email'=>'nl1-entry@example.com'];
+ update_option(N::OPTION,['enabled'=>false,'notification_email'=>'','style'=>'none'],false);
+ nl_check($dispatch('POST','newsletter',$payload)->get_status()===403,'REST disabled 403');
+ nl_check($dispatch('GET','newsletter/nonce')->get_status()===403,'GET nonce disabled 403');
+ update_option(N::OPTION,['enabled'=>true,'notification_email'=>'','style'=>'none'],false);
+ $nonce=$dispatch('GET','newsletter/nonce');
+ nl_check($nonce->get_status()===200&&wp_verify_nonce($nonce->get_data()['nonce'],'hws_newsletter'),'GET nonce valid 200');
+ nl_check(str_contains($nonce->get_headers()['Cache-Control'],'no-store'),'GET nonce cannot be cached');
+ nl_check($dispatch('POST','newsletter',$payload)->get_status()===201,'REST created 201');
+ nl_check($dispatch('POST','newsletter',$payload)->get_status()===200,'REST duplicate 200');
+ nl_check($dispatch('POST','newsletter',array_replace($payload,['email'=>'bad']))->get_status()===400,'REST validation 400');
+ nl_check($dispatch('POST','newsletter',array_replace($payload,['nonce'=>'bad']))->get_status()===403,'REST nonce 403');
+ foreach([[],array_replace($cfg,['list'=>'../bad']),array_replace($cfg,['name'=>[]]),array_replace($cfg,['consent'=>true]),array_replace($cfg,['source'=>[]]),array_replace($cfg,['success'=>[]])] as $bad){
+   nl_check($dispatch('POST','newsletter',array_replace($payload,['config'=>N::config($bad)]))->get_status()===400,'REST malformed signed configuration 400');
+ }
+ $_SERVER['REMOTE_ADDR']='198.51.100.121';for($i=0;$i<10;$i++)$dispatch('POST','newsletter',array_replace($payload,['email'=>'bad']));
+ nl_check($dispatch('POST','newsletter',$payload)->get_status()===429,'REST rate limit 429');
+ $_SERVER['REMOTE_ADDR']='198.51.100.122';
+ $die_filter=function(){return function($message,$title,$args){throw new RuntimeException((string)$message,(int)($args['response']??500));};};
+ add_filter('wp_die_handler',$die_filter,PHP_INT_MAX);
+ $invoke=function($action,$post=[],$get=[]) {
+   $_POST=$post;$_GET=$get;$_REQUEST=array_merge($get,$post);
+   try{do_action('admin_post_'.$action);throw new RuntimeException('Handler did not terminate',599);}
+   catch(RuntimeException $e){return $e;}
+ };
+ // A nonce from three ticks ago is older than its entire accepted lifetime.
+ wp_set_current_user(0);
+ $expired=substr(wp_hash((wp_nonce_tick('hws_newsletter')-3).'|hws_newsletter|'.get_current_user_id().'|'.wp_get_session_token(),'nonce'),-12,10);
+ nl_check(!wp_verify_nonce($expired,'hws_newsletter'),'test nonce is expired');
+ nl_check($dispatch('POST','newsletter',array_replace($payload,['nonce'=>$expired]))->get_status()===403,'REST rejects expired nonce');
+ $fallback=array_replace($payload,['nonce'=>$expired,'email'=>'nl1-fallback@example.com']);
+ $r=$invoke('nopriv_hws_base_tools_newsletter',$fallback);nl_check($r->getCode()===200&&str_contains($r->getMessage(),'Joined'),'admin-post accepts expired baked nonce with valid signed config');
+ nl_check($invoke('nopriv_hws_base_tools_newsletter',array_replace($fallback,['company_website'=>'spam']))->getCode()===400,'fallback honeypot enforced');
+ nl_check($invoke('nopriv_hws_base_tools_newsletter',array_replace($fallback,['config'=>'bad']))->getCode()===400,'fallback signed config enforced');
+ wp_set_current_user(1);
+ $r=$invoke('hws_base_tools_newsletter_save',['_wpnonce'=>wp_create_nonce('hws_newsletter_save'),'notification_email'=>'invalid']);
+ nl_check($r->getCode()===400,'save invalid email rejected');
+ wp_set_current_user(0);
+ nl_check($invoke('hws_base_tools_newsletter_save')->getCode()===403,'save non-admin rejected');
+ nl_check($invoke('hws_base_tools_newsletter_export')->getCode()===403,'export without capability rejected');
+ wp_set_current_user(1);
+ nl_check($invoke('hws_base_tools_newsletter_export')->getCode()===403,'export without nonce rejected');
+ // >20 rows and cursor paging through the actual admin renderer.
+ for($i=0;$i<23;$i++)$store->add($entry,'nl1-page-'.$i.'@example.com');
+ $_GET=['list'=>$entry];ob_start();N::admin();$first=ob_get_clean();
+ preg_match('/before=(\d+)/',$first,$cursor);
+ nl_check(count($store->recent($entry,20))===20&&isset($cursor[1]),'admin has older-page cursor after 20 rows');
+ $_GET=['list'=>$entry,'before'=>$cursor[1]];ob_start();N::admin();$second=ob_get_clean();
+ nl_check(str_contains($second,'Newest submissions')&&!str_contains($second,'hws-newsletter-older'),'admin older page shows remaining rows and newest link');
+ $id=(int)$store->recent($entry,1)[0]['id'];
+ $delete=['list'=>$entry,'subscriber_id'=>$id,'_wpnonce'=>wp_create_nonce('hws_newsletter_delete:'.$entry.':'.$id)];
+ wp_set_current_user(0);nl_check($invoke('hws_base_tools_newsletter_delete',$delete)->getCode()===403,'delete without capability rejected');wp_set_current_user(1);
+ nl_check($invoke('hws_base_tools_newsletter_delete',array_replace($delete,['_wpnonce'=>'bad']))->getCode()===403,'delete without nonce rejected');
+ nl_check(!$store->delete($list,$id),'delete is bound to collection');
+ $redirect=function(){throw new RuntimeException('redirect',302);};add_filter('wp_redirect',$redirect,-999);
+ $before_count=$store->total($entry);$r=$invoke('hws_base_tools_newsletter_delete',$delete);remove_filter('wp_redirect',$redirect,-999);
+ nl_check($r->getCode()===302&&$store->total($entry)===$before_count-1,'delete handler removes exactly one subscriber');
+ remove_filter('wp_die_handler',$die_filter,PHP_INT_MAX);
+ require __DIR__.'/newsletter-concurrency.php';
+ $race=nl_concurrent(array_replace($payload,['email'=>'nl1-concurrent@example.com']));
+ $statuses=array_column($race,'http');sort($statuses);
+ nl_check($statuses===[200,201],'concurrent REST requests produce one create and one duplicate');
+ $matches=array_filter($store->recent($entry,100),fn($row)=>$row['email']==='nl1-concurrent@example.com');
+ nl_check(count($matches)===1,'concurrent duplicate leaves exactly one row');
+ $_SERVER=$saved_server;$_GET=$saved_get;$_POST=$saved_post;$_REQUEST=$saved_request;
+
  echo "PASS ".$GLOBALS['nl_checks']." assertions\n";
 } finally {
- $wpdb->query($wpdb->prepare("DELETE FROM {$store->table()} WHERE collection IN (%s,%s)",$list,$list.'-other'));
+ $wpdb->query($wpdb->prepare("DELETE FROM {$store->table()} WHERE collection LIKE %s",$wpdb->esc_like($list).'%'));
  foreach(array_merge(range(101,109),[189]) as $n){$ip='192.0.2.'.$n;$wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256',$ip.':'.intdiv(time(),600))]);}
  $wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256','198.51.100.159:'.intdiv(time(),600))]);
+ foreach(range(120,131) as $n)$wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256','198.51.100.'.$n.':'.intdiv(time(),600))]);
  if($original===null)delete_option(N::OPTION);else update_option(N::OPTION,$original,false);
 }
