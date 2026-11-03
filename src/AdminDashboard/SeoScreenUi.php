@@ -56,6 +56,13 @@ final class SeoScreenUi {
             .hws-ss-empty{color:#787c82;font-size:13px;padding:6px 0}
             .hws-ss-notice{margin-top:8px;font-size:12px;color:#00701a}.hws-ss-notice.bad{color:#b32d2e}
             .hws-ss-notice:empty{display:none}
+            .hws-ss-hidden{margin-top:14px;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7}
+            .hws-ss-hidden>summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13px;color:#1d2327;display:flex;align-items:center;gap:6px}
+            .hws-ss-hidden[open]>summary{border-bottom:1px solid #dcdcde}
+            .hws-ss-hidden>div{padding:10px 14px 4px}
+            .hws-ss-hidden-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+            .hws-ss-hidden-head p{margin:0;color:#646970;font-size:12px;flex:1;min-width:240px}
+            .hws-ss-hidden [data-role=hidden-list]{padding-top:0}
             .hws-ss textarea{width:100%;min-height:110px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
         </style>
         <script>

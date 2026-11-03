@@ -13,7 +13,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 - Canonical page catalog: [src/Pages/PageTypes.php](src/Pages/PageTypes.php) defines titles, addresses, parents, designs, default states, conditions and content sources. Ordinary-page adapters preserve existing assignments; query layouts and repeated profiles stay outside page creation.
 
-- **Search console, Instant Indexing and recommended sitemaps screens:** the Search Console tab shows registration, owners, every sitemap Google holds with its health, submit-all, a page check, reindex requests and a link to Search Console; the Instant Indexing tab shows whether Rank Math's IndexNow works, its key file, what it sends on its own, the latest answers and a test send; the Sitemaps tab opens with every recommended sitemap, the plugin recommending it, Rank Math's current setting, a change button only where they differ and the "more than X" conditions. Nothing changes in Rank Math until a button is pressed.
+- **Search console, Instant Indexing and recommended sitemaps screens:** the Search Console tab shows registration, owners, every sitemap Google holds with its health, submit-all, a page check, reindex requests and a link to Search Console; the Instant Indexing tab shows whether Rank Math's IndexNow works, its key file, what it sends on its own, the latest answers and a test send; the Sitemaps tab opens with every recommended sitemap, the plugin recommending it, Rank Math's current setting, a change button only where they differ and the "more than X" conditions. Builder templates, theme parts and shop internals sit in a collapsed "Hidden: usually junk" list with one "turn all off" button and a "Move to main list" button on each. Nothing changes in Rank Math until a button is pressed.
 
 - **Import external featured images:** explicit `wp hws media import-external-featured [--dry-run] [--post-type=<type>] [--meta-key=<key>]` imports source URLs (default `fifu_image_url`, with detection of FIFU placeholder attachments even when their post URL meta is missing) into ordinary WordPress attachments, generates registered sizes, derives filenames and alt text from titles, and reuses local media by URL hash. Prints one JSON result per post. Passive SVG artwork is validated and imported with native vector dimensions without enabling SVG uploads globally. Dead or invalid images leave the current featured image intact. No automatic downloads or visitor output. See [command details](docs/external-featured-images.md).
 
@@ -455,6 +455,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.55.0
+
+- Sitemaps tab: builder templates, theme parts and shop internals (for example Elementor's template sitemap) now sit in a collapsed "Hidden: usually junk" list, with one button to turn them all off in Rank Math and a button on each to move it back to the main list. Bundles Hexa WP Core 3.49.0.
 
 ### 13.54.9
 

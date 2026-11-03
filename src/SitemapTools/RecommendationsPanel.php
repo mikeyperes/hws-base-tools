@@ -22,12 +22,22 @@ final class RecommendationsPanel {
             <h3><span>Recommended sitemaps</span><span class="hws-ss-pills" data-role="totals"></span></h3>
             <p>What this site should have in its sitemaps, and which plugin recommends each one. Nothing changes in Rank Math until you press a button.</p>
             <div data-role="list"><p class="hws-ss-empty">Loading…</p></div>
+            <details class="hws-ss-hidden" data-role="hidden-wrap" hidden>
+                <summary><span data-role="hidden-title">Hidden</span></summary>
+                <div class="hws-ss-hidden-head">
+                    <p>Sitemaps for page-builder templates, theme parts and shop internals. These almost never belong in Google, so they are kept out of the list above.</p>
+                    <button type="button" class="hpc-button" data-junk-off hidden>Turn all off in Rank Math</button>
+                </div>
+                <div data-role="hidden-list"></div>
+            </details>
             <div class="hws-ss-notice" data-role="notice" role="status" aria-live="polite"></div>
         </section>
         <script>
         (function(){
             var root = document.getElementById('hws-sr'); if (!root || root.dataset.ready) return; root.dataset.ready = '1';
             var ss = window.hwsSs, nonce = root.dataset.nonce, list = root.querySelector('[data-role=list]'), notice = root.querySelector('[data-role=notice]');
+            var wrap = root.querySelector('[data-role=hidden-wrap]'), hiddenList = root.querySelector('[data-role=hidden-list]'), junkOff = root.querySelector('[data-junk-off]');
+            function differsFrom(r){ return r.recommended !== r.current && (r.setting !== '' || r.kind === 'module'); }
             function say(t, bad){ notice.textContent = t || ''; notice.className = 'hws-ss-notice' + (bad ? ' bad' : ''); }
             function state(r){
                 if (r.collision_with) return 'warn';
@@ -41,6 +51,8 @@ final class RecommendationsPanel {
                 h += '<span class="hws-ss-label">' + ss.esc(r.label) + '<small>' + (r.url ? '<a href="' + ss.esc(r.url) + '" target="_blank" rel="noopener">' + ss.esc(r.url) + '</a>' : '') + '</small></span>';
                 h += '<span class="hws-ss-pills"><span class="hws-ss-pill ' + (r.recommended ? 'ok' : '') + '">' + (r.recommended ? 'Recommended' : 'Not recommended') + '</span>';
                 h += '<span class="hws-ss-pill ' + (r.current ? 'ok' : '') + '">' + (r.current ? 'On in Rank Math' : 'Off in Rank Math') + '</span></span>';
+                if (r.junk) h += '<button type="button" class="hpc-button secondary" data-promote="1">Move to main list</button>';
+                else if (r.promoted) h += '<button type="button" class="hpc-button secondary" data-promote="0">Move to hidden</button>';
                 if (differs) h += '<button type="button" class="hpc-button" data-change="' + (r.recommended ? 1 : 0) + '">' + (r.recommended ? 'Turn on in Rank Math' : 'Turn off in Rank Math') + '</button>';
                 h += '</div>';
                 h += '<div class="hws-ss-sub">Recommended by ' + ss.esc((r.recommended_by || []).join(', ') || 'no plugin') + '</div>';
@@ -57,15 +69,29 @@ final class RecommendationsPanel {
                 return h + '</div>';
             }
             function draw(d){
-                var rows = d.rows || [], diff = rows.filter(function(r){ return r.recommended !== r.current && (r.setting !== '' || r.kind === 'module'); }).length;
+                var all = d.rows || [], rows = all.filter(function(r){ return !r.junk; }), junk = all.filter(function(r){ return r.junk; }), diff = rows.filter(differsFrom).length, junkOn = junk.filter(function(r){ return r.current; }).length;
                 root.querySelector('[data-role=totals]').innerHTML = '<span class="hws-ss-pill">' + rows.length + ' sitemaps</span>' + (diff ? '<span class="hws-ss-pill warn">' + diff + ' differ from the recommendation</span>' : '<span class="hws-ss-pill ok">All match</span>');
                 rows.sort(function(a, b){ return (b.recommended !== b.current) - (a.recommended !== a.current); });
                 list.innerHTML = rows.length ? rows.map(row).join('') : '<p class="hws-ss-empty">Rank Math is not active, so there are no sitemaps.</p>';
+                junk.sort(function(a, b){ return b.current - a.current; });
+                wrap.hidden = !junk.length;
+                root.querySelector('[data-role=hidden-title]').innerHTML = 'Hidden: usually junk <span class="hws-ss-pill">' + junk.length + '</span>' + (junkOn ? ' <span class="hws-ss-pill bad">' + junkOn + ' on in Rank Math</span>' : ' <span class="hws-ss-pill ok">All off</span>');
+                junkOff.hidden = !junkOn; junkOff.disabled = false; junkOff.textContent = 'Turn all ' + junkOn + ' off in Rank Math';
+                if (junkOn) wrap.open = true;
+                hiddenList.innerHTML = junk.map(row).join('');
             }
             function load(){ return ss.post('hexa_sitemaps_lookup', nonce, {}).then(draw).catch(function(e){ list.innerHTML = '<p class="hws-ss-empty">' + ss.esc(e.message) + '</p>'; }); }
-            list.addEventListener('click', function(e){
+            junkOff.addEventListener('click', function(){
+                ss.busy(junkOff, true, 'Turning off…');
+                ss.post('hexa_sitemaps_disable_junk', nonce, {}).then(function(r){ say(r.message); return load(); }).catch(function(x){ ss.busy(junkOff, false); say(x.message, true); });
+            });
+            function onClick(e){
                 var b = e.target.closest('button'); if (!b) return;
                 var el = b.closest('[data-id]'), id = el.dataset.id;
+                if (b.hasAttribute('data-promote')) {
+                    ss.busy(b, true, 'Moving…');
+                    ss.post('hexa_sitemaps_promote', nonce, {id: id, main: b.dataset.promote}).then(function(r){ say(r.message); return load(); }).catch(function(x){ ss.busy(b, false); say(x.message, true); });
+                }
                 if (b.hasAttribute('data-change')) {
                     ss.busy(b, true, 'Changing…');
                     ss.post('hexa_sitemaps_change', nonce, {id: id, on: b.dataset.change}).then(function(r){ say(r.message || 'Changed.', r.ok === false); return load(); }).catch(function(x){ ss.busy(b, false); say(x.message, true); });
@@ -75,7 +101,9 @@ final class RecommendationsPanel {
                     ss.busy(b, true, 'Saving…');
                     ss.post('hexa_sitemaps_conditions', nonce, {id: id, more_than: f('more_than') || 2, min_posts: f('min_posts') || 1, apply: f('apply')}).then(function(){ say('Saved.'); return load(); }).catch(function(x){ ss.busy(b, false); say(x.message, true); });
                 }
-            });
+            }
+            list.addEventListener('click', onClick);
+            hiddenList.addEventListener('click', onClick);
             load();
         })();
         </script>
