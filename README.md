@@ -477,6 +477,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.58.3
+
+- Form protection: the Advanced fields (fill time, log retention) were stripped from the 13.58.1 screen, so Save did nothing. They render again and saving works (checked in a real browser).
+
 ### 13.58.1
 
 - Form protection screen redesigned: a status list at the top (✅/❌ per check, missing keys called out), the master switch, each check with a plain explanation, the bot check as three choices (Turnstile recommended, reCAPTCHA fallback only, off) showing only the chosen provider's keys, and fill time and log retention under Advanced. Settings and saving are unchanged.
