@@ -58,6 +58,7 @@ final class SeoScreenUi {
             .hws-ss-notice:empty{display:none}
             .hws-ss-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;color:#50575e}
             .hws-ss-bar .button-link{font-size:12px}
+            .hws-ss .hpc-button:disabled{opacity:.45;cursor:default}
             .hws-ss .hws-ss-pickrow{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-bottom:4px;cursor:pointer;flex-wrap:wrap}
             .hws-ss .hws-ss-pickrow input{margin:0}
             .hws-ss .hws-ss-pickrow .hws-ss-label{font-size:13px}

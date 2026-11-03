@@ -456,6 +456,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.56.1
+
+- Search Console checklist buttons look greyed out until something is ticked.
+
 ### 13.56.0
 
 - Search Console tab: one sitemap checklist replaces "Sitemaps in Google". It lists every sitemap the site has and every sitemap Google holds, each tagged Recommended or not and with its Google state, with Submit to Google and Remove from Google for the ticked ones (`wp hws search-console submit-urls|remove-urls --urls=...`).

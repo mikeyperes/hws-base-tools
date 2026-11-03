@@ -114,8 +114,8 @@ final class SearchConsoleScreen {
             function sync(){
                 var p = picked(), sub = p.filter(function(c){ return c.dataset.onSite === '1'; }).length, rem = p.filter(function(c){ return c.dataset.inGoogle === '1'; }).length;
                 var bs = root.querySelector('[data-action=submit-urls]'), br = root.querySelector('[data-action=remove-urls]');
-                bs.disabled = !sub; bs.textContent = 'Submit ' + (sub || '') + ' to Google';
-                br.disabled = !rem; br.textContent = 'Remove ' + (rem || '') + ' from Google';
+                bs.disabled = !sub; bs.textContent = sub ? 'Submit ' + sub + ' to Google' : 'Submit to Google';
+                br.disabled = !rem; br.textContent = rem ? 'Remove ' + rem + ' from Google' : 'Remove from Google';
             }
             root.addEventListener('change', function(e){ if (e.target.matches('[data-role=sitemaps] input')) sync(); });
             function batch(b, name, filter, verb){
