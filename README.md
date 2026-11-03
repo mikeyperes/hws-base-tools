@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Native homepage, category, tag and search layouts are owned here in src/Pages/PageTypes.php.
+
 - Canonical page catalog: [src/Pages/PageTypes.php](src/Pages/PageTypes.php) defines titles, addresses, parents, designs, default states, conditions and content sources. Ordinary-page adapters preserve existing assignments; query layouts and repeated profiles stay outside page creation.
 
 - **Search console, Instant Indexing and recommended sitemaps screens:** the Search Console tab shows registration, owners, every sitemap Google holds with its health, submit-all, a page check, reindex requests and a link to Search Console; the Instant Indexing tab shows whether Rank Math's IndexNow works, its key file, what it sends on its own, the latest answers and a test send; the Sitemaps tab opens with every recommended sitemap, the plugin recommending it, Rank Math's current setting, a change button only where they differ and the "more than X" conditions. Nothing changes in Rank Math until a button is pressed.

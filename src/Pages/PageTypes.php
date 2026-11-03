@@ -48,6 +48,8 @@ final class PageTypes {
         }
         $pages['founders']['title_source'] = 'HWS\\BaseTools\\Founders\\Founders::settings.heading';
         $pages += [
+            'category' => [ 'title' => 'Category', 'slug' => '/category/<name>/', 'kind' => 'layout', 'content_source' => 'WordPress native category query' ],
+            'tag' => [ 'title' => 'Tag', 'slug' => '/tag/<name>/', 'kind' => 'layout', 'content_source' => 'WordPress native tag query' ],
             'homepage' => [ 'title' => 'Homepage', 'slug' => '/', 'kind' => 'layout', 'content_source' => 'WordPress front page' ],
             'founder_profile' => [ 'title' => 'Founder profile', 'slug' => '<name>', 'parent' => 'founders', 'kind' => 'profile', 'content_source' => 'hws_founder_profile', 'repeat_for' => 'founders' ],
             'team_member_profile' => [ 'title' => 'Team member profile', 'slug' => '<name>', 'parent' => 'team', 'kind' => 'profile', 'content_source' => 'HWS Base Tools team member records', 'repeat_for' => 'team_members' ],
