@@ -56,8 +56,8 @@ final class RecommendationsPanel {
                 if (differs) h += '<button type="button" class="hpc-button" data-change="' + (r.recommended ? 1 : 0) + '">' + (r.recommended ? 'Turn on in Rank Math' : 'Turn off in Rank Math') + '</button>';
                 h += '</div>';
                 h += '<div class="hws-ss-sub">Recommended by ' + ss.esc((r.recommended_by || []).join(', ') || 'no plugin') + '</div>';
-                (r.warnings || []).concat(r.policy_warnings || []).filter(function(w, i, a){ return a.indexOf(w) === i; }).forEach(function(w){ h += '<div class="hws-ss-sub warn">' + ss.esc(w) + '</div>'; });
-                if (r.condition && (r.kind === 'taxonomy' || r.kind === 'author')) {
+                if (!r.junk) (r.warnings || []).concat(r.policy_warnings || []).filter(function(w, i, a){ return a.indexOf(w) === i; }).forEach(function(w){ h += '<div class="hws-ss-sub warn">' + ss.esc(w) + '</div>'; });
+                if (!r.junk && r.condition && (r.kind === 'taxonomy' || r.kind === 'author')) {
                     var c = r.condition, n = r.counts || {};
                     h += '<div class="hws-ss-cond">';
                     if (r.kind === 'taxonomy') h += '<label>Recommend only when the site has more than <input type="number" min="0" data-f="more_than" value="' + ss.esc(c.more_than) + '"> ' + ss.esc(r.label.toLowerCase()) + '</label>';

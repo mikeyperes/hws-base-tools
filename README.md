@@ -456,6 +456,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.55.1
+
+- Hidden sitemaps show only their name, address and buttons, without the conditions box or repeated warnings.
+
 ### 13.55.0
 
 - Sitemaps tab: builder templates, theme parts and shop internals (for example Elementor's template sitemap) now sit in a collapsed "Hidden: usually junk" list, with one button to turn them all off in Rank Math and a button on each to move it back to the main list. Bundles Hexa WP Core 3.49.0.
