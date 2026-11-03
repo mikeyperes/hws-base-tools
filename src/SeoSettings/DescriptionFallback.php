@@ -77,5 +77,6 @@ final class DescriptionFallback implements ModuleInterface {
         $body .= wp_nonce_field( self::ACTION, '_wpnonce', true, false );
         $body .= '<label for="hws-description-rules">Description rules</label><textarea id="hws-description-rules" name="rules" rows="12" class="large-text code">' . esc_textarea( (string) wp_json_encode( (object) self::rules(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) ) . '</textarea><p><button class="hpc-button" type="submit">Save description fallbacks</button></p></form>';
         echo CoreUi::card( [ 'title' => 'Search description fallbacks', 'body_html' => $body ] );
+        TermMetadata::render();
     }
 }

@@ -81,3 +81,6 @@ No CSS for none; selected simple/rounded CSS is queued once per WordPress handle
 Discarded indexer expansions leave the WordPress style handle queued for visible output.
 Admin: only the Newsletter tab prints a disabled form preview and its selected CSS; no frontend script.
 Turnstile script loads only when the shortcode has an inherited Turnstile widget.
+
+## Editorial surfaces
+No styles or scripts are enqueued by EditorialSurfaces or TermMetadata. Explicit shortcodes render unstyled markup only. Admin form uses existing WordPress controls on the SEO tab.

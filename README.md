@@ -9,6 +9,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
+- Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
+
+
 ### Newsletter signup collector
 - **Does:** collects email signups, optional name and consent, reports duplicates, pages recent rows, deletes individual subscribers, exports CSV and sends optional signup notices with source metadata.
 - **Switch:** Settings > HWS Base Tools > Newsletter (`hws_base_tools_newsletter`), disabled by default.

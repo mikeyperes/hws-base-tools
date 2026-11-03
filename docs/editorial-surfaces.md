@@ -1,0 +1,5 @@
+# Editorial surfaces
+
+Shortcodes: hws_archive_field (name term_name, term_count, total_terms, archive_url, results_heading, meta, pagination_summary), hws_archive_breadcrumbs, hws_archive_cloud (limit), hws_archive_item_field (name type_label or topic), hws_archive_item_excerpt (words), hws_page_breadcrumbs, hws_page_toc and hws_page_field (name deck, reads the page excerpt). Breadcrumbs, cloud and contents list take class; all are unstyled, with no CSS or JS. Existing Elementor styling owns their appearance.
+
+SEO tab: the editorial configuration form accepts surfaces (taxonomy, posts_per_page, current_query, page_anchors, type_labels) and metadata keyed by taxonomy (description, singular, plural, limit, canonical, index_follow). Description tokens: {term}, {count}, {noun}, {site_name}. Empty metadata preserves Rank Math. Automatic query and anchor changes are disabled until configured. These settings are stored as hws_base_tools_editorial_surfaces and hws_base_tools_term_metadata. No plugin requires these features to be enabled.
