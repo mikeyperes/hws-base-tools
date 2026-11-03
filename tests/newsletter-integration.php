@@ -138,6 +138,7 @@ try {
  echo "PASS ".$GLOBALS['nl_checks']." assertions\n";
 } finally {
  $wpdb->query($wpdb->prepare("DELETE FROM {$store->table()} WHERE collection LIKE %s",$wpdb->esc_like($list).'%'));
+ $wpdb->query($wpdb->prepare("DELETE FROM {$store->deletions_table()} WHERE collection LIKE %s",$wpdb->esc_like($list).'%'));
  foreach(array_merge(range(101,109),[189]) as $n){$ip='192.0.2.'.$n;$wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256',$ip.':'.intdiv(time(),600))]);}
  $wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256','198.51.100.159:'.intdiv(time(),600))]);
  foreach(range(120,131) as $n)$wpdb->delete($wpdb->prefix.'hexa_form_rates',['rate_key'=>hash('sha256','198.51.100.'.$n.':'.intdiv(time(),600))]);

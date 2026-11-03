@@ -26,4 +26,4 @@ try{
  try{$s->scan(0,1,$list);$ok=false;}catch(RuntimeException $e){$ok=true;}finally{remove_filter('query',$bad_max);$wpdb->suppress_errors($prior);}
  $check($ok,'snapshot bound read failure is reported');
  echo "PASS $n snapshot scan assertions\n";
-}finally{global $wpdb;$wpdb->query($wpdb->prepare('DELETE FROM '.$s->table().' WHERE collection=%s',$list));}
+}finally{global $wpdb;$wpdb->query($wpdb->prepare('DELETE FROM '.$s->table().' WHERE collection=%s',$list));$wpdb->query($wpdb->prepare('DELETE FROM '.$s->deletions_table().' WHERE collection=%s',$list));}

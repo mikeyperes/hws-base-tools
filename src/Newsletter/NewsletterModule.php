@@ -31,7 +31,7 @@ final class NewsletterModule implements ModuleInterface {
     public static function init(): void {
         if(isset($_GET['hws_newsletter_result'])){if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();do_action('litespeed_control_set_nocache','Newsletter result');}
         add_shortcode('hws_newsletter',[self::class,'render']);
-        if(self::settings()['enabled'] && get_option('hws_base_tools_newsletter_schema')!=='1') {self::store()->install();update_option('hws_base_tools_newsletter_schema','1',false);}
+        if((self::settings()['enabled']||get_option('hws_base_tools_newsletter_schema')==='1') && get_option('hws_base_tools_newsletter_schema')!=='2') {self::store()->install();update_option('hws_base_tools_newsletter_schema','2',false);}
         if(defined('WP_CLI')&&WP_CLI) {
             \WP_CLI::add_command('hws newsletter recent',function($args,$assoc){if(!current_user_can('manage_options'))\WP_CLI::error('Use --user with an administrator.');\WP_CLI::line(wp_json_encode(self::store()->recent($assoc['list']??'default',(int)($assoc['limit']??20))));});
             \WP_CLI::add_command('hws newsletter export',function($args,$assoc){if(!current_user_can('manage_options'))\WP_CLI::error('Use --user with an administrator.');self::store()->csv(STDOUT,$assoc['list']??'default');});
@@ -138,15 +138,45 @@ final class NewsletterModule implements ModuleInterface {
                 'list'=>['validate_callback'=>static function($v){return is_string($v)&&preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D',$v);}],
             ]
         ]);
+        $permission=static function(){return current_user_can(PluginMetadata::ADMIN_CAPABILITY);};
+        register_rest_route('hws-base-tools/v1','/newsletter/lists',['methods'=>'GET','permission_callback'=>$permission,'callback'=>[self::class,'lists']]);
+        register_rest_route('hws-base-tools/v1','/newsletter/deleted',[
+            'methods'=>'GET','permission_callback'=>$permission,'callback'=>[self::class,'deleted'],
+            'args'=>[
+                'after_id'=>['default'=>0,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&strlen((string)$v)<19;}],
+                'per_page'=>['default'=>100,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&(int)$v>=1&&(int)$v<=500;}]
+            ]
+        ]);
+        // Generic submissions spelling; retain subscribers/per_page for existing readers.
+        register_rest_route('hws-base-tools/v1','/newsletter/submissions',[
+            'methods'=>'GET','permission_callback'=>$permission,'callback'=>static function($r){$r['per_page']=min(500,(int)$r['limit']);return self::subscribers($r);},
+            'args'=>[
+                'after_id'=>['default'=>0,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&strlen((string)$v)<19;}],
+                'limit'=>['default'=>100,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&(int)$v>=1&&strlen((string)$v)<10;}],
+                'list'=>['validate_callback'=>static function($v){return is_string($v)&&preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D',$v);}],
+                'upper_id'=>['validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&strlen((string)$v)<19;}]
+            ]
+        ]);
         register_rest_route('hws-base-tools/v1','/newsletter',['methods'=>'POST','permission_callback'=>'__return_true','callback'=>function($r){return self::submit((array)$r->get_params(),$_SERVER);}]);
         register_rest_route('hws-base-tools/v1','/newsletter/nonce',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){if(!self::settings()['enabled'])return self::failure('disabled',403);$r=new \WP_REST_Response(['nonce'=>wp_create_nonce('hws_newsletter')]);$r->header('Cache-Control','no-store, private');return $r;}]);
     }
+    public static function lists() {
+        try{$data=in_array(get_option('hws_base_tools_newsletter_schema'),['1','2'],true)?self::store()->lists():[];}
+        catch(\Throwable $e){return new \WP_Error('storage','Lists could not be read.',['status'=>503]);}
+        $r=new \WP_REST_Response(['items'=>$data]);$r->header('Cache-Control','no-store, private');return $r;
+    }
+    public static function deleted($request) {
+        try{$data=get_option('hws_base_tools_newsletter_schema')==='2'?self::store()->deleted((int)$request['after_id'],(int)$request['per_page']):['items'=>[],'next_after_id'=>(int)$request['after_id'],'has_more'=>false];}
+        catch(\Throwable $e){return new \WP_Error('storage','Deleted submissions could not be read.',['status'=>503]);}
+        foreach($data['items'] as &$row){$row['id']=(int)$row['id'];$row['deletion_id']=(int)$row['deletion_id'];$row['list']=$row['collection'];$row['deleted_at_utc']=$row['deleted_at'];unset($row['collection'],$row['deleted_at']);}unset($row);
+        $r=new \WP_REST_Response($data);$r->header('Cache-Control','no-store, private');return $r;
+    }
     public static function subscribers($request) {
-        if(get_option('hws_base_tools_newsletter_schema')!=='1')$data=['items'=>[],'upper_id'=>0,'next_after_id'=>0,'has_more'=>false];
+        if(!in_array(get_option('hws_base_tools_newsletter_schema'),['1','2'],true))$data=['items'=>[],'upper_id'=>0,'next_after_id'=>0,'has_more'=>false];
         else {
             try{$data=self::store()->scan((int)$request['after_id'],(int)$request['per_page'],$request['list'],isset($request['upper_id'])?(int)$request['upper_id']:null);}
             catch(\Throwable $e){return new \WP_Error('storage','Subscribers could not be read.',['status'=>503]);}
-            foreach($data['items'] as &$row){$row['id']=(int)$row['id'];$row['list']=$row['collection'];unset($row['collection']);$row['consent']=(bool)$row['consent'];$row['headers']=json_decode($row['headers'],true);}
+            foreach($data['items'] as &$row){$row['id']=(int)$row['id'];$row['list']=$row['collection'];$row['created_at_utc']=$row['created_at'];unset($row['collection']);$row['consent']=(bool)$row['consent'];$row['headers']=json_decode($row['headers'],true);}
             unset($row);
         }
         $response=new \WP_REST_Response($data);$response->header('Cache-Control','no-store, private');return $response;
@@ -222,7 +252,7 @@ final class NewsletterModule implements ModuleInterface {
         echo '<p>Messages are plain text, maximum 2000 bytes each. Leave failure blank for the default error and specific email/consent instructions. A custom failure message also replaces field instructions.</p>';
         echo '<p><button class="button button-primary">Save settings</button></p></form><h3>Selected style preview</h3>'.self::render(['style'=>$s['style']],true).'<h3>Exact selected style CSS</h3>'.\Hexa\PluginCore\WpAdminComponents\CodeDisplay::render(self::css($s['style'])?:'/* No plugin CSS */',['language'=>'css','title'=>'Selected newsletter style']);
         echo '<h3>List</h3><form method="get"><input type="hidden" name="page" value="hws-core-tools"><input type="hidden" name="tab" value="newsletter"><label>List ID <input name="list" pattern="[a-z0-9][a-z0-9_-]{0,79}" value="'.esc_attr($list).'"></label><button class="button">View list</button></form>';
-        if(get_option('hws_base_tools_newsletter_schema')!=='1'){echo '<p>Enable the collector to create its storage.</p>';return;}
+        if(!in_array(get_option('hws_base_tools_newsletter_schema'),['1','2'],true)){echo '<p>Enable the collector to create its storage.</p>';return;}
         echo '<p>Total in '.esc_html($list).': '.self::store()->total($list).'</p><p><a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=hws_base_tools_newsletter_export&list='.$list),'hws_newsletter_export')).'">Export CSV</a></p><table class="widefat"><thead><tr><th>Email</th><th>Name</th><th>Time (EST)</th><th>IP</th><th>Source</th><th>Delete</th></tr></thead><tbody>';
         $before=absint($_GET['before']??0);$rows=self::store()->recent($list,21,$before);$has_older=count($rows)>20;$rows=array_slice($rows,0,20);
         foreach($rows as $r)echo '<tr><td>'.esc_html($r['email']).'</td><td>'.esc_html($r['name']).'</td><td>'.esc_html(SubmissionStore::est($r['created_at'])).'</td><td>'.esc_html($r['ip']).'</td><td>'.esc_html($r['source']).'</td><td><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="hws_base_tools_newsletter_delete"><input type="hidden" name="list" value="'.esc_attr($list).'"><input type="hidden" name="subscriber_id" value="'.(int)$r['id'].'">'.wp_nonce_field('hws_newsletter_delete:'.$list.':'.$r['id'],'_wpnonce',false,false).'<button class="button" type="submit">Delete subscriber</button></form></td></tr>';
@@ -233,13 +263,13 @@ final class NewsletterModule implements ModuleInterface {
         echo '<p>Shortcode: <code>[hws_newsletter list="'.esc_attr($list).'"]</code></p>';
     }
     public static function privacy_export(string $email,int $page=1): array {
-        if(get_option('hws_base_tools_newsletter_schema')!=='1')return ['data'=>[],'done'=>true];
+        if(!in_array(get_option('hws_base_tools_newsletter_schema'),['1','2'],true))return ['data'=>[],'done'=>true];
         $rows=self::store()->personal_data($email,$page);$data=[];
         foreach($rows as $r){$fields=[];foreach($r as $name=>$value)$fields[]=['name'=>$name,'value'=>$value];$data[]=['group_id'=>'hws-newsletter','group_label'=>'Newsletter signups','item_id'=>'hws-newsletter-'.$r['id'],'data'=>$fields];}
         return ['data'=>$data,'done'=>count($rows)<100];
     }
     public static function privacy_erase(string $email,int $page=1): array {
-        $ok=get_option('hws_base_tools_newsletter_schema')!=='1'||self::store()->erase($email);
+        $ok=!in_array(get_option('hws_base_tools_newsletter_schema'),['1','2'],true)||self::store()->erase($email);
         return ['items_removed'=>$ok,'items_retained'=>!$ok,'messages'=>$ok?[]:['Could not erase newsletter data.'],'done'=>$ok];
     }
 }

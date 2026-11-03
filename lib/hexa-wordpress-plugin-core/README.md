@@ -18,6 +18,11 @@
 
 ## Features
 
+### Submission deletion journal and list totals
+- **Does:** atomically records ID/list/UTC deletion tombstones on delete and privacy erase; serialized commits keep deletion cursors reliable. No subscriber personal fields are retained.
+- **Use:** `SubmissionStore::deleted($after,$limit)` returns items, next_after_id and has_more; cursor follows deletion_id. `lists()` includes known empty lists with zero totals. Hosts own authorization, migration and HTTP mapping. InnoDB is required for atomic deletion; a storage failure leaves rows intact.
+- **Code:** src/FrontendForms/SubmissionStore.php; docs/frontend-forms.md.
+
 ### Submission snapshot scanning
 - **Does:** reads submissions in ascending ID order with an upper bound and optional collection filter; hosts own authorization.
 - **Use:** `FrontendForms\SubmissionStore::scan($after, $limit, $collection, $upper)` returns items, upper_id, next_after_id and has_more. Reuse upper_id on subsequent pages; limit is clamped to 1-500.
