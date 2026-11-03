@@ -99,7 +99,7 @@ Simple and rounded use green #166534 and red #b91c1c on white (contrast ratios a
 Select the list ID in the Newsletter tab. Total and recent rows include EST and IP. Older submissions pages through 20 rows at a time; Newest submissions returns to the start. Each row has a Delete subscriber button protected by administrator capability and a nonce bound to that list and subscriber ID. Deletion permanently removes that row.
 Export CSV requires manage_options plus a valid export nonce; UTF-8 CSV includes UTC/EST and safe request metadata.
 Formula-like cells receive a leading apostrophe. Notifications default to the site admin email; blank disables them.
-Notices include email, list, EST time, IP, page URL, source, and a link to the list in the Newsletter admin tab. Only created rows send notices. A failed mail handoff never discards a saved subscriber; the notification hook exposes its result.
+Notices go to the notification address with the subject `Newsletter: Name <email> - example.com` (no name when the form has none) and come from `Site Name <no-reply@example.com>`, the site's own domain without `www.`, with Reply-To set to the subscriber, so replying answers them. The site must send mail through SMTP2GO, or another authenticated sender, for that `no-reply@` address to be delivered. Names are cleaned to one safe line before they reach the headers. Notices include name, email, list, EST time, IP, page URL, source, and a link to the list in the Newsletter admin tab. Only created rows send notices. A failed mail handoff never discards a saved subscriber; the notification hook exposes its result.
 Mail acceptance by WordPress does not prove delivery to a recipient.
 
 ## Follow-up automation

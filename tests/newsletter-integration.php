@@ -29,6 +29,12 @@ try {
  $r=N::submit($p,$fresh(105));nl_check(!is_wp_error($r)&&$r->get_data()['status']==='created','new signup');
  nl_check(count($mail)===1&&$mail[0]['to']==='nl1-notice@example.com','notification on new signup');
  foreach(['IP: 192.0.2.105','Page URL: https://example.com/signup','Source: newsletter','admin.php?page=hws-core-tools&tab=newsletter&list='] as $part)nl_check(str_contains($mail[0]['message'],$part),'notification metadata '.$part);
+ $host=preg_replace('/^www\./i','',(string)parse_url(home_url(),PHP_URL_HOST));$h=implode("\n",(array)$mail[0]['headers']);
+ nl_check($mail[0]['subject']==='Newsletter: =SUM 1 2 <nl1-test@example.com> - '.$host,'notice subject names subscriber and site');
+ nl_check(str_contains($h,'<no-reply@'.$host.'>')&&str_contains($h,'Reply-To: =SUM 1 2 <nl1-test@example.com>'),'notice from no-reply with subscriber reply-to');
+ $inj=N::submit(array_replace($p,['email'=>'nl1-inject@example.com','name'=>"Eve\r\nBcc: evil@example.com"]),$fresh(120));$last=end($mail);
+ nl_check(!is_wp_error($inj)&&!preg_match('/[\r\n]/',$last['subject'].implode('',(array)$last['headers']))&&!str_contains(implode("\n",(array)$last['headers']),"\nBcc"),'notice headers resist injection');
+ $mail=array_slice($mail,0,1);foreach($store->recent($list,50) as $row)if($row['email']==='nl1-inject@example.com')$store->delete($list,(int)$row['id']);
  nl_check(N::submit(array_replace($p,['email'=>'nl1-test@example.com']),$fresh(106))->get_data()['status']==='duplicate','normalized duplicate result');
  nl_check($store->total($list)===1&&count($mail)===1,'duplicate has no row or notification');
  $other=$store->add($list.'-other','nl1-test@example.com');nl_check($other['status']==='created','duplicate scope is per list');

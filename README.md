@@ -21,6 +21,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Read API:** authenticated administrators can GET `/wp-json/hws-base-tools/v1/newsletter/subscribers` with optional list, per_page, after_id and upper_id. Read-only cursor scans work while collection is off. Use WordPress application passwords over HTTPS; no downstream service is hard-coded.
 - **Messages:** Newsletter tab defaults for success, duplicate and failure; per-form `success`, `duplicate`, `error` overrides (plain text, 2000 bytes). Blank failure preserves specific field instructions. Signed configuration and no-JavaScript results use the same copy.
 - **Result styles:** `hws-newsletter__status--success`, `--duplicate`, `--error`; form `data-state` remains created/duplicate/error. Simple/rounded show accessible green success and red errors; none remains unstyled.
+- **Notification email:** subject `Newsletter: Name <email> - domain`, sent from `Site Name <no-reply@domain>` with Reply-To the subscriber; names are cleaned so they cannot add mail headers. Needs SMTP2GO (or another authenticated sender) on the domain.
 - **Does:** collects email signups, optional name and consent, reports duplicates, pages recent rows, deletes individual subscribers, exports CSV and sends optional signup notices with source metadata.
 - **Switch:** Settings > HWS Base Tools > Newsletter (`hws_base_tools_newsletter`), disabled by default.
 - **Use:** `[hws_newsletter]`; [all parameters, defaults, setup and commands](docs/newsletter.md).

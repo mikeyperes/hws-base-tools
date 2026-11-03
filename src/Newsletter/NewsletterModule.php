@@ -202,16 +202,23 @@ final class NewsletterModule implements ModuleInterface {
             $to=self::settings()['notification_email'];
             if($to&&is_email($to)) {
                 $metadata=SubmissionStore::headers($server,(string)(!empty($p['page_url'])?$p['page_url']:($server['HTTP_REFERER']??'')));
-                $body='List: '.$a['list']."\nEmail: ".$email."\nTime: ".SubmissionStore::est(gmdate('Y-m-d H:i:s'))
+                $host=preg_replace('/^www\./i','',(string)parse_url(home_url(),PHP_URL_HOST));
+                $name=self::header_text($a['name']==='on'?(string)($p['name']??''):'');
+                $site=self::header_text((string)get_bloginfo('name'))?:$host;
+                $subject='Newsletter: '.($name!==''?$name.' ':'').'<'.$email.'> - '.$host;
+                $headers=['From: '.$site.' <no-reply@'.$host.'>','Reply-To: '.($name!==''?$name.' ':'').'<'.$email.'>'];
+                $body='List: '.$a['list']."\nName: ".$name."\nEmail: ".$email."\nTime: ".SubmissionStore::est(gmdate('Y-m-d H:i:s'))
                     ."\nIP: ".SubmissionStore::client_ip($server)."\nPage URL: ".$metadata['page_url']
                     ."\nSource: ".$a['source']."\nManage signups: ".admin_url('admin.php?page=hws-core-tools&tab=newsletter&list='.rawurlencode($a['list']));
-                $sent=wp_mail($to,'New newsletter signup',$body);
+                $sent=wp_mail($to,$subject,$body,$headers);
                 do_action('hws_base_tools_newsletter_notification',$sent,$result['id']);
             }
             do_action('hws_base_tools_newsletter_signup',$result['id'],$a['list']);
         }
         return new \WP_REST_Response(['status'=>$result['status'],'message'=>$result['status']==='duplicate'?$a['duplicate']:$a['success']],$result['status']==='created'?201:200);
     }
+    /** One header-safe line: no line breaks, angle brackets, quotes or commas. */
+    private static function header_text(string $text): string {return trim(mb_substr(preg_replace('/[\x00-\x1F\x7F<>"(),;:\\\\]+/u',' ',$text)??'',0,120));}
     public static function post(): void {$r=self::submit(wp_unslash($_POST),$_SERVER,false);wp_die(esc_html(is_wp_error($r)?$r->get_error_message():$r->get_data()['message']),'Newsletter signup',['response'=>is_wp_error($r)?($r->get_error_data()['status']??400):200,'back_link'=>true]);}
     private static function guard(string $action): void {if(!current_user_can('manage_options'))wp_die('Administrator access required.',403);check_admin_referer($action);}
     public static function save(): void {
