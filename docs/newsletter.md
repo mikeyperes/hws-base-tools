@@ -16,7 +16,10 @@ Attributes and defaults:
 - list: default (lowercase letters, digits, underscore and hyphen; max 80; starts with letter/digit)
 - placeholder: Your email address
 - button: Subscribe
-- success: Thanks for signing up! (string, maximum 2000 bytes)
+- success: saved site default, initially Thanks for signing up!
+- duplicate: saved site default, initially This email is already subscribed to this list.
+- error: saved site override, initially blank. Blank uses Signup could not be saved. Try again later. for server/rate/security failures, and preserves specific invalid-email and missing-consent instructions. A nonempty override replaces all failure messages, including field instructions.
+- All three message parameters are plain text, maximum 2000 UTF-8 bytes each (not characters). Overlong/non-string shortcode messages reject the form; invalid admin saves preserve all prior settings. HTML is displayed as text, never executed. New forms sign these messages; unsigned request fields cannot override them. Older signed forms retain their success and inherit current duplicate/error settings.
 - style: saved admin default, initially none; none, simple, rounded
 - id: generated unique ID; class: empty (space separated additional classes)
 - name: off; on adds optional name
@@ -29,7 +32,7 @@ Generated configuration and nonce values use placeholders below; production URLs
 The same classes are present with every style. Each label wraps its control.
 Name, consent and Turnstile containers appear only when enabled.
 
-    <form id="weekly-signup" class="hws-newsletter hws-newsletter--none my-signup" method="post" action="/wp-admin/admin-post.php" data-endpoint="/wp-json/hws-base-tools/v1/newsletter">
+    <form id="weekly-signup" class="hws-newsletter hws-newsletter--none my-signup" method="post" action="/wp-admin/admin-post.php" data-endpoint="/wp-json/hws-base-tools/v1/newsletter" data-error="Signup could not be saved. Try again later.">
       <input type="hidden" name="action" value="hws_base_tools_newsletter">
       <input type="hidden" name="config" value="SIGNED_CONFIGURATION">
       <input type="hidden" name="nonce" value="NONCE">
@@ -51,6 +54,8 @@ Name, consent and Turnstile containers appear only when enabled.
       <div class="hws-newsletter__status" role="status" aria-live="polite"></div>
     </form>
 
+The status element gains exactly one result class: `hws-newsletter__status--success` (created), `hws-newsletter__status--duplicate`, or `hws-newsletter__status--error`. Pending submissions clear the prior result class.
+
 JS sets data-state="created", "duplicate" or "error" and aria-busy during requests.
 REST uses freshly fetched nonces. The no-JavaScript admin-post fallback deliberately ignores the page-baked public signup nonce, which may be expired in a cached page. Signed configuration, honeypot, IP rate limits, validation, enabled state and inherited Turnstile still apply. Without JS the POST fallback displays a result with a back link.
 Turnstile requires JS and inherits the enabled Base Tools Form Protection provider/keys. reCAPTCHA is not inherited.
@@ -58,7 +63,7 @@ A failed security check never saves a row.
 
 Additional examples:
 
-    [hws_newsletter list="weekly" style="simple"]
+    [hws_newsletter list="weekly" style="simple" success="Welcome aboard!" duplicate="You are already on our list." error="Please try again later."]
     [hws_newsletter list="events" style="rounded" name="on"]
     [hws_newsletter list="weekly" style="none" consent="on"]
 
@@ -68,13 +73,13 @@ No CSS for none. Exact generated simple and rounded CSS is reproduced below and 
 ### simple
 
 ```css
-.hws-newsletter--simple .hws-newsletter__fields{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.hws-newsletter--simple .hws-newsletter__field{display:flex;flex:1 1 180px;flex-direction:column;gap:6px}.hws-newsletter--simple .hws-newsletter__input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #767676;background:#fff;color:#161616}.hws-newsletter--simple .hws-newsletter__button{padding:12px 20px;border:1px solid #162638;background:#162638;color:#fff;cursor:pointer}.hws-newsletter--simple .hws-newsletter__status{margin-top:12px}.hws-newsletter--simple :focus-visible{outline:2px solid #2673b8;outline-offset:3px}
+.hws-newsletter--simple .hws-newsletter__fields{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.hws-newsletter--simple .hws-newsletter__field{display:flex;flex:1 1 180px;flex-direction:column;gap:6px}.hws-newsletter--simple .hws-newsletter__input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #767676;background:#fff;color:#161616}.hws-newsletter--simple .hws-newsletter__button{padding:12px 20px;border:1px solid #162638;background:#162638;color:#fff;cursor:pointer}.hws-newsletter--simple .hws-newsletter__status{margin-top:12px}.hws-newsletter--simple :focus-visible{outline:2px solid #2673b8;outline-offset:3px}.hws-newsletter--simple .hws-newsletter__status--success{color:#166534;background:#fff}.hws-newsletter--simple .hws-newsletter__status--error{color:#b91c1c;background:#fff}
 ```
 
 ### rounded
 
 ```css
-.hws-newsletter--rounded .hws-newsletter__fields{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.hws-newsletter--rounded .hws-newsletter__field{display:flex;flex:1 1 180px;flex-direction:column;gap:6px}.hws-newsletter--rounded .hws-newsletter__input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #767676;background:#fff;color:#161616}.hws-newsletter--rounded .hws-newsletter__button{padding:12px 20px;border:1px solid #162638;background:#162638;color:#fff;cursor:pointer}.hws-newsletter--rounded .hws-newsletter__status{margin-top:12px}.hws-newsletter--rounded :focus-visible{outline:2px solid #2673b8;outline-offset:3px}.hws-newsletter--rounded .hws-newsletter__input,.hws-newsletter--rounded .hws-newsletter__button{border-radius:24px}
+.hws-newsletter--rounded .hws-newsletter__fields{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.hws-newsletter--rounded .hws-newsletter__field{display:flex;flex:1 1 180px;flex-direction:column;gap:6px}.hws-newsletter--rounded .hws-newsletter__input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #767676;background:#fff;color:#161616}.hws-newsletter--rounded .hws-newsletter__button{padding:12px 20px;border:1px solid #162638;background:#162638;color:#fff;cursor:pointer}.hws-newsletter--rounded .hws-newsletter__status{margin-top:12px}.hws-newsletter--rounded :focus-visible{outline:2px solid #2673b8;outline-offset:3px}.hws-newsletter--rounded .hws-newsletter__status--success{color:#166534;background:#fff}.hws-newsletter--rounded .hws-newsletter__status--error{color:#b91c1c;background:#fff}.hws-newsletter--rounded .hws-newsletter__input,.hws-newsletter--rounded .hws-newsletter__button{border-radius:24px}
 ```
 
 ## Elementor Custom CSS
@@ -84,6 +89,11 @@ Use a Shortcode widget with [hws_newsletter style="none"]. In Advanced > Custom 
     selector .hws-newsletter__field { flex: 1 1 180px; }
     selector .hws-newsletter__input { width: 100%; padding: 12px; border: 1px solid #777; }
     selector .hws-newsletter__button { padding: 12px 20px; background: #162638; color: #fff; }
+    selector .hws-newsletter__status--success { color: #166534; background: #fff; }
+    selector .hws-newsletter__status--duplicate { color: #374151; background: #fff; }
+    selector .hws-newsletter__status--error { color: #b91c1c; background: #fff; }
+
+Simple and rounded use green #166534 and red #b91c1c on white (contrast ratios about 7.1:1 and 6.5:1). Style none adds no CSS. The no-JavaScript result page uses the same signed messages and HTML escaping. Configure site defaults in the Newsletter tab; shortcode values override them per form.
 
 ## Export and notifications
 Select the list ID in the Newsletter tab. Total and recent rows include EST and IP. Older submissions pages through 20 rows at a time; Newest submissions returns to the start. Each row has a Delete subscriber button protected by administrator capability and a nonce bound to that list and subscriber ID. Deletion permanently removes that row.
@@ -121,3 +131,9 @@ SubmissionStore is an internal PHP API; callers must apply their own authorizati
 
 ## Style loading
 Styles use one WordPress handle per built-in style, not per-render flags. An indexer can discard a shortcode expansion without losing its queued stylesheet. WordPress prints each handle once, in the head if queued early or via the footer for late-rendered Elementor widgets. No style is queued for none.
+
+## Message-change asset inventory
+
+Before and after this change: the home page and an article without the shortcode load no newsletter assets. A page using the enabled shortcode loads newsletter.js, plus only the chosen simple/rounded inline CSS handle (none loads no CSS). The Newsletter admin tab prints its selected style preview and CSS without loading the visitor script. Message colors extend the existing inline stylesheet; no new asset, request, or global loading hook was added.
+
+Tests: `wp eval-file wp-content/plugins/hws-base-tools/tests/newsletter-messages-integration.php --user=<admin>` (54 assertions, restores settings and deletes its fixtures), `node tests/newsletter-messages-js.cjs` (21 assertions, Node 22), and the existing newsletter integration and web-context tests.

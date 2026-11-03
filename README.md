@@ -14,6 +14,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 
 ### Newsletter signup collector
+- **Messages:** Newsletter tab defaults for success, duplicate and failure; per-form `success`, `duplicate`, `error` overrides (plain text, 2000 bytes). Blank failure preserves specific field instructions. Signed configuration and no-JavaScript results use the same copy.
+- **Result styles:** `hws-newsletter__status--success`, `--duplicate`, `--error`; form `data-state` remains created/duplicate/error. Simple/rounded show accessible green success and red errors; none remains unstyled.
 - **Does:** collects email signups, optional name and consent, reports duplicates, pages recent rows, deletes individual subscribers, exports CSV and sends optional signup notices with source metadata.
 - **Switch:** Settings > HWS Base Tools > Newsletter (`hws_base_tools_newsletter`), disabled by default.
 - **Use:** `[hws_newsletter]`; [all parameters, defaults, setup and commands](docs/newsletter.md).

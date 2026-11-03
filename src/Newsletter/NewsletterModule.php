@@ -6,6 +6,10 @@ use HWS\BaseTools\FormProtection\{Settings,BotCheck};
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 
 final class NewsletterModule implements ModuleInterface {
+    public const SUCCESS='Thanks for signing up!';
+    public const DUPLICATE='This email is already subscribed to this list.';
+    public const ERROR='Signup could not be saved. Try again later.';
+    public const MESSAGE_LIMIT=2000;
     public const OPTION='hws_base_tools_newsletter';
 
     public function register(): void {
@@ -21,7 +25,7 @@ final class NewsletterModule implements ModuleInterface {
         add_filter('wp_privacy_personal_data_exporters',function($items){$items['hws-newsletter']=['exporter_friendly_name'=>'Newsletter signups','callback'=>[self::class,'privacy_export']];return $items;});
         add_filter('wp_privacy_personal_data_erasers',function($items){$items['hws-newsletter']=['eraser_friendly_name'=>'Newsletter signups','callback'=>[self::class,'privacy_erase']];return $items;});
     }
-    public static function settings(): array {return array_replace(['enabled'=>false,'notification_email'=>get_option('admin_email'),'style'=>'none'],(array)get_option(self::OPTION,[]));}
+    public static function settings(): array {return array_replace(['enabled'=>false,'notification_email'=>get_option('admin_email'),'style'=>'none','success'=>self::SUCCESS,'duplicate'=>self::DUPLICATE,'error'=>''],(array)get_option(self::OPTION,[]));}
     public static function store(): SubmissionStore {return new SubmissionStore;}
     public static function init(): void {
         add_shortcode('hws_newsletter',[self::class,'render']);
@@ -35,7 +39,7 @@ final class NewsletterModule implements ModuleInterface {
     }
     public static function config(array $a): string { $json=wp_json_encode($a); return base64_encode($json).'.'.hash_hmac('sha256',$json,wp_salt('nonce')); }
     public static function decode(string $token): ?array {
-        if(strlen($token)>10000)return null;
+        if(strlen($token)>60000)return null;
         $parts=explode('.',$token,2);$json=base64_decode($parts[0],true);
         if(!$json||!hash_equals(hash_hmac('sha256',$json,wp_salt('nonce')),$parts[1]??''))return null;
         $a=json_decode($json,true);
@@ -43,17 +47,28 @@ final class NewsletterModule implements ModuleInterface {
         foreach(['list','name','consent','source','success'] as $key)if(!isset($a[$key])||!is_string($a[$key]))return null;
         try{SubmissionStore::collection($a['list']);}catch(\InvalidArgumentException $e){return null;}
         if(!in_array($a['name'],['on','off'],true)||!in_array($a['consent'],['on','off'],true)||strlen($a['source'])>120||strlen($a['success'])>2000)return null;
+        foreach(['duplicate','error'] as $key) {
+            if(array_key_exists($key,$a)&&(!is_string($a[$key])||strlen($a[$key])>self::MESSAGE_LIMIT))return null;
+            if(!isset($a[$key]))$a[$key]=self::settings()[$key];
+        }
         return $a;
+    }
+    /** Only verified signed configuration may override a response. */
+    private static function failure(string $code,int $status,?array $a=null,string $field_message=''): \WP_Error {
+        $error=$a['error']??self::settings()['error'];
+        return new \WP_Error($code,$error!==''?$error:($field_message!==''?$field_message:self::ERROR),['status'=>$status]);
     }
     public static function css(string $style): string {
         if(!in_array($style,['simple','rounded'],true))return '';
         $root='.hws-newsletter--'.$style;
         $css="$root .hws-newsletter__fields{display:flex;flex-wrap:wrap;gap:12px;align-items:end}$root .hws-newsletter__field{display:flex;flex:1 1 180px;flex-direction:column;gap:6px}$root .hws-newsletter__input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #767676;background:#fff;color:#161616}$root .hws-newsletter__button{padding:12px 20px;border:1px solid #162638;background:#162638;color:#fff;cursor:pointer}$root .hws-newsletter__status{margin-top:12px}$root :focus-visible{outline:2px solid #2673b8;outline-offset:3px}";
+        $css.="$root .hws-newsletter__status--success{color:#166534;background:#fff}$root .hws-newsletter__status--error{color:#b91c1c;background:#fff}";
         return $css.($style==='rounded'?"$root .hws-newsletter__input,$root .hws-newsletter__button{border-radius:24px}":'');
     }
     public static function render($atts=[],bool $preview=false): string {
         if(!$preview&&!self::settings()['enabled'])return '';
-        $a=shortcode_atts(['list'=>'default','placeholder'=>'Your email address','button'=>'Subscribe','success'=>'Thanks for signing up!','style'=>self::settings()['style'],'id'=>'','class'=>'','name'=>'off','consent'=>'off','consent_text'=>'I agree to receive newsletter emails.','source'=>'newsletter'],(array)$atts,'hws_newsletter');
+        $a=shortcode_atts(['list'=>'default','placeholder'=>'Your email address','button'=>'Subscribe','success'=>self::settings()['success'],'duplicate'=>self::settings()['duplicate'],'error'=>self::settings()['error'],'style'=>self::settings()['style'],'id'=>'','class'=>'','name'=>'off','consent'=>'off','consent_text'=>'I agree to receive newsletter emails.','source'=>'newsletter'],(array)$atts,'hws_newsletter');
+        foreach(['success','duplicate','error'] as $key)if(!is_string($a[$key])||strlen($a[$key])>self::MESSAGE_LIMIT)return '';
         try {SubmissionStore::collection($a['list']);}catch(\InvalidArgumentException $e){return '';}
         $a['style']=in_array($a['style'],['none','simple','rounded'],true)?$a['style']:'none';
         $uid=$a['id']!==''?sanitize_html_class($a['id']):wp_unique_id('hws-newsletter-');
@@ -61,8 +76,8 @@ final class NewsletterModule implements ModuleInterface {
         $html='';
         \Hexa\PluginCore\PublicComponents\InlineStyles::enqueue('hws-newsletter-'.$a['style'],self::css($a['style']));
         if(!$preview)wp_enqueue_script('hws-newsletter',plugins_url('assets/newsletter/newsletter.js',PluginMetadata::plugin_file()),[],PluginMetadata::VERSION,true);
-        $html.='<form id="'.esc_attr($uid).'" class="hws-newsletter hws-newsletter--'.esc_attr($a['style']).' '.esc_attr($classes).'" method="post" action="'.esc_url(admin_url('admin-post.php')).'" data-endpoint="'.esc_url(rest_url('hws-base-tools/v1/newsletter')).'">';
-        $html.='<input type="hidden" name="action" value="hws_base_tools_newsletter"><input type="hidden" name="config" value="'.esc_attr(self::config($a)).'"><input type="hidden" name="nonce" value="'.esc_attr(wp_create_nonce('hws_newsletter')).'"><input type="hidden" name="page_url" value="">';
+        $html.='<form id="'.esc_attr($uid).'" class="hws-newsletter hws-newsletter--'.esc_attr($a['style']).' '.esc_attr($classes).'" method="post" action="'.esc_url(admin_url('admin-post.php')).'" data-endpoint="'.esc_url(rest_url('hws-base-tools/v1/newsletter')).'" data-error="'.esc_attr($a['error']!==''?$a['error']:self::ERROR).'">';
+        $html.='<input type="hidden" name="action" value="hws_base_tools_newsletter"><input type="hidden" name="config" value="'.esc_attr(self::config(array_intersect_key($a,array_flip(['list','name','consent','source','success','duplicate','error'])))).'"><input type="hidden" name="nonce" value="'.esc_attr(wp_create_nonce('hws_newsletter')).'"><input type="hidden" name="page_url" value="">';
         $html.='<div class="hws-newsletter__fields">';
         if($a['name']==='on')$html.='<label class="hws-newsletter__field"><span class="hws-newsletter__label">Name</span><input class="hws-newsletter__input" name="name" autocomplete="name" maxlength="200"></label>';
         $html.='<label class="hws-newsletter__field"><span class="hws-newsletter__label">Email</span><input class="hws-newsletter__input" type="email" name="email" autocomplete="email" required maxlength="254" placeholder="'.esc_attr($a['placeholder']).'"></label><button class="hws-newsletter__button" type="submit"'.($preview?' disabled':'').'>'.esc_html($a['button']).'</button></div>';
@@ -74,25 +89,25 @@ final class NewsletterModule implements ModuleInterface {
     }
     public static function routes(): void {
         register_rest_route('hws-base-tools/v1','/newsletter',['methods'=>'POST','permission_callback'=>'__return_true','callback'=>function($r){return self::submit((array)$r->get_params(),$_SERVER);}]);
-        register_rest_route('hws-base-tools/v1','/newsletter/nonce',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){if(!self::settings()['enabled'])return new \WP_Error('disabled','Newsletter signup is disabled.',['status'=>403]);$r=new \WP_REST_Response(['nonce'=>wp_create_nonce('hws_newsletter')]);$r->header('Cache-Control','no-store, private');return $r;}]);
+        register_rest_route('hws-base-tools/v1','/newsletter/nonce',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){if(!self::settings()['enabled'])return self::failure('disabled',403);$r=new \WP_REST_Response(['nonce'=>wp_create_nonce('hws_newsletter')]);$r->header('Cache-Control','no-store, private');return $r;}]);
     }
     public static function submit(array $p,array $server,bool $require_nonce=true) {
-        if(!self::settings()['enabled'])return new \WP_Error('disabled','Newsletter signup is disabled.',['status'=>403]);
-        if(!self::store()->allow(SubmissionStore::client_ip($server)))return new \WP_Error('rate_limit','Too many attempts. Try again in ten minutes.',['status'=>429]);
-        if($require_nonce&&!wp_verify_nonce(is_string($p['nonce']??null)?$p['nonce']:'','hws_newsletter'))return new \WP_Error('nonce','This form expired. Reload and try again.',['status'=>403]);
         $a=self::decode(is_string($p['config']??null)?$p['config']:'');
-        if(!$a)return new \WP_Error('config','Invalid signup form.',['status'=>400]);
-        if(!empty($p['company_website']))return new \WP_Error('spam','Signup rejected.',['status'=>400]);
-        if($a['consent']==='on'&&($p['consent']??'')!=='1')return new \WP_Error('consent','Please agree to receive the newsletter.',['status'=>400]);
+        if(!self::settings()['enabled'])return self::failure('disabled',403,$a);
+        if(!self::store()->allow(SubmissionStore::client_ip($server)))return self::failure('rate_limit',429,$a);
+        if($require_nonce&&!wp_verify_nonce(is_string($p['nonce']??null)?$p['nonce']:'','hws_newsletter'))return self::failure('nonce',403,$a);
+        if(!$a)return self::failure('config',400);
+        if(!empty($p['company_website']))return self::failure('spam',400,$a);
+        if($a['consent']==='on'&&($p['consent']??'')!=='1')return self::failure('consent',400,$a,'Please agree to receive the newsletter.');
         $email=SubmissionStore::email((string)($p['email']??''));
-        if(strlen($email)>254||!is_email($email))return new \WP_Error('email','Enter a valid email address.',['status'=>400]);
+        if(strlen($email)>254||!is_email($email))return self::failure('email',400,$a,'Enter a valid email address.');
         $s=Settings::get();
         if($s['enabled']&&$s['bot_check']==='turnstile') {
             $bot=new BotCheck(static function($url,$body){$r=wp_safe_remote_post($url,['timeout'=>10,'body'=>$body]);return is_wp_error($r)?null:json_decode(wp_remote_retrieve_body($r),true);});
-            if($bot->reason('turnstile',(string)($p['cf-turnstile-response']??''),$s,(string)parse_url(home_url(),PHP_URL_HOST),SubmissionStore::client_ip($server)))return new \WP_Error('turnstile','Please complete the security check.',['status'=>400]);
+            if($bot->reason('turnstile',(string)($p['cf-turnstile-response']??''),$s,(string)parse_url(home_url(),PHP_URL_HOST),SubmissionStore::client_ip($server)))return self::failure('turnstile',400,$a);
         }
         $result=self::store()->add($a['list'],$email,['server'=>$server,'page_url'=>(string)(!empty($p['page_url'])?$p['page_url']:($server['HTTP_REFERER']??'')),'name'=>$a['name']==='on'?($p['name']??''):'','source'=>$a['source'],'consent'=>($p['consent']??'')==='1']);
-        if($result['status']==='error')return new \WP_Error('storage','Signup could not be saved. Try again later.',['status'=>503]);
+        if($result['status']==='error')return self::failure('storage',503,$a);
         if($result['status']==='created') {
             $to=self::settings()['notification_email'];
             if($to&&is_email($to)) {
@@ -105,7 +120,7 @@ final class NewsletterModule implements ModuleInterface {
             }
             do_action('hws_base_tools_newsletter_signup',$result['id'],$a['list']);
         }
-        return new \WP_REST_Response(['status'=>$result['status'],'message'=>$result['status']==='duplicate'?'This email is already subscribed to this list.':$a['success']],$result['status']==='created'?201:200);
+        return new \WP_REST_Response(['status'=>$result['status'],'message'=>$result['status']==='duplicate'?$a['duplicate']:$a['success']],$result['status']==='created'?201:200);
     }
     public static function post(): void {$r=self::submit(wp_unslash($_POST),$_SERVER,false);wp_die(esc_html(is_wp_error($r)?$r->get_error_message():$r->get_data()['message']),'Newsletter signup',['response'=>is_wp_error($r)?($r->get_error_data()['status']??400):200,'back_link'=>true]);}
     private static function guard(string $action): void {if(!current_user_can('manage_options'))wp_die('Administrator access required.',403);check_admin_referer($action);}
@@ -113,7 +128,13 @@ final class NewsletterModule implements ModuleInterface {
         self::guard('hws_newsletter_save'); $email=trim((string)wp_unslash($_POST['notification_email']??''));
         if($email!==''&&!is_email($email))wp_die('Enter a valid notification email, or leave blank.',400);
         $style=sanitize_key($_POST['style']??'none');
-        update_option(self::OPTION,['enabled'=>isset($_POST['enabled']),'notification_email'=>$email,'style'=>in_array($style,['none','simple','rounded'],true)?$style:'none'],false);
+        $messages=[];
+        foreach(['success'=>self::SUCCESS,'duplicate'=>self::DUPLICATE,'error'=>''] as $key=>$default) {
+            $value=wp_unslash($_POST[$key]??$default);
+            if(!is_string($value)||strlen($value)>self::MESSAGE_LIMIT)wp_die('Messages must be text of at most 2000 bytes.',400);
+            $messages[$key]=$value;
+        }
+        update_option(self::OPTION,array_merge(['enabled'=>isset($_POST['enabled']),'notification_email'=>$email,'style'=>in_array($style,['none','simple','rounded'],true)?$style:'none'],$messages),false);
         do_action('litespeed_purge_all');wp_safe_redirect(admin_url('admin.php?page=hws-core-tools&tab=newsletter'));exit;
     }
     public static function delete(): void {
@@ -136,7 +157,10 @@ final class NewsletterModule implements ModuleInterface {
         wp_nonce_field('hws_newsletter_save');
         echo '<h3>Enable signup collector</h3><label><input type="checkbox" name="enabled" '.checked($s['enabled'],true,false).'> Enabled</label><h3>Signup notification email</h3><p>Blank disables notifications. Defaults to the site administrator email.</p><input type="email" name="notification_email" value="'.esc_attr($s['notification_email']).'"><h3>Default style</h3><select name="style">';
         foreach(['none'=>'No plugin styling','simple'=>'Simple','rounded'=>'Rounded'] as $key=>$label)echo '<option value="'.$key.'" '.selected($s['style'],$key,false).'>'.$label.'</option>';
-        echo '</select><p><button class="button button-primary">Save settings</button></p></form><h3>Selected style preview</h3>'.self::render(['style'=>$s['style']],true).'<h3>Exact selected style CSS</h3>'.\Hexa\PluginCore\WpAdminComponents\CodeDisplay::render(self::css($s['style'])?:'/* No plugin CSS */',['language'=>'css','title'=>'Selected newsletter style']);
+        echo '</select>';
+        foreach(['success'=>'Success message','duplicate'=>'Already subscribed message','error'=>'Failure message'] as $key=>$label)echo '<h3><label for="hws-newsletter-'.$key.'">'.esc_html($label).'</label></h3><textarea id="hws-newsletter-'.$key.'" name="'.$key.'" rows="2" class="large-text" maxlength="2000" placeholder="'.esc_attr($key==='error'?self::ERROR:'').'">'.esc_textarea($s[$key]).'</textarea>';
+        echo '<p>Messages are plain text, maximum 2000 bytes each. Leave failure blank for the default error and specific email/consent instructions. A custom failure message also replaces field instructions.</p>';
+        echo '<p><button class="button button-primary">Save settings</button></p></form><h3>Selected style preview</h3>'.self::render(['style'=>$s['style']],true).'<h3>Exact selected style CSS</h3>'.\Hexa\PluginCore\WpAdminComponents\CodeDisplay::render(self::css($s['style'])?:'/* No plugin CSS */',['language'=>'css','title'=>'Selected newsletter style']);
         echo '<h3>List</h3><form method="get"><input type="hidden" name="page" value="hws-core-tools"><input type="hidden" name="tab" value="newsletter"><label>List ID <input name="list" pattern="[a-z0-9][a-z0-9_-]{0,79}" value="'.esc_attr($list).'"></label><button class="button">View list</button></form>';
         if(get_option('hws_base_tools_newsletter_schema')!=='1'){echo '<p>Enable the collector to create its storage.</p>';return;}
         echo '<p>Total in '.esc_html($list).': '.self::store()->total($list).'</p><p><a class="button" href="'.esc_url(wp_nonce_url(admin_url('admin-post.php?action=hws_base_tools_newsletter_export&list='.$list),'hws_newsletter_export')).'">Export CSV</a></p><table class="widefat"><thead><tr><th>Email</th><th>Name</th><th>Time (EST)</th><th>IP</th><th>Source</th><th>Delete</th></tr></thead><tbody>';
