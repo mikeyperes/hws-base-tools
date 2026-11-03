@@ -142,18 +142,19 @@ expect_true(
     && $sorted_grouped_tab_ids === $sorted_tab_ids,
     'grouped sidebar assigns every HWS tab exactly once'
 );
-expect_true( count( $groups ) === 6 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use six clear sidebar groups' );
-$operations_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Operations' === ( $group['label'] ?? '' ) ) );
+expect_true( count( $groups ) === 9 && ( $groups[0]['label'] ?? '' ) === 'Overview', 'HWS tabs use nine clear sidebar groups' );
+$operations_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Site Health' === ( $group['label'] ?? '' ) ) );
 expect_true(
     1 === count( $operations_groups ) && in_array( 'maintenance-mode', $operations_groups[0]['tabs'] ?? [], true ),
-    'Maintenance Mode has one canonical location in the Operations sidebar group'
+    'Maintenance Mode has one canonical location in the Site Health sidebar group'
 );
-$site_brand_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Site & Brand' === ( $group['label'] ?? '' ) ) );
+$brand_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Brand & People' === ( $group['label'] ?? '' ) ) );
+$layout_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Pages & Layout' === ( $group['label'] ?? '' ) ) );
 expect_true(
-    1 === count( $site_brand_groups )
-    && in_array( 'page-layout-styling', $site_brand_groups[0]['tabs'] ?? [], true )
-    && in_array( 'brand-templates', $site_brand_groups[0]['tabs'] ?? [], true ),
-    'Page Layout Styling and Brand Templates have canonical locations in the Site & Brand sidebar group'
+    1 === count( $brand_groups ) && 1 === count( $layout_groups )
+    && in_array( 'page-layout-styling', $layout_groups[0]['tabs'] ?? [], true )
+    && in_array( 'brand-templates', $brand_groups[0]['tabs'] ?? [], true ),
+    'Brand Templates sit under Brand & People and Page Layout Styling under Pages & Layout'
 );
 $layout_definitions = HWS\BaseTools\PageLayoutStyling\PageLayoutSettings::definitions();
 expect_true(
@@ -269,8 +270,8 @@ expect_true(
 );
 $security_groups = array_values( array_filter( $groups, static fn( array $group ): bool => 'Security' === ( $group['label'] ?? '' ) ) );
 expect_true(
-    1 === count( $security_groups ) && ( $security_groups[0]['tabs'] ?? [] ) === [ 'masked-login' ],
-    'Masked Login has one dedicated Security sidebar location'
+    1 === count( $security_groups ) && ( $security_groups[0]['tabs'] ?? [] ) === [ 'form-protection', 'masked-login' ],
+    'Form Protection and Masked Login share one Security sidebar group'
 );
 expect_true(
     $registry->implementation_files_for_tab( 'sitemaps' ) === [ 'settings-dashboard-site-profile.php', 'settings-dashboard-sitemaps.php' ],
