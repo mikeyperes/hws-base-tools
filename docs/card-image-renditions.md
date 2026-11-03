@@ -41,7 +41,7 @@ uses WordPress safe HTTP requests and image editors, and never enlarges original
 (or replays cached delivery markup). It observes the visible image's actual box,
 requests its width at 1x/2x density, rounds down to eight pixels and caps the result
 at 768px. It updates on viewport/layout changes and discovers newly appended cards.
-The original remote URL is never installed as the browser image source. Existing
+The original remote URL is never installed as the browser image source. The WordPress srcset-enrichment filter is disabled only for marked measured images, and the script removes any stale candidate list before setting their bounded source. Existing
 alt text, links, dimensions, crop, loading priority and layout remain unchanged.
 
 Post Info author avatars are rendered at twice the configured pixel box (22px

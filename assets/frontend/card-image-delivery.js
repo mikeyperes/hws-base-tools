@@ -7,6 +7,9 @@
     const width = image.getBoundingClientRect().width;
     if (width < 1) return;
     const pixels = Math.min(768, Math.max(8, Math.floor(width * Math.min(2, window.devicePixelRatio || 1) / 8) * 8));
+    // WordPress/optimizers may enrich cached markup after the widget renders.
+    image.removeAttribute('srcset');
+    image.removeAttribute('sizes');
     if (image.dataset.hwsCardPixels === String(pixels)) return;
     const url = new URL(image.dataset.hwsCardEndpoint, document.baseURI);
     url.searchParams.set('w', String(pixels));

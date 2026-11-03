@@ -11,8 +11,13 @@ final class CardImageDelivery {
     private const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/%3E';
 
     public function register(): void {
+        add_filter( 'wp_img_tag_add_srcset_and_sizes_attr', [ $this, 'automatic_srcset' ], 110, 2 );
         add_action( 'template_redirect', [ $this, 'deliver' ], 0 );
         add_filter( 'elementor/widget/render_content', [ $this, 'render' ], 110, 2 );
+    }
+
+    public function automatic_srcset( $add, string $image ): bool {
+        return str_contains( $image, 'data-hws-card-endpoint=' ) ? false : (bool) $add;
     }
 
     public function render( string $html, $widget ): string {
@@ -59,7 +64,7 @@ final class CardImageDelivery {
             $changed = true;
         }
         if ( $changed || str_contains( $html, 'data-hws-card-endpoint' ) ) {
-            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.59.2', true );
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.59.3', true );
         }
         return $tags->get_updated_html();
     }

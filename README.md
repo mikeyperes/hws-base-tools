@@ -482,6 +482,9 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.59.3
+- Prevent WordPress from regenerating the old responsive candidate list on measured card images, and discard stale candidates before delivery. This keeps the browser on the bounded rendition instead of overriding it with the original.
+
 ### 13.59.2
 - Apply measured delivery to all card-sized loop photos, including landscape-classified local imports whose supplied srcset describes an oversized source. Resolve the original attachment for sharp renditions without serving it directly.
 
