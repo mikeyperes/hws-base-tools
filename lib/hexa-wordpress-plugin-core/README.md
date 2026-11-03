@@ -18,6 +18,8 @@
 
 ## Features
 
+- PodcastSeries, PodcastSeason, PodcastEpisode, AudioObject, VideoObject and DataFeed builders with stable IDs, linked graph references, and shared content schema declarations.
+
 ### Submission deletion journal and list totals
 - **Does:** atomically records ID/list/UTC deletion tombstones on delete and privacy erase; serialized commits keep deletion cursors reliable. No subscriber personal fields are retained.
 - **Use:** `SubmissionStore::deleted($after,$limit)` returns items, next_after_id and has_more; cursor follows deletion_id. `lists()` includes known empty lists with zero totals. Hosts own authorization, migration and HTTP mapping. InnoDB is required for atomic deletion; a storage failure leaves rows intact.

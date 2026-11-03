@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.52.0 with podcast/media schema builders and shared content declarations.
+
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
 - Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
 
