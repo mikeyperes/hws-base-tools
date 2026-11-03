@@ -31,13 +31,13 @@ missing original, or an unreadable image. Such a source must not be enlarged.
 
 ## External loop photos and author avatars
 
-External raster photos in Elementor card lists use a source-signed resizing route.
+Raster photos in Elementor card lists use a source-signed resizing route, including local imports, orientation-marked images and inaccurate responsive candidate lists. The attachment original supplies the image editor when available; the browser receives only the measured rendition.
 The original is cached once under `uploads/hws-card-renditions/`; proportional
 WebP renditions are cached separately. No attachment, featured-image assignment,
 post content or original upload is changed. The route rejects unsigned sources,
 uses WordPress safe HTTP requests and image editors, and never enlarges originals.
 
-`card-image-delivery.js` loads only for a list that renders an external card photo
+`card-image-delivery.js` loads only for a list that renders a measured card photo
 (or replays cached delivery markup). It observes the visible image's actual box,
 requests its width at 1x/2x density, rounds down to eight pixels and caps the result
 at 768px. It updates on viewport/layout changes and discovers newly appended cards.

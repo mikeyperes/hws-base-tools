@@ -30,8 +30,7 @@ final class CardImageDelivery {
         $tags = new \WP_HTML_Tag_Processor( $html );
         $changed = false;
         while ( $tags->next_tag( 'IMG' ) ) {
-            if ( $tags->get_attribute( 'data-hws-card-endpoint' ) || $tags->has_class( 'elementor-avatar' )
-                || $tags->has_class( 'hws-fi-landscape' ) || $tags->has_class( 'hws-fi-portrait' ) || $tags->has_class( 'hws-fi-square' ) ) {
+            if ( $tags->get_attribute( 'data-hws-card-endpoint' ) || $tags->has_class( 'elementor-avatar' ) ) {
                 continue;
             }
             $class = (string) $tags->get_attribute( 'class' );
@@ -39,8 +38,15 @@ final class CardImageDelivery {
                 continue;
             }
             $source = (string) ( $tags->get_attribute( 'data-src' ) ?: $tags->get_attribute( 'src' ) );
-            if ( ! $this->valid_source( $source ) || ( $this->local_file( $source )
-                && ( $tags->get_attribute( 'srcset' ) || $tags->get_attribute( 'data-srcset' ) ) ) ) {
+            // A supplied srcset may describe a full source as a smaller rendition.
+            // Use the attachment's source for quality, but deliver only the measured pixels.
+            if ( preg_match( '/(?:^|\s)wp-image-(\d+)(?:\s|$)/', $class, $match ) ) {
+                $original = wp_get_original_image_url( (int) $match[1] );
+                if ( is_string( $original ) && $this->valid_source( $original ) ) {
+                    $source = $original;
+                }
+            }
+            if ( ! $this->valid_source( $source ) ) {
                 continue;
             }
             $tags->set_attribute( 'data-hws-card-endpoint', $this->endpoint( $source ) );
@@ -53,7 +59,7 @@ final class CardImageDelivery {
             $changed = true;
         }
         if ( $changed || str_contains( $html, 'data-hws-card-endpoint' ) ) {
-            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.59.1', true );
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.59.2', true );
         }
         return $tags->get_updated_html();
     }

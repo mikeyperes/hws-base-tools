@@ -117,7 +117,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Code:** `src/ContentTypes/SharedContentTypes.php`.
 
 ### Responsive card photo renditions
-- **Does:** registers the uncropped 600px `hws-card` rendition. WordPress includes it in compatible responsive image candidates without enlarging small originals. Elementor Loop Grid, Loop Carousel, Posts and Archive Posts widgets derive medium-card `sizes` from their own columns, gaps, breakpoints and nearest boxed container (read from the page's saved Elementor layout), and offer no copy wider than 768px; native lazy images also use automatic slot sizing. No publication-specific classes or layout changes are needed. External card photos without usable local renditions use a signed, cached resizing route; the card delivery script measures each visible slot and requests no more than its actual width times the screen density (capped at 2x and 768px). Elementor Post Info author avatars use cached renditions at twice the configured pixel box instead of Elementor's fixed 96px request. Source files and attachment/post assignments are preserved.
+- **Does:** registers the uncropped 600px `hws-card` rendition. WordPress includes it in compatible responsive image candidates without enlarging small originals. Elementor Loop Grid, Loop Carousel, Posts and Archive Posts widgets derive medium-card `sizes` from their own columns, gaps, breakpoints and nearest boxed container (read from the page's saved Elementor layout), and offer no copy wider than 768px; native lazy images also use automatic slot sizing. No publication-specific classes or layout changes are needed. Card photos, including external files, inaccurate srcsets and orientation-marked images, use a signed, cached resizing route; the card delivery script measures each visible slot and requests no more than its actual width times the screen density (capped at 2x and 768px). Elementor Post Info author avatars use cached renditions at twice the configured pixel box instead of Elementor's fixed 96px request. Source files and attachment/post assignments are preserved.
 - **Use:** keep `medium` for desktop card boxes up to 360px, or `medium_large` for wider lead cards. Run `wp media regenerate --image_size=hws-card --only-missing --skip-delete --yes` once for existing attachments. New uploads generate it automatically.
 - **Extend:** `hws_base_tools_card_image_sizes` accepts the calculated sizes and Elementor list widget for layouts that override native grid geometry.
 - **Details:** [Card image renditions](docs/card-image-renditions.md).
@@ -481,6 +481,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.59.2
+- Apply measured delivery to all card-sized loop photos, including landscape-classified local imports whose supplied srcset describes an oversized source. Resolve the original attachment for sharp renditions without serving it directly.
 
 ### 13.59.1
 - Deliver external or unresponsive loop photos through measured, cached image renditions capped at twice the rendered slot; resize Post Info author avatars to twice their configured box instead of the fixed 96px source. Layouts and source records stay unchanged.
