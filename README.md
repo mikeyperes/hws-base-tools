@@ -456,6 +456,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.54.7
+
+- Includes native homepage, category, tag and search layout ownership.
+
 ### 13.54.0
 - Added Featured Image Orientation: landscape-first heroes with a portrait and square fallback, switched per front page and content type single page. Bundles Hexa WP Core 3.48.2.
 
