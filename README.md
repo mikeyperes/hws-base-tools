@@ -480,6 +480,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.58.6
+
+- Other plugins' sitemaps on the Sitemaps tab keep their colored status tags and dots; only the text is dimmed.
+
 ### 13.58.3
 
 - Form protection: the Advanced fields (fill time, log retention) were stripped from the 13.58.1 screen, so Save did nothing. They render again and saving works (checked in a real browser).
