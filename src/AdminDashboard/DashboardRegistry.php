@@ -74,7 +74,7 @@ final class DashboardRegistry {
         $definitions = [
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
             'Brand & People' => [ 'website-types', 'brand-assets', 'brand-templates', 'founders', 'team' ],
-            'Pages & Layout' => [ 'pages', 'page-layout-styling', 'menu-tools', 'breadcrumbs', '404-page', 'footer-text', 'featured-image-orientation' ],
+            'Pages & Layout' => [ 'pages', 'page-layout-styling', 'menu-tools', 'breadcrumbs', '404-page', 'footer-text', 'featured-image-orientation', 'display-conditions' ],
             'Content' => [ 'custom-post-types', 'features', 'search', 'comments', 'shortcodes', 'rss-feeds', 'external-publishing', 'payments' ],
             'SEO & Indexing' => [ 'seo', 'sitemaps', 'search-console', 'instant-indexing' ],
             'Speed' => [ 'litespeed', 'database-optimization', 'ajax-navigation', 'cleanup' ],
