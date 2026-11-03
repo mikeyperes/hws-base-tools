@@ -18,6 +18,7 @@ final class CardImageRenditions implements ModuleInterface {
     private static array $boxed = [];
 
     public function register(): void {
+        ( new CardImageDelivery() )->register();
         if ( did_action( 'after_setup_theme' ) ) {
             self::register_size();
         } else {

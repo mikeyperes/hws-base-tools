@@ -17,7 +17,7 @@ ratio, crop, alt text, links, width and height stay intact. Other image sizes
 and widgets retain their own attributes. Card images offer no srcset candidate wider than 768px (medium_large). Processing happens at the list
 boundary so cached loop-item HTML gets the same correction.
 
-The feature adds no visitor-facing controls or assets. It corrects the existing
+The feature adds no visitor-facing controls or layout CSS. It corrects the existing
 card rendition contract automatically. Custom CSS that overrides grid column
 geometry can supply `hws_base_tools_card_image_sizes` (sizes string, widget).
 Only pixel gaps and pixel container caps are calculated; other units retain a
@@ -29,4 +29,24 @@ This writes attachment metadata through WordPress and preserves existing crops.
 It can report an unavailable rendition for a source narrower than 600px, a
 missing original, or an unreadable image. Such a source must not be enlarged.
 
-No CSS, JavaScript, network endpoint, site hostname, or layout setting is added.
+## External loop photos and author avatars
+
+External raster photos in Elementor card lists use a source-signed resizing route.
+The original is cached once under `uploads/hws-card-renditions/`; proportional
+WebP renditions are cached separately. No attachment, featured-image assignment,
+post content or original upload is changed. The route rejects unsigned sources,
+uses WordPress safe HTTP requests and image editors, and never enlarges originals.
+
+`card-image-delivery.js` loads only for a list that renders an external card photo
+(or replays cached delivery markup). It observes the visible image's actual box,
+requests its width at 1x/2x density, rounds down to eight pixels and caps the result
+at 768px. It updates on viewport/layout changes and discovers newly appended cards.
+The original remote URL is never installed as the browser image source. Existing
+alt text, links, dimensions, crop, loading priority and layout remain unchanged.
+
+Post Info author avatars are rendered at twice the configured pixel box (22px
+becomes 44px; 28px becomes 56px). Local avatar uploads are resized proportionally;
+Gravatar requests use the requested pixel size. The same cached delivery service
+handles avatars without a global avatar filter or changes to other author output.
+No CSS, site hostname, template ID or content-specific width is added.
+

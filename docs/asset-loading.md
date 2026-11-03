@@ -84,3 +84,13 @@ Turnstile script loads only when the shortcode has an inherited Turnstile widget
 
 ## Editorial surfaces
 No styles or scripts are enqueued by EditorialSurfaces or TermMetadata. Explicit shortcodes render unstyled markup only. Admin form uses existing WordPress controls on the SEO tab.
+
+## Measured card image delivery (13.59.1)
+
+Before: responsive card renditions loaded no frontend asset. After: one deferred
+`hws-card-image-delivery` script loads only when an Elementor Loop Grid, Loop
+Carousel, Posts or Archive Posts widget renders external card-photo delivery
+markup, including replayed cached markup. A homepage, article or ordinary page
+without such a list loads no new asset; the plugin's admin screens load none.
+Author-avatar resizing is server-side and adds no script. Existing frontend
+styles and all admin assets are unchanged.
