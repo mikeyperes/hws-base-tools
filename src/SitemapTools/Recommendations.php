@@ -6,6 +6,7 @@ use Hexa\PluginCore\Sitemaps\RecommendationRegistry;
 final class Recommendations implements ModuleInterface {
     public function register(): void {
         add_filter(RecommendationRegistry::FILTER,[self::class,'recommend'],10,2);
+        \HWS\BaseTools\Sitemaps\SitemapTypes::register();
         add_filter('hexa_plugin_core_sitemap_check',[self::class,'check'],10,2);
         add_action('rest_api_init',static function(){
             register_rest_route('hws-base-tools/v1','/sitemaps/google-news-approved',[
