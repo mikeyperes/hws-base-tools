@@ -88,6 +88,17 @@ final class SubmissionStore {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$this->table()} WHERE collection=%s AND id < %d ORDER BY id DESC LIMIT %d",self::collection($list),$before?:PHP_INT_MAX,max(1,min(500,$limit))),ARRAY_A)?:[];
     }
+    /** Caller owns authorization. Ascending snapshot-bounded scan, safe across insertions and deletions. */
+    public function scan(int $after=0,int $limit=100,?string $collection=null,?int $upper=null): array {
+        global $wpdb;$table=$this->table();$after=max(0,$after);$limit=max(1,min(500,$limit));
+        $scope=$collection!==null?$wpdb->prepare(' AND collection=%s',self::collection($collection)):'';
+        if($upper===null){$upper=(int)$wpdb->get_var("SELECT MAX(id) FROM $table WHERE 1=1$scope");if($wpdb->last_error!=='')throw new \RuntimeException('Submission scan unavailable.');}
+        $upper=max(0,$upper);
+        $rows=$wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE id > %d AND id <= %d$scope ORDER BY id ASC LIMIT %d",$after,$upper,$limit+1),ARRAY_A);
+        if($wpdb->last_error!==''||!is_array($rows))throw new \RuntimeException('Submission scan unavailable.');
+        $more=count($rows)>$limit;$rows=array_slice($rows,0,$limit);
+        return ['items'=>$rows,'upper_id'=>$upper,'next_after_id'=>$rows?(int)end($rows)['id']:$after,'has_more'=>$more];
+    }
     public static function est(string $utc): string { return (new \DateTimeImmutable($utc,new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('-05:00'))->format('Y-m-d H:i:s').' EST'; }
     public static function csv_cell($value): string { $s=(string)$value; return preg_match('/^[\s\x00-\x20]*[=+@-]/u',$s) || preg_match('/^[\t\r\n]/',$s) ? "'".$s : $s; }
     /** Caller owns HTTP authorization; this primitive also supports protected CLI exports. */

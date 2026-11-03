@@ -36,7 +36,7 @@ Root namespace: Hexa\PluginCore\
 Source root: src/
 Version source: VERSION
 
-Current release: 3.44.2
+Current release: 3.51.1
 ```
 
 Do not rename these.
@@ -1759,3 +1759,5 @@ Call `\Hexa\PluginCore\Users\UserProfileBridge::register()` from `hexa_plugin_co
 FrontendForms\SubmissionStore provides collection storage, unique email keys, IP/header normalization, rate limits and safe CSV. Hosts own enablement, authorization, consent, notifications and privacy hook registration. See docs/collection-submissions.md.
 
 PublicComponents\InlineStyles::enqueue(handle, css) queues deduplicated inline shortcode CSS through WordPress, with late footer printing. FrontendForms\SubmissionStore::delete(collection, id) deletes one collection-bound row after host authorization.
+
+SubmissionStore::scan($after,$limit,$collection,$upper) provides ascending snapshot-bounded reads. Hosts must authorize access; see docs/frontend-forms.md for the cursor envelope and deletion reconciliation.

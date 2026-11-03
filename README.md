@@ -14,6 +14,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 
 ### Newsletter signup collector
+- **No-JavaScript:** posts to the current front-end page and redirects back with a signed result flag, compatible with hidden wp-admin. Results use the same status element and configured messages.
+- **Read API:** authenticated administrators can GET `/wp-json/hws-base-tools/v1/newsletter/subscribers` with optional list, per_page, after_id and upper_id. Read-only cursor scans work while collection is off. Use WordPress application passwords over HTTPS; no downstream service is hard-coded.
 - **Messages:** Newsletter tab defaults for success, duplicate and failure; per-form `success`, `duplicate`, `error` overrides (plain text, 2000 bytes). Blank failure preserves specific field instructions. Signed configuration and no-JavaScript results use the same copy.
 - **Result styles:** `hws-newsletter__status--success`, `--duplicate`, `--error`; form `data-state` remains created/duplicate/error. Simple/rounded show accessible green success and red errors; none remains unstyled.
 - **Does:** collects email signups, optional name and consent, reports duplicates, pages recent rows, deletes individual subscribers, exports CSV and sends optional signup notices with source metadata.

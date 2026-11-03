@@ -18,6 +18,12 @@
 
 ## Features
 
+### Submission snapshot scanning
+- **Does:** reads submissions in ascending ID order with an upper bound and optional collection filter; hosts own authorization.
+- **Use:** `FrontendForms\SubmissionStore::scan($after, $limit, $collection, $upper)` returns items, upper_id, next_after_id and has_more. Reuse upper_id on subsequent pages; limit is clamped to 1-500.
+- **Code:** src/FrontendForms/SubmissionStore.php.
+
+
 ### Shortcode inline styles
 - **Does:** queues inline CSS by WordPress handle, surviving discarded render expansions and deduplicating late shortcode styles.
 - **Use:** \Hexa\PluginCore\PublicComponents\InlineStyles::enqueue($handle, $css); see [style lifecycle](docs/shortcode-inline-styles.md).

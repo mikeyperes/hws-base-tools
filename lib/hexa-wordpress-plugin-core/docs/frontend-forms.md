@@ -26,3 +26,11 @@ Test with:
 ```bash
 php -n tests/frontend-form-schema.php
 ```
+
+## SubmissionStore snapshots
+
+`Hexa\PluginCore\FrontendForms\SubmissionStore::scan(int $after=0, int $limit=100, ?string $collection=null, ?int $upper=null)` returns `items`, `upper_id`, `next_after_id`, `has_more`. Pass the returned upper bound and cursor into each next page. IDs ascend; inserts after the snapshot upper bound wait until the next scan, and deleted cursor rows do not break paging. Limit clamps to 1-500; an optional collection uses the same strict ID validation as writes. A database read failure throws RuntimeException.
+
+Hosts own authentication, authorization, response headers, and data minimization. For example, an authenticated administrative export can call `$store->scan(0,100,'weekly')` then `$store->scan($page['next_after_id'],100,'weekly',$page['upper_id'])`. This is read-only and works while collection is disabled. A complete rescan is required to reconcile deletions; it is not a change-feed or transactionally isolated snapshot.
+
+The consuming Base Tools `tests/newsletter-http-integration.php` exercises real authenticated paging, forbidden requests, argument validation and disabled-collector reads.

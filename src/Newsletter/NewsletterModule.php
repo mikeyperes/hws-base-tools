@@ -14,6 +14,7 @@ final class NewsletterModule implements ModuleInterface {
 
     public function register(): void {
         add_action('init',[self::class,'init']);
+        add_action('template_redirect',[self::class,'frontend_post'],1);
         add_action('rest_api_init',[self::class,'routes']);
         add_filter('hws_base_tools_dashboard_tabs',function($tabs){$tabs['newsletter']='Newsletter';return $tabs;});
         add_filter('hws_base_tools_render_dashboard_tab',function($handled,$tab){if($tab==='newsletter'){self::admin();return true;}return $handled;},10,2);
@@ -28,6 +29,7 @@ final class NewsletterModule implements ModuleInterface {
     public static function settings(): array {return array_replace(['enabled'=>false,'notification_email'=>get_option('admin_email'),'style'=>'none','success'=>self::SUCCESS,'duplicate'=>self::DUPLICATE,'error'=>''],(array)get_option(self::OPTION,[]));}
     public static function store(): SubmissionStore {return new SubmissionStore;}
     public static function init(): void {
+        if(isset($_GET['hws_newsletter_result'])){if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();do_action('litespeed_control_set_nocache','Newsletter result');}
         add_shortcode('hws_newsletter',[self::class,'render']);
         if(self::settings()['enabled'] && get_option('hws_base_tools_newsletter_schema')!=='1') {self::store()->install();update_option('hws_base_tools_newsletter_schema','1',false);}
         if(defined('WP_CLI')&&WP_CLI) {
@@ -76,7 +78,8 @@ final class NewsletterModule implements ModuleInterface {
         $html='';
         \Hexa\PluginCore\PublicComponents\InlineStyles::enqueue('hws-newsletter-'.$a['style'],self::css($a['style']));
         if(!$preview)wp_enqueue_script('hws-newsletter',plugins_url('assets/newsletter/newsletter.js',PluginMetadata::plugin_file()),[],PluginMetadata::VERSION,true);
-        $html.='<form id="'.esc_attr($uid).'" class="hws-newsletter hws-newsletter--'.esc_attr($a['style']).' '.esc_attr($classes).'" method="post" action="'.esc_url(admin_url('admin-post.php')).'" data-endpoint="'.esc_url(rest_url('hws-base-tools/v1/newsletter')).'" data-error="'.esc_attr($a['error']!==''?$a['error']:self::ERROR).'">';
+        $page_result=$preview?null:self::page_result($a);
+        $html.='<form'.($page_result?' data-state="'.esc_attr($page_result['state']==='success'?'created':$page_result['state']).'"':'').' id="'.esc_attr($uid).'" class="hws-newsletter hws-newsletter--'.esc_attr($a['style']).' '.esc_attr($classes).'" method="post" action="'.esc_url(self::page_url()).'" data-endpoint="'.esc_url(rest_url('hws-base-tools/v1/newsletter')).'" data-error="'.esc_attr($a['error']!==''?$a['error']:self::ERROR).'">';
         $html.='<input type="hidden" name="action" value="hws_base_tools_newsletter"><input type="hidden" name="config" value="'.esc_attr(self::config(array_intersect_key($a,array_flip(['list','name','consent','source','success','duplicate','error'])))).'"><input type="hidden" name="nonce" value="'.esc_attr(wp_create_nonce('hws_newsletter')).'"><input type="hidden" name="page_url" value="">';
         $html.='<div class="hws-newsletter__fields">';
         if($a['name']==='on')$html.='<label class="hws-newsletter__field"><span class="hws-newsletter__label">Name</span><input class="hws-newsletter__input" name="name" autocomplete="name" maxlength="200"></label>';
@@ -85,11 +88,68 @@ final class NewsletterModule implements ModuleInterface {
         if($a['consent']==='on')$html.='<label class="hws-newsletter__consent"><input type="checkbox" name="consent" value="1" required> '.esc_html($a['consent_text']).'</label>';
         $s=Settings::get();
         if($s['enabled']&&$s['bot_check']==='turnstile'&&!$preview)$html.='<div class="hws-newsletter__turnstile" data-sitekey="'.esc_attr($s['site_key']).'"></div>';
-        return $html.'<div class="hws-newsletter__status" role="status" aria-live="polite"></div></form>';
+        $result=$preview?null:self::page_result($a);
+        return $html.'<div class="hws-newsletter__status'.($result?' hws-newsletter__status--'.esc_attr($result['state']):'').'" role="status" aria-live="polite">'.($result?esc_html($result['message']):'').'</div></form>';
+    }
+    /** Current front-end URL, never a visitor-supplied redirect destination. */
+    public static function page_url(): string {
+        $home=wp_parse_url(home_url('/'));
+        $origin=$home['scheme'].'://'.$home['host'].(isset($home['port'])?':'.$home['port']:'');
+        $uri=wp_unslash($_SERVER['REQUEST_URI']??'/');
+        if(!is_string($uri)||!str_starts_with($uri,'/')||str_starts_with($uri,'//'))$uri='/';
+        return remove_query_arg('hws_newsletter_result',wp_validate_redirect($origin.$uri,home_url('/')));
+    }
+    private static function form_key(array $a): string {
+        $bound=[];foreach(['list','source','success','duplicate','error','consent','name'] as $key)$bound[$key]=$a[$key];
+        return substr(hash('sha256',wp_json_encode($bound)),0,16);
+    }
+    public static function frontend_post(): void {
+        if(($_SERVER['REQUEST_METHOD']??'')!=='POST'||($_POST['action']??null)!=='hws_base_tools_newsletter')return;
+        $p=wp_unslash($_POST);$a=self::decode(is_string($p['config']??null)?$p['config']:'');
+        $r=self::submit($p,$_SERVER,false);
+        $code=is_wp_error($r)?$r->get_error_code():$r->get_data()['status'];
+        // Only a fixed result code, form fingerprint and expiry are placed in the URL. No subscriber data.
+        $data=$code.'.'.time().'.'.($a?self::form_key($a):'invalid');
+        $flag=$data.'.'.substr(hash_hmac('sha256',$data,wp_salt('nonce')),0,24);
+        nocache_headers();wp_safe_redirect(add_query_arg('hws_newsletter_result',$flag,self::page_url()),303);exit;
+    }
+    public static function page_result(array $a): ?array {
+        $flag=$_GET['hws_newsletter_result']??'';
+        if(!is_string($flag)||strlen($flag)>150)return null;
+        $parts=explode('.',$flag);if(count($parts)!==4)return null;
+        [$code,$time,$key,$sig]=$parts;$data=$code.'.'.$time.'.'.$key;
+        if(!ctype_digit($time)||(int)$time<time()-600||(int)$time>time()+30||!hash_equals(substr(hash_hmac('sha256',$data,wp_salt('nonce')),0,24),$sig))return null;
+        if($key!==self::form_key($a)&&$key!=='invalid')return null;
+        if(!in_array($code,['created','duplicate','disabled','rate_limit','nonce','config','spam','consent','email','turnstile','storage'],true))return null;
+        nocache_headers();
+        if($code==='created')return ['state'=>'success','message'=>$a['success']];
+        if($code==='duplicate')return ['state'=>'duplicate','message'=>$a['duplicate']];
+        $field=$code==='email'?'Enter a valid email address.':($code==='consent'?'Please agree to receive the newsletter.':'');
+        return ['state'=>'error','message'=>self::failure($code,400,$a,$field)->get_error_message()];
     }
     public static function routes(): void {
+        register_rest_route('hws-base-tools/v1','/newsletter/subscribers',[
+            'methods'=>'GET','permission_callback'=>static function(){return current_user_can(PluginMetadata::ADMIN_CAPABILITY);},
+            'callback'=>[self::class,'subscribers'],
+            'args'=>[
+                'after_id'=>['default'=>0,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&strlen((string)$v)<19;}],
+                'upper_id'=>['validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&strlen((string)$v)<19;}],
+                'per_page'=>['default'=>100,'validate_callback'=>static function($v){return is_scalar($v)&&ctype_digit((string)$v)&&(int)$v>=1&&(int)$v<=500;}],
+                'list'=>['validate_callback'=>static function($v){return is_string($v)&&preg_match('/^[a-z0-9][a-z0-9_-]{0,79}$/D',$v);}],
+            ]
+        ]);
         register_rest_route('hws-base-tools/v1','/newsletter',['methods'=>'POST','permission_callback'=>'__return_true','callback'=>function($r){return self::submit((array)$r->get_params(),$_SERVER);}]);
         register_rest_route('hws-base-tools/v1','/newsletter/nonce',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){if(!self::settings()['enabled'])return self::failure('disabled',403);$r=new \WP_REST_Response(['nonce'=>wp_create_nonce('hws_newsletter')]);$r->header('Cache-Control','no-store, private');return $r;}]);
+    }
+    public static function subscribers($request) {
+        if(get_option('hws_base_tools_newsletter_schema')!=='1')$data=['items'=>[],'upper_id'=>0,'next_after_id'=>0,'has_more'=>false];
+        else {
+            try{$data=self::store()->scan((int)$request['after_id'],(int)$request['per_page'],$request['list'],isset($request['upper_id'])?(int)$request['upper_id']:null);}
+            catch(\Throwable $e){return new \WP_Error('storage','Subscribers could not be read.',['status'=>503]);}
+            foreach($data['items'] as &$row){$row['id']=(int)$row['id'];$row['list']=$row['collection'];unset($row['collection']);$row['consent']=(bool)$row['consent'];$row['headers']=json_decode($row['headers'],true);}
+            unset($row);
+        }
+        $response=new \WP_REST_Response($data);$response->header('Cache-Control','no-store, private');return $response;
     }
     public static function submit(array $p,array $server,bool $require_nonce=true) {
         $a=self::decode(is_string($p['config']??null)?$p['config']:'');

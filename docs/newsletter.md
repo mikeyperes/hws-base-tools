@@ -32,7 +32,7 @@ Generated configuration and nonce values use placeholders below; production URLs
 The same classes are present with every style. Each label wraps its control.
 Name, consent and Turnstile containers appear only when enabled.
 
-    <form id="weekly-signup" class="hws-newsletter hws-newsletter--none my-signup" method="post" action="/wp-admin/admin-post.php" data-endpoint="/wp-json/hws-base-tools/v1/newsletter" data-error="Signup could not be saved. Try again later.">
+    <form id="weekly-signup" class="hws-newsletter hws-newsletter--none my-signup" method="post" action="CURRENT_PAGE_URL" data-endpoint="/wp-json/hws-base-tools/v1/newsletter" data-error="Signup could not be saved. Try again later.">
       <input type="hidden" name="action" value="hws_base_tools_newsletter">
       <input type="hidden" name="config" value="SIGNED_CONFIGURATION">
       <input type="hidden" name="nonce" value="NONCE">
@@ -57,7 +57,7 @@ Name, consent and Turnstile containers appear only when enabled.
 The status element gains exactly one result class: `hws-newsletter__status--success` (created), `hws-newsletter__status--duplicate`, or `hws-newsletter__status--error`. Pending submissions clear the prior result class.
 
 JS sets data-state="created", "duplicate" or "error" and aria-busy during requests.
-REST uses freshly fetched nonces. The no-JavaScript admin-post fallback deliberately ignores the page-baked public signup nonce, which may be expired in a cached page. Signed configuration, honeypot, IP rate limits, validation, enabled state and inherited Turnstile still apply. Without JS the POST fallback displays a result with a back link.
+REST uses freshly fetched nonces. The no-JavaScript admin-post fallback deliberately ignores the page-baked public signup nonce, which may be expired in a cached page. Signed configuration, honeypot, IP rate limits, validation, enabled state and inherited Turnstile still apply. Without JS the form posts to its current front-end page. A 303 redirect returns to that page with a signed, ten-minute result flag; the shortcode displays the same configured text, status class and form data-state. Refreshing the result page does not submit again. Result flags contain no subscriber data, are bound to the form configuration and disable page caching. No public wp-admin access is needed. Legacy admin-post handlers remain for older cached forms.
 Turnstile requires JS and inherits the enabled Base Tools Form Protection provider/keys. reCAPTCHA is not inherited.
 A failed security check never saves a row.
 
@@ -137,3 +137,13 @@ Styles use one WordPress handle per built-in style, not per-render flags. An ind
 Before and after this change: the home page and an article without the shortcode load no newsletter assets. A page using the enabled shortcode loads newsletter.js, plus only the chosen simple/rounded inline CSS handle (none loads no CSS). The Newsletter admin tab prints its selected style preview and CSS without loading the visitor script. Message colors extend the existing inline stylesheet; no new asset, request, or global loading hook was added.
 
 Tests: `wp eval-file wp-content/plugins/hws-base-tools/tests/newsletter-messages-integration.php --user=<admin>` (54 assertions, restores settings and deletes its fixtures), `node tests/newsletter-messages-js.cjs` (21 assertions, Node 22), and the existing newsletter integration and web-context tests.
+
+## Read-only subscriber API
+
+GET `/wp-json/hws-base-tools/v1/newsletter/subscribers` requires an authenticated WordPress administrator (`manage_options`). Use a WordPress application password over HTTPS for remote readers; ordinary REST cookie authentication requires its standard nonce. Anonymous and non-admin requests cannot read signups. No write method exists. The plugin has no downstream-service reference or outbound sync.
+
+Arguments: `per_page` defaults to 100 (1-500), `after_id` defaults to 0, optional `list` (same 80-byte list ID rules), optional `upper_id`. Response: `items`, `upper_id`, `next_after_id`, `has_more`. Each item includes id, list, email, name, created_at (UTC), ip, headers (allowlisted object), source, consent (boolean). Responses are private/no-store. Disabled collection still permits authorized reads of retained data; no installed schema returns an empty envelope.
+
+Start without upper_id; repeat with returned upper_id and next_after_id while has_more. New higher IDs wait until the next full scan. Reconcile deletions only after a complete successful scan; pages are not a transactionally isolated snapshot. Example: `/wp-json/hws-base-tools/v1/newsletter/subscribers?list=weekly&per_page=100&after_id=0`.
+
+Real HTTP tests: `wp eval-file wp-content/plugins/hws-base-tools/tests/newsletter-http-integration.php --user=<admin>` temporarily creates a page, subscriber rows, user and application password, toggles login hiding, then deletes its fixtures and restores settings. Never log the generated password.
