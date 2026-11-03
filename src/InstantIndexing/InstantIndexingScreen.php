@@ -37,6 +37,7 @@ final class InstantIndexingScreen {
             <section class="hws-ss-section">
                 <h3>Latest sends</h3>
                 <div data-role="history"></div>
+                <p class="hws-ss-more" data-role="more-wrap" hidden><button type="button" class="hpc-button secondary" data-action="more">Load more</button> <span data-role="more-count"></span></p>
             </section>
         </div>
         <script>
@@ -53,9 +54,22 @@ final class InstantIndexingScreen {
                 (d.warnings || []).forEach(function(w){ h += '<div class="hws-ss-sub warn">' + ss.esc(w) + '</div>'; });
                 q('status').innerHTML = h;
                 var rows = d.last_submissions || [];
-                q('history').innerHTML = rows.length ? '<table class="hws-ss-table"><thead><tr><th>When</th><th>Page</th><th>Answer</th></tr></thead><tbody>' + rows.map(function(r){ return '<tr><td>' + ss.esc(ss.date(r.time)) + (r.manual ? ' (manual)' : '') + '</td><td class="url">' + ss.link(r.url) + '</td><td><span class="hws-ss-pill ' + (r.ok ? 'ok' : 'bad') + '">' + ss.esc(r.code) + '</span> ' + ss.esc(r.meaning || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hws-ss-empty">Nothing sent yet.</p>';
+                shown = rows.length; total = d.history_total || rows.length;
+                q('history').innerHTML = rows.length ? '<table class="hws-ss-table"><thead><tr><th>When</th><th>Page</th><th>Answer</th></tr></thead><tbody>' + rows.map(sendRow).join('') + '</tbody></table>' : '<p class="hws-ss-empty">Nothing sent yet.</p>';
+                more(d.history_more);
             }
+            var shown = 0, total = 0;
+            function sendRow(r){ return '<tr><td>' + ss.esc(ss.date(r.time)) + (r.manual ? ' (manual)' : '') + '</td><td class="url">' + ss.link(r.url) + '</td><td><span class="hws-ss-pill ' + (r.ok ? 'ok' : 'bad') + '">' + ss.esc(r.code) + '</span> ' + ss.esc(r.meaning || '') + '</td></tr>'; }
+            function more(on){ q('more-wrap').hidden = !on; q('more-count').textContent = 'Showing ' + shown + ' of ' + total; }
             function load(){ return ss.post('hws_base_tools_instant_indexing_status', nonce, {}).then(draw).catch(function(e){ q('status').innerHTML = '<p class="hws-ss-empty">' + ss.esc(e.message) + '</p>'; }); }
+            root.addEventListener('click', function(e){
+                var m = e.target.closest('button[data-action=more]'); if (!m) return;
+                ss.busy(m, true, 'Loading…');
+                ss.post('hws_base_tools_instant_indexing_history', nonce, {offset: shown}).then(function(p){
+                    var body = q('history').querySelector('tbody'); if (body) body.insertAdjacentHTML('beforeend', (p.rows || []).map(sendRow).join(''));
+                    shown += (p.rows || []).length; total = p.total; ss.busy(m, false); more(p.more);
+                }).catch(function(x){ ss.busy(m, false); q('more-count').textContent = x.message; });
+            });
             root.addEventListener('click', function(e){
                 var b = e.target.closest('button[data-action=test]'); if (!b) return;
                 ss.busy(b, true, 'Sending…');

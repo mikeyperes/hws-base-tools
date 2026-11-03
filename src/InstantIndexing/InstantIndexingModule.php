@@ -10,6 +10,7 @@ final class InstantIndexingModule implements ModuleInterface {
         });
         AjaxActionRegistry::create(['nonce_action'=>'hws_base_tools_instant_indexing','action_prefix'=>'hws_base_tools_instant_indexing'])->register([
             'status'=>static fn()=>IndexNowService::status(),
+            'history'=>static fn()=>IndexNowService::history(absint($_POST['offset']??0)),
             'test'=>static fn()=>IndexNowService::test(esc_url_raw(wp_unslash((string)($_POST['url']??'')))),
         ]);
         if(defined('WP_CLI') && WP_CLI)\WP_CLI::add_command('hws instant-indexing',static function($args,$assoc){

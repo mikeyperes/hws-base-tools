@@ -58,6 +58,7 @@ final class SeoScreenUi {
             .hws-ss-notice:empty{display:none}
             .hws-ss-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;color:#50575e}
             .hws-ss-bar .button-link{font-size:12px}
+            .hws-ss-more{margin:10px 0 0;display:flex;align-items:center;gap:10px;font-size:12px;color:#646970}.hws-ss-more[hidden]{display:none}
             .hws-ss-ext{text-decoration:none;word-break:break-all}.hws-ss-ext:hover{text-decoration:underline}
             .hws-ss-ext span{display:inline-block;margin-left:4px;font-size:.9em;text-decoration:none}
             .hws-ss .hpc-button:disabled{opacity:.45;cursor:default}
