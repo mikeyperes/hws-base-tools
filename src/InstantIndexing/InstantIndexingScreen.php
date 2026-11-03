@@ -47,13 +47,13 @@ final class InstantIndexingScreen {
             function draw(d){
                 var types = d.automatic_post_types || [], h = '';
                 h += item(!!d.module_on, d.module_on ? 'Instant Indexing is on in Rank Math' : 'Instant Indexing is off in Rank Math');
-                h += item(!!(d.key_present && d.key_at_root && d.key_matches && +d.key_http_code === 200), d.key_matches ? 'Key file found and matches' : 'Key file is missing or does not match', d.key_url ? '<a href="' + ss.esc(d.key_url) + '" target="_blank" rel="noopener">' + ss.esc(d.key_url) + '</a>' : '');
+                h += item(!!(d.key_present && d.key_at_root && d.key_matches && +d.key_http_code === 200), d.key_matches ? 'Key file found and matches' : 'Key file is missing or does not match', d.key_url ? ss.link(d.key_url) : '');
                 h += item(types.length > 0, types.length ? 'Sends automatically: ' + types.join(', ') : 'Nothing is sent automatically');
                 (d.google_instant_indexing_plugins || []).forEach(function(p){ if (p.installed) h += item(!!p.active, 'Google indexing plugin "' + p.name + '"' + (p.active ? ' is active' : ' is installed but off'), p.version ? 'Version ' + ss.esc(p.version) : ''); });
                 (d.warnings || []).forEach(function(w){ h += '<div class="hws-ss-sub warn">' + ss.esc(w) + '</div>'; });
                 q('status').innerHTML = h;
                 var rows = d.last_submissions || [];
-                q('history').innerHTML = rows.length ? '<table class="hws-ss-table"><thead><tr><th>When</th><th>Page</th><th>Answer</th></tr></thead><tbody>' + rows.map(function(r){ return '<tr><td>' + ss.esc(ss.date(r.time)) + (r.manual ? ' (manual)' : '') + '</td><td class="url">' + ss.esc(r.url) + '</td><td><span class="hws-ss-pill ' + (r.ok ? 'ok' : 'bad') + '">' + ss.esc(r.code) + '</span> ' + ss.esc(r.meaning || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hws-ss-empty">Nothing sent yet.</p>';
+                q('history').innerHTML = rows.length ? '<table class="hws-ss-table"><thead><tr><th>When</th><th>Page</th><th>Answer</th></tr></thead><tbody>' + rows.map(function(r){ return '<tr><td>' + ss.esc(ss.date(r.time)) + (r.manual ? ' (manual)' : '') + '</td><td class="url">' + ss.link(r.url) + '</td><td><span class="hws-ss-pill ' + (r.ok ? 'ok' : 'bad') + '">' + ss.esc(r.code) + '</span> ' + ss.esc(r.meaning || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hws-ss-empty">Nothing sent yet.</p>';
             }
             function load(){ return ss.post('hws_base_tools_instant_indexing_status', nonce, {}).then(draw).catch(function(e){ q('status').innerHTML = '<p class="hws-ss-empty">' + ss.esc(e.message) + '</p>'; }); }
             root.addEventListener('click', function(e){

@@ -58,6 +58,8 @@ final class SeoScreenUi {
             .hws-ss-notice:empty{display:none}
             .hws-ss-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;color:#50575e}
             .hws-ss-bar .button-link{font-size:12px}
+            .hws-ss-ext{text-decoration:none;word-break:break-all}.hws-ss-ext:hover{text-decoration:underline}
+            .hws-ss-ext span{display:inline-block;margin-left:4px;font-size:.9em;text-decoration:none}
             .hws-ss .hpc-button:disabled{opacity:.45;cursor:default}
             .hws-ss .hws-ss-pickrow{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-bottom:4px;cursor:pointer;flex-wrap:wrap}
             .hws-ss .hws-ss-pickrow input{margin:0}
@@ -74,6 +76,7 @@ final class SeoScreenUi {
         </style>
         <script>
         window.hwsSs = window.hwsSs || {
+            link: function(url, text){ return '<a class="hws-ss-ext" href="' + this.esc(url) + '" target="_blank" rel="noopener noreferrer">' + this.esc(text == null ? url : text) + '<span aria-hidden="true">↗</span></a>'; },
             esc: function(v){ var d=document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; },
             post: function(action, nonce, fields){
                 var body = new URLSearchParams(); body.set('action', action); body.set('nonce', nonce);

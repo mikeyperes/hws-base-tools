@@ -432,7 +432,7 @@ function hws_sitemap_feeds_render( string $kind ): void {
             var html = '<div class="hws-sf-top"><span class="hws-sf-icon ' + state + '" title="' + esc(title) + '">' + icon + '</span>'
                 + '<span class="hws-sf-label">' + esc(row.label) + (row.slug ? ' <code class="hws-sf-id" title="ID for the shortcode">' + esc(row.slug) + '</code>' : '') + '</span>'
                 + '<span class="hws-sf-actions">' + settings + toggle + validate + '</span></div>';
-            if (row.url) html += '<div class="hws-sf-url"><a href="' + esc(row.url) + '" target="_blank" rel="noopener">' + esc(row.url) + '</a></div>';
+            if (row.url) html += '<div class="hws-sf-url"><a href="' + esc(row.url) + '" target="_blank" rel="noopener noreferrer">' + esc(row.url) + '<span aria-hidden="true" style="margin-left:4px">↗</span></a></div>';
             if (row.note) html += '<div class="hws-sf-meta">' + esc(row.note) + '</div>';
             if (r && row.available) {
                 html += httpBadge(r);

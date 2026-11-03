@@ -103,7 +103,7 @@ final class SearchConsoleScreen {
                 q('sitemaps').innerHTML = items.length ? items.map(function(i){
                     var g = gState(i.google), dot = i.recommended ? (i.google ? g[0] : 'warn') : (i.google ? 'bad' : '');
                     var h = '<label class="hws-ss-row hws-ss-pickrow"><input type="checkbox" data-url="' + ss.esc(i.url) + '" data-on-site="' + (i.on_site ? 1 : 0) + '" data-in-google="' + (i.google ? 1 : 0) + '"' + (i.recommended && !i.google ? ' checked' : '') + '>';
-                    h += '<span class="hws-ss-dot ' + dot + '"></span><span class="hws-ss-label"><a href="' + ss.esc(i.url) + '" target="_blank" rel="noopener">' + ss.esc(i.url.replace(/^https?:\/\/[^\/]+/, '')) + '</a>';
+                    h += '<span class="hws-ss-dot ' + dot + '"></span><span class="hws-ss-label">' + ss.link(i.url, i.url.replace(/^https?:\/\/[^\/]+/, ''));
                     h += '<small>' + ss.esc(i.label || 'Not on this site') + (i.google && i.google.last_read ? ' · read by Google ' + ss.esc(ss.date(i.google.last_read)) : '') + '</small></span>';
                     h += '<span class="hws-ss-pills">' + (i.recommended ? '<span class="hws-ss-pill ok">Recommended</span>' : '<span class="hws-ss-pill">' + (i.junk ? 'Junk' : 'Not recommended') + '</span>') + '<span class="hws-ss-pill ' + g[0] + '">' + ss.esc(g[1]) + '</span></span></label>';
                     return h;

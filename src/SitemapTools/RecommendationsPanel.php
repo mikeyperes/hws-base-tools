@@ -48,7 +48,7 @@ final class RecommendationsPanel {
                 var s = state(r), writable = r.setting !== '' || r.kind === 'module', differs = r.recommended !== r.current && writable && !(r.collision_with && !r.current);
                 var h = '<div class="hws-ss-row' + (differs ? ' attention' : '') + '" data-id="' + ss.esc(r.id) + '">';
                 h += '<div class="hws-ss-top"><span class="hws-ss-dot ' + s + '"></span>';
-                h += '<span class="hws-ss-label">' + ss.esc(r.label) + '<small>' + (r.url ? '<a href="' + ss.esc(r.url) + '" target="_blank" rel="noopener">' + ss.esc(r.url) + '</a>' : '') + '</small></span>';
+                h += '<span class="hws-ss-label">' + ss.esc(r.label) + '<small>' + (r.url ? ss.link(r.url) : '') + '</small></span>';
                 h += '<span class="hws-ss-pills"><span class="hws-ss-pill ' + (r.recommended ? 'ok' : '') + '">' + (r.recommended ? 'Recommended' : 'Not recommended') + '</span>';
                 h += '<span class="hws-ss-pill ' + (r.current ? 'ok' : '') + '">' + (r.current ? 'On in Rank Math' : 'Off in Rank Math') + '</span></span>';
                 if (r.junk) h += '<button type="button" class="hpc-button secondary" data-promote="1">Move to main list</button>';

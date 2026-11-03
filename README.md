@@ -456,6 +456,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.56.2
+
+- Every page and sitemap address on the Sitemaps, Search Console and Instant Indexing tabs is a link that opens in a new tab, with a ↗ arrow.
+
 ### 13.56.1
 
 - Search Console checklist buttons look greyed out until something is ticked.
