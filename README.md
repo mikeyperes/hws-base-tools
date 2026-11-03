@@ -47,6 +47,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### Form protection
 - **Does:** independent honeypot, signed minimum-fill-time and browser-header checks reject only the current submission in Elementor Pro, Contact Form 7, Gravity Forms and WPForms. One bot check selects none, Cloudflare Turnstile or invisible reCAPTCHA v3; both providers can never run together.
+- **Screen:** status list first, then the master switch, one switch per check with what it does, and the bot check as one choice with only its keys shown.
 - **Switch:** master switch remains off on new sites; independent switches and provider choice are in Security, Form protection, saved in `hws_base_tools_form_protection` and exposed by `wp hws forms protection status|set`.
 - **Defaults:** two distinct stable honeypot names per form; three-second minimum; header check off until enabled; Turnstile selected at first key setup; reCAPTCHA score 0.5. Both secrets use Core's protected credential store and are refused in CLI arguments.
 - **Read:** `wp hws forms blocked` and the administrator-only `/wp-json/hws-base-tools/v1/form-protection/blocked` endpoint expose only time, form, IP and reason. `wp hws forms signals` reads missing-language signals, which never reject a submission.
@@ -473,6 +474,10 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.58.1
+
+- Form protection screen redesigned: a status list at the top (✅/❌ per check, missing keys called out), the master switch, each check with a plain explanation, the bot check as three choices (Turnstile recommended, reCAPTCHA fallback only, off) showing only the chosen provider's keys, and fill time and log retention under Advanced. Settings and saving are unchanged.
 
 ### 13.58.0
 
