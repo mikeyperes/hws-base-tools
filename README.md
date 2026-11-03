@@ -9,6 +9,9 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Configurable per-post-type Rank Math breadcrumb trails: section label/URL, taxonomy, and excluded default or named terms.
+- Opt-in search description fallbacks per post type, from ordered fields/excerpt and a title/site-name template. Existing descriptions win. Settings and schema API: [SEO fallbacks](docs/seo-fallbacks.md).
+
 - Native homepage, category, tag and search layouts are owned here in src/Pages/PageTypes.php.
 
 - Canonical page catalog: [src/Pages/PageTypes.php](src/Pages/PageTypes.php) defines titles, addresses, parents, designs, default states, conditions and content sources. Ordinary-page adapters preserve existing assignments; query layouts and repeated profiles stay outside page creation.

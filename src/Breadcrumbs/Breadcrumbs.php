@@ -27,6 +27,8 @@ final class Breadcrumbs implements ModuleInterface {
         AjaxActionRegistry::create( [ 'action_prefix' => 'hws_base_tools', 'nonce_action' => self::NONCE_ACTION, 'nonce_field' => 'nonce' ] )
             ->register( [ 'breadcrumbs_save' => [ 'callback' => [ self::class, 'handle_save' ] ] ] );
 
+        add_filter( 'rank_math/frontend/breadcrumb/items', [ PostTypeTrail::class, 'filter' ], 20, 2 );
+
         if ( ! BreadcrumbSettings::enabled() || self::smp_still_owns_breadcrumbs() ) {
             return;
         }
@@ -150,8 +152,11 @@ final class Breadcrumbs implements ModuleInterface {
         if ( empty( $css['valid'] ) ) {
             return [ 'saved' => false, 'message' => $css['message'] ];
         }
+        $rules = json_decode( (string) $request->raw( 'trail_rules', '{}', 'post' ), true );
+        if ( ! is_array( $rules ) ) { return [ 'saved' => false, 'message' => 'Trail rules must be a JSON object.' ]; }
         $settings = BreadcrumbSettings::update(
             [
+                'trail_rules' => $rules,
                 'enabled'             => $request->bool( 'enabled', false, 'post' ),
                 'style'               => $request->key( 'style', 'bc-b2', 'post' ),
                 'accent_color'        => $request->text( 'accent_color', '', 'post' ),

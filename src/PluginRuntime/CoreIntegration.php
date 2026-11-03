@@ -88,6 +88,7 @@ final class CoreIntegration {
             ->add_module( new MaintenanceModeFeature() )
             ->add_module( new TeamTab() )
             ->add_module( new \HWS\BaseTools\Breadcrumbs\Breadcrumbs() )
+            ->add_module( new \HWS\BaseTools\SeoSettings\DescriptionFallback() )
             ->add_module( new \HWS\BaseTools\NotFoundPage\NotFoundPage() )
             // Payments: the one Stripe connection other HWS plugins charge through; off by default.
             ->add_module( new \HWS\BaseTools\Payments\PaymentsModule() )

@@ -1,0 +1,5 @@
+# SEO fallbacks
+
+Breadcrumbs > Post type trails accepts a JSON object keyed by post type. Rules contain section_label, section_url, taxonomy, exclude_default_term and excluded_term_slugs. Uses Rank Math's original home/current items and first alphabetically sorted eligible term. Enabled only with the breadcrumb module. Placement visibility settings continue to control the band independently. Both Rank Math HTML and JSON-LD use the same items filter. No added markup or assets.
+
+SEO & Rank Math > Search description fallbacks accepts a JSON object keyed by post type. Rules contain enabled, sources (ordered meta:field_name or excerpt), template ({title}, {site_name}), limit (80-220, default 160). Only empty Rank Math descriptions receive a normalized, word-trimmed fallback. Rules are empty by default. DescriptionFallback::generate(post_id, optional_limit) exposes the same configured text to schema producers. No added front-end markup or assets. Saving requires administrator capability and a valid nonce. Invalid JSON is rejected without replacing settings.

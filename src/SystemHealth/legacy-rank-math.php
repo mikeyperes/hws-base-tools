@@ -5,6 +5,7 @@
  */
 function render_tab_seo() {
     \HWS\BaseTools\SeoSettings\RankMathSchemaSetting::render();
+    \HWS\BaseTools\SeoSettings\DescriptionFallback::render();
     display_settings_seo_reporting();
 }
 

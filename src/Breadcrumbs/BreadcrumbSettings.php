@@ -22,6 +22,7 @@ final class BreadcrumbSettings {
     /** @return array<string,mixed> */
     public static function defaults(): array {
         return [
+            'trail_rules' => [],
             'enabled'             => false,
             'style'               => 'bc-b2',
             'accent_color'        => '',
@@ -68,6 +69,7 @@ final class BreadcrumbSettings {
         $ids      = is_array( $values['disabled_ids'] ) ? $values['disabled_ids'] : preg_split( '/[\s,]+/', (string) $values['disabled_ids'] );
 
         return [
+            'trail_rules' => self::sanitize_rules( $values['trail_rules'] ),
             'enabled'             => (bool) $values['enabled'],
             'style'               => in_array( $style, self::STYLES, true ) ? $style : $defaults['style'],
             'accent_color'        => (string) ( sanitize_hex_color( (string) $values['accent_color'] ) ?? '' ),
@@ -81,6 +83,23 @@ final class BreadcrumbSettings {
             'css_override'        => (string) $values['css_override'],
             'migrated_from_smp'   => (bool) $values['migrated_from_smp'],
         ];
+    }
+
+    /** Validate per-post-type section and taxonomy choices; no rules by default. */
+    public static function sanitize_rules( $rules ): array {
+        if ( ! is_array( $rules ) ) { return []; }
+        $clean = [];
+        foreach ( $rules as $type => $rule ) {
+            if ( ! is_array( $rule ) || ! sanitize_key( (string) $type ) ) { continue; }
+            $clean[ sanitize_key( (string) $type ) ] = [
+                'section_label' => sanitize_text_field( (string) ( $rule['section_label'] ?? '' ) ),
+                'section_url' => esc_url_raw( (string) ( $rule['section_url'] ?? '' ), [ 'http', 'https' ] ),
+                'taxonomy' => sanitize_key( (string) ( $rule['taxonomy'] ?? '' ) ),
+                'exclude_default_term' => ! empty( $rule['exclude_default_term'] ),
+                'excluded_term_slugs' => array_values( array_filter( array_map( 'sanitize_title', (array) ( $rule['excluded_term_slugs'] ?? [] ) ) ) ),
+            ];
+        }
+        return $clean;
     }
 
     /** @return array<string,mixed> */
