@@ -73,11 +73,14 @@ final class DashboardRegistry {
         $groups = [];
         $definitions = [
             'Overview' => [ 'overview', 'quick-start', 'review-center' ],
-            'Site & Brand' => [ 'brand-assets', 'page-layout-styling', 'featured-image-orientation', 'breadcrumbs', '404-page', 'brand-templates', 'website-types', 'founders', 'pages', 'menu-tools', 'footer-text' ],
-            'Content' => [ 'custom-post-types', 'team', 'features', 'search', 'shortcodes', 'comments' ],
-            'Operations' => [ 'ajax-navigation', 'maintenance-mode', 'external-publishing', 'payments', 'plugins', 'litespeed', 'database-optimization', 'system-checks', 'mail-authentication', 'seo', 'sitemaps', 'search-console', 'instant-indexing', 'rss-feeds', 'cleanup', 'backups', 'update-center' ],
+            'Brand & People' => [ 'website-types', 'brand-assets', 'brand-templates', 'founders', 'team' ],
+            'Pages & Layout' => [ 'pages', 'page-layout-styling', 'menu-tools', 'breadcrumbs', '404-page', 'footer-text', 'featured-image-orientation' ],
+            'Content' => [ 'custom-post-types', 'features', 'search', 'comments', 'shortcodes', 'rss-feeds', 'external-publishing', 'payments' ],
+            'SEO & Indexing' => [ 'seo', 'sitemaps', 'search-console', 'instant-indexing' ],
+            'Speed' => [ 'litespeed', 'database-optimization', 'ajax-navigation', 'cleanup' ],
+            'Site Health' => [ 'system-checks', 'plugins', 'update-center', 'backups', 'mail-authentication', 'maintenance-mode' ],
             'Security' => [ 'form-protection', 'masked-login' ],
-            'WordPress Admin' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
+            'Advanced' => [ 'ui-cleanup', 'config', 'advanced', 'snippets', 'hexa-core' ],
         ];
 
         foreach ( $definitions as $label => $ids ) {
@@ -198,7 +201,7 @@ final class DashboardRegistry {
         $this->add( new DashboardModuleDefinition( 'maintenance-mode', 'Maintenance Mode', [ \HWS\BaseTools\MaintenanceMode\MaintenanceModeAdmin::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'external-publishing', 'External Publishing', [ \HWS\BaseTools\ExternalPublishing\ExternalPublishingModule::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'plugins', 'Plugins', 'hws_base_tools\\render_tab_plugins', [ 'settings-dashboard-check-plugins.php', 'settings-dashboard-theme-checks.php' ] ) );
-        $this->add( new DashboardModuleDefinition( 'form-protection', 'Form protection', [ \HWS\BaseTools\FormProtection\ProtectionTab::class, 'render' ] ) );
+        $this->add( new DashboardModuleDefinition( 'form-protection', 'Form Protection', [ \HWS\BaseTools\FormProtection\ProtectionTab::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'ajax-navigation', 'AJAX Navigation', [ \HWS\BaseTools\AjaxNavigation\NavigationTab::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'payments', 'Payments', [ \HWS\BaseTools\Payments\PaymentsTab::class, 'render' ] ) );
         $this->add( new DashboardModuleDefinition( 'litespeed', 'LiteSpeed', [ \HWS\BaseTools\LiteSpeed\LiteSpeedModule::class, 'render' ] ) );

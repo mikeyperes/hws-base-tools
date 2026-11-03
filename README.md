@@ -456,6 +456,10 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.54.8
+
+- Reorganized the settings sidebar into clear groups: Overview, Brand & People, Pages & Layout, Content, SEO & Indexing, Speed, Site Health, Security and Advanced. The old 17-item Operations group is gone.
+
 ### 13.54.7
 
 - Includes native homepage, category, tag and search layout ownership.
