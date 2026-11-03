@@ -54,7 +54,46 @@ final class SearchConsoleService {
         $sitemaps=$this->client->request($this->base().'/sitemaps');
         $result['sitemaps_response']=$sitemaps;
         $result['sitemaps']=$sitemaps['data']['sitemap']??[];
+        $result['items']=self::items($result['sitemaps']);
         return $result;
+    }
+    private static function key(string $url): string {return strtolower(preg_replace('#^https?://#','',rtrim($url,'/')));}
+    /** One list: every sitemap the site serves or Google holds, tagged with our recommendation and Google's state. */
+    public static function items(array $google): array {
+        $items=[];
+        foreach(RecommendationRegistry::lookup()['rows'] as $row){
+            if(empty($row['url']) || 'local'===$row['id']) continue;
+            if(empty($row['current']) && empty($row['recommended'])) continue;
+            $items[self::key($row['url'])]=['url'=>$row['url'],'label'=>$row['label'],'recommended'=>!empty($row['recommended']),'on_site'=>!empty($row['current']),'junk'=>!empty($row['junk']),'google'=>null];
+        }
+        foreach($google as $g){
+            $k=self::key((string)($g['path']??''));
+            if(!isset($items[$k])) $items[$k]=['url'=>$g['path'],'label'=>'','recommended'=>false,'on_site'=>false,'junk'=>false,'google'=>null];
+            $items[$k]['google']=['pending'=>!empty($g['isPending']),'errors'=>(int)($g['errors']??0),'warnings'=>(int)($g['warnings']??0),'last_read'=>$g['lastDownloaded']??null,'last_submitted'=>$g['lastSubmitted']??null];
+        }
+        return array_values($items);
+    }
+    /** Submit chosen sitemap addresses; only addresses this site serves are accepted. */
+    public function submit_urls(array $urls): array {
+        if($failure=$this->unavailable()) return $failure;
+        $served=[];
+        foreach(self::items([]) as $item) if($item['on_site']) $served[self::key($item['url'])]=$item['url'];
+        $results=[];
+        foreach($urls as $url){
+            $url=(string)$url;$known=$served[self::key($url)]??null;
+            $results[]=$known?['url'=>$known]+$this->client->request($this->base().'/sitemaps/'.rawurlencode($known),'PUT'):['url'=>$url,'ok'=>false,'message'=>'This site does not serve that sitemap.'];
+        }
+        return ['property'=>$this->resolve()['property'],'results'=>$results,'count'=>count($results)];
+    }
+    /** Remove chosen sitemaps from Google. The site's own sitemap files are untouched. */
+    public function remove_urls(array $urls): array {
+        if($failure=$this->unavailable()) return $failure;
+        $results=[];
+        foreach($urls as $url){
+            $url=(string)$url;
+            $results[]=self::own_url($url)?['url'=>$url]+$this->client->request($this->base().'/sitemaps/'.rawurlencode($url),'DELETE'):['url'=>$url,'ok'=>false,'message'=>'Not an address on this site.'];
+        }
+        return ['property'=>$this->resolve()['property'],'results'=>$results,'count'=>count($results)];
     }
     public function submit(string $id): array {
         $rows=array_column(RecommendationRegistry::lookup()['rows'],null,'id');

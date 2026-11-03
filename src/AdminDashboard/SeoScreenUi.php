@@ -56,6 +56,12 @@ final class SeoScreenUi {
             .hws-ss-empty{color:#787c82;font-size:13px;padding:6px 0}
             .hws-ss-notice{margin-top:8px;font-size:12px;color:#00701a}.hws-ss-notice.bad{color:#b32d2e}
             .hws-ss-notice:empty{display:none}
+            .hws-ss-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px;font-size:12px;color:#50575e}
+            .hws-ss-bar .button-link{font-size:12px}
+            .hws-ss .hws-ss-pickrow{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-bottom:4px;cursor:pointer;flex-wrap:wrap}
+            .hws-ss .hws-ss-pickrow input{margin:0}
+            .hws-ss .hws-ss-pickrow .hws-ss-label{font-size:13px}
+            .hws-ss-pickrow:has(input:checked){border-color:#2271b1;background:#f6f9fc}
             .hws-ss-hidden{margin-top:14px;border:1px solid #dcdcde;border-radius:6px;background:#f6f7f7}
             .hws-ss-hidden>summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13px;color:#1d2327;display:flex;align-items:center;gap:6px}
             .hws-ss-hidden[open]>summary{border-bottom:1px solid #dcdcde}
