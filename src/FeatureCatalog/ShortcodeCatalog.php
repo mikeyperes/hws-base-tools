@@ -22,6 +22,15 @@ final class ShortcodeCatalog {
     public static function definitions(): array {
         return [
             [
+                'id' => 'hws_newsletter', 'label' => 'Newsletter signup', 'shortcode' => '[hws_newsletter]',
+                'description' => 'Disabled-by-default newsletter collector with optional name, consent and styling. Setup and stable HTML: docs/newsletter.md.',
+                'test_method' => 'Enable Newsletter, submit and repeat an email, then inspect its list and CSV export.',
+                'source' => 'src/Newsletter/NewsletterModule.php', 'provider' => 'HWS Base Tools + Hexa WP Core',
+                'parameters' => ['list'=>'default','placeholder'=>'Your email address','button'=>'Subscribe','success'=>'Thanks for signing up!','style'=>'none','id'=>'','class'=>'','name'=>'off','consent'=>'off','consent_text'=>'I agree to receive newsletter emails.','source'=>'newsletter'],
+                'examples' => [['label'=>'Weekly newsletter','shortcode'=>'[hws_newsletter list="weekly" consent="on"]','parameters'=>['list'=>'weekly','consent'=>'on']]],
+            ],
+
+            [
                 'id' => TeamMemberDirectory::SHORTCODE,
                 'label' => 'Team Member Directory',
                 'shortcode' => '[hws_team_members]',

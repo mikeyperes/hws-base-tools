@@ -73,3 +73,11 @@ Before: `hws-form-protection` on enabled forms and the Turnstile SDK when config
 ## Featured image orientation (13.54.0)
 
 `hws-featured-image-orientation` (about 1 KB of CSS) loads only on the front page and on single pages whose content type switch is on, and never in the admin. Its rules only touch elements carrying `hws-fi-hero`, so pages without a tagged hero are unchanged. The settings tab prints the same CSS inline for its samples. Check: home page and an article list it; a category archive, a plain page with its switch off and every other admin screen do not.
+
+## Newsletter collector
+Disabled: no newsletter frontend assets. Enabled: newsletter.js is enqueued only by a rendered shortcode.
+No newsletter assets on the homepage or an ordinary article without the shortcode.
+No CSS for none; selected simple/rounded CSS appears with the first visible content output per style.
+Offscreen indexer expansion does not consume visible content's style emission.
+Admin: only the Newsletter tab prints a disabled form preview and its selected CSS; no frontend script.
+Turnstile script loads only when the shortcode has an inherited Turnstile widget.

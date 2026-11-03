@@ -18,6 +18,14 @@
 
 ## Features
 
+### Collection submissions
+- **Does:** stores normalized, deduplicated per-list submissions with UTC timestamps, safe request metadata, atomic IP rate counters and formula-safe streaming CSV.
+- **Use:** `FrontendForms\SubmissionStore`; see [API and host responsibilities](docs/collection-submissions.md).
+- **Extend:** `hexa_form_submission_client_ip` supplies a client IP for an explicitly trusted reverse proxy.
+- **Code:** `src/FrontendForms/SubmissionStore.php`.
+
+
+
 - Declared extensible builder/system exclusions and taxonomy/content-type sitemap collision protection.
 
 - Opt-in shared sitemap recommendations, explicit Rank Math changes, saved conditions, REST/AJAX and JSON WP-CLI. [Contract](docs/sitemaps.md).

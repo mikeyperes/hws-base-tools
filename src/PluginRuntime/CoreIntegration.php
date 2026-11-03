@@ -76,6 +76,7 @@ final class CoreIntegration {
         self::$bootstrap
             ->add_module( new \HWS\BaseTools\Media\ExternalFeaturedImageModule() )
             ->add_module( new LegacyEventBridge() )
+            ->add_module( new \HWS\BaseTools\Newsletter\NewsletterModule() )
             ->add_module( new DashboardAssets() )
             ->add_module( new \HWS\BaseTools\DisplayConditions\DisplayConditionsModule() )
             ->add_module( new QuickStartModule() )

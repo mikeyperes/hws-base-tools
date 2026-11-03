@@ -9,6 +9,17 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Newsletter signup collector
+- **Does:** collects email signups, optional name and consent, reports duplicates, exports CSV and sends optional signup notices.
+- **Switch:** Settings > HWS Base Tools > Newsletter (`hws_base_tools_newsletter`), disabled by default.
+- **Use:** `[hws_newsletter]`; [all parameters, defaults, setup and commands](docs/newsletter.md).
+- **Style:** no CSS by default; simple and rounded options, stable `hws-newsletter__*` classes.
+- **Example:** [HTML, built-in CSS and Elementor selector example](docs/newsletter.md); Newsletter admin tab has a preview.
+- **Extend:** `hws_base_tools_newsletter_signup` receives ID/list; `hws_base_tools_newsletter_notification` receives mail handoff result/ID.
+- **Code:** `src/Newsletter/NewsletterModule.php`, Core `FrontendForms/SubmissionStore.php`, `assets/newsletter/newsletter.js`.
+
+
+
 - Configurable per-post-type Rank Math breadcrumb trails: section label/URL, taxonomy, and excluded default or named terms.
 - Opt-in search description fallbacks per post type, from ordered fields/excerpt and a title/site-name template. Existing descriptions win. Settings and schema API: [SEO fallbacks](docs/seo-fallbacks.md).
 
