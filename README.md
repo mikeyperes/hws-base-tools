@@ -311,7 +311,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Code:** `src/Editorial/`
 
 ### Backup plugin blocker
-- **Does:** backups are made by the server with JetBackup, so a hardcoded list of backup plugins (`BackupPluginBlocker::PLUGINS`: All-in-One WP Migration and its extensions, UpdraftPlus) is kept off the site: installing them (upload, plugin search or WP-CLI) fails, activating them is refused, an active copy is deactivated on the next admin visit, and their backup requests and scheduled backups are dropped. Every block is silent: an install fails with WordPress's generic "The package could not be installed." and nothing names the block. Installed folders and existing backup files are left alone (the Backups tab deletes old backups). Default off.
+- **Does:** backups are made by the server with JetBackup, so a hardcoded list of backup plugins (`BackupPluginBlocker::PLUGINS`: All-in-One WP Migration and its extensions, UpdraftPlus and its add-ons, Duplicator and Duplicator Pro, WP STAGING, BackWPup, WPvivid, Backup Migration) and file manager plugins (WP File Manager, Advanced File Manager, Filester) is kept off the site: installing them (upload, plugin search or WP-CLI) fails, activating them is refused, an active copy is deactivated on the next admin visit, and their backup requests and scheduled backups are dropped. Every block is silent: an install fails with WordPress's generic "The package could not be installed." and nothing names the block. Installed folders and existing backup files are left alone (the Backups tab deletes old backups). Default off.
 - **Switch:** WP Admin → Settings → HWS Base Tools → Features → Block Backup Plugins (`enable_backup_plugin_blocker`).
 - **Code:** `src/Maintenance/BackupPluginBlocker.php`
 
@@ -489,6 +489,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.62.0
+- Block Backup Plugins now also blocks Duplicator, Duplicator Pro, WP STAGING, BackWPup, WPvivid, Backup Migration, UpdraftPlus add-ons and the file manager plugins WP File Manager, Advanced File Manager and Filester.
 
 ### 13.61.1
 - Block Backup Plugins is now fully silent: a blocked install shows only WordPress's generic failure text.

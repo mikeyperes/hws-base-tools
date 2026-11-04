@@ -21,10 +21,19 @@ final class BackupPluginBlocker {
     public const PLUGINS = [
         'all-in-one-wp-migration' => 'All-in-One WP Migration',
         'updraftplus'             => 'UpdraftPlus',
+        'de-updraftplus'          => 'UpdraftPlus add-ons',
+        'duplicator'              => 'Duplicator',
+        'wp-staging'              => 'WP STAGING',
+        'backwpup'                => 'BackWPup',
+        'wpvivid-backuprestore'   => 'WPvivid Backup & Migration',
+        'backup-backup'           => 'Backup Migration',
+        'wp-file-manager'         => 'WP File Manager',
+        'file-manager-advanced'   => 'Advanced File Manager',
+        'filester'                => 'Filester File Manager',
     ];
 
     /** Cron hook prefixes of the blocked plugins. */
-    private const CRON_PREFIXES = [ 'ai1wm', 'updraft' ];
+    private const CRON_PREFIXES = [ 'ai1wm', 'updraft', 'duplicator', 'backwpup', 'wpstg', 'wpvivid' ];
 
     /** Backup and restore request actions of the blocked plugins. */
     private const REQUEST_ACTIONS = [
@@ -188,8 +197,8 @@ final class BackupPluginBlocker {
 
         return [
             'id'               => self::FEATURE_OPTION,
-            'name'             => 'Block Backup Plugins',
-            'description'      => 'Backups are made by the server with JetBackup. These backup plugins cannot be installed, activated or make backups:',
+            'name'             => 'Block Backup and File Manager Plugins',
+            'description'      => 'Backups are made by the server with JetBackup. These backup and file manager plugins cannot be installed, activated or run:',
             'info'             => '<ul>' . $list . '</ul>',
             'function'         => 'enable_backup_plugin_blocker',
             'scope_admin_only' => false,
