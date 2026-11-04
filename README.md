@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- Bundles Hexa WP Core 3.52.0 with podcast/media schema builders and shared content declarations.
+- Bundles Hexa WP Core 3.54.0, whose sitemap rules can differ by site type.
 
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
 - Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
@@ -38,6 +38,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 - Native homepage, category, tag and search layouts are owned here in src/Pages/PageTypes.php.
 
 - Canonical page catalog: [src/Pages/PageTypes.php](src/Pages/PageTypes.php) defines titles, addresses, parents, designs, default states, conditions and content sources. Ordinary-page adapters preserve existing assignments; query layouts and repeated profiles stay outside page creation.
+- Every page a site's default menus link to is in the page catalog: the contact page is named Connect (`/connect/`, the old `/contact/` address still matches), a Sitemap page, and company pages that are off by default (Services, Knowledge Base, Client Portal, Pay Invoice, Service Forms, Downloadable Assets).
+- Site-type sitemap rule: on a company or shop site the authors sitemap is recommended only when more than one author has posts. The sitemap lookup uses the site type saved in Website Identity.
 
 - **Search console, Instant Indexing and recommended sitemaps screens:** the Search Console tab shows registration, owners, one checklist of every sitemap on the site or in Google, tagged Recommended and with its Google state, to submit or remove the ticked ones, a page check, reindex requests and a link to Search Console; the Instant Indexing tab shows whether Rank Math's IndexNow works, its key file, what it sends on its own, the latest answers and a test send; the Sitemaps tab opens with every recommended sitemap, the plugin recommending it, Rank Math's current setting, a change button only where they differ and the "more than X" conditions. Builder templates, theme parts and shop internals sit in a collapsed "Hidden: usually junk" list with one "turn all off" button and a "Move to main list" button on each. Sitemaps owned by another HWS plugin show read-only in a grayed group with a link to that plugin's Sitemaps settings. Nothing changes in Rank Math until a button is pressed.
 
