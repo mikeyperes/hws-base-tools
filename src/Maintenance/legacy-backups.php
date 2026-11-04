@@ -49,105 +49,10 @@ class Backup_Cleaner_Config {
 
 
 /**
- * Known backup plugin locations
- */
-function hws_get_backup_locations() {
-    return [
-        'all-in-one-wp-migration' => [
-            'name' => 'All-in-One WP Migration',
-            'path' => WP_CONTENT_DIR . '/ai1wm-backups/',
-            'extensions' => [ 'wpress' ],
-        ],
-        'updraftplus' => [
-            'name' => 'UpdraftPlus',
-            'path' => WP_CONTENT_DIR . '/updraft/',
-            'extensions' => [ 'zip', 'gz', 'sql' ],
-        ],
-        'backwpup' => [
-            'name' => 'BackWPup',
-            'path' => WP_CONTENT_DIR . '/uploads/backwpup*/',
-            'extensions' => [ 'zip', 'tar', 'gz' ],
-        ],
-        'duplicator' => [
-            'name' => 'Duplicator',
-            'path' => WP_CONTENT_DIR . '/backups-dup-lite/',
-            'extensions' => [ 'zip', 'daf' ],
-        ],
-        'duplicator-pro' => [
-            'name' => 'Duplicator Pro',
-            'path' => WP_CONTENT_DIR . '/backups-dup-pro/',
-            'extensions' => [ 'zip', 'daf' ],
-        ],
-        'wpvivid' => [
-            'name' => 'WPVivid',
-            'path' => WP_CONTENT_DIR . '/wpvivid/',
-            'extensions' => [ 'zip' ],
-        ],
-        'backup-migration' => [
-            'name' => 'Backup Migration',
-            'path' => WP_CONTENT_DIR . '/backup-migration*/',
-            'extensions' => [ 'zip' ],
-        ],
-    ];
-}
-
-
-/**
- * Scan for backups
+ * Scan for backups of every backup and file manager plugin, in each format it writes
  */
 function hws_scan_backups() {
-    $locations = hws_get_backup_locations();
-    $found = [];
-
-    foreach ( $locations as $plugin_key => $config ) {
-        $path = $config['path'];
-        $plugin_name = $config['name'];
-        $extensions = $config['extensions'];
-
-        // Handle wildcard paths
-        if ( strpos( $path, '*' ) !== false ) {
-            $dirs = glob( $path, GLOB_ONLYDIR );
-            if ( ! $dirs ) continue;
-        } else {
-            $dirs = [ $path ];
-        }
-
-        foreach ( $dirs as $dir ) {
-            if ( ! is_dir( $dir ) ) continue;
-
-            $files = @scandir( $dir );
-            if ( ! $files ) continue;
-
-            foreach ( $files as $file ) {
-                if ( $file === '.' || $file === '..' ) continue;
-
-                $file_path = $dir . '/' . $file;
-                if ( ! is_file( $file_path ) ) continue;
-
-                // Check extension
-                $ext = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
-                if ( ! in_array( $ext, $extensions, true ) ) continue;
-
-                $found[] = [
-                    'plugin'    => $plugin_key,
-                    'plugin_name' => $plugin_name,
-                    'file'      => $file,
-                    'path'      => $file_path,
-                    'size'      => filesize( $file_path ),
-                    'size_human'=> size_format( filesize( $file_path ) ),
-                    'modified'  => filemtime( $file_path ),
-                    'age_days'  => floor( ( time() - filemtime( $file_path ) ) / DAY_IN_SECONDS ),
-                ];
-            }
-        }
-    }
-
-    // Sort by modified date (newest first)
-    usort( $found, function( $a, $b ) {
-        return $b['modified'] - $a['modified'];
-    } );
-
-    return $found;
+    return \HWS\BaseTools\Maintenance\BackupFileScanner::scan();
 }
 
 
@@ -417,6 +322,14 @@ function render_tab_backups() {
         $grouped[ $plugin ]['total'] += $backup['size'];
         $total_size += $backup['size'];
     }
+
+    $catalog = \HWS\BaseTools\Maintenance\BackupPluginCatalog::plugins();
+    $install_states = \HWS\BaseTools\Maintenance\BackupPluginCatalog::install_states();
+    $state_labels = [
+        'active'        => '🔴 Active',
+        'installed'     => '🟡 Installed, inactive',
+        'not_installed' => '✅ Not installed',
+    ];
     ?>
 
     <!-- Backup plugin blocker -->
@@ -443,6 +356,59 @@ function render_tab_backups() {
         <div class="hws-status-card">
             <div id="hws-backup-max-age" class="value"><?php echo $settings['days']; ?> days</div>
             <div class="label">Max Age</div>
+        </div>
+    </div>
+
+    <!-- Backup and file manager plugins -->
+    <div class="hws-panel">
+        <div class="hws-panel-header">🧩 Backup and File Manager Plugins</div>
+        <div class="hws-panel-body">
+            <p>Every backup and file manager plugin this tab knows, whether it is on this site, and the backup files found in each one's folders and formats.</p>
+            <table class="hws-plugin-table">
+                <thead>
+                    <tr>
+                        <th>Plugin</th>
+                        <th>Kind</th>
+                        <th>On this site</th>
+                        <th>Backup folders</th>
+                        <th>Formats</th>
+                        <th>Backup files</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $catalog as $slug => $plugin ) :
+                        $count = isset( $grouped[ $slug ] ) ? count( $grouped[ $slug ]['files'] ) : 0;
+                    ?>
+                        <tr>
+                            <td><strong><?php echo esc_html( $plugin['name'] ); ?></strong><br><code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code></td>
+                            <td><?php echo \HWS\BaseTools\Maintenance\BackupPluginCatalog::TYPE_FILE_MANAGER === $plugin['type'] ? 'File manager' : 'Backup'; ?></td>
+                            <td><?php echo esc_html( $state_labels[ $install_states[ $slug ] ?? 'not_installed' ] ); ?></td>
+                            <td>
+                                <?php if ( $plugin['folders'] ) : ?>
+                                    <?php foreach ( $plugin['folders'] as $folder ) : ?>
+                                        <code style="font-size: 11px;">wp-content/<?php echo esc_html( $folder ); ?></code><br>
+                                    <?php endforeach; ?>
+                                <?php else : ?>
+                                    <span style="color: #646970;">Makes no backups</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo $plugin['formats'] ? esc_html( '.' . implode( ', .', $plugin['formats'] ) ) : 'None'; ?></td>
+                            <td data-backup-plugin-count="<?php echo esc_attr( $slug ); ?>" class="<?php echo $count ? 'status-bad' : ''; ?>">
+                                <?php echo $count ? esc_html( $count . ' files (' . size_format( $grouped[ $slug ]['total'] ) . ')' ) : 'None'; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p style="margin: 10px 0 0; font-size: 12px; color: #646970;">Formats only one plugin writes (<?php
+                $signatures = [];
+                foreach ( $catalog as $plugin ) {
+                    foreach ( $plugin['signatures'] as $format ) {
+                        $signatures[] = '.' . $format;
+                    }
+                }
+                echo esc_html( implode( ', ', $signatures ) );
+            ?>) are also found anywhere in wp-content and the site root.</p>
         </div>
     </div>
 
@@ -624,6 +590,18 @@ function render_tab_backups() {
                 }
 
                 $('[data-backup-plugin-summary="' + plugin + '"]').text($rows.length + ' files (' + formatBytes(pluginBytes) + ')');
+            });
+
+            $('[data-backup-plugin-count]').each(function() {
+                var $cell = $(this);
+                var $rows = $('[data-backup-file-row][data-backup-plugin="' + $cell.data('backup-plugin-count') + '"]');
+                var pluginBytes = 0;
+
+                $rows.each(function() {
+                    pluginBytes += parseInt($(this).data('backup-size-bytes'), 10) || 0;
+                });
+
+                $cell.text($rows.length ? $rows.length + ' files (' + formatBytes(pluginBytes) + ')' : 'None').toggleClass('status-bad', $rows.length > 0);
             });
         }
 

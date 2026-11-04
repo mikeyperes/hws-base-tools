@@ -17,21 +17,6 @@ defined( 'ABSPATH' ) || exit;
 final class BackupPluginBlocker {
     public const FEATURE_OPTION = 'enable_backup_plugin_blocker';
 
-    /** Blocked plugin folders; a folder matches its slug or `<slug>-<anything>`. */
-    public const PLUGINS = [
-        'all-in-one-wp-migration' => 'All-in-One WP Migration',
-        'updraftplus'             => 'UpdraftPlus',
-        'de-updraftplus'          => 'UpdraftPlus add-ons',
-        'duplicator'              => 'Duplicator',
-        'wp-staging'              => 'WP STAGING',
-        'backwpup'                => 'BackWPup',
-        'wpvivid-backuprestore'   => 'WPvivid Backup & Migration',
-        'backup-backup'           => 'Backup Migration',
-        'wp-file-manager'         => 'WP File Manager',
-        'file-manager-advanced'   => 'Advanced File Manager',
-        'filester'                => 'Filester File Manager',
-    ];
-
     /** Cron hook prefixes of the blocked plugins. */
     private const CRON_PREFIXES = [ 'ai1wm', 'updraft', 'duplicator', 'backwpup', 'wpstg', 'wpvivid' ];
 
@@ -67,15 +52,9 @@ final class BackupPluginBlocker {
         }
     }
 
+    /** A blocked plugin folder is a catalog slug or `<slug>-<anything>`. */
     public static function is_blocked_folder( string $folder ): bool {
-        $folder = strtolower( trim( $folder, '/\\' ) );
-        foreach ( array_keys( self::PLUGINS ) as $slug ) {
-            if ( $folder === $slug || str_starts_with( $folder, $slug . '-' ) ) {
-                return true;
-            }
-        }
-
-        return false;
+        return null !== BackupPluginCatalog::slug_for_folder( $folder );
     }
 
     /** `folder/file.php` or a bare `file.php` belongs to a blocked plugin. */
@@ -200,7 +179,7 @@ final class BackupPluginBlocker {
     }
 
     public static function definition(): array {
-        $list = implode( '', array_map( static fn ( string $name ): string => '<li>' . esc_html( $name ) . '</li>', self::PLUGINS ) );
+        $list = implode( '', array_map( static fn ( string $name ): string => '<li>' . esc_html( $name ) . '</li>', BackupPluginCatalog::names() ) );
 
         return [
             'id'               => self::FEATURE_OPTION,

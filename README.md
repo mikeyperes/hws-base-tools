@@ -311,9 +311,14 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Code:** `src/Editorial/`
 
 ### Backup plugin blocker
-- **Does:** backups are made by the server with JetBackup, so a hardcoded list of backup plugins (`BackupPluginBlocker::PLUGINS`: All-in-One WP Migration and its extensions, UpdraftPlus and its add-ons, Duplicator and Duplicator Pro, WP STAGING, BackWPup, WPvivid, Backup Migration) and file manager plugins (WP File Manager, Advanced File Manager, Filester) is kept off the site: installing them (upload, plugin search or WP-CLI) fails, activating them is refused, an active copy is deactivated on the next admin visit, and their backup requests and scheduled backups are dropped. Every block is silent: an install fails with WordPress's generic "The package could not be installed." and nothing names the block. Installed folders and existing backup files are left alone (the Backups tab deletes old backups). Default on (set once on install or update; turning it off sticks).
+- **Does:** backups are made by the server with JetBackup, so a hardcoded list of backup plugins (`BackupPluginCatalog::plugins()`: All-in-One WP Migration and its extensions, UpdraftPlus and its add-ons, Duplicator and Duplicator Pro, WP STAGING, BackWPup, WPvivid, Backup Migration) and file manager plugins (WP File Manager, Advanced File Manager, Filester) is kept off the site: installing them (upload, plugin search or WP-CLI) fails, activating them is refused, an active copy is deactivated on the next admin visit, and their backup requests and scheduled backups are dropped. Every block is silent: an install fails with WordPress's generic "The package could not be installed." and nothing names the block. Installed folders and existing backup files are left alone (the Backups tab deletes old backups). Default on (set once on install or update; turning it off sticks).
 - **Switch:** WP Admin → Settings → HWS Base Tools → Backups (`options-general.php?page=hws-core-tools&tab=backups`) → Server makes daily backups toggle (`enable_backup_plugin_blocker`).
-- **Code:** `src/Maintenance/BackupPluginBlocker.php`
+- **Code:** `src/Maintenance/BackupPluginBlocker.php`, list in `src/Maintenance/BackupPluginCatalog.php`
+
+### Backup file scan
+- **Does:** the Backups tab lists every backup and file manager plugin from the same list, with whether it is active, installed or absent, its backup folders, the file formats it writes and the backup files found. Each plugin's folders are scanned for its formats (for example WPvivid's `wpvividbackups` zips, WP STAGING's `.wpstg`, WP File Manager's `fm_backup`), and formats only one plugin writes (`.wpress`, `.daf`, `.wpstg`) are also found anywhere in wp-content and the site root. Found files can be deleted one by one, per plugin, or by the auto-cleanup.
+- **Where:** WP Admin → Settings → HWS Base Tools → Backups (`options-general.php?page=hws-core-tools&tab=backups`).
+- **Code:** `src/Maintenance/BackupFileScanner.php`, `src/Maintenance/legacy-backups.php`
 
 ### Rank Math schema switch
 - **Does:** decides whether Rank Math prints its own schema block next to the Hexa plugins' shared `hexa-schema` block. Where it is off, Featured Image From URL's duplicate image block is removed too. Rank Math stays active for titles, descriptions and sitemaps.
@@ -489,6 +494,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.64.0
+- The Backups tab lists every backup and file manager plugin with its install state, backup folders, formats and backup files found, and scans each plugin's folders for each of its formats (WPvivid backups in `wpvividbackups` were missed before).
 
 ### 13.63.2
 - The backup plugin blocker on the Backups tab is now one small toggle labeled "Server makes daily backups", on by default for new installs and updates.
