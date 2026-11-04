@@ -490,6 +490,9 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ## Changelog
 
+### 13.63.0
+- Bundles Hexa WP Core 3.55.0: the dashboard sidebar has a search box at the top that filters its sections as you type.
+
 ### 13.62.0
 - Block Backup Plugins now also blocks Duplicator, Duplicator Pro, WP STAGING, BackWPup, WPvivid, Backup Migration, UpdraftPlus add-ons and the file manager plugins WP File Manager, Advanced File Manager and Filester.
 

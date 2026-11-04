@@ -61,7 +61,7 @@
 - **Code:** `bootstrap.php`, `src/CoreBootstrap/`, `src/CoreContracts/`, `src/CoreRuntime/`
 
 ### Admin tabs and dashboard shell
-- **Does:** the plugin's one admin page: top tabs or a grouped, collapsible sidebar with plugin and Core versions, tabs loaded by AJAX with the tab kept in the URL, plus the automatic Hexa Core tab showing this README.
+- **Does:** the plugin's one admin page: top tabs or a grouped, collapsible sidebar with plugin and Core versions and a search box that filters its sections, tabs loaded by AJAX with the tab kept in the URL, plus the automatic Hexa Core tab showing this README.
 - **Use:** `( new HostTabsRenderer() )->render( [ tabs, active, page_url, ajax_action, nonce, root_id, panel_id, layout => 'sidebar', groups, sidebar_identity, render_callback ] )`; `TabRegistry`/`TabDefinition` for the list; `( new CoreTabModule( new CoreTabConfig( [ tabs_filter, render_filter, core_root, readme_path, library_path ] ) ) )->register()`.
 - **Extend:** the host's `<prefix>_dashboard_tabs` and `<prefix>_render_dashboard_tab` filters.
 - **Code:** `src/WpAdminTabs/` (docs: `docs/tabs.md`)
