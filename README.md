@@ -9,6 +9,12 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Shared Elementor heading placements
+- **Does:** native Template widgets can supply an eyebrow, intro, title variant, padding and text-spacing set, and an optional role custom field to one saved heading. Unconfigured widgets preserve the UI/default appearance.
+- **Use:** Template > Shared heading options; native Heading widgets use the Shortcode dynamic tag with [hws_heading_field name="title|eyebrow|intro|role"]. Plain titles read the main queried object, never the loop post or SEO document title.
+- **Details:** [Shared heading options](docs/shared-heading-options.md).
+
+
 - Bundles Hexa WP Core 3.54.0, whose sitemap rules can differ by site type.
 
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.

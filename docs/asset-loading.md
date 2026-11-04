@@ -94,3 +94,5 @@ markup, including replayed cached markup. A homepage, article or ordinary page
 without such a list loads no new asset; the plugin's admin screens load none.
 Author-avatar resizing is server-side and adds no script. Existing frontend
 styles and all admin assets are unchanged.
+
+Shared heading placements register Elementor controls and a field shortcode only; no CSS or JavaScript assets are added. The saved Elementor template owns its scoped styling.

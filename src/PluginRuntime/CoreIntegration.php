@@ -85,6 +85,7 @@ final class CoreIntegration {
             ->add_module( new DatabaseOptimizationModule() )
             ->add_module( new QueryHookCompatibility() )
             ->add_module( new BrandTemplateFeature() )
+            ->add_module( new \HWS\BaseTools\Elementor\TemplateHeadingOptions() )
             ->add_module( new PageLayoutFeature() )
             ->add_module( new MaintenanceModeFeature() )
             ->add_module( new TeamTab() )
