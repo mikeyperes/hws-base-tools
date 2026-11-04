@@ -421,7 +421,10 @@ function render_tab_backups() {
 
     <!-- Backup plugin blocker -->
     <?php require_once dirname( __DIR__, 2 ) . '/src/FeatureCatalog/legacy-features.php'; ?>
-    <?php hws_render_feature_card( \HWS\BaseTools\Maintenance\BackupPluginBlocker::definition() ); ?>
+    <div class="hws-backup-blocker-toggle" style="display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:13px;color:#50575e">
+        <?php echo hws_render_feature_toggle( \HWS\BaseTools\Maintenance\BackupPluginBlocker::definition() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+        <span>Server makes daily backups</span>
+    </div>
 
     <!-- Summary -->
     <div class="hws-status-grid">

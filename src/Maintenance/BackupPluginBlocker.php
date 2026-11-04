@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Backup plugin blocker: keeps All-in-One WP Migration (and its extensions) and
- * UpdraftPlus off the site. Default off. Every block is silent: no notice
+ * UpdraftPlus off the site. Default on. Every block is silent: no notice
  * names the block or this plugin.
  *
  * While on, installing either plugin (upload, plugin search or WP-CLI) fails,
@@ -58,6 +58,13 @@ final class BackupPluginBlocker {
         add_filter( 'pre_schedule_event', [ self::class, 'block_schedule' ], 10, 2 );
         add_action( 'init', [ self::class, 'stop_backups' ], 0 );
         add_action( 'admin_init', [ self::class, 'deactivate_installed' ], 0 );
+    }
+
+    /** On by default: a site that never set the switch (new install or rollout) gets it on once. */
+    public static function seed_default(): void {
+        if ( null === get_option( self::FEATURE_OPTION, null ) ) {
+            add_option( self::FEATURE_OPTION, 1 );
+        }
     }
 
     public static function is_blocked_folder( string $folder ): bool {
@@ -197,7 +204,7 @@ final class BackupPluginBlocker {
 
         return [
             'id'               => self::FEATURE_OPTION,
-            'name'             => 'Block Backup and File Manager Plugins',
+            'name'             => 'Server makes daily backups',
             'description'      => 'Backups are made by the server with JetBackup. These backup and file manager plugins cannot be installed, activated or run:',
             'info'             => '<ul>' . $list . '</ul>',
             'function'         => 'enable_backup_plugin_blocker',

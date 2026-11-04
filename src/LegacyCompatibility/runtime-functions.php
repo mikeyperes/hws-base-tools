@@ -4,9 +4,11 @@ namespace hws_base_tools;
 
 use HWS\BaseTools\FeatureCatalog\RuntimeLogger;
 use HWS\BaseTools\FeatureCatalog\SnippetActivator;
+use HWS\BaseTools\Maintenance\BackupPluginBlocker;
 
 if ( ! function_exists( __NAMESPACE__ . '\\activate_snippets' ) ) {
     function activate_snippets( string $type = '' ): void {
+        BackupPluginBlocker::seed_default();
         $snippets = function_exists( __NAMESPACE__ . '\\get_snippets' )
             ? get_snippets( $type )
             : [];
