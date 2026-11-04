@@ -10,6 +10,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
         add_action('elementor/frontend/widget/before_render', [self::class, 'enter']);
         add_action('elementor/frontend/widget/after_render', [self::class, 'leave']);
         add_shortcode('hws_heading_field', [self::class, 'field']);
+        add_filter('rank_math/frontend/breadcrumb/items', [self::class, 'breadcrumb_items'], 20);
     }
     public static function controls($widget): void {
         $widget->start_controls_section('hws_heading_options', ['label'=>__('Shared heading options','hws-base-tools')]);
@@ -20,6 +21,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
         $widget->add_control('hws_heading_variant', ['label'=>__('Title style variant','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'ui','options'=>['ui'=>'UI','display'=>'Display','newsroom'=>'Newsroom']]);
         $widget->add_control('hws_heading_padding', ['label'=>__('Padding set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Default (40/36, 32/28, 28/24)','newsroom'=>'Newsroom (48, 36, 26)']]);
         $widget->add_control('hws_heading_spacing', ['label'=>__('Text spacing set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Follow title variant','contact'=>'Contact (14px, 520px intro)']]);
+        $widget->add_control('hws_heading_breadcrumb_middle', ['label'=>__('Breadcrumb middle crumbs','hws-base-tools'),'type'=>\Elementor\Controls_Manager::TEXTAREA,'default'=>'','description'=>__('Optional: one Label|https://example.com/path/ pair per line. Home and the current title are automatic. Empty preserves Rank Math.','hws-base-tools')]);
         $widget->add_control('hws_heading_role_field', ['label'=>__('Optional role custom field','hws-base-tools'),'type'=>\Elementor\Controls_Manager::TEXT,'default'=>'executive_role','description'=>__('Empty fields produce no role line.','hws-base-tools')]);
         $widget->end_controls_section();
     }
@@ -35,6 +37,27 @@ final class TemplateHeadingOptions implements ModuleInterface {
     public static function leave($widget): void {
         $last=end(self::$placements);
         if($last && $last['widget']===$widget) array_pop(self::$placements);
+    }
+    /** Replace only the displayed trail inside the opted-in Template placement. */
+    public static function breadcrumb_items(array $items): array {
+        $placement=end(self::$placements);
+        $raw=$placement['settings']['hws_heading_breadcrumb_middle']??'';
+        if(!is_scalar($raw)||trim((string)$raw)==='') return $items;
+        $title=self::plain_title();
+        if($title==='') return $items;
+        $middle=[];
+        foreach(preg_split('/\R/u',trim((string)$raw))?:[] as $line){
+            if(trim($line)==='') continue;
+            $parts=explode('|',$line,2);
+            if(count($parts)!==2) return $items;
+            $label=sanitize_text_field(trim($parts[0]));
+            $url=esc_url_raw(trim($parts[1]),['http','https']);
+            $host=wp_parse_url($url,PHP_URL_HOST);
+            if($label===''||$url===''||!is_string($host)||$host==='') return $items;
+            $middle[]=[$label,$url];
+        }
+        if(!$middle) return $items;
+        return array_merge([[__('Home','hws-base-tools'),home_url('/')]],$middle,[[$title,'']]);
     }
     public static function plain_title(): string {
         if(is_search()) return (string)get_search_query(false);

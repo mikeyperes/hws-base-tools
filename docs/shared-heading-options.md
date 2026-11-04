@@ -16,3 +16,15 @@ Title resolution: search returns the query; taxonomy returns the queried term na
 
 The optional role reads only on singular requests from the main queried post. No output is added until a template opts into the field shortcode.
 Intro text falls back to the main queried singular page's saved excerpt when the per-placement value is empty. Both empty produce no line; archives and search never borrow a result's excerpt. hws_heading_intro_width is an optional pixel maximum width; empty follows the saved heading's profile. The native control exposes --hws-heading-intro-width-override.
+
+## Optional breadcrumb middle crumbs
+
+hws_heading_breadcrumb_middle is a native Template-widget textarea, empty by default. Enter one Label|absolute-HTTP(S)-URL pair per line. The displayed trail becomes Home, those middle crumbs in order, and the current plain context title. Home and the last crumb are automatic; do not enter them.
+
+The Rank Math breadcrumb widget/shortcode and markup remain native. The filter is active only while the opted-in Template placement renders. Empty input, malformed rows, invalid URLs or an unavailable context title preserve the original trail in full. Other placements and the site's real page hierarchy are unchanged. It adds no frontend CSS or JS and does not modify the head's normal breadcrumb schema.
+
+Example:
+Executives|https://example.com/about/executives/
+
+The following placement can instead use:
+Team|https://example.com/team/
