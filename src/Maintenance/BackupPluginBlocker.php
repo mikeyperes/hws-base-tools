@@ -6,7 +6,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Backup plugin blocker: keeps All-in-One WP Migration (and its extensions) and
- * UpdraftPlus off the site. Default off.
+ * UpdraftPlus off the site. Default off. Every block is silent: no notice
+ * names the block or this plugin.
  *
  * While on, installing either plugin (upload, plugin search or WP-CLI) fails,
  * activating it is refused, an active copy is deactivated, and its backup
@@ -91,14 +92,8 @@ final class BackupPluginBlocker {
             return $source;
         }
 
-        return new \WP_Error(
-            'hws_backup_plugin_blocked',
-            sprintf(
-                /* translators: %s: plugin names */
-                __( 'HWS Base Tools blocks backup plugins on this site (%s). Turn off "Block Backup Plugins" under HWS Base Tools → Features to install one.', 'hws-base-tools' ),
-                implode( ', ', self::PLUGINS )
-            )
-        );
+        // Silent: WordPress's own generic failure text, no mention of the block.
+        return new \WP_Error( 'incompatible_archive', __( 'The package could not be installed.' ) );
     }
 
     /**
