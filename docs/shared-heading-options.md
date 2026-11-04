@@ -28,3 +28,6 @@ Executives|https://example.com/about/executives/
 
 The following placement can instead use:
 Team|https://example.com/team/
+## Optional heading facts
+
+hws_heading_facts accepts one Label|Value per line. Empty input prints nothing. hws_heading_facts_style selects about (default) or team. Values allow safe anchor links; labels are plain text. The [hws_heading_facts] shortcode renders a semantic dl with div/dt/dd rows and ph-facts or th-facts classes. The saved Elementor heading owns both scoped draft skins, without plugin assets. Blank or malformed rows are omitted. External links open in a new tab with noopener noreferrer. Placement state is isolated as with the other heading options.

@@ -22,6 +22,11 @@ Shared WordPress site configuration, administration, and operational tooling for
 - **Use:** Template > Shared heading options > Breadcrumb middle crumbs.
 - **Details:** [Shared heading options](docs/shared-heading-options.md#optional-breadcrumb-middle-crumbs).
 
+### Optional facts per heading placement
+- **Does:** native Template widgets accept Label|Value facts and About/Team markup variants, hidden when empty. Safe links are supported; the saved heading owns the skin.
+- **Use:** Heading facts and Facts style under Shared heading options; place [hws_heading_facts] in a native Shortcode widget.
+- **Details:** [Shared heading options](docs/shared-heading-options.md#optional-heading-facts).
+
 ### Shared Elementor heading placements
 - **Does:** native Template widgets can supply an eyebrow, intro (with saved page-excerpt fallback), optional intro maximum width, title variant, padding and text-spacing set, and an optional role custom field to one saved heading. Unconfigured widgets preserve the UI/default appearance.
 - **Use:** Template > Shared heading options; native Heading widgets use the Shortcode dynamic tag with [hws_heading_field name="title|eyebrow|intro|role"]. Plain titles read the main queried object, never the loop post or SEO document title.

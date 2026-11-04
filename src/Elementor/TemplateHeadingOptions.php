@@ -10,6 +10,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
         add_action('elementor/frontend/widget/before_render', [self::class, 'enter']);
         add_action('elementor/frontend/widget/after_render', [self::class, 'leave']);
         add_shortcode('hws_heading_field', [self::class, 'field']);
+        add_shortcode('hws_heading_facts', [self::class, 'facts']);
         add_filter('rank_math/frontend/breadcrumb/items', [self::class, 'breadcrumb_items'], 20);
     }
     public static function controls($widget): void {
@@ -21,6 +22,8 @@ final class TemplateHeadingOptions implements ModuleInterface {
         $widget->add_control('hws_heading_variant', ['label'=>__('Title style variant','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'ui','options'=>['ui'=>'UI','display'=>'Display','newsroom'=>'Newsroom']]);
         $widget->add_control('hws_heading_padding', ['label'=>__('Padding set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Default (40/36, 32/28, 28/24)','newsroom'=>'Newsroom (48, 36, 26)']]);
         $widget->add_control('hws_heading_spacing', ['label'=>__('Text spacing set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Follow title variant','contact'=>'Contact (14px, 520px intro)']]);
+        $widget->add_control('hws_heading_facts', ['label'=>__('Heading facts','hws-base-tools'),'type'=>\Elementor\Controls_Manager::TEXTAREA,'default'=>'','description'=>__('One Label|Value per line. Empty hides the facts. Values may contain safe links.','hws-base-tools')]);
+        $widget->add_control('hws_heading_facts_style', ['label'=>__('Facts style','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'about','options'=>['about'=>'About (vertical definition list)','team'=>'Team (wrapping facts row)']]);
         $widget->add_control('hws_heading_breadcrumb_middle', ['label'=>__('Breadcrumb middle crumbs','hws-base-tools'),'type'=>\Elementor\Controls_Manager::TEXTAREA,'default'=>'','description'=>__('Optional: one Label|https://example.com/path/ pair per line. Home and the current title are automatic. Empty preserves Rank Math.','hws-base-tools')]);
         $widget->add_control('hws_heading_role_field', ['label'=>__('Optional role custom field','hws-base-tools'),'type'=>\Elementor\Controls_Manager::TEXT,'default'=>'executive_role','description'=>__('Empty fields produce no role line.','hws-base-tools')]);
         $widget->end_controls_section();
@@ -37,6 +40,36 @@ final class TemplateHeadingOptions implements ModuleInterface {
     public static function leave($widget): void {
         $last=end(self::$placements);
         if($last && $last['widget']===$widget) array_pop(self::$placements);
+    }
+    /** Data and semantic markup only; the saved heading owns the scoped skin. */
+    public static function facts(): string {
+        $placement=end(self::$placements);$settings=$placement['settings']??[];
+        $raw=$settings['hws_heading_facts']??'';
+        if(!is_scalar($raw)||trim((string)$raw)==='')return '';
+        $rows='';
+        foreach(preg_split('/\R/u',trim((string)$raw))?:[]as$line){
+            if(trim($line)==='')continue;
+            $parts=explode('|',$line,2);
+            if(count($parts)!==2)continue;
+            $label=sanitize_text_field(trim($parts[0]));
+            $value=wp_kses(trim($parts[1]),['a'=>['href'=>true,'target'=>true,'rel'=>true,'class'=>true]]);
+            if($label===''||trim(wp_strip_all_tags($value))==='')continue;
+            if(class_exists('WP_HTML_Tag_Processor')){
+                $tags=new \WP_HTML_Tag_Processor($value);
+                while($tags->next_tag('a')){
+                    $url=(string)$tags->get_attribute('href');
+                    if($url!==''&&wp_parse_url($url,PHP_URL_HOST)!==wp_parse_url(home_url('/'),PHP_URL_HOST)){
+                        $tags->set_attribute('target','_blank');
+                        $tags->set_attribute('rel','noopener noreferrer');
+                    }
+                }
+                $value=$tags->get_updated_html();
+            }
+            $rows.='<div><dt>'.esc_html($label).'</dt><dd>'.$value.'</dd></div>';
+        }
+        if($rows==='')return '';
+        $class=($settings['hws_heading_facts_style']??'about')==='team'?'th-facts':'ph-facts';
+        return '<dl class="hws-heading-facts '.$class.'">'.$rows.'</dl>';
     }
     /** Replace only the displayed trail inside the opted-in Template placement. */
     public static function breadcrumb_items(array $items): array {
