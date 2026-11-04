@@ -10,7 +10,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 ## Features
 
 ### Shared Elementor heading placements
-- **Does:** native Template widgets can supply an eyebrow, intro, title variant, padding and text-spacing set, and an optional role custom field to one saved heading. Unconfigured widgets preserve the UI/default appearance.
+- **Does:** native Template widgets can supply an eyebrow, intro (with saved page-excerpt fallback), optional intro maximum width, title variant, padding and text-spacing set, and an optional role custom field to one saved heading. Unconfigured widgets preserve the UI/default appearance.
 - **Use:** Template > Shared heading options; native Heading widgets use the Shortcode dynamic tag with [hws_heading_field name="title|eyebrow|intro|role"]. Plain titles read the main queried object, never the loop post or SEO document title.
 - **Details:** [Shared heading options](docs/shared-heading-options.md).
 

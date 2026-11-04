@@ -16,6 +16,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
         foreach(['eyebrow'=>'Eyebrow text','intro'=>'Intro text'] as $key=>$label) {
             $widget->add_control('hws_heading_'.$key, ['label'=>__($label,'hws-base-tools'),'type'=>$key==='intro'?\Elementor\Controls_Manager::TEXTAREA:\Elementor\Controls_Manager::TEXT,'default'=>'','dynamic'=>['active'=>true]]);
         }
+        $widget->add_control('hws_heading_intro_width', ['label'=>__('Intro max-width (px)','hws-base-tools'),'type'=>\Elementor\Controls_Manager::NUMBER,'min'=>0,'max'=>1600,'default'=>'','selectors'=>['{{WRAPPER}}'=>'--hws-heading-intro-width-override: {{VALUE}}px;'],'description'=>__('Empty follows the heading profile (600px, Contact 520px).','hws-base-tools')]);
         $widget->add_control('hws_heading_variant', ['label'=>__('Title style variant','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'ui','options'=>['ui'=>'UI','display'=>'Display','newsroom'=>'Newsroom']]);
         $widget->add_control('hws_heading_padding', ['label'=>__('Padding set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Default (40/36, 32/28, 28/24)','newsroom'=>'Newsroom (48, 36, 26)']]);
         $widget->add_control('hws_heading_spacing', ['label'=>__('Text spacing set','hws-base-tools'),'type'=>\Elementor\Controls_Manager::SELECT,'default'=>'default','options'=>['default'=>'Follow title variant','contact'=>'Contact (14px, 520px intro)']]);
@@ -57,6 +58,10 @@ final class TemplateHeadingOptions implements ModuleInterface {
         }
         if(!in_array($name,['eyebrow','intro'],true))return '';
         $value=$s['hws_heading_'.$name]??'';
+        if($name==='intro' && (!is_scalar($value)||trim((string)$value)==='') && is_singular()){
+            $object=get_queried_object();
+            $value=$object instanceof \WP_Post ? $object->post_excerpt : '';
+        }
         return is_scalar($value)?esc_html((string)$value):'';
     }
 }
