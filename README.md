@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Shared heading placement options survive deferred nested Theme Builder rendering with document-scoped context and parent restoration. Ambiguous multiple placements are never guessed.
+
 - Founders attachment portraits use WordPress responsive image markup, including srcset, dimensions and automatic lazy-image sizes; custom photo URLs and avatars keep their previous output.
 - People search supports `search_threshold="0"` to show the search form for every nonempty directory (default threshold 10). Existing `search="always"` also forces visibility; `search="0"` still hides it. [People search controls](docs/people-search-visibility.md).
 - Team portrait `photo_sizes` can be configured in the Team tab or per shortcode, allowing custom layouts to declare their actual image box widths. Empty preserves the original grid sizing. [Team image hints](docs/team-directory-markup.md).

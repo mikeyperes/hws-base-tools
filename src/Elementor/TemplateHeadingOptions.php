@@ -5,7 +5,33 @@ use Hexa\PluginCore\CoreContracts\ModuleInterface;
 defined('ABSPATH') || exit;
 final class TemplateHeadingOptions implements ModuleInterface {
     private static array $placements = [];
+    private static array $documents = [];
+    public static function document_enter($document): void {
+        $placement = end(self::$placements);
+        if (!$placement) {
+            $candidates = [];
+            $walk = static function(array $rows) use (&$walk, &$candidates): void {
+                foreach ($rows as $row) {
+                    $settings = (array)($row['settings'] ?? []);
+                    if (($row['widgetType'] ?? '') === 'template' && array_filter($settings, static fn($key) => str_starts_with((string)$key, 'hws_heading_'), ARRAY_FILTER_USE_KEY)) {
+                        $candidates[] = ['settings'=>$settings];
+                    }
+                    $walk((array)($row['elements'] ?? []));
+                }
+            };
+            $walk((array)$document->get_elements_data());
+            // A deferred document has no widget scope. Recover only an unambiguous placement.
+            $placement = count($candidates) === 1 ? $candidates[0] : (end(self::$documents) ?: []);
+        }
+        self::$documents[] = $placement ?: [];
+    }
+    public static function document_leave(): void { array_pop(self::$documents); }
+    private static function placement(): array {
+        return end(self::$placements) ?: (end(self::$documents) ?: []);
+    }
     public function register(): void {
+        add_action('elementor/frontend/before_get_builder_content', [self::class, 'document_enter']);
+        add_action('elementor/frontend/get_builder_content', [self::class, 'document_leave']);
         add_action('elementor/element/template/section_template/after_section_end', [self::class, 'controls']);
         add_action('elementor/frontend/widget/before_render', [self::class, 'enter']);
         add_action('elementor/frontend/widget/after_render', [self::class, 'leave']);
@@ -43,7 +69,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
     }
     /** Data and semantic markup only; the saved heading owns the scoped skin. */
     public static function facts(): string {
-        $placement=end(self::$placements);$settings=$placement['settings']??[];
+        $placement=self::placement();$settings=$placement['settings']??[];
         $raw=$settings['hws_heading_facts']??'';
         if(!is_scalar($raw)||trim((string)$raw)==='')return '';
         $rows='';
@@ -73,7 +99,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
     }
     /** Replace only the displayed trail inside the opted-in Template placement. */
     public static function breadcrumb_items(array $items): array {
-        $placement=end(self::$placements);
+        $placement=self::placement();
         $raw=$placement['settings']['hws_heading_breadcrumb_middle']??'';
         if(!is_scalar($raw)||trim((string)$raw)==='') return $items;
         $title=self::plain_title();
@@ -104,7 +130,7 @@ final class TemplateHeadingOptions implements ModuleInterface {
     }
     public static function field($atts=[]): string {
         $name=sanitize_key((string)($atts['name']??''));
-        $placement=end(self::$placements);$s=$placement['settings']??[];
+        $placement=self::placement();$s=$placement['settings']??[];
         if($name==='title') return esc_html(self::plain_title());
         if($name==='role'){
             if(!is_singular())return '';
