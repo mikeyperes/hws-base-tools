@@ -63,6 +63,7 @@ final class TeamMemberDirectory {
                 'markup'        => (string) $page['markup'],
                 'roles_first'   => (string) $page['roles_first'],
                 'photo_size'    => 'medium_large',
+                'photo_sizes'   => (string) $page['photo_sizes'],
                 'per_page' => '0',
                 'pagination' => 'load_more',
                 'search' => '1',
@@ -78,7 +79,7 @@ final class TeamMemberDirectory {
         $size = sanitize_key( (string) $atts['photo_size'] );
         self::$photo_size = in_array( $size, get_intermediate_image_sizes(), true ) || 'full' === $size ? $size : 'medium_large';
         $cols = max( 1, (int) $atts['columns'] );
-        self::$photo_sizes_hint = '(max-width: 767px) 100vw, (max-width: 1024px) 50vw, ' . (int) ceil( 1200 / $cols ) . 'px';
+        self::$photo_sizes_hint = trim( (string) $atts['photo_sizes'] ) ?: '(max-width: 767px) 100vw, (max-width: 1024px) 50vw, ' . (int) ceil( 1200 / $cols ) . 'px';
         $limit = self::normalize_limit( $atts['limit'] );
 
         $order = 'DESC' === strtoupper( (string) $atts['order'] ) ? 'DESC' : 'ASC';

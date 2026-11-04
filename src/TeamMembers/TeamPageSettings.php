@@ -24,6 +24,7 @@ final class TeamPageSettings {
             'orderby'       => 'menu_order',
             'design'        => 'default',
             'markup'        => 'classic',
+            'photo_sizes'   => '',
             'roles_first'   => 'Founder, Co-Founder, CEO, President, COO, CTO',
         ];
     }
@@ -71,6 +72,7 @@ final class TeamPageSettings {
             'orderby'       => in_array( $orderby, [ 'menu_order', 'title', 'date' ], true ) ? $orderby : 'menu_order',
             'design'        => 'none' === $design ? 'none' : 'default',
             'markup'        => ($values['markup'] ?? '') === 'svg' ? 'svg' : 'classic',
+            'photo_sizes'   => sanitize_text_field( (string) ( $values['photo_sizes'] ?? '' ) ),
             'roles_first'   => self::roles( (string) ( $values['roles_first'] ?? $defaults['roles_first'] ) ),
         ];
     }

@@ -89,6 +89,16 @@ final class FounderCards {
             $people .= '<article class="' . esc_attr( $item . ' ' . $item . '--' . $user->user_nicename ) . '">';
             if ( $show( 'photo' ) && '' !== $photo ) {
                 $img     = '<img class="' . esc_attr( $item ) . '__image" src="' . esc_url( $photo ) . '" alt="' . esc_attr( $name ) . '" loading="lazy" decoding="async">';
+                $photo_id = Founders::photo_id( $id );
+                // Preserve provider-supplied URLs and avatar fallbacks. Only saved attachment portraits use core's responsive markup.
+                if ( $photo_id > 0 && $photo === (string) wp_get_attachment_image_url( $photo_id, (string) $atts['photo_size'] ) ) {
+                    $responsive = wp_get_attachment_image( $photo_id, (string) $atts['photo_size'], false, [
+                        'class' => $item . '__image', 'alt' => $name, 'loading' => 'lazy', 'decoding' => 'async',
+                    ] );
+                    if ( $responsive ) {
+                        $img = $responsive;
+                    }
+                }
                 $people .= $link
                     ? '<a class="' . esc_attr( $item ) . '__photo" href="' . esc_url( $url ) . '" tabindex="-1" aria-hidden="true">' . $img . '</a>'
                     : '<span class="' . esc_attr( $item ) . '__photo">' . $img . '</span>';

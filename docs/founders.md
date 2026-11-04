@@ -44,3 +44,7 @@
 `hws_publication_founders()` → `[ [ 'user_id', 'name', 'title', 'url', 'bio', 'photo' ], ... ]`; `hws_publication_founders_enabled()`; `hws_publication_founders_edit_url()`. Filter `hws_publication_founders_photo_url( $url, $user_id, $size )`.
 
 Code: `src/Founders/`.
+
+## Responsive portraits
+
+Saved attachment portraits use `wp_get_attachment_image()` with the selected photo_size, existing image class, alt text, lazy loading and async decoding. Core supplies intrinsic dimensions, srcset candidates and sizes (including auto sizing for lazy images when supported). The browser can use the rendered image box to select a candidate at its pixel density. Custom provider URLs and avatar fallbacks retain their original markup.

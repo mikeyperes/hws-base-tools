@@ -49,8 +49,10 @@ final class PeopleSearchProfile {
         } finally {
             remove_action( 'pre_get_users', $restrict );
         }
-        // Pagination still works for small lists; the search form itself is shown only above ten people.
-        if ( ( count( $ids ) <= 10 && 'always' !== ( $directory['search'] ?? true ) ) || false === ( $directory['search'] ?? true ) ) {
+        // Default threshold preserves small-list behavior; zero shows the form for any nonempty list.
+        $threshold = isset( $directory['search_threshold'] ) && is_numeric( $directory['search_threshold'] )
+            ? max( 0, (int) $directory['search_threshold'] ) : 10;
+        if ( ( count( $ids ) <= $threshold && 'always' !== ( $directory['search'] ?? true ) ) || false === ( $directory['search'] ?? true ) ) {
             $html = str_replace( '<form class="hls ', '<form hidden class="hls ', $html );
         }
         return $html;

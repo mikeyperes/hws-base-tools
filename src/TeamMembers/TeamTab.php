@@ -189,6 +189,7 @@ final class TeamTab implements ModuleInterface {
                 'order'         => [ 'default' => (string) $settings['order'], 'description' => 'Sort direction.', 'options' => [ 'ASC', 'DESC' ] ],
                 'roles_first'   => [ 'default' => (string) $settings['roles_first'], 'description' => 'Positions listed first, in this order, comma separated.' ],
                 'show_excerpt'  => [ 'default' => (string) $settings['show_excerpt'], 'description' => '1 shows each short bio, 0 hides it.', 'options' => [ '1', '0' ] ],
+                'photo_sizes' => [ 'default' => (string) $settings['photo_sizes'], 'description' => 'Responsive image sizes hint; empty preserves the default grid hint.' ],
                 'markup' => [ 'default' => (string) $settings['markup'], 'description' => 'classic preserves the original markup; svg wraps names and uses SVG profile arrows.', 'options' => [ 'classic', 'svg' ] ],
                 'link_profiles' => [ 'default' => (string) $settings['link_profiles'], 'description' => '1 links each person to their profile page.', 'options' => [ '1', '0' ] ],
                 'featured_only' => [ 'default' => '0', 'description' => '1 shows only people marked Featured.', 'options' => [ '1', '0' ] ],
@@ -233,6 +234,7 @@ final class TeamTab implements ModuleInterface {
         <h4>Show</h4>
         <ul class="hws-team-options">
             <li><label><input type="checkbox" data-field="show_excerpt" <?php checked( ! empty( $settings['show_excerpt'] ) ); ?>> Short bio</label></li>
+            <li><label>Portrait sizes hint <input type="text" data-field="photo_sizes" value="<?php echo esc_attr( $settings['photo_sizes'] ); ?>" placeholder="Automatic grid hint"></label></li>
             <li><label>Card markup <select data-field="markup"><option value="classic" <?php selected( $settings['markup'], 'classic' ); ?>>Classic</option><option value="svg" <?php selected( $settings['markup'], 'svg' ); ?>>Wrapped names and SVG arrows</option></select></label></li>
             <li><label><input type="checkbox" data-field="link_profiles" <?php checked( ! empty( $settings['link_profiles'] ) ); ?>> Links to each person's profile page</label></li>
             <?php if ( $builder ) : ?>
@@ -318,7 +320,7 @@ final class TeamTab implements ModuleInterface {
     /** @return array<string,string> */
     private static function posted_values(): array {
         $values = [];
-        foreach ( [ 'style', 'design', 'markup', 'columns', 'limit', 'orderby', 'order', 'show_excerpt', 'link_profiles', 'featured_only', 'category', 'roles_first' ] as $key ) {
+        foreach ( [ 'style', 'design', 'markup', 'photo_sizes', 'columns', 'limit', 'orderby', 'order', 'show_excerpt', 'link_profiles', 'featured_only', 'category', 'roles_first' ] as $key ) {
             if ( isset( $_POST[ $key ] ) ) {
                 $values[ $key ] = sanitize_text_field( (string) wp_unslash( $_POST[ $key ] ) );
             }

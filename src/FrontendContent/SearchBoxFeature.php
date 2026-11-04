@@ -70,6 +70,10 @@ final class SearchBoxFeature implements ModuleInterface {
             'empty'        => [ 'No results', 'empty="Nothing found"' ],
             'clear'        => [ 'Reset link text', 'clear="Reset"' ],
         ],
+        'People lists' => [
+            'search' => [ 'People profile: always shows the form, 0 hides it; omitted uses the threshold', 'profile="people" search="always"' ],
+            'search_threshold' => [ 'People profile: hide the form at or below this count (default 10); 0 shows it for every nonempty list', 'profile="people" search_threshold="0"' ],
+        ],
         'Advanced' => [
             'target'       => [ 'List to refresh (CSS selector)', 'target=".my-grid"' ],
             'class'        => [ 'Extra CSS class on the box', 'class="sidebar-search"' ],
@@ -174,7 +178,7 @@ final class SearchBoxFeature implements ModuleInterface {
             $directory = (array) apply_filters( 'hws_base_tools_people_directory', [], sanitize_key( (string) ( $attributes['directory'] ?? 'people' ) ) );
             $directory['filter_layout'] = $attributes['filter_layout'] ?? 'dropdown';
             $directory['search_style'] = $attributes['style'] ?? self::style();
-            foreach ( [ 'placeholder', 'search_label', 'search', 'per_page', 'pagination' ] as $key ) {
+            foreach ( [ 'placeholder', 'search_label', 'search', 'search_threshold', 'per_page', 'pagination' ] as $key ) {
                 if ( isset( $attributes[$key] ) ) {
                     $directory[$key] = 'search' === $key && in_array( (string) $attributes[$key], [ '0', 'no', 'false', 'none' ], true ) ? false : $attributes[$key];
                 }
