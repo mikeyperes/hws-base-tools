@@ -40,6 +40,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 
 ### Newsletter signup collector
+- **Settings screen:** one-column cards: collector switch with live counts, notice email, form design picked from real samples (CSS on demand), visitor messages, list chips with counts, subscriber table with export and delete, and a copyable shortcode.
 - **Pull APIs:** administrator-only `newsletter/lists` exposes list totals, `newsletter/submissions` scans ascending IDs, and `newsletter/deleted` exposes privacy-safe tombstones with a separate deletion cursor. Admin deletion and privacy erasure journal atomically; readers can reconcile removals. All reads work disabled and use no-store. See [API contracts](docs/newsletter.md#lists-submissions-and-deletion-feed).
 - **No-JavaScript:** posts to the current front-end page and redirects back with a signed result flag, compatible with hidden wp-admin. Results use the same status element and configured messages.
 - **Read API:** authenticated administrators can GET `/wp-json/hws-base-tools/v1/newsletter/subscribers` with optional list, per_page, after_id and upper_id. Read-only cursor scans work while collection is off. Use WordPress application passwords over HTTPS; no downstream service is hard-coded.
