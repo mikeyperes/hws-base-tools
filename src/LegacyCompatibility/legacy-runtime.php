@@ -12,6 +12,7 @@ use HWS\BaseTools\FrontendContent\FeatureLoader;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
+use HWS\BaseTools\Maintenance\BackupPluginBlocker;
 use HWS\BaseTools\Maintenance\ScheduledTaskLoader;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
@@ -719,6 +720,7 @@ function get_snippets($type = "")
     ],
     // ★ RECOMMENDED
     PublicDraftPreviewFeature::definition(),
+    BackupPluginBlocker::definition(),
     [
         'id'               => ReadingProgress::FEATURE_OPTION,
         'name'             => 'Reading Progress Bar',

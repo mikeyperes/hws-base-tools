@@ -310,6 +310,11 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Switch:** `enable_required_featured_image` (`hws_required_featured_image_min_width`, `_min_height`, `_post_types`); `enable_public_draft_preview`.
 - **Code:** `src/Editorial/`
 
+### Backup plugin blocker
+- **Does:** backups are made by the server with JetBackup, so a hardcoded list of backup plugins (`BackupPluginBlocker::PLUGINS`: All-in-One WP Migration and its extensions, UpdraftPlus) is kept off the site: installing them (upload, plugin search or WP-CLI) fails, activating them is refused, an active copy is deactivated on the next admin visit, and their backup requests and scheduled backups are dropped. Installed folders and existing backup files are left alone (the Backups tab deletes old backups). Default off.
+- **Switch:** WP Admin → Settings → HWS Base Tools → Features → Block Backup Plugins (`enable_backup_plugin_blocker`).
+- **Code:** `src/Maintenance/BackupPluginBlocker.php`
+
 ### Rank Math schema switch
 - **Does:** decides whether Rank Math prints its own schema block next to the Hexa plugins' shared `hexa-schema` block. Where it is off, Featured Image From URL's duplicate image block is removed too. Rank Math stays active for titles, descriptions and sitemaps.
 - **Switch:** WP Admin → Settings → HWS Base Tools → SEO & Rank Math → Rank Math schema output (`hws_rank_math_schema_output`: `keep`, `hexa` default, `off`).
@@ -484,6 +489,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.61.0
+- Added **Block Backup Plugins** under Features (default off): All-in-One WP Migration and UpdraftPlus can no longer be installed or activated, an active copy is turned off, and their backups stop.
 
 ### 13.59.3
 - Prevent WordPress from regenerating the old responsive candidate list on measured card images, and discard stale candidates before delivery. This keeps the browser on the bounded rendition instead of overriding it with the original.

@@ -4,6 +4,7 @@ use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
+use HWS\BaseTools\Maintenance\BackupPluginBlocker;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 use Hexa\PluginCore\WpAdminComponents\ColorControl;
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
@@ -83,6 +84,7 @@ function hws_get_all_dashboard_features(): array {
         ReadingProgress::FEATURE_OPTION,
         FeaturedImageRequirement::FEATURE_OPTION,
         PublicDraftPreviewFeature::FEATURE_OPTION,
+        BackupPluginBlocker::FEATURE_OPTION,
     ];
 
     foreach ( [ 'Admin Features', 'Frontend Features' ] as $group_name ) {

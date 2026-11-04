@@ -976,6 +976,12 @@ expect_true(
     'public draft links are a default-off Base Tools feature, not a Core module'
 );
 expect_true(
+    str_contains( source( 'src/LegacyCompatibility/legacy-runtime.php' ), 'BackupPluginBlocker::definition()' )
+        && str_contains( source( 'src/FrontendContent/legacy-base-features.php' ), "function enable_backup_plugin_blocker(): void {\n    BackupPluginBlocker::activate();" )
+        && str_contains( source( 'src/Maintenance/BackupPluginBlocker.php' ), "add_filter( 'upgrader_source_selection', [ self::class, 'block_install' ], 1, 4 );" ),
+    'backup plugin blocker is a default-off Base Tools feature'
+);
+expect_true(
     ! str_contains( source( 'src/Maintenance/legacy-log-cleaner.php' ), "dirname( __FILE__ ) . '/hws-base-tools.php'" ),
     'relocated log cleaner uses the canonical plugin root'
 );

@@ -4,6 +4,7 @@ use Hexa\PluginCore\QuerySafety\QueryEligibility;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
+use HWS\BaseTools\Maintenance\BackupPluginBlocker;
 use HWS\BaseTools\TeamMembers\TeamMemberDirectory;
 use HWS\BaseTools\UserImpersonation\UserImpersonationFeature;
 
@@ -86,6 +87,10 @@ function enable_required_featured_image(): void {
 
 function enable_public_draft_preview(): void {
     PublicDraftPreviewFeature::activate();
+}
+
+function enable_backup_plugin_blocker(): void {
+    BackupPluginBlocker::activate();
 }
 
 function enable_hws_user_impersonation(): void {
