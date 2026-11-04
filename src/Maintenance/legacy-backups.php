@@ -419,6 +419,10 @@ function render_tab_backups() {
     }
     ?>
 
+    <!-- Backup plugin blocker -->
+    <?php require_once dirname( __DIR__, 2 ) . '/src/FeatureCatalog/legacy-features.php'; ?>
+    <?php hws_render_feature_card( \HWS\BaseTools\Maintenance\BackupPluginBlocker::definition() ); ?>
+
     <!-- Summary -->
     <div class="hws-status-grid">
         <div class="hws-status-card <?php echo count( $backups ) > 0 ? 'warn' : 'good'; ?>">

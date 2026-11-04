@@ -84,12 +84,12 @@ function hws_get_all_dashboard_features(): array {
         ReadingProgress::FEATURE_OPTION,
         FeaturedImageRequirement::FEATURE_OPTION,
         PublicDraftPreviewFeature::FEATURE_OPTION,
-        BackupPluginBlocker::FEATURE_OPTION,
     ];
 
     foreach ( [ 'Admin Features', 'Frontend Features' ] as $group_name ) {
         foreach ( $groups[ $group_name ] as $index => $feature ) {
-            if ( 'enable_wp_admin_logo' === ( $feature['id'] ?? '' ) ) {
+            // Shown on the Backups tab instead.
+            if ( in_array( $feature['id'] ?? '', [ 'enable_wp_admin_logo', BackupPluginBlocker::FEATURE_OPTION ], true ) ) {
                 unset( $groups[ $group_name ][ $index ] );
                 continue;
             }
