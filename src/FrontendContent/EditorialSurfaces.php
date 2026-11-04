@@ -14,12 +14,44 @@ final class EditorialSurfaces implements ModuleInterface {
  $registry->add(new ShortcodeDefinition($tag,ucwords(str_replace('_',' ',$tag)),'['.$tag.']','Unstyled editorial field or navigation.','Uses current WordPress context.','0','Current context'));
  add_shortcode($tag,[self::class,$method]);}
  add_filter('elementor/query/get_query_args/current_query',[self::class,'query'],35);
+ add_action('elementor/frontend/widget/before_render',[self::class,'begin_widget']);
+ add_action('elementor/frontend/widget/after_render',[self::class,'end_widget']);
  add_filter('the_content',[self::class,'anchors'],12);
  }
  public static function page_field(array $atts=[]): string {return ($atts['name']??'')==='deck'&&self::page()?esc_html(self::page()->post_excerpt):'';}
+ /** Explicit widget sizes, scoped to the widget currently rendering. */
+ private static array $widget_sizes = [];
+ public static function begin_widget($widget): void {
+     if (empty(self::settings()['current_query'])) return;
+     $raw = (array) $widget->get_data('settings');
+     foreach (['post_query_', 'posts_', 'query_'] as $prefix) {
+         if ($widget->get_settings($prefix . 'post_type') !== 'current_query') continue;
+         $size = $raw[$prefix . 'posts_per_page'] ?? $raw['posts_per_page'] ?? null;
+         self::$widget_sizes[spl_object_id($widget)] = is_numeric($size) && (int)$size !== 0 ? (int)$size : null;
+         break;
+     }
+ }
+ public static function end_widget($widget): void {
+     unset(self::$widget_sizes[spl_object_id($widget)]);
+ }
  public static function query(array $vars): array {
- $term=self::term();$s=self::settings();if(!$term||empty($s['current_query']))return $vars;
- $vars['post_status']='publish';$vars['posts_per_page']=max(1,(int)($s['posts_per_page']??10));$vars['ignore_sticky_posts']=true;$vars['tax_query']=[['taxonomy'=>$term->taxonomy,'field'=>'term_id','terms'=>[(int)$term->term_id],'operator'=>'IN']];return $vars;
+     $s = self::settings();
+     if (empty($s['current_query'])) return $vars;
+     $term = self::term();
+     if (!$term && !is_search() && !is_author() && !is_category() && !is_tag()) return $vars;
+     $sizes = self::$widget_sizes;
+     $size = $sizes ? end($sizes) : null;
+     // Explicit widget size, configured editorial size, then the site's Reading setting.
+     $size ??= $s['posts_per_page'] ?? get_option('posts_per_page', 10);
+     $vars['posts_per_page'] = (int)$size === -1 ? -1 : max(1, (int)$size);
+     // WordPress gives an archive-specific value precedence over posts_per_page.
+     if (isset($vars['posts_per_archive_page'])) $vars['posts_per_archive_page'] = $vars['posts_per_page'];
+     if ($term) {
+         $vars['post_status'] = 'publish';
+         $vars['ignore_sticky_posts'] = true;
+         $vars['tax_query'] = [['taxonomy'=>$term->taxonomy,'field'=>'term_id','terms'=>[(int)$term->term_id],'operator'=>'IN']];
+     }
+     return $vars;
  }
  public static function anchors(string $content): string {
  if(empty(self::settings()['page_anchors'])||!is_singular('page')||!in_the_loop()||!is_main_query())return $content;

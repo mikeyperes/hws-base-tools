@@ -60,6 +60,7 @@ final class TeamMemberDirectory {
                 'order'         => (string) $page['order'],
                 'orderby'       => (string) $page['orderby'],
                 'design'        => (string) $page['design'],
+                'markup'        => (string) $page['markup'],
                 'roles_first'   => (string) $page['roles_first'],
                 'photo_size'    => 'medium_large',
                 'per_page' => '0',
@@ -133,7 +134,7 @@ final class TeamMemberDirectory {
             self::attribute_enabled( $atts['show_excerpt'] ),
             self::attribute_enabled( $atts['link_profiles'] ),
             false,
-            self::normalize_design( (string) $atts['design'] )
+            self::normalize_design( (string) $atts['design'] ), (string) $atts['markup']
         );
     }
 
@@ -154,7 +155,7 @@ final class TeamMemberDirectory {
             'render_item' => static function ( int $id ) use ( $atts ): string {
                 $post = get_post( $id );
                 return $post instanceof \WP_Post ? self::render_items( [ self::item_from_post( $post ) ], self::normalize_style( (string) $atts['style'] ), 1,
-                    self::attribute_enabled( $atts['show_excerpt'] ), self::attribute_enabled( $atts['link_profiles'] ), false, self::normalize_design( (string) $atts['design'] ) ) : '';
+                    self::attribute_enabled( $atts['show_excerpt'] ), self::attribute_enabled( $atts['link_profiles'] ), false, self::normalize_design( (string) $atts['design'] ), (string) $atts['markup'] ) : '';
             },
         ] );
         $restrict = static function ( $query ) use ( $ids ): void {
@@ -298,7 +299,7 @@ final class TeamMemberDirectory {
         return self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) );
     }
 
-    public static function preview_html( string $style, string $design = 'default' ): string {
+    public static function preview_html( string $style, string $design = 'default', string $markup = 'classic' ): string {
         $items = [
             [
                 'name'       => 'Jordan Lee',
@@ -318,7 +319,7 @@ final class TeamMemberDirectory {
             ],
         ];
 
-        return self::render_items( $items, self::normalize_style( $style ), 2, true, false, true, self::normalize_design( $design ) );
+        return self::render_items( $items, self::normalize_style( $style ), 2, true, false, true, self::normalize_design( $design ), $markup );
     }
 
     /**
@@ -443,7 +444,7 @@ final class TeamMemberDirectory {
     /**
      * @param array<int,array<string,mixed>> $items
      */
-    private static function render_items( array $items, string $style, int $columns, bool $show_excerpt, bool $link_profiles, bool $preview = false, string $design = 'default' ): string {
+    private static function render_items( array $items, string $style, int $columns, bool $show_excerpt, bool $link_profiles, bool $preview = false, string $design = 'default', string $markup = 'classic' ): string {
         if ( empty( $items ) ) {
             return '';
         }
@@ -459,7 +460,7 @@ final class TeamMemberDirectory {
 
         $html = '<div class="' . esc_attr( $classes ) . '" data-layout="' . esc_attr( $style ) . '" data-columns="' . esc_attr( (string) $columns ) . '" style="--hws-team-columns:' . esc_attr( (string) $columns ) . '" role="list">';
         foreach ( $items as $item ) {
-            $html .= self::render_item( $item, $show_excerpt, $link_profiles );
+            $html .= self::render_item( $item, $show_excerpt, $link_profiles, $markup );
         }
 
         return $html . '</div>';
@@ -468,7 +469,7 @@ final class TeamMemberDirectory {
     /**
      * @param array<string,mixed> $item
      */
-    private static function render_item( array $item, bool $show_excerpt, bool $link_profiles ): string {
+    private static function render_item( array $item, bool $show_excerpt, bool $link_profiles, string $markup = 'classic' ): string {
         $name = trim( (string) ( $item['name'] ?? '' ) );
         $position = trim( (string) ( $item['position'] ?? '' ) );
         $excerpt = trim( (string) ( $item['excerpt'] ?? '' ) );
@@ -481,12 +482,14 @@ final class TeamMemberDirectory {
             ? $image_html
             : '<span class="hws-team-member-placeholder" aria-hidden="true">' . esc_html( $initials ) . '</span>';
 
+        $label = 'svg' === $markup ? '<span>' . esc_html( $name ) . '</span>' : esc_html( $name );
+        $arrow = 'svg' === $markup ? '<svg data-arrow aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h11M12.5 7.5 17 12l-4.5 4.5"/></svg>' : '&rarr;';
         if ( $can_link ) {
             $media = '<a class="hws-team-member-media" href="' . esc_url( $url ) . '" aria-label="View ' . esc_attr( $name ) . '">' . $media . '</a>';
-            $title = '<a href="' . esc_url( $url ) . '">' . esc_html( $name ) . '</a>';
+            $title = '<a href="' . esc_url( $url ) . '">' . $label . '</a>';
         } else {
             $media = '<span class="hws-team-member-media">' . $media . '</span>';
-            $title = esc_html( $name );
+            $title = $label;
         }
 
         $html = '<article class="hws-team-card" role="listitem" itemscope itemtype="https://schema.org/Person">' . $media;
@@ -498,7 +501,7 @@ final class TeamMemberDirectory {
             $html .= '<p class="hws-team-member-excerpt" itemprop="description">' . esc_html( $excerpt ) . '</p>';
         }
         if ( $can_link ) {
-            $html .= '<a class="hws-team-member-link" itemprop="url" href="' . esc_url( $url ) . '">View profile <span aria-hidden="true">&rarr;</span></a>';
+            $html .= '<a class="hws-team-member-link" itemprop="url" href="' . esc_url( $url ) . '">View profile <span aria-hidden="true">' . $arrow . '</span></a>';
         }
 
         return $html . '</div></article>';
