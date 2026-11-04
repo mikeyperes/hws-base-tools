@@ -18,6 +18,8 @@ final class SitemapTypes {
             [ 'id' => 'post_type_team-member', 'recommended' => static fn() => (bool) get_option( 'smp_enable_cpt_teammember', false ), 'why' => 'On when the Team Members content type is switched on.' ],
             [ 'id' => 'post_type_testimonial', 'recommended' => static fn() => (bool) get_option( 'enable_cpt_testimonial', false ), 'why' => 'On when the Testimonials content type is switched on.' ],
             [ 'id' => 'post_type_services', 'recommended' => static fn() => (bool) get_option( 'hws_enable_cpt_services', false ), 'why' => 'On when the Services content type is switched on.' ],
+            // Site-type rule: a company blog lists its authors only when more than one person writes.
+            [ 'id' => 'authors', 'site_types' => [ 'company_website', 'ecommerce_website' ], 'recommended' => static fn( array $row ) => (int) ( $row['counts']['would_show'] ?? 0 ) > 1, 'why' => 'On a company site, only when more than one author has posts.' ],
         ];
     }
 
@@ -25,6 +27,8 @@ final class SitemapTypes {
         if ( ! class_exists( SitemapProviders::class ) ) {
             return;
         }
+        // The lookup uses the site type saved in Website Identity.
+        add_filter( 'hexa_plugin_core_site_type', static fn( $type ) => '' !== (string) $type ? $type : (string) get_option( 'hws_site_type', '' ) );
         SitemapProviders::register( self::SLUG, 'HWS Base Tools', admin_url( 'options-general.php?page=hws-core-tools&tab=sitemaps' ), self::definitions() );
     }
 }

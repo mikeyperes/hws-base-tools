@@ -23,13 +23,21 @@ final class PageTypes {
             'logo'                => [ 'title' => 'Logo', 'slug' => 'logo', 'description' => 'The official logo and brand files, with usage rules. Logo from Website Identity; files from Brand Assets.' ] + $about,
             'parent_organization' => [ 'title' => 'Parent Network', 'slug' => 'parent-network', 'slugs' => [ 'parent-organization', 'parent-company' ], 'description' => 'The parent company, from Website Identity. Optional.', 'optional' => true ] + $org + $about,
             'team'                => [ 'title' => 'Team', 'slug' => 'team', 'slugs' => [ 'our-team' ], 'description' => 'Everyone on Base Tools\' Team list.' ] + $custom + $about,
-            'contact'             => [ 'title' => 'Contact', 'slug' => 'contact', 'slugs' => [ 'contact-us' ], 'description' => 'Generic: any website. The public contact page.', 'template' => true ] + $custom,
+            'contact'             => [ 'title' => 'Connect', 'slug' => 'connect', 'slugs' => [ 'contact', 'contact-us' ], 'description' => 'Generic: any website. The public contact page.', 'template' => true ] + $custom,
             'privacy'             => [ 'title' => 'Privacy Policy', 'slug' => 'privacy-policy', 'slugs' => [ 'privacy', 'privacy-policy-*' ], 'description' => 'What visitor data is collected and how it is used.', 'template' => true ],
             'cookies'             => [ 'title' => 'Cookie Policy', 'slug' => 'cookie-policy', 'slugs' => [ 'cookies', 'cookie-policy-*' ], 'description' => 'Which cookies the website uses and how to control them.', 'template' => true ],
             'terms'               => [ 'title' => 'Terms of Use', 'slug' => 'terms-of-use', 'slugs' => [ 'terms', 'terms-and-conditions', 'terms-of-use-*' ], 'description' => 'The rules for using the website.', 'template' => true ],
             'accessibility'       => [ 'title' => 'Accessibility', 'slug' => 'accessibility', 'description' => 'The accessibility commitment and how to report a barrier.', 'template' => true ],
             'faqs'                => [ 'title' => 'FAQs', 'slug' => 'faqs', 'slugs' => [ 'faq' ], 'description' => 'Common visitor questions.', 'template' => true ],
             'rss_feed'            => [ 'title' => 'RSS Feed', 'slug' => 'rss-feed', 'slugs' => [ 'rss', 'feeds' ], 'description' => 'Every RSS feed, from Base Tools\' feeds.', 'template' => true ],
+            'sitemap'             => [ 'title' => 'Sitemap', 'slug' => 'sitemap', 'slugs' => [ 'site-map' ], 'description' => 'Every page of the site, from Rank Math\'s HTML sitemap.', 'template' => true, 'content_source' => 'Rank Math HTML sitemap' ],
+            // Company pages: off by default, switched on per site.
+            'services'            => [ 'title' => 'Services', 'slug' => 'services', 'description' => 'Every service, from Base Tools\' Services.', 'optional' => true, 'content_source' => 'HWS Base Tools Services records' ] + $custom + $org,
+            'knowledge_base'      => [ 'title' => 'Knowledge Base', 'slug' => 'knowledge-base', 'slugs' => [ 'blog', 'resources' ], 'description' => 'The site\'s articles.', 'optional' => true, 'content_source' => 'WordPress posts' ] + $custom + $org,
+            'client_portal'       => [ 'title' => 'Client Portal', 'slug' => 'client-portal', 'slugs' => [ 'document-portal' ], 'description' => 'Where clients sign in or send documents.', 'optional' => true, 'content_source' => 'Site client portal link or form' ] + $custom + $org,
+            'pay_invoice'         => [ 'title' => 'Pay Invoice', 'slug' => 'pay-invoice', 'description' => 'Where clients pay an invoice.', 'optional' => true, 'content_source' => 'Site payment link or form' ] + $custom + $org,
+            'service_forms'       => [ 'title' => 'Service Forms', 'slug' => 'service-forms', 'description' => 'The forms clients fill in to start a service.', 'optional' => true, 'content_source' => 'Site forms' ] + $custom + $org,
+            'downloadable_assets' => [ 'title' => 'Downloadable Assets', 'slug' => 'downloadable-assets', 'description' => 'Files clients can download.', 'optional' => true, 'content_source' => 'Site media files' ] + $custom + $org,
         ];
 
         foreach ( $pages as $key => &$page ) {
