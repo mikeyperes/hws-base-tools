@@ -1,3 +1,7 @@
+# 3.56.1
+
+- Term choice limits skip anonymous, CLI and cron saves, preserve excluded mandatory terms, and accept a host ownership predicate.
+
 # Hexa WordPress Plugin Core changelog
 
 Release notes moved from the README (3.31.1). Newest first; each Core release adds its line here.
