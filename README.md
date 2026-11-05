@@ -40,6 +40,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
 - Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
 
+- **Multiple newsletters:** create any number of newsletters from the Newsletter tab, each with its own name, list ID, notice email, design and messages (blank fields use the site defaults); use one with `[hws_newsletter list="<id>"]`. Removing a newsletter keeps its subscribers.
 
 ### Newsletter signup collector
 - **Settings screen:** one-column cards: collector switch with live counts, notice email, form design picked from real samples (CSS on demand), visitor messages, list chips with counts, subscriber table with export and delete, and a copyable shortcode.
