@@ -40,10 +40,17 @@ Shared WordPress site configuration, administration, and operational tooling for
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
 - Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
 
-- **Multiple newsletters:** create any number of newsletters from the Newsletter tab, each with its own name, list ID, notice email, design and messages (blank fields use the site defaults); use one with `[hws_newsletter list="<id>"]`. Removing a newsletter keeps its subscribers.
-
 ### Newsletter signup collector
-- **Settings screen:** one-column cards: collector switch with live counts, notice email, form design picked from real samples (CSS on demand), visitor messages, list chips with counts, subscriber table with export and delete, and a copyable shortcode.
+Collects email signups into one or more newsletters stored on the site. It never sends marketing email. Off until switched on. Full guide: [docs/newsletter.md](docs/newsletter.md).
+
+- **Quick start:** Settings > HWS Base Tools > Newsletter. Switch on **Collect newsletter signups** under Site defaults, type a newsletter name (its ID fills in as you type), click **Create newsletter**, then paste the shortcode it shows, for example `[hws_newsletter list="weekly-digest"]`, into a page.
+- **Multiple newsletters:** each has its own name, ID, notice email, form design and messages. A blank field uses the site default. Removing a newsletter keeps its subscribers.
+- **Everything is AJAX:** creating, opening, saving and removing newsletters, deleting subscribers and saving site defaults all happen without a page reload, and the address bar follows the open newsletter. The visitor form also submits without a reload (a no-JavaScript fallback still works).
+- **Create from PHP:** `Newsletters::create(['name' => 'Weekly digest'])` returns the record or a `WP_Error`; `Newsletters::ensure([...])` creates it only if missing; also `get()`, `all()`, `update($id, [...])`, `remove($id)`. Class: `HWS\BaseTools\Newsletter\Newsletters`.
+- **Create from a hook:** `do_action('hws_base_tools_create_newsletter', ['name' => 'Weekly digest']);` creates it once and is safe to run on every page load. Listen with `hws_base_tools_newsletter_created`, `_updated` and `_removed`.
+- **Create over REST (administrators):** `GET|POST /wp-json/hws-base-tools/v1/newsletter/newsletters`, `GET|POST|PATCH|DELETE /wp-json/hws-base-tools/v1/newsletter/newsletters/<id>`. See [Creating newsletters](docs/newsletter.md#creating-newsletters).
+- **IDs:** made by Hexa WP Core's `SlugConverter` (the same rules run live in the browser through Core's `SlugField`): "Spring Café & News!" becomes `spring-cafe-and-news`. An ID cannot change after creation.
+- **Tests:** `wp eval-file wp-content/plugins/hws-base-tools/tests/newsletters-api.php` (IDs, PHP API, hook, REST, AJAX) and `tests/newsletter-integration.php` (signups, mail, privacy).
 - **Pull APIs:** administrator-only `newsletter/lists` exposes list totals, `newsletter/submissions` scans ascending IDs, and `newsletter/deleted` exposes privacy-safe tombstones with a separate deletion cursor. Admin deletion and privacy erasure journal atomically; readers can reconcile removals. All reads work disabled and use no-store. See [API contracts](docs/newsletter.md#lists-submissions-and-deletion-feed).
 - **No-JavaScript:** posts to the current front-end page and redirects back with a signed result flag, compatible with hidden wp-admin. Results use the same status element and configured messages.
 - **Read API:** authenticated administrators can GET `/wp-json/hws-base-tools/v1/newsletter/subscribers` with optional list, per_page, after_id and upper_id. Read-only cursor scans work while collection is off. Use WordPress application passwords over HTTPS; no downstream service is hard-coded.

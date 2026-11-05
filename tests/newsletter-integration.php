@@ -66,7 +66,7 @@ try {
  nl_check(N::submit($p,$fresh(109))->get_error_code()==='turnstile','missing Turnstile token fails closed');
  remove_filter('pre_option_'.\HWS\BaseTools\FormProtection\Settings::OPTION,$turnstile);
 
- wp_set_current_user(1);ob_start();N::admin();$admin=ob_get_clean();nl_check(strpos($admin,'Export CSV')!==false&&strpos($admin,'Exact selected style CSS')!==false,'admin renders export and CSS preview');
+ wp_set_current_user(1);ob_start();N::admin();$admin=ob_get_clean();nl_check(strpos($admin,'Export CSV')!==false&&strpos($admin,'Show the CSS for the default design')!==false&&strpos($admin,'hpc-slug-field')!==false,'admin renders export and CSS preview');
  wp_set_current_user(0);ob_start();N::admin();nl_check(ob_get_clean()==='','admin capability guard');wp_set_current_user(1);
  nl_check(N::privacy_erase('nl1-test@example.com')['items_removed']&&$store->total($list)===2,'privacy erasure removes across lists');
 

@@ -1,12 +1,69 @@
 # Newsletter signup collector
 
-Enable: Settings > HWS Base Tools > Content > Newsletter, check Enabled and Save.
-Default is disabled, with no plugin styling. Existing data remains when disabled.
-Admin: /wp-admin/admin.php?page=hws-core-tools&tab=newsletter
-No mailing service is subscribed and no marketing campaign is sent. This is a collector, not double opt-in.
-Connect downstream sending separately and honor unsubscribe requests there. IP/header data is personal data:
-publish a privacy notice and set your organization's retention policy. WordPress Tools > Export/Erase Personal Data includes all newsletter lists.
-Storage remains on uninstall to avoid accidental subscriber loss.
+Collects email signups into newsletters stored on this site. It never sends marketing email and is not double opt-in; connect a sending service separately and honor unsubscribes there. Off by default. Data stays when it is switched off or the plugin is removed.
+
+Admin: Settings > HWS Base Tools > Newsletter (`/wp-admin/admin.php?page=hws-core-tools&tab=newsletter`).
+
+IP and header data is personal data: publish a privacy notice and set a retention policy. WordPress Tools > Export/Erase Personal Data covers every newsletter.
+
+## Quick start
+
+1. Open the Newsletter tab and switch on **Collect newsletter signups** under Site defaults, then **Save site defaults**.
+2. Under **Create a newsletter**, type its name. The ID fills in as you type ("Weekly Digest!" becomes `weekly-digest`); type your own ID to override it.
+3. Click **Create newsletter**. Its page opens below with subscribers, the shortcode, and its own notice email, design and messages.
+4. Paste the shortcode into a page or an Elementor Shortcode widget: `[hws_newsletter list="weekly-digest"]`.
+
+Every button on the tab works without reloading the page.
+
+## Creating newsletters
+
+A newsletter is a signup list. Its ID is what the shortcode's `list="..."` uses and never changes. Each one can set `name`, `notification_email`, `style` (`none`, `simple`, `rounded`), `success`, `duplicate` and `error`; anything left blank uses the site default. A list that only exists because signups arrived (an older `list="..."`) also shows on the tab and can be given settings.
+
+IDs come from Hexa WP Core's `DataNormalization\SlugConverter::from_name()`: lowercase, accents removed, `&` becomes `and`, everything else becomes one dash, at most 80 characters.
+
+### From PHP
+
+```php
+use HWS\BaseTools\Newsletter\Newsletters;
+
+$made = Newsletters::create( [ 'name' => 'Weekly digest', 'style' => 'rounded' ] ); // array with 'id', or WP_Error (name, id, exists, notification_email)
+$same = Newsletters::ensure( [ 'name' => 'Weekly digest' ] );                       // creates only when missing
+Newsletters::update( 'weekly-digest', [ 'success' => 'Welcome aboard!' ] );           // only the fields you pass change
+Newsletters::get( 'weekly-digest' );                                                  // record or null
+Newsletters::all();                                                                   // [ id => record ]
+Newsletters::remove( 'weekly-digest' );                                               // settings only; subscribers stay
+```
+
+### From a hook
+
+```php
+// Safe on every load: creates the newsletter once, then does nothing.
+do_action( 'hws_base_tools_create_newsletter', [ 'name' => 'Weekly digest' ] );
+
+add_action( 'hws_base_tools_newsletter_created', function ( string $id, array $record ) {} , 10, 2 );
+add_action( 'hws_base_tools_newsletter_updated', function ( string $id, array $record ) {} , 10, 2 );
+add_action( 'hws_base_tools_newsletter_removed', function ( string $id ) {} );
+```
+
+### Over REST
+
+Administrators only (cookie with `X-WP-Nonce`, or an application password over HTTPS).
+
+| Method | Route | Does |
+| --- | --- | --- |
+| GET | `/wp-json/hws-base-tools/v1/newsletter/newsletters` | `{ items: [ { id, name, ... } ] }` |
+| POST | `/wp-json/hws-base-tools/v1/newsletter/newsletters` | create; body `name` (required), `id`, other fields; 201, or 409 if the ID exists |
+| GET | `/wp-json/hws-base-tools/v1/newsletter/newsletters/<id>` | one newsletter, 404 if none |
+| POST, PUT, PATCH | `/wp-json/hws-base-tools/v1/newsletter/newsletters/<id>` | update the fields sent |
+| DELETE | `/wp-json/hws-base-tools/v1/newsletter/newsletters/<id>` | remove settings; subscribers stay |
+
+```bash
+curl -u admin:APP_PASSWORD -X POST https://example.com/wp-json/hws-base-tools/v1/newsletter/newsletters -d name="Weekly digest"
+```
+
+### Admin AJAX
+
+The tab uses Hexa WP Core's AJAX registry (`manage_options` plus nonce `hws_newsletter_admin`). Actions: `hws_base_tools_newsletter_create`, `_open`, `_update`, `_remove`, `_defaults`, `_delete_subscriber`. They return rendered HTML for the list and the open newsletter; use the PHP API or REST from code instead.
 
 ## Shortcode
     [hws_newsletter]
