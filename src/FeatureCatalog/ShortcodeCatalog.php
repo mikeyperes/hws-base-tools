@@ -22,6 +22,14 @@ final class ShortcodeCatalog {
     public static function definitions(): array {
         return [
             [
+                'id' => 'hws_scroll_to_top', 'label' => 'Scroll to top', 'shortcode' => '[hws_scroll_to_top]',
+                'description' => 'The shared Back to top button. Enabled by default; footer shortcode suppresses automatic output. README: Scroll to top.',
+                'test_method' => 'Scroll past the threshold, activate with Enter or Space, then confirm only one button exists.',
+                'source' => 'src/FrontendContent/ScrollToTop.php', 'provider' => 'HWS Base Tools',
+                'parameters' => \HWS\BaseTools\FrontendContent\ScrollToTop::defaults() + [ 'class' => '' ],
+                'examples' => [[ 'label' => 'Footer button', 'shortcode' => '[hws_scroll_to_top]', 'parameters' => [] ]],
+            ],
+            [
                 'id' => 'hws_newsletter', 'label' => 'Newsletter signup', 'shortcode' => '[hws_newsletter]',
                 'description' => 'Disabled-by-default newsletter collector with optional name, consent and styling. Setup and stable HTML: docs/newsletter.md.',
                 'test_method' => 'Enable Newsletter, submit and repeat an email, then inspect its list and CSV export.',

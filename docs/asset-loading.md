@@ -96,3 +96,16 @@ Author-avatar resizing is server-side and adds no script. Existing frontend
 styles and all admin assets are unchanged.
 
 Shared heading placements register Elementor controls and a field shortcode only; no CSS or JavaScript assets are added. The saved Elementor template owns its scoped styling.
+
+
+## Scroll to top
+
+Before 13.67.0 this feature contributed no assets. After 13.67.0:
+
+- Homepage, article and any other public page, feature on: one inline `hws-scroll-to-top-css` and one inline `hws-scroll-to-top-js`, with the automatic footer button.
+- Page using `[hws_scroll_to_top]`, feature on: the same two inline assets with its first shortcode output; the automatic fallback contributes nothing.
+- Any public page, feature off: no button, CSS or JavaScript from this feature.
+- Features admin tab: the same CSS is included only inside the card preview; Core color controls use their established admin assets. No frontend behavior script runs.
+- Other admin screens: no Scroll to top assets.
+
+The guard is `ScrollToTop::shortcode()` (admin, enabled and one-render checks); `automatic()` shares it at the end of `wp_footer`. This is the source loading contract, not evidence of a site installation. [Markup and design CSS](scroll-to-top.md).

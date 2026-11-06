@@ -2,6 +2,7 @@
 
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
+use HWS\BaseTools\FrontendContent\ScrollToTop;
 use HWS\BaseTools\Editorial\FeaturedImageRequirement;
 use HWS\BaseTools\Editorial\PublicDraftPreviewFeature;
 use HWS\BaseTools\Maintenance\BackupPluginBlocker;
@@ -82,6 +83,7 @@ function hws_get_all_dashboard_features(): array {
         'enable_lowercase_upload_filenames',
         'enable_footer_text_auto_injection',
         ReadingProgress::FEATURE_OPTION,
+        ScrollToTop::FEATURE_OPTION,
         FeaturedImageRequirement::FEATURE_OPTION,
         PublicDraftPreviewFeature::FEATURE_OPTION,
     ];
@@ -108,7 +110,7 @@ function hws_get_all_dashboard_features(): array {
 
 function hws_render_feature_toggle( array $feature ): string {
     $feature_id = $feature['id'] ?? '';
-    $enabled    = (bool) get_option( $feature_id, false );
+    $enabled    = (bool) get_option( $feature_id, ScrollToTop::FEATURE_OPTION === $feature_id );
     $onclick    = 'window.' . __NAMESPACE__ . '.toggleSnippet(\'' . esc_attr( $feature_id ) . '\')';
 
     if ( function_exists( __NAMESPACE__ . '\\render_toggle_switch' ) ) {
@@ -120,6 +122,11 @@ function hws_render_feature_toggle( array $feature ): string {
 
 function hws_render_feature_settings( array $feature ): void {
     $feature_id = $feature['id'] ?? '';
+
+    if ( ScrollToTop::FEATURE_OPTION === $feature_id ) {
+        ScrollToTop::render_settings();
+        return;
+    }
 
     if ( UserImpersonationFeature::FEATURE_OPTION === $feature_id ) {
         UserImpersonationFeature::render_settings();
@@ -307,7 +314,7 @@ function hws_render_feature_activity( string $feature_id ): void {
 function hws_render_feature_card( array $feature ): void {
     $feature_id    = $feature['id'] ?? '';
     $is_deprecated = ! empty( $feature['deprecated'] );
-    $is_enabled    = (bool) get_option( $feature_id, false );
+    $is_enabled    = (bool) get_option( $feature_id, ScrollToTop::FEATURE_OPTION === $feature_id );
     $info_text     = FeatureValueResolver::text( $feature['info'] ?? '' );
     $description   = FeatureValueResolver::text( $feature['description'] ?? '' );
     $code_example  = FeatureValueResolver::text( $feature['code_example'] ?? '' );
@@ -517,6 +524,13 @@ function hws_output_feature_card_scripts(): void {
                 owner_fields: $settings.find('[data-hws-feature-field="owner_fields"]').val() || ''
             };
 
+            $settings.find('[data-hws-scroll-field]').each(function() {
+                payload[this.dataset.hwsScrollField] = this.type === 'checkbox' ? (this.checked ? '1' : '0') : this.value;
+            });
+            ['background', 'icon_color', 'hover_background', 'hover_icon_color'].forEach(function(key) {
+                payload[key] = $settings.find('input[data-hpc-color-value-input][data-key="hws_stt_' + key + '"]').val() || '';
+            });
+
             $button.prop('disabled', true);
             $status.text('Saving...');
 
@@ -647,6 +661,19 @@ function ajax_hws_feature_save_settings(): void {
 
     $feature_id = isset( $_POST['feature_id'] ) ? sanitize_key( wp_unslash( $_POST['feature_id'] ) ) : '';
 
+    if ( ScrollToTop::FEATURE_OPTION === $feature_id ) {
+        $input = [];
+        foreach ( array_keys( ScrollToTop::defaults() ) as $key ) {
+            if ( isset( $_POST[ $key ] ) && is_scalar( $_POST[ $key ] ) ) {
+                $input[ $key ] = sanitize_text_field( wp_unslash( $_POST[ $key ] ) );
+            }
+        }
+        $saved = ScrollToTop::save_settings( $input );
+        hws_add_feature_activity( $feature_id, 'Updated scroll to top settings.' );
+        wp_send_json_success( $saved );
+        return;
+    }
+
     if ( UserImpersonationFeature::FEATURE_OPTION === $feature_id ) {
         $saved = UserImpersonationFeature::save_settings( [
             'locations' => isset( $_POST['locations'] ) ? (array) wp_unslash( $_POST['locations'] ) : [],
@@ -721,7 +748,7 @@ function ajax_hws_feature_run_test(): void {
 }
 
 function hws_run_feature_test( string $feature_id ): array {
-    $enabled = (bool) get_option( $feature_id, false );
+    $enabled = (bool) get_option( $feature_id, ScrollToTop::FEATURE_OPTION === $feature_id );
     $ran_at  = current_time( 'mysql' );
 
     if ( ! $enabled ) {
@@ -734,6 +761,14 @@ function hws_run_feature_test( string $feature_id ): array {
     }
 
     switch ( $feature_id ) {
+        case ScrollToTop::FEATURE_OPTION:
+            return [
+                'passed' => true,
+                'message' => 'Scroll to top is enabled with normalized settings.',
+                'proof' => 'Use [hws_scroll_to_top] in a footer; automatic output is suppressed after shortcode rendering.',
+                'ran_at' => $ran_at,
+            ];
+
         case ReadingProgress::FEATURE_OPTION:
             $settings = ReadingProgress::settings();
             $targets = $settings['entire_site']

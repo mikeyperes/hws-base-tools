@@ -188,7 +188,7 @@ final class LegacyEventBridge implements ModuleInterface {
                     continue;
                 }
 
-                $current_value      = get_option( $snippet_id );
+                $current_value      = get_option( $snippet_id, $snippet['default'] ?? false );
                 $current_value_bool = filter_var( $current_value, FILTER_VALIDATE_BOOLEAN );
 
                 \hws_base_tools\write_log( "Current value of '{$snippet_id}': " . var_export( $current_value, true ) );

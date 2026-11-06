@@ -1005,6 +1005,12 @@ foreach ( $iterator as $file ) {
     $output = [];
 }
 
+$scroll_output = [];
+$scroll_exit = 0;
+exec( escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $root . '/tests/scroll-to-top-unit.php' ) . ' 2>&1', $scroll_output, $scroll_exit );
+echo implode( "\n", $scroll_output ) . "\n";
+expect_true( 0 === $scroll_exit, 'Scroll to top defaults and shortcode runtime' );
+
 echo "\n{$passes} checks passed; " . count( $failures ) . " failed.\n";
 
 if ( $failures ) {

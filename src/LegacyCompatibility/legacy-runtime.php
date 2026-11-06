@@ -719,6 +719,7 @@ function get_snippets($type = "")
         'recommended' => true
     ],
     // ★ RECOMMENDED
+    \HWS\BaseTools\FrontendContent\ScrollToTop::definition(),
     PublicDraftPreviewFeature::definition(),
     BackupPluginBlocker::definition(),
     [
