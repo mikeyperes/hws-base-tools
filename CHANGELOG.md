@@ -1,5 +1,8 @@
 # Changelog
 
+## 13.68.0
+Reading progress bar: the top bar now uses the highest possible stacking layer (z-index 2147483647, important) so sticky headers, Elementor sections, cookie banners and popups never cover it. Bundles Core 3.56.1.
+
 ## 13.67.0
 Scroll to top: enabled-by-default accessible round button, Features settings, Elementor footer shortcode with duplicate suppression, inherited global colors, reduced motion and mobile visibility. Includes markup/CSS documentation and runtime unit tests. Bundles Core 3.56.1.
 

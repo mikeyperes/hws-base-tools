@@ -451,7 +451,7 @@ final class ReadingProgress implements ModuleInterface {
 
     private static function frontend_css(): string {
         return '.hws-reading-progress-inline{display:flex;align-items:center;gap:12px}.hws-reading-progress-inline .hws-reading-progress__track{flex:1;height:4px;background:rgba(127,127,127,.2)}.hws-reading-progress-inline__value{font-variant-numeric:tabular-nums}'
-            . '.hws-reading-progress{box-sizing:border-box;left:0;pointer-events:none;position:fixed;right:0;top:0;width:auto;z-index:2147483000}'
+            . '.hws-reading-progress{box-sizing:border-box;left:0;pointer-events:none;position:fixed;right:0;top:0;width:auto;z-index:2147483647!important}'
             . '.hws-reading-progress *{box-sizing:border-box}'
             . '.hws-reading-progress--floating{left:12px;right:12px;top:8px}'
             . '@media(max-width:600px){.hws-reading-progress--floating{left:8px;right:8px;top:6px}}'

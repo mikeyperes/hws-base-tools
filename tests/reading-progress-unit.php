@@ -191,6 +191,10 @@ reading_progress_expect(
     'frontend runtime is semantic, animation-safe, and duplicate-safe during transition'
 );
 reading_progress_expect(
+    str_contains( $source, 'z-index:2147483647!important' ),
+    'top bar uses the highest possible stacking layer so headers, banners and popups never cover it'
+);
+reading_progress_expect(
     str_contains( $feature_ui, 'ColorControl::render(' )
         && str_contains( $feature_ui, "'--hws-reading-progress-color' => 'color'" )
         && str_contains( $feature_ui, 'ReadingProgress::preview_html' )

@@ -218,6 +218,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 ### Reading progress bar
 - **Does:** a progress line at the top of the page that fills as the visitor scrolls.
 - **Switch:** Features → Reading Progress Bar (`enable_reading_progress_bar`). Style `hws_reading_progress_style`: `thin`, `track`, `glow`, `floating`, `segmented`. Colour `hws_reading_progress_color`. Thin-line glow `hws_reading_progress_glow`: boolean, off by default, switchable per site; affects only `thin`, with matching live admin previews. Where it shows `hws_reading_progress_scope`: `posts`, `posts_front_page`, `sitewide`, `selected` (with `hws_reading_progress_post_types`, `hws_reading_progress_front_page`).
+- **Layer:** always on top: the bar uses the highest possible stacking layer (`z-index: 2147483647 !important`), so sticky headers, Elementor sections, cookie banners and popups never cover it.
 - **Use:** automatic, printed right after `<body>`. Never build a second progress bar on a page; configure this one.
 - **Use inline:** `[hws_reading_progress label="Read" class=""]` adds a themeable track and percentage, synchronized by the same scroll listener as the top bar. An empty label omits it. It respects the existing feature switch and page scope.
 - **Style:** `#hws-reading-progress.hws-reading-progress--<style>`, `.hws-reading-progress__track`, `.hws-reading-progress__fill`; variables `--hws-reading-progress-color`, `--hws-reading-progress-soft`, `--hws-reading-progress-glow`.
