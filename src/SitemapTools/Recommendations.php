@@ -37,9 +37,10 @@ final class Recommendations implements ModuleInterface {
         ];
         foreach($rules as $slug=>[$label,$types]) if($has($slug)) $rule($types,$label,true);
         foreach($active as $file) if(false!==strpos($file,'podcast')) $rule(['episode','episodes','podcast','podcast-episode','podcast-guest','podcast_guest'],'Podcast plugin',true);
-        $publication=$has('smp-publication-integration');
-        $rows['news']['recommended']=$publication && (bool)get_option('hws_base_tools_google_news_approved',false);
-        $rows['news']['recommended_by']=[$publication?'SMP Publication':'HWS Base Tools'];
+        // Every news site gets a News sitemap; Google News approval is shown, not required.
+        $publication=$has('smp-publication-integration') || 'news_outlet'===$site_type;
+        $rows['news']['recommended']=$publication;
+        $rows['news']['recommended_by']=[$has('smp-publication-integration')?'SMP Publication':'HWS Base Tools (news site)'];
         $rows['news']['google_news_approved']=(bool)get_option('hws_base_tools_google_news_approved',false);
         if(isset($rows['taxonomy_product_tag'])) {$rows['taxonomy_product_tag']['recommended']=false;$rows['taxonomy_product_tag']['recommended_by']=['WooCommerce'];}
         if(isset($rows['taxonomy_product_cat'])) {$rows['taxonomy_product_cat']['recommended']=$has('woocommerce') && $rows['taxonomy_product_cat']['counts']['total'] > $rows['taxonomy_product_cat']['condition']['more_than'];$rows['taxonomy_product_cat']['recommended_by']=['WooCommerce'];}

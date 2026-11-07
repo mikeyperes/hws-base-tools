@@ -87,7 +87,7 @@ For an interactive standalone draft, copy the [runtime JavaScript](assets/js/scr
 - **Details:** [Shared heading options](docs/shared-heading-options.md).
 
 
-- Bundles Hexa WP Core 3.54.0, whose sitemap rules can differ by site type.
+- Bundles Hexa WP Core 3.57.0 (sitemaps make their pages visible to Google when turned on); earlier Core 3.54.0 whose sitemap rules can differ by site type.
 
 - [Unstyled editorial surfaces](docs/editorial-surfaces.md): tag fields and clouds, item labels/excerpts, page breadcrumbs and contents lists. Optional current-query sizing and heading anchors stay off until configured.
 - Settings-driven term description, canonical and robots rules live beside description fallbacks on the SEO tab. No site-specific URLs or document IDs ship in code.
@@ -126,6 +126,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 
 - Canonical page catalog: [src/Pages/PageTypes.php](src/Pages/PageTypes.php) defines titles, addresses, parents, designs, default states, conditions and content sources. Ordinary-page adapters preserve existing assignments; query layouts and repeated profiles stay outside page creation.
 - Every page a site's default menus link to is in the page catalog: the contact page is named Connect (`/connect/`, the old `/contact/` address still matches), a Sitemap page, and company pages that are off by default (Services, Knowledge Base, Client Portal, Pay Invoice, Service Forms, Downloadable Assets).
+- Sitemaps are recommended by the plugin, not by Rank Math: turning a sitemap on in the Sitemaps tab also makes its pages visible to Google when Rank Math had them hidden, and every news site gets the News sitemap recommended without a Google News approval switch.
 - Site-type sitemap rule: on a company or shop site the authors sitemap is recommended only when more than one author has posts. The sitemap lookup uses the site type saved in Website Identity.
 
 - **Search console, Instant Indexing and recommended sitemaps screens:** the Search Console tab shows registration, owners, one checklist of every sitemap on the site or in Google, tagged Recommended and with its Google state, to submit or remove the ticked ones, a page check, reindex requests and a link to Search Console; the Instant Indexing tab shows whether Rank Math's IndexNow works, its key file, what it sends on its own, the latest answers and a test send; the Sitemaps tab opens with every recommended sitemap, the plugin recommending it, Rank Math's current setting, a change button only where they differ and the "more than X" conditions. Builder templates, theme parts and shop internals sit in a collapsed "Hidden: usually junk" list with one "turn all off" button and a "Move to main list" button on each. Sitemaps owned by another HWS plugin show read-only in a grayed group with a link to that plugin's Sitemaps settings. Nothing changes in Rank Math until a button is pressed.
