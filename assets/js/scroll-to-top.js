@@ -5,13 +5,23 @@
             if (button.dataset.hwsBound === '1') return;
             button.dataset.hwsBound = '1';
             var pending = false;
+            var ring = button.querySelector('.hws-stt-ring-progress');
             function update() {
                 pending = false;
-                button.hidden = (window.scrollY || document.documentElement.scrollTop || 0) <= Number(button.dataset.showAfter || 0);
+                var top = window.scrollY || document.documentElement.scrollTop || 0;
+                button.hidden = top <= Number(button.dataset.showAfter || 0);
+                if (ring) {
+                    // The ring path is 100 units long, so the offset is the unread share.
+                    var room = document.documentElement.scrollHeight - window.innerHeight;
+                    var progress = room > 0 ? Math.min(1, top / room) : 0;
+                    ring.style.strokeDashoffset = String(Math.round((1 - progress) * 1000) / 10);
+                }
             }
-            window.addEventListener('scroll', function () {
+            function schedule() {
                 if (!pending) { pending = true; window.requestAnimationFrame(update); }
-            }, {passive: true});
+            }
+            window.addEventListener('scroll', schedule, {passive: true});
+            window.addEventListener('resize', schedule, {passive: true});
             window.addEventListener('pageshow', update);
             button.addEventListener('click', function () {
                 var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

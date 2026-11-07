@@ -10,6 +10,9 @@ defined( 'ABSPATH' ) || exit;
 final class ScrollToTop implements ModuleInterface {
     public const FEATURE_OPTION = 'hws_base_tools_scroll_to_top_enabled';
     public const SETTINGS_OPTION = 'hws_base_tools_scroll_to_top_settings';
+    /** Color settings and the CSS variable each one overrides. */
+    public const COLOR_VARIABLES = [ 'background' => 'bg', 'icon_color' => 'icon', 'hover_background' => 'hover-bg', 'hover_icon_color' => 'hover-icon', 'ring_color' => 'ring' ];
+    public const STYLES = [ 'default' => 'Round button', 'depth' => 'Layered depth with scroll progress ring', 'none' => 'No plugin styling' ];
     private static bool $rendered = false;
 
     public function register(): void {
@@ -25,7 +28,7 @@ final class ScrollToTop implements ModuleInterface {
     public static function defaults(): array {
         return [
             'position' => 'bottom_right', 'offset' => 24, 'size' => 48,
-            'background' => '', 'icon_color' => '', 'hover_background' => '', 'hover_icon_color' => '',
+            'background' => '', 'icon_color' => '', 'hover_background' => '', 'hover_icon_color' => '', 'ring_color' => '',
             'show_after' => 300, 'hide_mobile' => false, 'style' => 'default',
         ];
     }
@@ -36,11 +39,11 @@ final class ScrollToTop implements ModuleInterface {
         foreach ( [ 'offset' => [ 0, 300 ], 'size' => [ 44, 120 ], 'show_after' => [ 0, 20000 ] ] as $key => $range ) {
             $settings[ $key ] = max( $range[0], min( $range[1], (int) $settings[ $key ] ) );
         }
-        foreach ( [ 'background', 'icon_color', 'hover_background', 'hover_icon_color' ] as $key ) {
+        foreach ( self::COLOR_VARIABLES as $key => $variable ) {
             $settings[ $key ] = sanitize_hex_color( (string) $settings[ $key ] ) ?: '';
         }
         $settings['hide_mobile'] = filter_var( $settings['hide_mobile'], FILTER_VALIDATE_BOOLEAN );
-        $settings['style'] = 'none' === $settings['style'] ? 'none' : 'default';
+        $settings['style'] = isset( self::STYLES[ $settings['style'] ] ) ? $settings['style'] : 'default';
         return $settings;
     }
 
@@ -59,7 +62,7 @@ final class ScrollToTop implements ModuleInterface {
         return [
             'id' => self::FEATURE_OPTION, 'name' => 'Scroll to top', 'default' => true,
             'description' => 'A round fixed button returns visitors to the top after scrolling. On by default.',
-            'info' => 'Use [hws_scroll_to_top] in an Elementor footer without duplicating automatic output. Blank colors inherit Elementor globals.',
+            'info' => 'Use [hws_scroll_to_top] in an Elementor footer without duplicating automatic output. Styles: round button, layered depth with a scroll progress ring, or no plugin styling. Blank colors inherit Elementor globals.',
             'function' => '', 'scope_admin_only' => false,
             'code_example' => '[hws_scroll_to_top position="bottom_left" offset="24" size="48" show_after="300" hide_mobile="1"]',
         ];
@@ -67,14 +70,17 @@ final class ScrollToTop implements ModuleInterface {
 
     public static function markup( array $settings, string $class = '' ): string {
         $variables = '--hws-stt-offset:' . $settings['offset'] . 'px;--hws-stt-size:' . $settings['size'] . 'px;';
-        foreach ( [ 'background' => 'bg', 'icon_color' => 'icon', 'hover_background' => 'hover-bg', 'hover_icon_color' => 'hover-icon' ] as $key => $variable ) {
+        foreach ( self::COLOR_VARIABLES as $key => $variable ) {
             if ( '' !== $settings[ $key ] ) {
                 $variables .= '--hws-stt-' . $variable . ':' . $settings[ $key ] . ';';
             }
         }
         $classes = array_filter( array_map( 'sanitize_html_class', preg_split( '/\s+/', $class ) ?: [] ) );
-        return '<button type="button" class="hws-scroll-to-top hws-scroll-to-top--' . esc_attr( $settings['position'] ) . ' hws-scroll-to-top--' . esc_attr( $settings['style'] ) . ( $settings['hide_mobile'] ? ' hws-scroll-to-top--hide-mobile' : '' ) . ( $classes ? ' ' . esc_attr( implode( ' ', $classes ) ) : '' ) . '" data-hws-scroll-to-top data-show-after="' . $settings['show_after'] . '" aria-label="Back to top" hidden style="' . esc_attr( $variables ) . '"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m6 14 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+        return '<button type="button" class="hws-scroll-to-top hws-scroll-to-top--' . esc_attr( $settings['position'] ) . ' hws-scroll-to-top--' . esc_attr( $settings['style'] ) . ( $settings['hide_mobile'] ? ' hws-scroll-to-top--hide-mobile' : '' ) . ( $classes ? ' ' . esc_attr( implode( ' ', $classes ) ) : '' ) . '" data-hws-scroll-to-top data-show-after="' . $settings['show_after'] . '" aria-label="Back to top" hidden style="' . esc_attr( $variables ) . '">' . ( 'depth' === $settings['style'] ? self::RING : '' ) . '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m6 14 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
     }
+
+    /** Decorative progress ring; its 100-unit path lets the script set the unread share as the offset. */
+    private const RING = '<svg class="hws-stt-ring" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle class="hws-stt-ring-track" cx="24" cy="24" r="20.5" pathLength="100"/><circle class="hws-stt-ring-progress" cx="24" cy="24" r="20.5" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>';
 
     public static function shortcode( $attributes = [] ): string {
         if ( is_admin() || ! self::enabled() || self::$rendered ) {
@@ -98,12 +104,12 @@ final class ScrollToTop implements ModuleInterface {
     public static function render_settings(): void {
         $settings = self::settings();
         echo '<div data-feature-settings="' . esc_attr( self::FEATURE_OPTION ) . '" style="display:grid;gap:14px">';
-        foreach ( [ 'position' => 'Position', 'offset' => 'Edge offset (px)', 'size' => 'Button size (px)', 'background' => 'Background color', 'icon_color' => 'Icon color', 'hover_background' => 'Hover background color', 'hover_icon_color' => 'Hover icon color', 'show_after' => 'Show after distance (px)', 'hide_mobile' => 'Hide on mobile (767px and below)', 'style' => 'Styling' ] as $key => $label ) {
+        foreach ( [ 'position' => 'Position', 'offset' => 'Edge offset (px)', 'size' => 'Button size (px)', 'background' => 'Background color', 'icon_color' => 'Icon color', 'hover_background' => 'Hover background color', 'hover_icon_color' => 'Hover icon color', 'ring_color' => 'Progress ring color (Layered depth)', 'show_after' => 'Show after distance (px)', 'hide_mobile' => 'Hide on mobile (767px and below)', 'style' => 'Styling' ] as $key => $label ) {
             echo '<div><label><strong style="display:block">' . esc_html( $label ) . '</strong>';
             $field = ' data-hws-scroll-field="' . esc_attr( $key ) . '"';
             if ( in_array( $key, [ 'position', 'style' ], true ) ) {
                 echo '<select' . $field . '>';
-                $choices = 'position' === $key ? [ 'bottom_right' => 'Bottom right', 'bottom_left' => 'Bottom left' ] : [ 'default' => 'Round button', 'none' => 'No plugin styling' ];
+                $choices = 'position' === $key ? [ 'bottom_right' => 'Bottom right', 'bottom_left' => 'Bottom left' ] : self::STYLES;
                 foreach ( $choices as $value => $text ) {
                     echo '<option value="' . esc_attr( $value ) . '"' . selected( $settings[ $key ], $value, false ) . '>' . esc_html( $text ) . '</option>';
                 }
@@ -119,11 +125,19 @@ final class ScrollToTop implements ModuleInterface {
                     'default' => '', 'allow_inherit' => true,
                 ] );
             }
-            echo '</label></div>';
+            echo '</label>';
+            if ( 'style' === $key ) {
+                // A real sample of each designed style, drawn by the site CSS with these settings.
+                echo '<div class="hws-stt-preview">';
+                foreach ( [ 'default', 'depth' ] as $style ) {
+                    echo '<div><span>' . esc_html( self::STYLES[ $style ] ) . '</span>' . self::markup( [ 'style' => $style ] + $settings ) . '</div>';
+                }
+                echo '</div>';
+            }
+            echo '</div>';
         }
-        echo '<p>Blank colors use Elementor primary, secondary and background globals, with built-in fallbacks.</p>';
-        echo '<style>' . self::css() . '.hws-stt-preview .hws-scroll-to-top{position:relative!important;inset:auto!important;display:grid!important}</style><div class="hws-stt-preview">';
-        echo self::markup( $settings );
-        echo '</div><button type="button" class="button button-primary hws-feature-save-settings" data-feature-id="' . esc_attr( self::FEATURE_OPTION ) . '">Save Settings</button><span class="hws-feature-setting-status" aria-live="polite"></span></div>';
+        echo '<p>Blank colors use Elementor primary, secondary, background and accent globals, with built-in fallbacks.</p>';
+        echo '<style>' . self::css() . '.hws-stt-preview{display:grid;gap:12px;margin-top:10px}.hws-stt-preview>div{display:grid;gap:8px;justify-items:start;padding:16px 20px;background:#f6f7f7;border-radius:6px}.hws-stt-preview .hws-scroll-to-top{position:relative!important;inset:auto!important;display:grid!important;animation:none}.hws-stt-preview .hws-stt-ring-progress{stroke-dashoffset:35}</style>';
+        echo '<button type="button" class="button button-primary hws-feature-save-settings" data-feature-id="' . esc_attr( self::FEATURE_OPTION ) . '">Save Settings</button><span class="hws-feature-setting-status" aria-live="polite"></span></div>';
     }
 }

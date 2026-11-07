@@ -108,4 +108,6 @@ Before 13.67.0 this feature contributed no assets. After 13.67.0:
 - Features admin tab: the same CSS is included only inside the card preview; Core color controls use their established admin assets. No frontend behavior script runs.
 - Other admin screens: no Scroll to top assets.
 
+13.69.0 (Layered depth style) adds no assets: its rules and ring script live in the same two inline assets, and the ring SVG is printed only for that style.
+
 The guard is `ScrollToTop::shortcode()` (admin, enabled and one-render checks); `automatic()` shares it at the end of `wp_footer`. This is the source loading contract, not evidence of a site installation. [Markup and design CSS](scroll-to-top.md).

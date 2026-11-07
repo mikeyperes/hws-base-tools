@@ -527,7 +527,7 @@ function hws_output_feature_card_scripts(): void {
             $settings.find('[data-hws-scroll-field]').each(function() {
                 payload[this.dataset.hwsScrollField] = this.type === 'checkbox' ? (this.checked ? '1' : '0') : this.value;
             });
-            ['background', 'icon_color', 'hover_background', 'hover_icon_color'].forEach(function(key) {
+            <?php echo wp_json_encode( array_keys( ScrollToTop::COLOR_VARIABLES ) ); ?>.forEach(function(key) {
                 payload[key] = $settings.find('input[data-hpc-color-value-input][data-key="hws_stt_' + key + '"]').val() || '';
             });
 
