@@ -410,3 +410,7 @@ Term choice limits support `excluded_terms` (IDs or callback) outside the choice
 Site-wide discussion closing uses bounded updates of only comment and ping status fields, with post-cache invalidation. It includes registered post types and attachments without invoking content-save hooks for every row. Explicit ID requests retain native WordPress post updates.
 
 The bounded selector includes all stored post statuses of registered types and closes any discussion value other than closed, including imported nonstandard values.
+
+### Avatar provider ownership
+
+Profile writes require active Simple Local Avatars and reject competing avatar plugins. Simple User Avatar (including network activation) suppresses the local fallback. Replacement and rollback remove outgoing provider derivatives.

@@ -1,5 +1,10 @@
 # 3.57.0
 
+## 3.59.1 - 2026-11-08
+
+- Recognize Simple User Avatar and network-active avatar plugins; enforce Simple Local Avatars for profile writes and clean outgoing derivatives.
+
+
 ## 3.59.0
 
 - Include nonstandard discussion statuses when closing all registered content types.

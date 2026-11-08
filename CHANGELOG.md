@@ -14,3 +14,7 @@ Fix stylesheet deduplication outside the_content and cached no-JavaScript forms.
 
 ## 13.57.0
 Newsletter signup collector, disabled by default, with Core 3.50.0 collection storage, admin counts/recent rows, safe CSV, notifications, protection and privacy hooks.
+
+## 13.72.1 - 2026-11-08
+
+- Bundle Hexa WP Core 3.59.1 with explicit avatar provider ownership.

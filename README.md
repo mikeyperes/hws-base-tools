@@ -1550,3 +1550,7 @@ Report issues at <https://github.com/mikeyperes/hws-base-tools/issues>.
 ## License
 
 Proprietary Hexa Web Systems software unless a source file states otherwise.
+
+### Author photo provider
+
+Bundled Core recognizes Simple User Avatar and requires Simple Local Avatars for author photo writes.

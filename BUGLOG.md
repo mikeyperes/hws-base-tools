@@ -60,3 +60,11 @@
 - Root cause: The bridge re-dispatched author discovery through the nested WordPress `/wp/v2/users` controller. Security layers can reject that nested request even after the outer bridge has authenticated an administrator with `list_users`.
 - Patch: The allowlisted users resource now returns a bounded, paginated author directory directly after the existing HMAC and `list_users` checks.
 - Guard: The focused suite asserts that user discovery uses the bridge-owned author directory and does not introduce a direct nested users proxy.
+
+## HWS-BASE-BUG-008 - Unsupported avatar plugin masked by fallback
+
+- Severity: High
+- Symptom: Photos appeared verified while Simple User Avatar could not read legacy keys.
+- Cause: The Core avatar plugin list omitted Simple User Avatar.
+- Patch: Core 3.59.1 recognizes it, including network activation, and enforces supported photo writes.
+- Guard: The shared plugin list suppresses the fallback while an avatar plugin is active.
