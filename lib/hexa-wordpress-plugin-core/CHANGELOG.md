@@ -1,5 +1,9 @@
 # 3.57.0
 
+## 3.59.0
+
+- Include nonstandard discussion statuses when closing all registered content types.
+
 ## 3.58.0
 
 - Close site-wide comments and pings in bounded status-only updates with post-cache invalidation, avoiding thousands of content-save hooks.
