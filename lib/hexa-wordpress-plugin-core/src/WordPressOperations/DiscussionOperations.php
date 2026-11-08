@@ -46,9 +46,11 @@ final class DiscussionOperations {
                 break;
             }
             $batch_updated = 0;
+            // Avoid content-save hooks for a site-wide discussion policy change.
+            $bulk_ok = $all ? $this->close_post_batch( $targets ) : null;
             foreach ( $targets as $post_id ) {
                 $attempted++;
-                $result = function_exists( 'wp_update_post' ) ? wp_update_post( [ 'ID' => $post_id, 'comment_status' => 'closed', 'ping_status' => 'closed' ], true ) : false;
+                $result = $all ? $bulk_ok : ( function_exists( 'wp_update_post' ) ? wp_update_post( [ 'ID' => $post_id, 'comment_status' => 'closed', 'ping_status' => 'closed' ], true ) : false );
                 $ok = ! ( function_exists( 'is_wp_error' ) && is_wp_error( $result ) ) && false !== $result && 0 !== $result;
                 $updated += $ok ? 1 : 0;
                 $failed += $ok ? 0 : 1;
@@ -183,6 +185,28 @@ final class DiscussionOperations {
                     : ( $stopped_no_progress ? 'Processing stopped because the remaining comments made no progress.' : 'Some comments remain or failed to delete.' ),
             ],
         ];
+    }
+
+    /** Close only discussion fields; explicit post edits keep native save hooks.
+     *  @param list<int> $ids
+     */
+    private function close_post_batch( array $ids ): bool {
+        global $wpdb;
+        if ( ! isset( $wpdb ) || [] === $ids ) {
+            return false;
+        }
+        $ids = $this->normalize_ids( $ids );
+        $result = $wpdb->query(
+            "UPDATE {$wpdb->posts} SET comment_status = 'closed', ping_status = 'closed'"
+            . ' WHERE ID IN (' . implode( ',', $ids ) . ')'
+        );
+        if ( false === $result ) {
+            return false;
+        }
+        foreach ( $ids as $id ) {
+            clean_post_cache( $id );
+        }
+        return true;
     }
 
     /** @return list<int> */

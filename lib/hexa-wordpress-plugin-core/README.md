@@ -406,3 +406,5 @@ Before adding code in another Codex or Claude chat, read `AGENTS.md`, `HEXA_PLUG
 - `src/Sitemaps/`: shared sitemap registry, conditions, Rank Math comparison and administrator endpoints. See `docs/sitemaps.md`.
 
 Term choice limits support `excluded_terms` (IDs or callback) outside the choice count and `applies_to` (WP_Post callback) for host ownership checks. Only signed-in users are limited; CLI and cron saves are exempt.
+
+Site-wide discussion closing uses bounded updates of only comment and ping status fields, with post-cache invalidation. It includes registered post types and attachments without invoking content-save hooks for every row. Explicit ID requests retain native WordPress post updates.

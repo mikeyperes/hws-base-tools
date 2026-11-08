@@ -9,6 +9,11 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Large-site discussion policy
+
+Quick Start closes comments and pings across registered post types, including attachments, with bounded status-only updates and post-cache invalidation. It does not save each post’s content or trigger content-save hooks. Bundles Hexa WP Core 3.58.0.
+
+
 ### Scroll to top
 
 - **Does:** a fixed round Back to top button appears after scrolling past 300px and smoothly returns to the top. Native button keyboard activation, visible focus, decorative SVG and reduced-motion support are included.

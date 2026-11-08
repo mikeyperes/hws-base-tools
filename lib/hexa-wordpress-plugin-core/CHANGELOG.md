@@ -1,5 +1,9 @@
 # 3.57.0
 
+## 3.58.0
+
+- Close site-wide comments and pings in bounded status-only updates with post-cache invalidation, avoiding thousands of content-save hooks.
+
 - Sitemap recommendations ignore Rank Math's noindex. Each row reports `hidden_from_google` with a warning when a recommended sitemap's pages are hidden, and turning a content-type, taxonomy or author sitemap on also makes its pages visible to Google (Titles & Meta robots set to index), so the sitemap actually appears.
 
 # 3.56.1
