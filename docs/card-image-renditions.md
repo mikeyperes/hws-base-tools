@@ -60,9 +60,9 @@ behavior remain unchanged. There is no new setting, page CSS or page script.
 
 The shared delivery observer reads the actual image box on first visibility and
 on layout/viewport changes. It sets `sizes` to that exact CSS width in pixels,
-then offers proportional WebP candidates for 1x and 2x, rounded down to eight
-pixels. Hero candidates are capped at 2560px and the source width; cards remain
-capped at 768px. A 342px box offers 336w/680w; a 944px box offers 944w/1888w
+then offers proportional WebP candidates for 1x and 2x. The 1x candidate rounds up to eight pixels so native selection
+does not jump to the 2x file; the 2x candidate rounds down. Hero candidates are capped at 2560px and the source width; cards remain
+capped at 768px. A 342px box offers 344w/680w; a 944px box offers 944w/1888w
 when the source is large enough. A 1200px source limits the latter to 1200w.
 A 635.3359375px desktop box declares `sizes="635.3359375px"`, not 800px.
 The selected builder size and attachment remain intact; only browser delivery

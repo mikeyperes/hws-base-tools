@@ -5,7 +5,7 @@
   function updateHero(image, width) {
     const cap = Math.min(2560, Number(image.dataset.hwsHeroMax) || 2560);
     const quantize = value => Math.max(8, Math.floor(Math.min(cap, value) / 8) * 8);
-    const widths = [...new Set([quantize(width), quantize(width * 2)])];
+    const widths = [...new Set([quantize(Math.ceil(width / 8) * 8), quantize(width * 2)])];
     const endpoint = pixels => {
       const url = new URL(image.dataset.hwsHeroEndpoint, document.baseURI);
       url.searchParams.set('w', String(pixels));
