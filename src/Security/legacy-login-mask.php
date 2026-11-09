@@ -119,7 +119,7 @@ const DEFAULT_SLUG = 'hexa-admin';
     public static function login_url(string $redirect = '', bool $reauth = false): string {
         $url  = home_url('/' . self::slug() . '/');
         $args = [];
-        if ($redirect !== '') $args['redirect_to'] = $redirect;
+        if ($redirect !== '') $args['redirect_to'] = rawurlencode($redirect);
         if ($reauth)         $args['reauth'] = '1';
         return $args ? add_query_arg($args, $url) : $url;
     }

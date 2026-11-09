@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.72.4 - 2026-11-08
+
+- Encode masked-login redirect_to destinations so targets with multiple query parameters survive expired-link recovery and sign-in.
+
+
 ## 13.72.3 - 2026-11-08
 
 - Redirect signed-out used or expired links to the masked login form with the destination preserved and a short expiration notice, avoiding the admin-ajax error handler.
