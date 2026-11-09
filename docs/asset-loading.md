@@ -116,3 +116,7 @@ The guard is `ScrollToTop::shortcode()` (admin, enabled and one-render checks); 
 ## Reading progress height and contrast (13.73.0)
 
 Before and after: the homepage, an article and any selected public page load the same inline reading-progress CSS and script only when enabled and in scope. Pages outside scope load neither. The Features admin card retains its inline preview CSS and existing settings script with Core color controls; other admin pages load none. No external asset or additional scroll listener is introduced. Background detection exits immediately unless the optional adaptive setting is enabled.
+
+## Measured hero delivery
+
+The existing `hws-card-image-delivery` script also loads when an Elementor widget explicitly carries `hws-fi-hero`, including cached widget markup. It measures that image for responsive delivery; it adds no CSS. Untagged pages without measured cards do not load it.

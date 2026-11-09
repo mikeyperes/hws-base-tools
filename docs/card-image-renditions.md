@@ -50,3 +50,31 @@ Gravatar requests use the requested pixel size. The same cached delivery service
 handles avatars without a global avatar filter or changes to other author output.
 No CSS, site hostname, template ID or content-specific width is added.
 
+
+## Responsive heroes
+
+Add the existing `hws-fi-hero` class to an Elementor image or featured-image
+widget, regardless of site type or selected WordPress image size. This explicitly
+opts that hero into measured delivery; untagged images and existing card/author
+behavior remain unchanged. There is no new setting, page CSS or page script.
+
+The shared delivery observer reads the actual image box on first visibility and
+on layout/viewport changes. It sets `sizes` to that exact CSS width in pixels,
+then offers proportional WebP candidates for 1x and 2x, rounded down to eight
+pixels. Hero candidates are capped at 2560px and the source width; cards remain
+capped at 768px. A 342px box offers 336w/680w; a 944px box offers 944w/1888w
+when the source is large enough. A 1200px source limits the latter to 1200w.
+A 635.3359375px desktop box declares `sizes="635.3359375px"`, not 800px.
+The selected builder size and attachment remain intact; only browser delivery
+uses the measured renditions.
+
+Hero endpoint signatures bind the separate 2560px maximum. Changing a legacy
+card endpoint's cap invalidates its signature. Existing card signatures, avatar
+delivery, safe-source validation and no-upscale behavior remain compatible.
+Local source dimensions are read directly; external dimensions are resolved
+through the existing safe fetch/cache. No attachment metadata or content is changed.
+
+Loading still requires JavaScript, as existing measured cards do. Until the
+shared observer runs the image uses the existing lightweight placeholder.
+Links, alt text, orientation fallback, crop, dimensions and loading attributes
+remain in place. The feature has no dependency on publication templates.

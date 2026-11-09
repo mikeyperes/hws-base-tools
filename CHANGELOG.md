@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.74.0 - 2026-11-08
+
+- Add opt-in measured responsive hero delivery through hws-fi-hero, with source-bounded candidates up to 2560px and exact box-width sizes. Preserve card and avatar limits and legacy signatures.
+
+
 ## 13.73.0 - 2026-11-08
 
 - Add optional 1–24 px reading-bar height and automatic light/dark background contrast colors on all site types. Existing design heights, fixed color, targeting and defaults remain unchanged. Bundles Hexa WP Core 3.59.1.

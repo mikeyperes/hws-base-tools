@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 final class CardImageDelivery {
     private const QUERY = 'hws_card_image';
     private const MAX_WIDTH = 768;
+    private const HERO_MAX_WIDTH = 2560;
     private const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/%3E';
 
     public function register(): void {
@@ -17,7 +18,7 @@ final class CardImageDelivery {
     }
 
     public function automatic_srcset( $add, string $image ): bool {
-        return str_contains( $image, 'data-hws-card-endpoint=' ) ? false : (bool) $add;
+        return ( str_contains( $image, 'data-hws-card-endpoint=' ) || str_contains( $image, 'data-hws-hero-endpoint=' ) ) ? false : (bool) $add;
     }
 
     public function render( string $html, $widget ): string {
@@ -26,6 +27,10 @@ final class CardImageDelivery {
             return $html;
         }
         $name = $widget->get_name();
+        $settings = (array) $widget->get_settings_for_display();
+        if ( preg_match( '/(?:^|\s)hws-fi-hero(?:\s|$)/', (string) ( $settings['_css_classes'] ?? '' ) ) ) {
+            return $this->hero( $html );
+        }
         if ( 'post-info' === $name ) {
             return $this->avatars( $html, (array) $widget->get_settings_for_display() );
         }
@@ -35,7 +40,7 @@ final class CardImageDelivery {
         $tags = new \WP_HTML_Tag_Processor( $html );
         $changed = false;
         while ( $tags->next_tag( 'IMG' ) ) {
-            if ( $tags->get_attribute( 'data-hws-card-endpoint' ) || $tags->has_class( 'elementor-avatar' ) ) {
+            if ( $tags->get_attribute( 'data-hws-card-endpoint' ) || $tags->get_attribute( 'data-hws-hero-endpoint' ) || $tags->has_class( 'elementor-avatar' ) ) {
                 continue;
             }
             $class = (string) $tags->get_attribute( 'class' );
@@ -64,7 +69,52 @@ final class CardImageDelivery {
             $changed = true;
         }
         if ( $changed || str_contains( $html, 'data-hws-card-endpoint' ) ) {
-            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.59.3', true );
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.74.0', true );
+        }
+        return $tags->get_updated_html();
+    }
+
+    /** Hero widgets opt into measured delivery without changing card limits. */
+    private function hero( string $html ): string {
+        $tags = new \WP_HTML_Tag_Processor( $html );
+        $changed = false;
+        while ( $tags->next_tag( 'IMG' ) ) {
+            $source = (string) ( $tags->get_attribute( 'data-src' ) ?: $tags->get_attribute( 'src' ) );
+            if ( preg_match( '/(?:^|\s)wp-image-(\d+)(?:\s|$)/', (string) $tags->get_attribute( 'class' ), $match ) ) {
+                $original = wp_get_original_image_url( (int) $match[1] );
+                if ( is_string( $original ) && $this->valid_source( $original ) ) {
+                    $source = $original;
+                }
+            }
+            if ( ! $this->valid_source( $source ) ) {
+                continue;
+            }
+            $cap = self::HERO_MAX_WIDTH;
+            $local = $this->local_file( $source );
+            if ( ! $local ) {
+                // Resolve external dimensions through the same signed-source safe fetch/cache.
+                $cached = $this->rendition( $source, self::HERO_MAX_WIDTH );
+                if ( is_wp_error( $cached ) ) {
+                    continue;
+                }
+                $local = $this->local_file( $cached );
+            }
+            $dimensions = $local ? wp_getimagesize( $local ) : false;
+            if ( $dimensions ) {
+                $cap = min( $cap, (int) $dimensions[0] );
+            }
+            $tags->set_attribute( 'data-hws-hero-endpoint', $this->endpoint( $source, self::HERO_MAX_WIDTH ) );
+            $tags->set_attribute( 'data-hws-hero-max', (string) $cap );
+            $tags->set_attribute( 'src', self::PLACEHOLDER );
+            foreach ( [ 'srcset', 'sizes', 'data-src', 'data-srcset', 'data-sizes', 'data-lazy-src', 'data-lazy-srcset', 'data-lazy-sizes' ] as $attribute ) {
+                $tags->remove_attribute( $attribute );
+            }
+            $tags->set_attribute( 'data-no-lazy', '1' );
+            $tags->add_class( 'skip-lazy' );
+            $changed = true;
+        }
+        if ( $changed || str_contains( $html, 'data-hws-hero-endpoint' ) ) {
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.74.0', true );
         }
         return $tags->get_updated_html();
     }
@@ -108,9 +158,14 @@ final class CardImageDelivery {
         return $tags->get_updated_html();
     }
 
-    private function endpoint( string $source ): string {
+    private function endpoint( string $source, int $cap = self::MAX_WIDTH ): string {
         $encoded = rtrim( strtr( base64_encode( $source ), '+/', '-_' ), '=' );
-        return add_query_arg( [ self::QUERY => $encoded, 'sig' => hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) ) ], home_url( '/' ) );
+        $payload = self::MAX_WIDTH === $cap ? $encoded : $encoded . ':' . $cap;
+        $args = [ self::QUERY => $encoded, 'sig' => hash_hmac( 'sha256', $payload, wp_salt( 'auth' ) ) ];
+        if ( self::MAX_WIDTH !== $cap ) {
+            $args['cap'] = $cap;
+        }
+        return add_query_arg( $args, home_url( '/' ) );
     }
 
     public function deliver(): void {
@@ -119,13 +174,15 @@ final class CardImageDelivery {
         }
         $encoded = is_string( $_GET[ self::QUERY ] ) ? wp_unslash( $_GET[ self::QUERY ] ) : '';
         $signature = isset( $_GET['sig'] ) && is_string( $_GET['sig'] ) ? wp_unslash( $_GET['sig'] ) : '';
+        $cap = isset( $_GET['cap'] ) && is_scalar( $_GET['cap'] ) ? (int) $_GET['cap'] : self::MAX_WIDTH;
+        $payload = self::MAX_WIDTH === $cap ? $encoded : $encoded . ':' . $cap;
         $source = base64_decode( strtr( $encoded, '-_', '+/' ), true );
-        if ( ! $source || ! hash_equals( hash_hmac( 'sha256', $encoded, wp_salt( 'auth' ) ), $signature ) || ! $this->valid_source( $source ) ) {
+        if ( ! in_array( $cap, [ self::MAX_WIDTH, self::HERO_MAX_WIDTH ], true ) || ! $source || ! hash_equals( hash_hmac( 'sha256', $payload, wp_salt( 'auth' ) ), $signature ) || ! $this->valid_source( $source ) ) {
             status_header( 400 );
             exit;
         }
         // Round down, never up: even a 2x screen must stay at or below twice the slot.
-        $width = min( self::MAX_WIDTH, max( 8, (int) ( $_GET['w'] ?? 0 ) ) );
+        $width = min( $cap, max( 8, (int) ( $_GET['w'] ?? 0 ) ) );
         $width -= $width % 8;
         $url = $this->rendition( $source, $width );
         if ( is_wp_error( $url ) ) {

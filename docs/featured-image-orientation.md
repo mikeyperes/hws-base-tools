@@ -26,3 +26,5 @@ The feature adds one class to the featured image of the post being drawn (the pa
 ## Switches
 
 Option `hws_featured_image_orientation`: `front_page` and `post_types[<type>]`. A missing value is on, so new content types start on. The CSS loads only on the front page and on single pages whose switch is on.
+
+Tagged Elementor hero widgets also use [measured responsive delivery](card-image-renditions.md#responsive-heroes), independent of the orientation switches.

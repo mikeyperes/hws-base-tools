@@ -209,6 +209,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 
 ### Featured image orientation
 - **Does:** heroes are designed for a landscape featured photo. When a story's featured photo is portrait or square, it is marked with its shape (`hws-fi-landscape`, `hws-fi-portrait`, `hws-fi-square`, from the photo's saved width and height) and the hero shows it whole on a soft backdrop inside the same box instead of zooming in and cutting it. Landscape photos fill the box. On phones a portrait box turns 4:5, capped at 70% of the screen height. No script.
+- **Delivery:** tagged hero widgets use measured responsive WebP candidates up to 2560px (bounded by the source), with actual CSS box widths in `sizes`. Cards retain their 768px limit. See [hero delivery](docs/card-image-renditions.md#responsive-heroes).
 - **Use:** add the CSS class `hws-fi-hero` to the hero's Image widget (16:9 box), plus `hws-fi-hero--3x2` for a 3:2 box. Optional variables: `--hws-fi-focus` (photo focus point), `--hws-fi-backdrop` (fallback backdrop).
 - **Settings:** Site & Brand → Featured Image Orientation: one switch for the front page and one for each content type whose single page shows a featured image. All are on by default; nothing changes until a hero carries `hws-fi-hero`.
 - **Details:** [Featured image orientation](docs/featured-image-orientation.md).
