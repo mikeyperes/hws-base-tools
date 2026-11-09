@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.72.2 - 2026-11-08
+
+- Preserve validated same-site redirect_to destinations for logged-in, used, and expired one-click login links.
+
+
 ## 13.69.0
 Scroll to top: new "Layered depth" style chosen in the feature settings. A shaded disc with an inner highlight and layered shadow, a ring that fills with the reader's scroll progress, a lift on hover and a press-in on click, plus a progress ring color setting (blank uses the Elementor accent global). The round button stays the default; reduced motion turns the motion off. The settings card shows a real sample of each style. Bundles Core 3.56.1.
 

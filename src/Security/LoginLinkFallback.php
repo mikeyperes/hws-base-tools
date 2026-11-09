@@ -24,8 +24,18 @@ final class LoginLinkFallback implements ModuleInterface {
     public static function respond(): void {
         nocache_headers();
 
+        $target = admin_url();
+        $requested = isset( $_GET['redirect_to'] ) ? wp_unslash( $_GET['redirect_to'] ) : '';
+        if ( is_string( $requested ) ) {
+            $validated = wp_validate_redirect( $requested, '' );
+            $host = wp_parse_url( $validated, PHP_URL_HOST );
+            if ( $validated !== '' && ( ! $host || strcasecmp( $host, wp_parse_url( home_url(), PHP_URL_HOST ) ) === 0 ) ) {
+                $target = $validated;
+            }
+        }
+
         if ( is_user_logged_in() && current_user_can( 'read' ) ) {
-            wp_safe_redirect( admin_url() );
+            wp_safe_redirect( $target );
             exit;
         }
 
@@ -34,7 +44,7 @@ final class LoginLinkFallback implements ModuleInterface {
             esc_html__( 'Login link expired', 'hws-base-tools' ),
             [
                 'response'  => 410,
-                'link_url'  => wp_login_url(),
+                'link_url'  => wp_login_url( $target ),
                 'link_text' => esc_html__( 'Go to the login page', 'hws-base-tools' ),
             ]
         );
