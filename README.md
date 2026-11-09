@@ -11,7 +11,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ### One-click login destinations
 
-Code's `wptoolkit:login <domain> --redirect=<full URL or path>` returns one link that signs in and opens that same-site page. Any login link can also carry `&redirect_to=<URL-encoded URL or path>` at click time. HWS Base Tools validates that target with WordPress and restricts it to the same site, including admin and front-end pages; an invalid target falls back to the dashboard. Already-signed-in users opening used or expired links go straight to that target. Signed-out users see the expired-link page with a login-page link that preserves the target as `redirect_to`. Authentication remains owned by the temporary, single-use, 60-minute login handler.
+Code's `wptoolkit:login <domain> --redirect=<full URL or path>` returns one link that signs in and opens that same-site page. Any login link can also carry `&redirect_to=<URL-encoded URL or path>` at click time. HWS Base Tools validates that target with WordPress and restricts it to the same site, including admin and front-end pages; an invalid target falls back to the dashboard. Already-signed-in users opening used or expired links go straight to that target. Signed-out users are redirected without caching to the login form (including the masked login slug when enabled), with an expired-link notice and the target preserved as `redirect_to`. After signing in, they land on that target. Authentication remains owned by the temporary, single-use, 60-minute login handler.
 
 
 

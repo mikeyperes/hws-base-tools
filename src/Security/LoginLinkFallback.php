@@ -19,6 +19,7 @@ final class LoginLinkFallback implements ModuleInterface {
     public function register(): void {
         add_action( 'wp_ajax_nopriv_' . self::ACTION, [ self::class, 'respond' ] );
         add_action( 'wp_ajax_' . self::ACTION, [ self::class, 'respond' ] );
+        add_filter( 'login_message', [ self::class, 'expiredNotice' ] );
     }
 
     public static function respond(): void {
@@ -39,14 +40,18 @@ final class LoginLinkFallback implements ModuleInterface {
             exit;
         }
 
-        wp_die(
-            esc_html__( 'This login link has expired or was already used. Ask for a new one.', 'hws-base-tools' ),
-            esc_html__( 'Login link expired', 'hws-base-tools' ),
-            [
-                'response'  => 410,
-                'link_url'  => wp_login_url( $target ),
-                'link_text' => esc_html__( 'Go to the login page', 'hws-base-tools' ),
-            ]
-        );
+        // wp_login_url applies the site's masked-login filter and preserves the target.
+        wp_safe_redirect( add_query_arg( 'hws_login_expired', '1', wp_login_url( $target ) ) );
+        exit;
+    }
+
+    public static function expiredNotice( string $message ): string {
+        if ( isset( $_GET['hws_login_expired'] ) && $_GET['hws_login_expired'] === '1' ) {
+            $message .= '<p class="message">'
+                . esc_html__( 'This login link has expired or was already used. Sign in to continue.', 'hws-base-tools' )
+                . '</p>';
+        }
+
+        return $message;
     }
 }

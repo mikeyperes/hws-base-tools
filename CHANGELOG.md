@@ -1,5 +1,10 @@
 # Changelog
 
+## 13.72.3 - 2026-11-08
+
+- Redirect signed-out used or expired links to the masked login form with the destination preserved and a short expiration notice, avoiding the admin-ajax error handler.
+
+
 ## 13.72.2 - 2026-11-08
 
 - Preserve validated same-site redirect_to destinations for logged-in, used, and expired one-click login links.
