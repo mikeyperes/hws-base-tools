@@ -111,3 +111,8 @@ Before 13.67.0 this feature contributed no assets. After 13.67.0:
 13.69.0 (Layered depth style) adds no assets: its rules and ring script live in the same two inline assets, and the ring SVG is printed only for that style.
 
 The guard is `ScrollToTop::shortcode()` (admin, enabled and one-render checks); `automatic()` shares it at the end of `wp_footer`. This is the source loading contract, not evidence of a site installation. [Markup and design CSS](scroll-to-top.md).
+
+
+## Reading progress height and contrast (13.73.0)
+
+Before and after: the homepage, an article and any selected public page load the same inline reading-progress CSS and script only when enabled and in scope. Pages outside scope load neither. The Features admin card retains its inline preview CSS and existing settings script with Core color controls; other admin pages load none. No external asset or additional scroll listener is introduced. Background detection exits immediately unless the optional adaptive setting is enabled.

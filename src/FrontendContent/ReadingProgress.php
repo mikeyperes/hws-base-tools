@@ -18,6 +18,10 @@ final class ReadingProgress implements ModuleInterface {
     public const STYLE_OPTION = 'hws_reading_progress_style';
     public const GLOW_OPTION = 'hws_reading_progress_glow';
     public const COLOR_OPTION = 'hws_reading_progress_color';
+    public const HEIGHT_OPTION = 'hws_reading_progress_height';
+    public const ADAPTIVE_OPTION = 'hws_reading_progress_adaptive';
+    public const LIGHT_COLOR_OPTION = 'hws_reading_progress_light_color';
+    public const DARK_COLOR_OPTION = 'hws_reading_progress_dark_color';
     public const MIGRATION_OPTION = 'hws_reading_progress_smp_migration';
     public const DEFAULT_SCOPE = 'posts';
     public const DEFAULT_POST_TYPES = [ 'post' ];
@@ -170,7 +174,12 @@ final class ReadingProgress implements ModuleInterface {
         return is_string( $color ) && '' !== $color ? strtolower( $color ) : self::DEFAULT_COLOR;
     }
 
-    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool} */
+    /** Zero preserves the selected design's original height; overrides use whole pixels. */
+    public static function normalize_height( mixed $height ): int {
+        return max( 0, min( 24, (int) $height ) );
+    }
+
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool,height:int,adaptive:bool,light_color:string,dark_color:string} */
     public static function settings(): array {
         $legacy_scope = self::normalize_scope( (string) get_option( self::SCOPE_OPTION, self::DEFAULT_SCOPE ) );
         $missing = '__hws_reading_progress_missing__';
@@ -190,10 +199,14 @@ final class ReadingProgress implements ModuleInterface {
             'style'       => self::normalize_style( (string) get_option( self::STYLE_OPTION, self::DEFAULT_STYLE ) ),
             'color'       => self::normalize_color( (string) get_option( self::COLOR_OPTION, self::DEFAULT_COLOR ) ),
             'glow'        => self::normalize_boolean( get_option( self::GLOW_OPTION, false ) ),
+            'height'      => self::normalize_height( get_option( self::HEIGHT_OPTION, 0 ) ),
+            'adaptive'    => self::normalize_boolean( get_option( self::ADAPTIVE_OPTION, false ) ),
+            'light_color' => self::normalize_color( (string) get_option( self::LIGHT_COLOR_OPTION, '#ffffff' ) ),
+            'dark_color'  => self::normalize_color( (string) get_option( self::DARK_COLOR_OPTION, '#111111' ) ),
         ];
     }
 
-    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool} */
+    /** @return array{scope:string,entire_site:bool,front_page:bool,post_types:list<string>,style:string,color:string,glow:bool,height:int,adaptive:bool,light_color:string,dark_color:string} */
     public static function save_settings( array $settings ): array {
         $legacy_scope = self::normalize_scope( (string) ( $settings['scope'] ?? self::DEFAULT_SCOPE ) );
         $entire_site = array_key_exists( 'entire_site', $settings )
@@ -214,6 +227,10 @@ final class ReadingProgress implements ModuleInterface {
             'style'       => self::normalize_style( (string) ( $settings['style'] ?? self::DEFAULT_STYLE ) ),
             'color'       => self::normalize_color( (string) ( $settings['color'] ?? self::DEFAULT_COLOR ) ),
             'glow'        => self::normalize_boolean( $settings['glow'] ?? get_option( self::GLOW_OPTION, false ) ),
+            'height'      => self::normalize_height( $settings['height'] ?? get_option( self::HEIGHT_OPTION, 0 ) ),
+            'adaptive'    => self::normalize_boolean( $settings['adaptive'] ?? get_option( self::ADAPTIVE_OPTION, false ) ),
+            'light_color' => self::normalize_color( (string) ( $settings['light_color'] ?? get_option( self::LIGHT_COLOR_OPTION, '#ffffff' ) ) ),
+            'dark_color'  => self::normalize_color( (string) ( $settings['dark_color'] ?? get_option( self::DARK_COLOR_OPTION, '#111111' ) ) ),
         ];
 
         update_option( self::SCOPE_OPTION, $normalized['scope'], false );
@@ -223,6 +240,11 @@ final class ReadingProgress implements ModuleInterface {
         update_option( self::STYLE_OPTION, $normalized['style'], false );
         update_option( self::COLOR_OPTION, $normalized['color'], false );
         update_option( self::GLOW_OPTION, $normalized['glow'], false );
+
+        update_option( self::HEIGHT_OPTION, $normalized['height'], false );
+        update_option( self::ADAPTIVE_OPTION, $normalized['adaptive'], false );
+        update_option( self::LIGHT_COLOR_OPTION, $normalized['light_color'], false );
+        update_option( self::DARK_COLOR_OPTION, $normalized['dark_color'], false );
 
         return $normalized;
     }
@@ -333,9 +355,15 @@ final class ReadingProgress implements ModuleInterface {
 
         $settings = self::settings();
         $variables = '--hws-reading-progress-scale:0;--hws-reading-progress-value:0%;' . self::color_variables( $settings['color'] );
+        if ( $settings['height'] > 0 ) {
+            $variables .= ';--hws-reading-progress-height:' . $settings['height'] . 'px';
+        }
+        $adaptive_attributes = $settings['adaptive']
+            ? ' data-hws-adaptive="1" data-hws-light-color="' . esc_attr( $settings['light_color'] ) . '" data-hws-dark-color="' . esc_attr( $settings['dark_color'] ) . '"'
+            : '';
         $aria_label = is_singular( 'post' ) ? 'Article reading progress' : 'Page reading progress';
 
-        echo '<div id="hws-reading-progress" class="hws-reading-progress hws-reading-progress--' . esc_attr( $settings['style'] ) . ( $settings['glow'] ? ' hws-reading-progress--glow-enabled' : '' ) . '" role="progressbar" aria-label="' . esc_attr( $aria_label ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="' . esc_attr( $variables ) . '"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></div>';
+        echo '<div id="hws-reading-progress"' . $adaptive_attributes . ' class="hws-reading-progress hws-reading-progress--' . esc_attr( $settings['style'] ) . ( $settings['glow'] ? ' hws-reading-progress--glow-enabled' : '' ) . '" role="progressbar" aria-label="' . esc_attr( $aria_label ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="' . esc_attr( $variables ) . '"><span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span></div>';
         self::$markup_rendered = true;
     }
 
@@ -356,6 +384,45 @@ final class ReadingProgress implements ModuleInterface {
             var ticking=false;
             var lastValue=-1;
             var resizeObserver=null;
+            var adaptive=indicator.dataset.hwsAdaptive==="1";
+            var lastColor="";
+            function updateColor(){
+                if(!adaptive){return;}
+                var rect=indicator.getBoundingClientRect();
+                var x=Math.max(0,Math.min(window.innerWidth-1,rect.left+rect.width/2));
+                var y=Math.max(0,Math.min(window.innerHeight-1,rect.top+rect.height/2));
+                var layers=document.elementsFromPoint(x,y);
+                var colors=[];
+                var hint="";
+                // Paint-order layers include sections behind transparent fixed headers.
+                for(var layer=0;layer<layers.length;layer++){
+                    var node=layers[layer];
+                    if(node===indicator||indicator.contains(node)){continue;}
+                    hint=node.getAttribute("data-hws-reading-progress-theme")||"";
+                    if(hint==="dark"||hint==="light"){break;}
+                    var bg=getComputedStyle(node).backgroundColor;
+                    var parts=bg.match(/[\d.]+/g);
+                    if(parts&&parts.length>=3){
+                        var alpha=parts.length>3?Number(parts[3]):1;
+                        colors.push([Number(parts[0]),Number(parts[1]),Number(parts[2]),alpha]);
+                        if(alpha>=1){break;}
+                    }
+                }
+                var rgb=[255,255,255];
+                colors.reverse().forEach(function(c){for(var i=0;i<3;i++){rgb[i]=c[i]*c[3]+rgb[i]*(1-c[3]);}});
+                var linear=rgb.map(function(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);});
+                var dark=hint?hint==="dark":(0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2])<0.179;
+                var color=dark?indicator.dataset.hwsLightColor:indicator.dataset.hwsDarkColor;
+                if(color===lastColor){return;}
+                lastColor=color;
+                var hex=color.slice(1);
+                if(hex.length===3){hex=hex.split("").map(function(c){return c+c;}).join("");}
+                var channels=[0,2,4].map(function(i){return parseInt(hex.slice(i,i+2),16);}).join(",");
+                indicator.style.setProperty("--hws-reading-progress-color",color);
+                indicator.style.setProperty("--hws-reading-progress-soft","rgba("+channels+",0.18)");
+                indicator.style.setProperty("--hws-reading-progress-glow","rgba("+channels+",0.55)");
+                indicator.dataset.hwsBackground=dark?"dark":"light";
+            }
             function update(){
                 ticking=false;
                 var bodyHeight=document.body?document.body.scrollHeight:0;
@@ -363,6 +430,7 @@ final class ReadingProgress implements ModuleInterface {
                 var maximum=Math.max(0,pageHeight-window.innerHeight);
                 var offset=Math.max(0,window.scrollY||window.pageYOffset||root.scrollTop||0);
                 var value=maximum>0?Math.max(0,Math.min(100,(offset/maximum)*100)):0;
+                updateColor();
                 if(Math.abs(value-lastValue)<0.01){return;}
                 lastValue=value;
                 document.querySelectorAll("#hws-reading-progress,[data-hws-reading-progress]").forEach(function(display){
@@ -475,15 +543,15 @@ final class ReadingProgress implements ModuleInterface {
         return '.hws-reading-progress__track,.hws-reading-progress__fill{display:block;width:100%}'
             . '.hws-reading-progress__track{overflow:hidden;position:relative}'
             . '.hws-reading-progress__fill{background:var(--hws-reading-progress-color,#00ff41);height:100%;transform:scaleX(var(--hws-reading-progress-scale,0));transform-origin:0 50%;transition:transform .08s linear}'
-            . '.hws-reading-progress--thin .hws-reading-progress__track{background:transparent;height:2px}'
+            . '.hws-reading-progress--thin .hws-reading-progress__track{background:transparent;height:var(--hws-reading-progress-height,2px)}'
             . '.hws-reading-progress--thin .hws-reading-progress__fill{box-shadow:none}'
             . '.hws-reading-progress--thin.hws-reading-progress--glow-enabled .hws-reading-progress__fill{box-shadow:0 0 12px var(--hws-reading-progress-glow,rgba(0,255,65,.55))}'
-            . '.hws-reading-progress--track .hws-reading-progress__track{background:var(--hws-reading-progress-soft,rgba(37,99,235,.18));height:5px}'
-            . '.hws-reading-progress--glow .hws-reading-progress__track{background:transparent;height:3px;overflow:visible}'
+            . '.hws-reading-progress--track .hws-reading-progress__track{background:var(--hws-reading-progress-soft,rgba(37,99,235,.18));height:var(--hws-reading-progress-height,5px)}'
+            . '.hws-reading-progress--glow .hws-reading-progress__track{background:transparent;height:var(--hws-reading-progress-height,3px);overflow:visible}'
             . '.hws-reading-progress--glow .hws-reading-progress__fill{box-shadow:0 0 5px var(--hws-reading-progress-color,#00ff41),0 0 18px var(--hws-reading-progress-glow,rgba(0,255,65,.55))}'
-            . '.hws-reading-progress--floating .hws-reading-progress__track{background:var(--hws-reading-progress-soft,rgba(37,99,235,.18));border:1px solid var(--hws-reading-progress-soft,rgba(37,99,235,.18));border-radius:999px;box-shadow:0 2px 12px rgba(15,23,42,.18);height:6px}'
+            . '.hws-reading-progress--floating .hws-reading-progress__track{background:var(--hws-reading-progress-soft,rgba(37,99,235,.18));border:1px solid var(--hws-reading-progress-soft,rgba(37,99,235,.18));border-radius:999px;box-shadow:0 2px 12px rgba(15,23,42,.18);height:var(--hws-reading-progress-height,6px)}'
             . '.hws-reading-progress--floating .hws-reading-progress__fill{border-radius:999px}'
-            . '.hws-reading-progress--segmented .hws-reading-progress__track{background:repeating-linear-gradient(90deg,var(--hws-reading-progress-soft,rgba(37,99,235,.18)) 0 24px,transparent 24px 29px);height:6px;overflow:visible}'
+            . '.hws-reading-progress--segmented .hws-reading-progress__track{background:repeating-linear-gradient(90deg,var(--hws-reading-progress-soft,rgba(37,99,235,.18)) 0 24px,transparent 24px 29px);height:var(--hws-reading-progress-height,6px);overflow:visible}'
             . '.hws-reading-progress--segmented .hws-reading-progress__fill{-webkit-clip-path:inset(0 calc(100% - var(--hws-reading-progress-value,0%)) 0 0);background:repeating-linear-gradient(90deg,var(--hws-reading-progress-color,#00ff41) 0 24px,transparent 24px 29px);clip-path:inset(0 calc(100% - var(--hws-reading-progress-value,0%)) 0 0);transform:none;transition:clip-path .08s linear}';
     }
 }

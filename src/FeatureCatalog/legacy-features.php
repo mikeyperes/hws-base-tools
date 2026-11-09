@@ -167,7 +167,7 @@ function hws_render_feature_settings( array $feature ): void {
 function hws_render_reading_progress_settings(): void {
     $settings = ReadingProgress::settings();
     $post_type_choices = ReadingProgress::post_type_choices();
-    $variables = '--hws-reading-progress-color:' . $settings['color'] . ';';
+    $variables = '--hws-reading-progress-color:' . $settings['color'] . ';' . ( $settings['height'] > 0 ? '--hws-reading-progress-height:' . $settings['height'] . 'px;' : '' );
     ?>
     <div
         class="hws-reading-progress-settings"
@@ -263,6 +263,24 @@ function hws_render_reading_progress_settings(): void {
             ]
         ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         ?>
+
+        <div>
+            <strong>Bar height</strong>
+            <p><label>Height in pixels <input type="number" min="0" max="24" step="1" data-hws-feature-field="height" value="<?php echo esc_attr( (string) $settings['height'] ); ?>"></label></p>
+            <p class="description">0 keeps the design's original height (2 px for Thin top line). Choose 3 for a 3 px bar.</p>
+        </div>
+        <div>
+            <strong>Automatic contrast colors</strong>
+            <p><label><input type="checkbox" data-hws-feature-field="adaptive" <?php checked( $settings['adaptive'] ); ?>> Switch color with the background beneath the bar</label></p>
+            <p class="description">Off keeps the existing progress color. On uses the light color over dark backgrounds and the dark color over light backgrounds. For photos or gradients, an optional data-hws-reading-progress-theme="dark" or "light" attribute on a section identifies its background.</p>
+        </div>
+        <?php foreach ( [ 'light_color' => [ 'Light color over dark backgrounds', '#ffffff' ], 'dark_color' => [ 'Dark color over light backgrounds', '#111111' ] ] as $key => $choice ) {
+            echo ColorControl::render( [
+                'key' => 'hws_reading_progress_' . $key,
+                'label' => $choice[0], 'value' => $settings[ $key ], 'default' => $choice[1],
+                'allow_inherit' => false, 'import_brand' => true,
+            ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        } ?>
 
         <div class="hws-reading-progress-settings-actions">
             <button type="button" class="button button-primary hws-feature-save-settings" data-feature-id="<?php echo esc_attr( ReadingProgress::FEATURE_OPTION ); ?>">Save Settings</button>
@@ -518,6 +536,10 @@ function hws_output_feature_card_scripts(): void {
                 style: $settings.find('[data-hws-feature-field="style"]:checked').val() || '',
                 glow: $settings.find('[data-hws-feature-field="glow"]').is(':checked') ? '1' : '0',
                 color: $settings.find('[data-key="<?php echo esc_js( ReadingProgress::COLOR_OPTION ); ?>"]').val() || '',
+                height: $settings.find('[data-hws-feature-field="height"]').val() || '0',
+                adaptive: $settings.find('[data-hws-feature-field="adaptive"]').is(':checked') ? '1' : '0',
+                light_color: $settings.find('[data-key="hws_reading_progress_light_color"]').val() || '#ffffff',
+                dark_color: $settings.find('[data-key="hws_reading_progress_dark_color"]').val() || '#111111',
                 min_width: $settings.find('[data-hws-feature-field="min_width"]').val() || '0',
                 min_height: $settings.find('[data-hws-feature-field="min_height"]').val() || '0',
                 locations: $settings.find('[data-hws-feature-field="locations"]:checked').map(function() { return this.value; }).get(),
@@ -556,6 +578,11 @@ function hws_output_feature_card_scripts(): void {
 
         $(document).off('change.hwsReadingProgressGlow', '[data-hws-feature-field="glow"]').on('change.hwsReadingProgressGlow', '[data-hws-feature-field="glow"]', function() {
             $(this).closest('.hws-reading-progress-settings').find('.hws-reading-progress-preview').toggleClass('hws-reading-progress--glow-enabled', this.checked);
+        });
+
+        $(document).off('input.hwsReadingProgressHeight', '[data-hws-feature-field="height"]').on('input.hwsReadingProgressHeight', '[data-hws-feature-field="height"]', function() {
+            var height = Math.max(0, Math.min(24, parseInt(this.value, 10) || 0));
+            $(this).closest('.hws-reading-progress-settings').get(0).style.setProperty('--hws-reading-progress-height', height ? height + 'px' : '');
         });
 
         function syncReadingProgressTargets($settings) {
@@ -693,6 +720,10 @@ function ajax_hws_feature_save_settings(): void {
                 'style'       => isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '',
                 'glow'        => ! empty( $_POST['glow'] ),
                 'color'       => isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '',
+                'height'      => isset( $_POST['height'] ) ? absint( $_POST['height'] ) : 0,
+                'adaptive'    => ! empty( $_POST['adaptive'] ),
+                'light_color' => isset( $_POST['light_color'] ) ? sanitize_text_field( wp_unslash( $_POST['light_color'] ) ) : '#ffffff',
+                'dark_color'  => isset( $_POST['dark_color'] ) ? sanitize_text_field( wp_unslash( $_POST['dark_color'] ) ) : '#111111',
             ]
         );
         hws_add_feature_activity( $feature_id, 'Updated reading progress targeting, design, and color.' );

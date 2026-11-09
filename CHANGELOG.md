@@ -1,5 +1,9 @@
 # Changelog
 
+## 13.73.0 - 2026-11-08
+
+- Add optional 1–24 px reading-bar height and automatic light/dark background contrast colors on all site types. Existing design heights, fixed color, targeting and defaults remain unchanged. Bundles Hexa WP Core 3.59.1.
+
 ## 13.72.4 - 2026-11-08
 
 - Encode masked-login redirect_to destinations so targets with multiple query parameters survive expired-link recovery and sign-in.
