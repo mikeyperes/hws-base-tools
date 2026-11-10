@@ -1562,3 +1562,8 @@ Proprietary Hexa Web Systems software unless a source file states otherwise.
 ### Author photo provider
 
 Bundled Core recognizes Simple User Avatar and requires Simple Local Avatars for author photo writes.
+
+### PDF / print library
+- **Does:** Bundles Core 3.60.0 generic HTML print/PDF with physical page sizes in inches.
+- **Use:** Consuming plugins call `Hexa\PluginCore\PdfPrint\HtmlDocument`; hosts supply Dompdf and protected output.
+- **Code:** `lib/hexa-wordpress-plugin-core/src/PdfPrint/`; [documentation](lib/hexa-wordpress-plugin-core/docs/pdf-print.md).

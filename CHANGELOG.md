@@ -42,3 +42,6 @@ Newsletter signup collector, disabled by default, with Core 3.50.0 collection st
 ## 13.72.1 - 2026-11-08
 
 - Bundle Hexa WP Core 3.59.1 with explicit avatar provider ownership.
+
+## 13.74.1
+- Bundle Hexa WP Core 3.60.0 with generic physical-size HTML PDF / print.
