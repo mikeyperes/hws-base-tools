@@ -215,8 +215,7 @@ final class CompanyFacts {
             return 'Image set';
         }
         if ( 'founding_date' === $field ) {
-            $time = strtotime( (string) $value );
-            return $time ? date_i18n( (string) get_option( 'date_format', 'F j, Y' ), $time ) : (string) $value;
+            return \HWS\BaseTools\SiteProfile\FoundingDate::format( $value );
         }
         if ( is_array( $value ) ) {
             return count( array_filter( $value ) ) . ' added';
@@ -273,8 +272,7 @@ final class CompanyFacts {
         $sep    = (string) $atts['sep'];
 
         if ( 'founding_date' === $field && 'raw' !== $format ) {
-            $time = strtotime( (string) $value );
-            return $time ? esc_html( date_i18n( 'year' === $format ? 'Y' : (string) get_option( 'date_format', 'F j, Y' ), $time ) ) : esc_html( (string) $value );
+            return esc_html( \HWS\BaseTools\SiteProfile\FoundingDate::format( $value, $format ) );
         }
         if ( 'logo' === $field ) {
             return 'url' === $format ? esc_url( (string) wp_get_attachment_image_url( absint( $value ), 'full' ) ) : (string) wp_get_attachment_image( absint( $value ), sanitize_key( (string) $atts['size'] ), false, [ 'class' => 'hws-company-logo', 'loading' => 'lazy' ] );

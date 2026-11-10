@@ -1,5 +1,9 @@
 # Changelog
 
+## 13.74.2 - 2026-11-10
+
+- Accept company founding years, year-months and full dates without ACF date-picker coercion. Validate calendar dates, preserve legacy full dates, and format page text without inventing missing parts. Bundles Hexa WP Core 3.60.0.
+
 ## 13.74.0 - 2026-11-08
 
 - Add opt-in measured responsive hero delivery through hws-fi-hero, with source-bounded candidates up to 2560px and exact box-width sizes. Preserve card and avatar limits and legacy signatures.

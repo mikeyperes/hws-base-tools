@@ -36,6 +36,9 @@ final class SiteIdentity implements ModuleInterface {
     public function register(): void {
         require_once __DIR__ . '/site-identity-functions.php';
         FieldGroups::add( self::field_group() );
+        add_filter( 'acf/validate_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'validate' ], 10, 2 );
+        add_filter( 'acf/format_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
+        add_filter( 'acf/update_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
         add_action( 'init', static fn() => add_shortcode( self::SHORTCODE, [ self::class, 'shortcode' ] ) );
         SiteSetupCommand::register();
     }
@@ -160,6 +163,8 @@ final class SiteIdentity implements ModuleInterface {
                 $value = self::list_values( $value );
             } elseif ( in_array( $key, [ 'logo', 'photo', 'user' ], true ) ) {
                 $value = is_array( $value ) ? (int) ( $value['ID'] ?? $value['id'] ?? 0 ) : (int) $value;
+            } elseif ( 'founding_date' === $key ) {
+                $value = FoundingDate::normalize( $value );
             } elseif ( 'founders' === $key ) {
                 // One definition: the Founders tab (HWS\BaseTools\Founders\Founders).
                 $value = \HWS\BaseTools\Founders\Founders::user_ids();
@@ -188,7 +193,7 @@ final class SiteIdentity implements ModuleInterface {
             [ 'key' => 'field_hws_identity_description', 'label' => 'Short description', 'name' => 'description', 'type' => 'textarea', 'rows' => 3, 'new_lines' => '' ],
             $image( 'logo', 'Logo' ),
             $text( 'url', 'Website', '', 'url' ),
-            [ 'key' => 'field_hws_identity_founding_date', 'label' => 'Founding date', 'name' => 'founding_date', 'type' => 'date_picker', 'display_format' => 'F j, Y', 'return_format' => 'Y-m-d' ],
+            [ 'key' => 'field_hws_identity_founding_date', 'label' => 'Founding date', 'name' => 'founding_date', 'type' => 'text', 'instructions' => 'Enter the precision known: YYYY, YYYY-MM, or YYYY-MM-DD. Do not invent a month or day.', 'placeholder' => '2020, 2020-06, or 2020-06-15' ],
             $text( 'founding_location', 'Founding city' ),
             $text( 'founding_location_url', 'Founding city Wikipedia page', 'The founding city\'s Wikipedia page (https://en.wikipedia.org/wiki/...). Used in the schema.', 'url' ),
             [ 'key' => 'field_hws_identity_founders_note', 'label' => 'Founders', 'name' => '', 'type' => 'message', 'message' => 'Founders are picked in one place: the <a href="' . esc_url( admin_url( 'options-general.php?page=hws-core-tools&tab=founders' ) ) . '">Founders tab</a>.' ],

@@ -70,6 +70,13 @@ final class SiteSetupCommand {
         if ( 'set' !== $action ) {
             \WP_CLI::error( 'Use get or set.' );
         }
+        if ( isset( $assoc['founding_date'] ) && '' !== trim( (string) $assoc['founding_date'] ) ) {
+            $date = FoundingDate::normalize( $assoc['founding_date'] );
+            if ( '' === $date ) {
+                \WP_CLI::error( 'Use YYYY, YYYY-MM, or YYYY-MM-DD with a valid calendar date.' );
+            }
+            $assoc['founding_date'] = $date;
+        }
         if ( isset( $assoc['type'] ) ) {
             if ( ! isset( SiteIdentity::TYPES[ $assoc['type'] ] ) ) {
                 \WP_CLI::error( 'Unknown type: ' . $assoc['type'] );
