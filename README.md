@@ -92,6 +92,10 @@ For an interactive standalone draft, copy the [runtime JavaScript](assets/js/scr
 - **Use:** Heading facts and Facts style under Shared heading options; place [hws_heading_facts] in a native Shortcode widget.
 - **Details:** [Shared heading options](docs/shared-heading-options.md#optional-heading-facts).
 
+### Embedded template styles in the head
+- **Does:** on a single page, post or template, the styling of every Elementor template placed by a Template widget or used as a loop grid's card (nested too), plus those widgets' own styles, loads in the page head instead of the end of the body. The page's first paint is already styled, so it no longer shows unstyled and then jumps. Page output is unchanged.
+- **Use:** automatic wherever Elementor is active; nothing to set.
+
 ### Shared Elementor heading placements
 - **Does:** native Template widgets can supply an eyebrow, intro (with saved page-excerpt fallback), optional intro maximum width, title variant, padding and text-spacing set, and an optional role custom field to one saved heading. Unconfigured widgets preserve the UI/default appearance.
 - **Use:** Template > Shared heading options; native Heading widgets use the Shortcode dynamic tag with [hws_heading_field name="title|eyebrow|intro|role"]. Plain titles read the main queried object, never the loop post or SEO document title.
