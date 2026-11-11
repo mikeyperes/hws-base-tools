@@ -68,3 +68,10 @@
 - Cause: The Core avatar plugin list omitted Simple User Avatar.
 - Patch: Core 3.59.1 recognizes it, including network activation, and enforces supported photo writes.
 - Guard: The shared plugin list suppresses the fallback while an avatar plugin is active.
+
+## SETUP-001 (high): fresh-site configuration gaps
+
+- Symptoms: empty permalinks fail repair, hard flush leaves no WordPress rewrite block, SMTP has no setup action, anonymous Wordfence acquisition returns a premium-downgrade error.
+- Causes: setup assumed an existing structure and successful server detection; SMTP only audited/tested; new free licenses require registration.
+- Fix: Quick Start defaults structure and persists native rules with marker-safe writing/readback; SMTP uses WP Mail SMTP save pipeline with a protected site key; missing Wordfence keys return registration requirements.
+- Guard: SETUP-001 in PermalinkSetupService; no cross-site keys, secret output, mail sends or automatic terms acceptance.

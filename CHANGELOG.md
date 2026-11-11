@@ -1,3 +1,7 @@
+# 13.74.5 - 2026-11-10
+
+- SETUP-001: default fresh permalinks, persist rewrites, configure SMTP2GO, direct missing Wordfence keys to supported registration. Includes 13.74.4 ACF guard and Hexa WP Core 3.60.0 unchanged.
+
 # Changelog
 
 ## 13.74.2 - 2026-11-10

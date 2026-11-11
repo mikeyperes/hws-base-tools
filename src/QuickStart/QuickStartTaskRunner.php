@@ -56,6 +56,7 @@ final class QuickStartTaskRunner {
             'audit_litespeed'              => LiteSpeedTaskRunner::audit_profile( (string) ( $context['litespeed_profile'] ?? 'safe_baseline' ) ),
             'configure_wordfence'          => self::operation( ( new WordfencePolicyService() )->apply(), 'Wordfence baseline configured.' ),
             'audit_wordfence'              => self::wordfence_status(),
+            'configure_smtp'               => ( new SiteConfigurationService() )->configure_smtp( (array) ( $payload['inputs'] ?? [] ) ),
             'audit_smtp'                   => self::audit_smtp(),
             'test_smtp'                    => ( new SiteConfigurationService() )->test_smtp( (string) ( is_array( $payload['inputs'] ?? null ) ? ( $payload['inputs']['smtp_test_recipient'] ?? '' ) : '' ) ),
             'purge_caches'                 => self::purge_caches(),
@@ -89,6 +90,7 @@ final class QuickStartTaskRunner {
             'install_bootstrap_loader',
             'install_essential_plugins',
             'install_litespeed',
+            'configure_smtp',
             'configure_wordfence' => [ 'manage_options', 'install_plugins', 'activate_plugins' ],
             'sync_hexa_core',
             'update_plugins' => [ 'manage_options', 'update_plugins' ],
@@ -296,7 +298,7 @@ final class QuickStartTaskRunner {
 
     /** @return array<string,mixed> */
     private static function repair_permalinks(): array {
-        $result = ( new PermalinkOperations() )->repair( '' );
+        $result = ( new PermalinkSetupService() )->repair();
         if ( empty( $result['success'] ) ) {
             return self::operation( $result, 'Permalink repair failed.' );
         }

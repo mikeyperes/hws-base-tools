@@ -9,6 +9,14 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Fresh-site setup
+
+Quick Start defaults empty permalinks to `/%postname%/`, explicitly writes and verifies the WordPress `.htaccess` block while preserving LiteSpeed/cPanel blocks, then checks an inner page. A database flush alone is not success.
+
+`configure_smtp` installs/activates WP Mail SMTP and saves SMTP2GO through its options API, preserving other settings. Sender email/name come from the individual checklist action. Supply the site-specific key through `HWS_SMTP2GO_API_KEY` or `hws_base_tools_smtp2go_api_key`, never a visible checklist field or report. The separate test action verifies delivery.
+
+Wordfence validates an existing or protected site-specific key through its save API. A missing key returns `site_license_registration_required` with official free-license instructions and remains incomplete until registration and terms are complete. It never calls the anonymous premium-downgrade endpoint or shares another site's key.
+
 ### Optional ACF form compatibility
 
 The legacy admin form hook registers only when `acf_form_head` exists, so sites using native Hexa fields without Advanced Custom Fields can load admin pages safely. Bundles Hexa WP Core 3.60.0.

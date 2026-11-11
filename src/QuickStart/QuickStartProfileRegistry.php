@@ -91,7 +91,7 @@ final class QuickStartProfileRegistry {
                     self::task( 'set_memory_limit', 'Set WordPress memory to 4 GB', 'config_mutation', 'Sets both WP_MEMORY_LIMIT and WP_MAX_MEMORY_LIMIT to exactly 4096M and verifies the file values.', 'Apply', $context ),
                     self::task( 'disable_debug_settings', 'Disable production debug output', 'config_mutation', 'Disables WP_DEBUG, WP_DEBUG_DISPLAY, and WP_DEBUG_LOG.', 'Apply', $context ),
                     self::task( 'disable_comments_pings', 'Disable all comments and pings', 'config_mutation', 'Closes future discussion and all existing post comment and ping statuses. Existing comments are handled separately in Review Center.', 'Apply', $context ),
-                    self::task( 'repair_permalinks', 'Hard-repair permalinks', 'setup_action', 'Preserves the chosen permalink structure, rebuilds rewrite rules, and verifies a live inner page.', 'Repair', $context ),
+                    self::task( 'repair_permalinks', 'Hard-repair permalinks', 'setup_action', 'Defaults fresh sites to post-name addresses, writes the WordPress rewrite block, preserves server blocks, and verifies a live inner page.', 'Repair', $context ),
                     self::task( 'audit_real_cron', 'Check real cron handoff', 'status_check', 'Reports whether visitor-driven WP-Cron is disabled and whether a recent external cron heartbeat is known. It never disables WP-Cron without that proof.', 'Check', $context ),
                 ]
             ),
@@ -120,7 +120,14 @@ final class QuickStartProfileRegistry {
                 '7. Security & Mail',
                 'Apply the WordPress-level Wordfence policy and verify mail configuration without storing credentials in source code.',
                 [
-                    self::task( 'configure_wordfence', 'Configure Wordfence baseline', 'config_mutation', 'Installs or activates Wordfence, sets safe alert policy, and uses an environment-provided fleet license only when one is configured.', 'Configure', $context ),
+                    self::task( 'configure_wordfence', 'Configure Wordfence baseline', 'config_mutation', 'Installs or activates Wordfence, sets safe alert policy, and validates an existing or protected site-specific license. New free licenses use Wordfence registration, never the premium-downgrade API.', 'Configure', $context ),
+                    self::task( 'configure_smtp', 'Configure SMTP2GO', 'config_mutation', 'Saves the protected site SMTP2GO key through WP Mail SMTP. No email is sent.', 'Configure', $context, [
+                        'batch_enabled' => false,
+                        'required_inputs' => [
+                            [ 'id' => 'smtp_from_email', 'label' => 'Sender email', 'type' => 'email', 'required' => true, 'value' => self::default_email() ],
+                            [ 'id' => 'smtp_from_name', 'label' => 'Sender name', 'type' => 'text', 'required' => true, 'value' => get_bloginfo( 'name' ) ],
+                        ],
+                    ] ),
                     self::task( 'audit_smtp', 'Check SMTP configuration', 'status_check', 'Checks WP Mail SMTP, sender identity, mailer selection, and authentication presence without exposing secrets.', 'Check', $context ),
                     self::task(
                         'test_smtp',

@@ -151,7 +151,7 @@ final class WordfencePolicyService {
         } elseif ( ! empty( $after['tos_review_required'] ) ) {
             $message = 'Wordfence configuration was saved, but its current terms or privacy policy require an authorized user review.';
         } elseif ( empty( $license['success'] ) ) {
-            $message = 'Wordfence configuration was saved, but a valid site license could not be verified.';
+            $message = 'Wordfence configuration was saved, but a valid site-specific license is required. Register a free license through Wordfence, install it on this site, then rerun this task. The anonymous premium-downgrade endpoint is not used for new-site registration.';
         } else {
             $message = 'Wordfence did not fully verify the required WordPress-level security baseline.';
         }
@@ -228,7 +228,7 @@ final class WordfencePolicyService {
         $source   = '' !== $injected ? 'server_site' : ( '' !== $stored ? 'existing_site' : 'none' );
 
         if ( '' === $key ) {
-            return [ 'success' => false, 'attempted' => false, 'source' => $source, 'reason' => 'site_license_missing' ];
+            return [ 'success' => false, 'attempted' => false, 'source' => $source, 'reason' => 'site_license_registration_required', 'registration_url' => 'https://www.wordfence.com/help/api-key/#installing-your-free-license-key', 'retry_after_registration' => true ];
         }
 
         try {

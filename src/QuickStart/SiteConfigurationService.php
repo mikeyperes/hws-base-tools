@@ -109,6 +109,34 @@ final class SiteConfigurationService {
         return [ 'success' => true, 'message' => count( $enabled ) . ' recommended HWS feature(s) enabled.', 'data' => [ 'enabled' => $enabled ] ];
     }
 
+    /** Save through WP Mail SMTP's pipeline without sending mail. */
+    public function configure_smtp( array $inputs = [] ): array {
+        $key = defined( 'HWS_SMTP2GO_API_KEY' ) ? trim( (string) HWS_SMTP2GO_API_KEY ) : '';
+        $key = trim( (string) apply_filters( 'hws_base_tools_smtp2go_api_key', $key, home_url( '/' ) ) );
+        $email = strtolower( sanitize_email( (string) ( $inputs['smtp_from_email'] ?? get_option( 'admin_email', '' ) ) ) );
+        $name = sanitize_text_field( (string) ( $inputs['smtp_from_name'] ?? get_bloginfo( 'name' ) ) );
+        if ( '' === $key || ! is_email( $email ) ) return [ 'success' => false, 'message' => 'A protected site-specific SMTP2GO API key and valid sender email are required.', 'data' => [ 'key_present' => '' !== $key, 'sender_valid' => (bool) is_email( $email ) ] ];
+        $file = 'wp-mail-smtp/wp_mail_smtp.php';
+        $status = \Hexa\PluginCore\PluginProvisioning\PluginProvisioner::plugin_status_by_file( $file );
+        if ( empty( $status['installed'] ) ) {
+            $installed = \Hexa\PluginCore\PluginProvisioning\PluginProvisioner::install_wordpress_org_plugin( 'wp-mail-smtp', true );
+            if ( is_wp_error( $installed ) ) return [ 'success' => false, 'message' => 'WP Mail SMTP installation failed.' ];
+        } elseif ( empty( $status['active'] ) ) {
+            $activated = \Hexa\PluginCore\PluginProvisioning\PluginProvisioner::activate_plugin_file( $file );
+            if ( is_wp_error( $activated ) ) return [ 'success' => false, 'message' => 'WP Mail SMTP activation failed.' ];
+        }
+        if ( ! function_exists( 'wp_mail_smtp' ) ) return [ 'success' => false, 'message' => 'WP Mail SMTP is active. Run setup again in a fresh request to load its API.' ];
+        try {
+            $options = wp_mail_smtp()->get_connections_manager()->get_primary_connection()->get_options();
+            $options->set( [ 'mail' => [ 'mailer' => 'smtp2go', 'from_email' => $email, 'from_name' => $name, 'from_email_force' => true ], 'smtp2go' => [ 'api_key' => $key ] ], false, false );
+            $saved = (string) $options->get( 'smtp2go', 'api_key' );
+            $verified = 'smtp2go' === $options->get( 'mail', 'mailer' ) && $email === $options->get( 'mail', 'from_email' ) && hash_equals( $key, $saved );
+            return [ 'success' => $verified, 'message' => $verified ? 'SMTP2GO settings saved and verified. Use the separate verification email to test delivery.' : 'SMTP2GO saved settings did not match.', 'data' => [ 'mailer' => 'smtp2go', 'sender' => $email, 'key_present' => '' !== $saved, 'email_sent' => false ] ];
+        } catch ( \Throwable $error ) {
+            return [ 'success' => false, 'message' => 'WP Mail SMTP could not save SMTP2GO configuration.', 'data' => [ 'email_sent' => false ] ];
+        }
+    }
+
     /** @return array<string,mixed> */
     public function test_smtp( string $recipient ): array {
         $recipient = sanitize_email( $recipient );
