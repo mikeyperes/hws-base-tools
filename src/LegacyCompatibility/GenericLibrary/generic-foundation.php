@@ -175,7 +175,7 @@ if (!function_exists(__NAMESPACE__ . '\\does_term_exist')) {
 // Legacy host plugins include this library while plugins load, before Hexa Plugin Core
 // resolves its classes, so the Fields check waits for init.
 add_action('init', static function () {
-    if (\Hexa\PluginCore\Fields\Field::available()) {
+    if (\Hexa\PluginCore\Fields\Field::available() && function_exists('acf_form_head')) {
         add_action('admin_head', 'acf_form_head');
     }
 });

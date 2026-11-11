@@ -9,6 +9,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Optional ACF form compatibility
+
+The legacy admin form hook registers only when `acf_form_head` exists, so sites using native Hexa fields without Advanced Custom Fields can load admin pages safely. Bundles Hexa WP Core 3.60.0.
+
 ### One-click login destinations
 
 Code's `wptoolkit:login <domain> --redirect=<full URL or path>` returns one link that signs in and opens that same-site page. Any login link can also carry `&redirect_to=<URL-encoded URL or path>` at click time. HWS Base Tools validates that target with WordPress and restricts it to the same site, including admin and front-end pages; an invalid target falls back to the dashboard. Already-signed-in users opening used or expired links go straight to that target. Signed-out users are redirected without caching to the login form (including the masked login slug when enabled), with an expired-link notice and the target preserved as `redirect_to`. After signing in, they land on that target. Masked login destinations are URL-encoded so all query parameters survive the redirect. Authentication remains owned by the temporary, single-use, 60-minute login handler.
