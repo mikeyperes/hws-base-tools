@@ -37,7 +37,7 @@ WebP renditions are cached separately. No attachment, featured-image assignment,
 post content or original upload is changed. The route rejects unsigned sources,
 uses WordPress safe HTTP requests and image editors, and never enlarges originals.
 
-`card-image-delivery.js` loads only for a list that renders a measured card photo
+`card-image-sizer.js` loads only for a list that renders a measured card photo
 (or replays cached delivery markup). It observes the visible image's actual box,
 requests its width at 1x/2x density, rounds down to eight pixels and caps the result
 at 768px. It updates on viewport/layout changes and discovers newly appended cards.

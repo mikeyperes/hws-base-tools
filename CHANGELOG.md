@@ -1,3 +1,7 @@
+# 13.74.7 - 2026-11-11
+
+- Card image script renamed to card-image-sizer.js and versioned from the plugin version, so caches serve the 13.74.6 fix instead of the year-cached old script.
+
 # 13.74.6 - 2026-11-11
 
 - Card and hero image width now uses `hws_w` instead of `w`, which WordPress reserves for "week" and redirected image requests to the homepage, blanking card photos. Hexa WP Core 3.60.0 unchanged.

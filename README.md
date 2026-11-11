@@ -240,7 +240,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 - **Use:** keep `medium` for desktop card boxes up to 360px, or `medium_large` for wider lead cards. Run `wp media regenerate --image_size=hws-card --only-missing --skip-delete --yes` once for existing attachments. New uploads generate it automatically.
 - **Extend:** `hws_base_tools_card_image_sizes` accepts the calculated sizes and Elementor list widget for layouts that override native grid geometry.
 - **Details:** [Card image renditions](docs/card-image-renditions.md).
-- **Code:** `src/FrontendContent/CardImageRenditions.php`, `src/FrontendContent/CardImageDelivery.php`, `assets/frontend/card-image-delivery.js`.
+- **Code:** `src/FrontendContent/CardImageRenditions.php`, `src/FrontendContent/CardImageDelivery.php`, `assets/frontend/card-image-sizer.js`.
 
 
 ### Hidden admin access message

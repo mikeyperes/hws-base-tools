@@ -69,7 +69,7 @@ final class CardImageDelivery {
             $changed = true;
         }
         if ( $changed || str_contains( $html, 'data-hws-card-endpoint' ) ) {
-            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.74.0', true );
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-sizer.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], \HWS\BaseTools\PluginRuntime\PluginMetadata::VERSION, true );
         }
         return $tags->get_updated_html();
     }
@@ -114,7 +114,7 @@ final class CardImageDelivery {
             $changed = true;
         }
         if ( $changed || str_contains( $html, 'data-hws-hero-endpoint' ) ) {
-            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-delivery.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], '13.74.0', true );
+            wp_enqueue_script( 'hws-card-image-delivery', plugins_url( 'assets/frontend/card-image-sizer.js', HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE ), [], \HWS\BaseTools\PluginRuntime\PluginMetadata::VERSION, true );
         }
         return $tags->get_updated_html();
     }
