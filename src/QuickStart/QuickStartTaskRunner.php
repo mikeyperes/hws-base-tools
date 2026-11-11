@@ -41,6 +41,7 @@ final class QuickStartTaskRunner {
             'update_themes'                => self::operation( ( new UpdateOperations() )->update_themes(), 'Theme updates completed.' ),
             'enable_auto_updates'          => self::operation( ( new AutoUpdatePolicy() )->apply( [ 'core' => 'all', 'plugins' => true, 'themes' => true ] ), 'Automatic updates enabled.' ),
             'install_essential_plugins'    => ( new PluginStackService() )->ensure( ! empty( $context['include_smp'] ) ),
+            'configure_rank_math'          => ( new RankMathSetupService() )->configure(),
             'verify_plugin_stack'          => self::verify_plugin_stack( $context ),
             'set_memory_limit'             => ( new SiteConfigurationService() )->set_memory_limit(),
             'disable_debug_settings'       => ( new SiteConfigurationService() )->disable_debug(),

@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+Quick Start enables Rank Math SEO output after plugin provisioning by saving Rank Math’s native optional-registration skip when no account is connected. The individual step is repeatable and preserves connected accounts, titles, descriptions, and social metadata.
+
 ### Fresh-site setup
 
 Quick Start defaults empty permalinks to `/%postname%/`, explicitly writes and verifies the WordPress `.htaccess` block while preserving LiteSpeed/cPanel blocks, then checks an inner page. A database flush alone is not success.

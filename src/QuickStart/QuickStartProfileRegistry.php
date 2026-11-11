@@ -79,6 +79,7 @@ final class QuickStartProfileRegistry {
                 'Install and activate the HWS-required plugin stack for this site profile.',
                 [
                     self::task( 'install_essential_plugins', 'Install and activate required plugins', 'setup_action', 'Uses the shared provisioner and the selected HWS site profile. Paid plugins remain review items when no licensed package is available.', 'Install', $context ),
+                    self::task( 'configure_rank_math', 'Enable Rank Math SEO output', 'config_mutation', 'Skips optional Rank Math registration when no account is connected, preserving connected accounts and saved SEO fields.', 'Configure', $context ),
                     self::task( 'enable_auto_updates', 'Enable future automatic updates', 'config_mutation', 'Enables all WordPress core, plugin, and theme auto-updates after the required stack is installed.', 'Apply', $context ),
                     self::task( 'verify_plugin_stack', 'Verify plugin stack', 'status_check', 'Reports missing, inactive, outdated, or conflicting plugins after provisioning.', 'Verify', $context ),
                 ]

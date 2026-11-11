@@ -65,3 +65,7 @@ records. Restore is deliberately limited to the approved WordPress option keys;
 plugin, theme, WordPress, Core, file, and wp-config inventory is not rolled
 back. Each option is read back for verification, and a failed restore attempt
 is rolled back to the state present immediately before that attempt.
+
+## Rank Math registration
+
+After required plugins are installed, `configure_rank_math` saves Rank Math’s native `rank_math_registration_skip` option for active, unconnected Rank Math. Connected accounts and SEO fields remain unchanged. It verifies the gate and enables output on the next request; inactive Rank Math is reported without mutation. Network-active Rank Math uses the main site option, matching Rank Math’s gate.
