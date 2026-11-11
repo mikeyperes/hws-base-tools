@@ -182,7 +182,7 @@ final class CardImageDelivery {
             exit;
         }
         // Round down, never up: even a 2x screen must stay at or below twice the slot.
-        $width = min( $cap, max( 8, (int) ( $_GET['w'] ?? 0 ) ) );
+        $width = min( $cap, max( 8, (int) ( $_GET['hws_w'] ?? 0 ) ) );
         $width -= $width % 8;
         $url = $this->rendition( $source, $width );
         if ( is_wp_error( $url ) ) {

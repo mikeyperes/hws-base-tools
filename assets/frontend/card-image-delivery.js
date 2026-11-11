@@ -8,7 +8,7 @@
     const widths = [...new Set([quantize(Math.ceil(width / 8) * 8), quantize(width * 2)])];
     const endpoint = pixels => {
       const url = new URL(image.dataset.hwsHeroEndpoint, document.baseURI);
-      url.searchParams.set('w', String(pixels));
+      url.searchParams.set('hws_w', String(pixels));
       return url.href;
     };
     // The measured CSS slot precedes the candidates, avoiding viewport guesses.
@@ -29,7 +29,7 @@
     image.removeAttribute('sizes');
     if (image.dataset.hwsCardPixels === String(pixels)) return;
     const url = new URL(image.dataset.hwsCardEndpoint, document.baseURI);
-    url.searchParams.set('w', String(pixels));
+    url.searchParams.set('hws_w', String(pixels));
     image.dataset.hwsCardPixels = String(pixels);
     image.src = url.href;
   }

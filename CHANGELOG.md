@@ -1,3 +1,7 @@
+# 13.74.6 - 2026-11-11
+
+- Card and hero image width now uses `hws_w` instead of `w`, which WordPress reserves for "week" and redirected image requests to the homepage, blanking card photos. Hexa WP Core 3.60.0 unchanged.
+
 # 13.74.5 - 2026-11-10
 
 - SETUP-001: default fresh permalinks, persist rewrites, configure SMTP2GO, direct missing Wordfence keys to supported registration. Includes 13.74.4 ACF guard and Hexa WP Core 3.60.0 unchanged.
