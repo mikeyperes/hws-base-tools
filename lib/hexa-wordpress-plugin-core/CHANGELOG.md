@@ -1,5 +1,12 @@
 # 3.57.0
 
+## 3.61.0 - 2026-11-13
+
+- Schema structures: `SchemaStructures` registry, `SchemaContext`, `SchemaStructuresPanel` and `SchemaStructuresModule` (AJAX and `wp hexa schema`): each plugin declares its structures, which ship on in their default mode, keep their mode, print in the shared block and preview live.
+- `SchemaNodes::person_profile()`, `occupation()`, `educational_organization()`, `country()`, `quotation()`, `creative_work()`; `ImageGallery` page type; `same_as()` keeps the first spelling of a repeated link.
+- `SchemaPage::merge_nodes()` and `document_for()` merge and print nodes without changing the current page.
+- FAQ output no longer prints the admin UI styles on public pages; its own styles print once per page.
+
 ## 3.59.1 - 2026-11-08
 
 - Recognize Simple User Avatar and network-active avatar plugins; enforce Simple Local Avatars for profile writes and clean outgoing derivatives.

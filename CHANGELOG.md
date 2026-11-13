@@ -1,3 +1,8 @@
+# 13.74.9 - 2026-11-13
+
+- Bundles Hexa WP Core 3.61.0 (schema structures registry, Person profile schema nodes).
+- Plugin catalog points SFPF Person Profile Integration at its real main file, initialization.php.
+
 # 13.74.7 - 2026-11-11
 
 - Card image script renamed to card-image-sizer.js and versioned from the plugin version, so caches serve the 13.74.6 fix instead of the year-cached old script.

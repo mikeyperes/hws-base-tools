@@ -74,7 +74,7 @@ function hws_get_hexa_plugin_catalog(): array {
         ],
         'sfpf-person-profile-integration' => [
             'name'        => 'SFPF Person Profile Integration',
-            'plugin_file' => 'sfpf-person-profile-integration/sfpf-person-profile-integration.php',
+            'plugin_file' => 'sfpf-person-profile-integration/initialization.php',
             'repo'        => 'mikeyperes/sfpf-person-profile-integration',
             'description' => 'Person profile integration for SFPF sites.',
         ],

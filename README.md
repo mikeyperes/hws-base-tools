@@ -9,6 +9,10 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+### Hexa WP Core 3.61.0
+
+Bundles Hexa WP Core 3.61.0: a shared schema structures registry (each plugin lists its page schema with modes, defaults and previews; `wp hexa schema list|preview|set`) and Person profile schema pieces. The plugin catalog checks SFPF Person Profile Integration by its real main file, `initialization.php`.
+
 Quick Start enables Rank Math SEO output after plugin provisioning by saving Rank Math’s native optional-registration skip when no account is connected. The individual step is repeatable and preserves connected accounts, titles, descriptions, and social metadata.
 
 ### Fresh-site setup
