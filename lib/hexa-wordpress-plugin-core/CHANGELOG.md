@@ -1,3 +1,7 @@
+## 3.62.0 - 2026-11-15
+
+- Add shared domain-bound HMAC JSON signing and HTTPS POST transport with fresh nonces, exact-body hashes and redirects disabled.
+
 # 3.57.0
 
 ## 3.61.0 - 2026-11-13

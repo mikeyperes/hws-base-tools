@@ -1773,3 +1773,7 @@ Term choice limits support `excluded_terms` (IDs or callback) outside the choice
 - **Use:** `new PdfPrint\PageSize($widthInches, $heightInches)` and `new PdfPrint\HtmlDocument($size)`; call `html($items, $css, true)` or `pdf($items, $css)`. PDF requires host-bundled `dompdf/dompdf`.
 - **Extend:** Hosts supply escaped item HTML, bounded item lists, CSS, permission checks and response delivery.
 - **Code:** `src/PdfPrint/`. See [PDF / print](docs/pdf-print.md).
+
+## Signed JSON requests
+
+Use `Hexa\PluginCore\ApiKeys\SignedJsonClient` for domain-bound HMAC HTTPS calls. Hosts provide endpoints, header prefix, key and domain; Core signs exact body bytes and generates a new nonce per send. See `docs/signed-json.md`.

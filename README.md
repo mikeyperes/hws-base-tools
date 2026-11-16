@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.62.0 with shared domain-bound HMAC signing for JSON API calls.
+
 ### Hexa WP Core 3.61.0
 
 Bundles Hexa WP Core 3.61.0: a shared schema structures registry (each plugin lists its page schema with modes, defaults and previews; `wp hexa schema list|preview|set`) and Person profile schema pieces. The plugin catalog checks SFPF Person Profile Integration by its real main file, `initialization.php`.
