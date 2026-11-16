@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.63.0, including the reusable read-only press-release author/person client for consuming plugins. No new Base Tools screen or visitor output is activated.
+
 - Bundles Hexa WP Core 3.62.1 with shared domain-bound HMAC signing for JSON API calls.
 
 ### Hexa WP Core 3.61.0
