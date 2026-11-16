@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- Bundles Hexa WP Core 3.62.0 with shared domain-bound HMAC signing for JSON API calls.
+- Bundles Hexa WP Core 3.62.1 with shared domain-bound HMAC signing for JSON API calls.
 
 ### Hexa WP Core 3.61.0
 
