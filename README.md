@@ -236,6 +236,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 ### Featured image orientation
 - **Does:** heroes are designed for a landscape featured photo. When a story's featured photo is portrait or square, it is marked with its shape (`hws-fi-landscape`, `hws-fi-portrait`, `hws-fi-square`, from the photo's saved width and height) and the hero shows it whole on a soft backdrop inside the same box instead of zooming in and cutting it. Landscape photos fill the box. On phones a portrait box turns 4:5, capped at 70% of the screen height. No script.
 - **Delivery:** tagged hero widgets use measured responsive WebP candidates up to 2560px (bounded by the source), with actual CSS box widths in `sizes`. Cards retain their 768px limit. See [hero delivery](docs/card-image-renditions.md#responsive-heroes).
+- **Caching:** the orientation stylesheet keeps its release version when LiteSpeed removes asset query strings, using LiteSpeed’s per-URL exception.
 - **Markup:** the aspect box, full-width image link, and portrait/square fallbacks support both Elementor widget containers and optimized Image widgets without a container.
 - **Use:** add the CSS class `hws-fi-hero` to the hero's Image widget (16:9 box), plus `hws-fi-hero--3x2` for a 3:2 box. Optional variables: `--hws-fi-focus` (photo focus point), `--hws-fi-backdrop` (fallback backdrop).
 - **Settings:** Site & Brand → Featured Image Orientation: one switch for the front page and one for each content type whose single page shows a featured image. All are on by default; nothing changes until a hero carries `hws-fi-hero`.
@@ -623,6 +624,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.74.13
+- Preserve the featured-image stylesheet version through LiteSpeed query-string removal so CDN caches receive updated hero styles.
 
 ### 13.74.12
 - Fix featured-image hero aspect boxes and full-width links in Elementor optimized Image markup while preserving legacy widget containers and portrait/square fallbacks.
