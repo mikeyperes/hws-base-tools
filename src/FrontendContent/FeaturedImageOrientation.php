@@ -109,11 +109,7 @@ final class FeaturedImageOrientation implements ModuleInterface {
         }
         wp_enqueue_style(
             'hws-featured-image-orientation',
-            add_query_arg(
-                '_litespeed_rm_qs',
-                '0',
-                plugin_dir_url( PluginMetadata::plugin_file() ) . 'assets/frontend/featured-image-orientation.css'
-            ),
+            plugin_dir_url( PluginMetadata::plugin_file() ) . 'assets/frontend/featured-image-orientation.css',
             wp_style_is( 'elementor-frontend', 'registered' ) ? [ 'elementor-frontend' ] : [],
             PluginMetadata::VERSION
         );
