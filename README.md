@@ -282,6 +282,7 @@ Collects email signups into one or more newsletters stored on the site. It never
 - **Layer:** always on top: the bar uses the highest possible stacking layer (`z-index: 2147483647 !important`), so sticky headers, Elementor sections, cookie banners and popups never cover it.
 - **Use:** automatic, printed right after `<body>`. Never build a second progress bar on a page; configure this one.
 - **Height and contrast:** `hws_reading_progress_height` accepts 0 (original design height) or 1–24 px, including 3. `hws_reading_progress_adaptive` defaults off; when on, `hws_reading_progress_light_color` (default `#ffffff`) is used over dark backgrounds and `hws_reading_progress_dark_color` (default `#111111`) over light ones. No site-type dependency. [Background detection and markup](docs/reading-progress.md).
+- **Article scope:** `[hws_reading_progress target=".article-body" offset_target=".site-header"]` measures the selected body below the selected fixed header. Both selectors are optional; omit `target` for page progress. [Boundary and fallback behavior](docs/reading-progress.md).
 - **Use inline:** `[hws_reading_progress label="Read" class=""]` adds a themeable track and percentage, synchronized by the same scroll listener as the top bar. An empty label omits it. It respects the existing feature switch and page scope.
 - **Style:** `#hws-reading-progress.hws-reading-progress--<style>`, `.hws-reading-progress__track`, `.hws-reading-progress__fill`; variables `--hws-reading-progress-color`, `--hws-reading-progress-soft`, `--hws-reading-progress-glow`.
 - **Code:** `src/FrontendContent/ReadingProgress.php`
@@ -623,6 +624,9 @@ php tests/run.php
 The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PLUGIN_CORE_LIBRARY.md` must match the canonical Core repository exactly.
 
 ## Changelog
+
+### 13.74.14
+- Add per-shortcode article-body progress with `target` and optional `offset_target` CSS selectors. Existing page progress remains unchanged.
 
 ### 13.74.12
 - Fix featured-image hero aspect boxes and full-width links in Elementor optimized Image markup while preserving legacy widget containers and portrait/square fallbacks.

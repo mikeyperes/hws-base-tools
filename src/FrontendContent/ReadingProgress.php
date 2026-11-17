@@ -340,10 +340,13 @@ final class ReadingProgress implements ModuleInterface {
         if ( ! self::should_render() ) {
             return '';
         }
-        $attributes = shortcode_atts( [ 'label' => 'Read', 'class' => '' ], (array) $attributes, 'hws_reading_progress' );
+        $attributes = shortcode_atts( [ 'label' => 'Read', 'class' => '', 'target' => '', 'offset_target' => '' ], (array) $attributes, 'hws_reading_progress' );
         $label = trim( (string) $attributes['label'] );
         $classes = array_filter( array_map( 'sanitize_html_class', preg_split( '/\s+/', (string) $attributes['class'] ) ?: [] ) );
-        return '<div class="hws-reading-progress-inline ' . esc_attr( implode( ' ', $classes ) ) . '" data-hws-reading-progress role="progressbar" aria-label="' . esc_attr( $label ?: 'Reading progress' ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">'
+        $target_attributes = ' data-hws-reading-progress-target="' . esc_attr( trim( (string) $attributes['target'] ) ) . '"'
+            . ' data-hws-reading-progress-offset-target="' . esc_attr( trim( (string) $attributes['offset_target'] ) ) . '"';
+
+        return '<div class="hws-reading-progress-inline ' . esc_attr( implode( ' ', $classes ) ) . '"' . $target_attributes . ' data-hws-reading-progress role="progressbar" aria-label="' . esc_attr( $label ?: 'Reading progress' ) . '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">'
             . ( $label !== '' ? '<span class="hws-reading-progress-inline__label">' . esc_html( $label ) . '</span>' : '' )
             . '<span class="hws-reading-progress__track"><span class="hws-reading-progress__fill"></span></span><span class="hws-reading-progress-inline__value" data-hws-reading-progress-value>0%</span></div>';
     }
@@ -382,7 +385,6 @@ final class ReadingProgress implements ModuleInterface {
             indicator.dataset.hwsBound="1";
             var root=document.documentElement;
             var ticking=false;
-            var lastValue=-1;
             var resizeObserver=null;
             var adaptive=indicator.dataset.hwsAdaptive==="1";
             var lastColor="";
@@ -423,17 +425,36 @@ final class ReadingProgress implements ModuleInterface {
                 indicator.style.setProperty("--hws-reading-progress-glow","rgba("+channels+",0.55)");
                 indicator.dataset.hwsBackground=dark?"dark":"light";
             }
+            function selectTarget(selector){
+                if(!selector){return null;}
+                try{return document.querySelector(selector);}catch(error){return null;}
+            }
+            function progressValue(display,offset,pageValue){
+                var selector=display.getAttribute("data-hws-reading-progress-target");
+                if(!selector){return pageValue;}
+                var target=selectTarget(selector);
+                if(!target){return 0;}
+                var offsetTarget=selectTarget(display.getAttribute("data-hws-reading-progress-offset-target"));
+                var inset=offsetTarget?offsetTarget.getBoundingClientRect().height:0;
+                var rect=target.getBoundingClientRect();
+                var top=rect.top+offset;
+                var room=rect.height-(window.innerHeight-inset);
+                if(room<=0){return offset+inset>=top?100:0;}
+                return Math.max(0,Math.min(100,((offset+inset-top)/room)*100));
+            }
             function update(){
                 ticking=false;
                 var bodyHeight=document.body?document.body.scrollHeight:0;
                 var pageHeight=Math.max(root.scrollHeight,bodyHeight);
                 var maximum=Math.max(0,pageHeight-window.innerHeight);
                 var offset=Math.max(0,window.scrollY||window.pageYOffset||root.scrollTop||0);
-                var value=maximum>0?Math.max(0,Math.min(100,(offset/maximum)*100)):0;
+                var pageValue=maximum>0?Math.max(0,Math.min(100,(offset/maximum)*100)):0;
                 updateColor();
-                if(Math.abs(value-lastValue)<0.01){return;}
-                lastValue=value;
                 document.querySelectorAll("#hws-reading-progress,[data-hws-reading-progress]").forEach(function(display){
+                    var value=progressValue(display,offset,pageValue);
+                    var previous=display.getAttribute("data-hws-reading-progress-last-value");
+                    if(previous!==null&&Math.abs(value-Number(previous))<0.01){return;}
+                    display.setAttribute("data-hws-reading-progress-last-value",String(value));
                     display.style.setProperty("--hws-reading-progress-scale",(value/100).toFixed(5));
                     display.style.setProperty("--hws-reading-progress-value",value.toFixed(3)+"%");
                     display.setAttribute("aria-valuenow",String(Math.round(value)));
@@ -450,7 +471,16 @@ final class ReadingProgress implements ModuleInterface {
             window.addEventListener("resize",requestUpdate,{passive:true});
             window.addEventListener("pageshow",requestUpdate,{passive:true});
             window.addEventListener("load",requestUpdate,{once:true,passive:true});
-            if("ResizeObserver" in window&&document.body){resizeObserver=new ResizeObserver(requestUpdate);resizeObserver.observe(document.body);}
+            if("ResizeObserver" in window&&document.body){
+                resizeObserver=new ResizeObserver(requestUpdate);
+                resizeObserver.observe(document.body);
+                document.querySelectorAll("[data-hws-reading-progress]").forEach(function(display){
+                    ["data-hws-reading-progress-target","data-hws-reading-progress-offset-target"].forEach(function(attribute){
+                        var target=selectTarget(display.getAttribute(attribute));
+                        if(target){resizeObserver.observe(target);}
+                    });
+                });
+            }
             if(document.fonts&&document.fonts.ready){document.fonts.ready.then(requestUpdate);}
             update();
         })();

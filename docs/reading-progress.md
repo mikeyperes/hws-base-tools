@@ -18,3 +18,21 @@ No theme, template or site type is required for solid-background detection. The 
 The fixed renderer remains `#hws-reading-progress` with `.hws-reading-progress__track` and `.hws-reading-progress__fill`. `--hws-reading-progress-height` overrides the track height. Existing color, soft and glow variables remain available. Adaptive output adds `data-hws-adaptive`, `data-hws-light-color`, `data-hws-dark-color` and the runtime `data-hws-background` state. Inline shortcode companions retain their existing themeable colors and 4 px default track.
 
 Admin design samples use the runtime CSS and selected height. The two color controls preview their selected swatches. Saving settings uses the existing capability- and nonce-protected feature handler.
+
+## Article-scoped inline progress
+
+`[hws_reading_progress label="Read" target=".article-body" offset_target=".site-header"]`
+
+`target` is a CSS selector for the first content element to measure. `offset_target`
+is an optional CSS selector whose first matched element's rendered height accounts
+for a fixed header. These selectors are site-defined, with no template dependency.
+At the body's top below that header progress is 0%; when its bottom reaches the
+viewport bottom it is 100%. Between them, progress is linear and clamped to 0–100%.
+The percentage, fill, completion class and accessible value share that calculation.
+
+Omitting `target` preserves whole-page progress, including the fixed top bar.
+An invalid or missing target stays at 0%; an invalid or missing offset target uses
+zero inset. Content shorter than the available viewport completes when its top
+reaches the header. Each inline display has independent scope, using the existing
+single scroll listener and animation-frame scheduler. Load, resize, page restore,
+font loading and observed content/header size changes recalculate progress.
