@@ -14,6 +14,8 @@ The feature adds one class to the featured image of the post being drawn (the pa
 </div>
 ```
 
+Elementor optimized Image widgets can omit `.elementor-widget-container`, placing the link or image directly inside `.hws-fi-hero`. The widget itself supplies the aspect box in that markup; legacy markup keeps its box on the container. Both use the same orientation, backdrop, and phone rules.
+
 `hws-fi-landscape` when width / height is above 1.05, `hws-fi-portrait` below 0.95, otherwise `hws-fi-square`.
 
 ## Styling
