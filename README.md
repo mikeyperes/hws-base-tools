@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields use Core with their existing keys. Legacy primary-entity migration reads founder, website and publication-user options through Core.
+- Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields use Core with their existing keys. Legacy primary-entity migration reads founder, website and publication-user options through Core. The legacy field reference and brand gallery use Core field labels.
 
 - Bundles Hexa WP Core 3.63.0, including the reusable read-only press-release author/person client for consuming plugins. No new Base Tools screen or visitor output is activated.
 

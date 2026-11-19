@@ -3673,7 +3673,7 @@ function render_brand_gallery_panel() {
     $payload = hws_get_brand_gallery_payload();
     ?>
     <div class="hws-panel" id="hws-brand-gallery-panel">
-        <div class="hws-panel-header">Brand Gallery ACF</div>
+        <div class="hws-panel-header">Brand Gallery Fields</div>
         <div class="hws-panel-body">
             <div style="display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;">
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">

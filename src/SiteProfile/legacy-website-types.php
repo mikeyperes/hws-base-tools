@@ -426,7 +426,7 @@ function display_settings_website_types() {
             <?php endforeach; ?>
 
             <section class="hws-website-type-custom-fields" id="hws-website-type-custom-fields" style="margin-top:26px;padding-top:22px;border-top:1px solid #dcdcde;">
-                <h3 style="margin:0 0 6px;font-size:18px;">Custom Fields / ACF</h3>
+                <h3 style="margin:0 0 6px;font-size:18px;">Custom Fields</h3>
                 <p style="margin:0 0 14px;color:#646970;">
                     Manage field groups, user profile fields, and related website-type field structures from this page.
                 </p>

@@ -201,7 +201,7 @@ final class ShortcodeCatalog {
                 'id' => 'website_content',
                 'label' => 'Website Settings Content',
                 'shortcode' => '[website_content field="website_mission_statement"]',
-                'description' => 'Returns one ACF Website Settings option field.',
+                'description' => 'Returns one Website Settings option field.',
                 'test_method' => 'Compare output with the named field on the Website Settings options page.',
                 'source' => 'src/BrandAssets/legacy-brand-functions.php',
                 'provider' => 'HWS Base Tools',

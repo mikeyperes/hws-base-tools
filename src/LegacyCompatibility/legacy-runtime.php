@@ -626,7 +626,7 @@ function get_snippets($type = "")
     ],
     [
         'id'               => 'enable_acf_source_tracker',
-        'name'             => 'ACF Source Tracker',
+        'name'             => 'Field Source Tracker',
         'description'      => 'Shows a subtle source header on each field group (registering plugin plus the unique group key) with a faint per-source colour accent, so field origins are trackable. Generic engine; currently active on the user edit/profile screen.',
         'info'             => 'Default off. Generic: auto-detects which plugin or theme registered each group by its unique key. Active screens are filterable via the hws_acf_source_tracker_screens filter.',
         'function'         => 'enable_acf_source_tracker',
@@ -804,7 +804,7 @@ function get_snippets($type = "")
             <code>hpr_updates_internal</code> – Internal announcements<br>
             <code>hpr_external_cision</code> – Cision press releases<br>
             <code>hpr_external_prcom</code> – PR.com press releases<br>
-            <strong>Dynamic tag:</strong> <code>HWS Trimmed ACF Text</code><br>
+            <strong>Dynamic tag:</strong> <code>HWS Trimmed Field Text</code><br>
             <strong>Display condition:</strong> <code>hws_request_parameter</code> – matches a scalar GET parameter by comparator and value<br>
             <em>Usage: Loop Widget → Query → Advanced → Query ID</em>',
         'function' => 'enable_elementor_queries',

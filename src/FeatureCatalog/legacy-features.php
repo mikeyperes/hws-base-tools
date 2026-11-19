@@ -144,7 +144,7 @@ function hws_render_feature_settings( array $feature ): void {
     }
 
     if ( 'enable_syndtd_feed_limit' !== $feature_id ) {
-        echo '<p class="hws-feature-muted">No custom ACF or option adjustments needed.</p>';
+        echo '<p class="hws-feature-muted">No custom field or option adjustments needed.</p>';
         return;
     }
 
@@ -357,7 +357,7 @@ function hws_render_feature_card( array $feature ): void {
         </section>
 
         <section>
-            <h4>Custom ACF Adjustments</h4>
+            <h4>Custom Field Adjustments</h4>
             <?php hws_render_feature_settings( $feature ); ?>
         </section>
 

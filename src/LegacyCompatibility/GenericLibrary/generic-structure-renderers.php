@@ -44,9 +44,9 @@ namespace hws_base_tools;
 function display_acf_structure( $group_keys, $deprecated = false ) {
     // — Return a closure so it's evaluated lazily at render time
     return function() use ( $group_keys, $deprecated ) {
-        // — Bail if ACF isn't active
+        // This view can be called before Core finishes booting.
         if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
-            return '<em style="color:#999;">ACF not active — cannot display field structure.</em>';
+            return '<em style="color:#999;">Core Fields has not finished loading.</em>';
         }
 
         $keys   = is_array( $group_keys ) ? $group_keys : [ $group_keys ];
@@ -60,7 +60,7 @@ function display_acf_structure( $group_keys, $deprecated = false ) {
             if ( empty( $group ) ) {
                 // — Group not registered — show a helpful fallback instead of nothing
                 $output .= '<div style="border:1px solid #dba617;border-radius:6px;padding:10px;margin-bottom:12px;background:#fff8e5;font-size:12px;color:#6a5400;">'
-                         . '⚠️ ACF group <code>' . esc_html( $group_key ) . '</code> not found. '
+                         . '⚠️ Field group <code>' . esc_html( $group_key ) . '</code> not found. '
                          . 'Enable the snippet that registers it, or verify the group key.'
                          . '</div>';
                 continue;

@@ -13,7 +13,7 @@ final class TrimmedAcfTextTag extends \Elementor\Core\DynamicTags\Tag {
     }
 
     public function get_title(): string {
-        return __( 'HWS Trimmed ACF Text', 'hws-base-tools' );
+        return __( 'HWS Trimmed Field Text', 'hws-base-tools' );
     }
 
     public function get_group(): string {
