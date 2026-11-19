@@ -22,7 +22,11 @@ final class Migration {
     private static function acf(array $s): array {
         $key=$s['key']??'';
         if(str_starts_with($key,'options:'))throw new \RuntimeException('ACF option source requires manual mapping: '.$key);
-        if(str_starts_with($key,'field_') && function_exists('acf_get_field'))$key=acf_get_field($key)['name']??'';
+        // Bug: legacy conditions lost their field names when ACF was unavailable.
+        // Fix: resolve the old key in Core. Why: both code and saved definitions use the same lookup.
+        if ( str_starts_with( $key, 'field_' ) ) {
+            $key = \Hexa\PluginCore\Fields\FieldGroups::get_field( $key )['name'] ?? '';
+        }
         return ['source'=>'custom_field','key'=>$key];
     }
     private static function name(array $d): string {

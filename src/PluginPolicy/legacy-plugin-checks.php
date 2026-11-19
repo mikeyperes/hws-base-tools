@@ -335,15 +335,6 @@ function ajax_activate_plugin() {
  */
 function hws_get_monitored_plugins() {
     return [
-        // === OPTIONAL PRO PLUGINS ===
-        'advanced-custom-fields-pro/acf.php' => [
-            'name'        => 'Advanced Custom Fields Pro',
-            'should_be'   => 'active',
-            'auto_update' => true,
-            'download'    => 'manual',
-            'category'    => 'optional',
-            'pro'         => true,
-        ],
         // === ESSENTIAL ACTIVE (auto-installed by Quick Setup where possible) ===
         'elementor/elementor.php' => [
             'name'        => 'Elementor',

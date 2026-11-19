@@ -8,6 +8,7 @@ use Hexa\PluginCore\CoreContracts\ModuleInterface;
 use Hexa\PluginCore\FieldStructures\AcfSettingsPanel;
 use Hexa\PluginCore\Fields\Field;
 use Hexa\PluginCore\Fields\FieldGroups;
+use Hexa\PluginCore\Fields\Hooks;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,9 +37,9 @@ final class SiteIdentity implements ModuleInterface {
     public function register(): void {
         require_once __DIR__ . '/site-identity-functions.php';
         FieldGroups::add( self::field_group() );
-        add_filter( 'acf/validate_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'validate' ], 10, 2 );
-        add_filter( 'acf/format_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
-        add_filter( 'acf/update_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
+        Hooks::on( 'validate_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'validate' ], 10, 2 );
+        Hooks::on( 'format_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
+        Hooks::on( 'update_value/key=field_hws_identity_founding_date', [ FoundingDate::class, 'normalize' ] );
         add_action( 'init', static fn() => add_shortcode( self::SHORTCODE, [ self::class, 'shortcode' ] ) );
         SiteSetupCommand::register();
     }
@@ -125,12 +126,13 @@ final class SiteIdentity implements ModuleInterface {
     }
 
     private static function read( string $name ): mixed {
-        return self::started() ? Field::get( $name, 'option' ) : self::stored( $name );
+        $value = Field::get( $name, 'option' );
+        return $value ?? self::stored( $name );
     }
 
-    /** False during plugin startup, before ACF has started: reading fields then would start ACF too early and crash. */
+    /** Compatibility check for callers that use the Core field reader. */
     public static function started(): bool {
-        return ! function_exists( 'get_field' ) || (bool) did_action( 'acf/init' );
+        return Field::available();
     }
 
     /** The saved value straight from the options table (a group's sub-fields are stored as options_<group>_<key>). */

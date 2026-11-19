@@ -5,9 +5,11 @@ Shared WordPress site configuration, administration, and operational tooling for
 > Feature base for HWS Skills. Read before building on this plugin; use or
 > extend these features instead of rebuilding them.
 
-**Purpose:** site-wide building blocks for Hexa-managed sites: brand assets, site values, team and testimonial content, reading progress, footer text and admin cleanup. **Admin:** WP Admin → HWS Base Tools (`admin.php?page=hws-base-tools`); feature switches are on its Features tab, each stored as an option of the same name. **Depends on:** ACF Pro for the Website Settings and profile fields; Elementor optional.
+**Purpose:** site-wide building blocks for Hexa-managed sites: brand assets, site values, team and testimonial content, reading progress, footer text and admin cleanup. **Admin:** WP Admin → HWS Base Tools (`admin.php?page=hws-base-tools`); feature switches are on its Features tab, each stored as an option of the same name. **Optional integration:** Elementor.
 
 ## Features
+
+- Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields register and save in Core using their existing keys and values.
 
 - Bundles Hexa WP Core 3.63.0, including the reusable read-only press-release author/person client for consuming plugins. No new Base Tools screen or visitor output is activated.
 
@@ -29,7 +31,7 @@ Wordfence validates an existing or protected site-specific key through its save 
 
 ### Optional ACF form compatibility
 
-The legacy admin form hook registers only when `acf_form_head` exists, so sites using native Hexa fields without Advanced Custom Fields can load admin pages safely. Bundles Hexa WP Core 3.60.0.
+Website Settings forms use the shared Hexa WP Core field editor.
 
 ### One-click login destinations
 
@@ -607,7 +609,7 @@ Legacy `[founder]` and `[company]` compatibility remains available, but profile-
 | PHP | 8.1 |
 | Hexa WP Core bundle | 3.28.1 |
 
-ACF or ACF Pro is optional and is required only for ACF-backed structures and values. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
+Custom fields use Hexa WP Core. Individual operational panels may require the plugin they inspect, such as LiteSpeed Cache or Rank Math.
 
 ## Installation
 
@@ -1154,7 +1156,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 ### 13.12.0
 
 - Staff business never reaches users below administrator. Two new UI Cleanup switches, on by default: "Plugin Notices for Non-Administrators" (only WordPress, Hexa, HWS, ACF and avatar notices reach them; Rank Math notices and donation banners never do) and "Profile Page for Non-Administrators" (no Personal Options, Application Passwords, or staff plugins' sections such as Rank Math SEO and Elementor AI). Both remove the other plugins' hooks at the source through Core's client-facing plugin list.
-- "Additional User Profile Fields" is staff-only: users below administrator do not get the group. Changeable on its ACF Structures card.
+- "Additional User Profile Fields" is staff-only: users below administrator do not get the group. Changeable on its Field Structures card.
 - Bundles Hexa WordPress Plugin Core 3.28.0.
 
 ### 13.11.0
@@ -1563,7 +1565,7 @@ The bundled Core `VERSION`, `PACKAGE_HASH`, executable source, and root `HEXA_PL
 
 ### 11.1.5
 
-- Moved the selected primary author’s complete WordPress/ACF field inventory from Website & Primary Entity to the Custom Post Types tab after ACF Structures.
+- Moved the selected primary author’s complete WordPress/ACF field inventory from Website & Primary Entity to the Custom Post Types tab after Field Structures.
 - Updated the bundled Hexa WP Core to 1.1.3.
 
 ### 11.1.4

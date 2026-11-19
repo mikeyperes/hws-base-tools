@@ -466,22 +466,6 @@ add_action( 'admin_init', function() {
 
 
 
-// Generic functions import
-if ( ! function_exists( __NAMESPACE__ . '\\hws_is_acf_available' ) ) {
-    function hws_is_acf_available() {
-        // Custom fields always work: ACF when active, Hexa WP Core native fields otherwise.
-        return \Hexa\PluginCore\Fields\Field::available();
-    }
-}
-
-if ( ! function_exists( __NAMESPACE__ . '\\get_field' ) ) {
-    function get_field( ...$args ) {
-        return \Hexa\PluginCore\Fields\Field::available()
-            ? \Hexa\PluginCore\Fields\Field::get( ...$args )
-            : null;
-    }
-}
-
 // Define global variables
 //global $api_url, $plugin_github_url, $plugin_zip_url, $wordpress_version_tested, $plugin_name, $github_access_token, $author_name, $author_uri, $plugin_uri, $plugin_version;
 
@@ -534,17 +518,7 @@ add_action( 'plugins_loaded', function() {
 
 
 
-if ( is_admin() ) {
-    add_action( 'admin_notices', function() {
-        if ( hws_is_acf_available() || ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-
-        echo '<div class="notice notice-warning"><p><strong>HWS Base Tools:</strong> ACF is not active. Core tools remain available; ACF field registration and ACF-powered shortcodes will stay inactive until ACF or ACF Pro is enabled.</p></div>';
-    } );
-}
-
-// ACF-specific registration stays behind ACF's lifecycle hook.
+// Register the site's field definitions during Core initialization.
 \Hexa\PluginCore\Fields\Hooks::on( 'init', [ AcfModule::class, 'register' ], 5 );
 
 

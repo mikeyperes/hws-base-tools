@@ -123,7 +123,6 @@ final class SharedAcfStructures {
             'definition'      => $provider,
             'location'        => $location,
             'fields'          => $fields,
-            'dependencies'    => [ 'Advanced Custom Fields Pro' ],
         ];
     }
 

@@ -168,19 +168,6 @@ if (!function_exists(__NAMESPACE__ . '\\does_term_exist')) {
 
 
 /**
- * Ensure ACF (Advanced Custom Fields) form functions are available.
- *
- * This function adds the `acf_form_head` action to the `admin_head` hook if the function exists.
- */
-// Legacy host plugins include this library while plugins load, before Hexa Plugin Core
-// resolves its classes, so the Fields check waits for init.
-add_action('init', static function () {
-    if (\Hexa\PluginCore\Fields\Field::available() && function_exists('acf_form_head')) {
-        add_action('admin_head', 'acf_form_head');
-    }
-});
-
-/**
  * Check if a specific ACF field group is imported.
  *
  * @param string $key The key of the ACF field group.

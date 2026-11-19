@@ -25,7 +25,7 @@ final class ContentTypesTab {
         echo ( new AcfFieldGroupRenderer() )->render(
             SharedAcfStructures::registry(),
             [
-                'title'          => 'ACF Structures',
+                'title'          => 'Field Structures',
                 'description'    => 'Manage site, user, sponsored-content, and RSS field groups from the same shared Core interface.',
                 'persist_prefix' => 'hws-acf-structures',
             ]
