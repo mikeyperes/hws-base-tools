@@ -3681,7 +3681,7 @@ function render_brand_gallery_panel() {
                     <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">Shared image gallery for brand assets. The dashboard saves attachment IDs and syncs them to the ACF option field.</p>
                     <div style="display:grid;gap:8px;font-size:12px;color:#50575e;">
                         <div>Option: <code><?php echo esc_html( $payload['option'] ); ?></code></div>
-                        <div>ACF field: <code><?php echo esc_html( $payload['acf_field'] ); ?></code></div>
+                        <div>Field: <code><?php echo esc_html( $payload['acf_field'] ); ?></code></div>
                         <div>Field key: <code><?php echo esc_html( $payload['acf_key'] ); ?></code></div>
                         <div>Images: <strong id="hws-brand-gallery-count"><?php echo (int) $payload['count']; ?></strong></div>
                     </div>

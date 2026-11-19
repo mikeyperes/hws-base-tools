@@ -7,6 +7,7 @@ namespace HWS\BaseTools\SiteProfile;
 use Hexa\PluginCore\EntitySources\PrimaryEntityManager;
 use Hexa\PluginCore\EntitySources\PrimaryEntityModule;
 use Hexa\PluginCore\EntitySources\PrimaryEntityRenderer;
+use Hexa\PluginCore\Fields\Field;
 use Hexa\PluginCore\FieldStructures\AcfSettingsPanel;
 
 defined( 'ABSPATH' ) || exit;
@@ -81,37 +82,30 @@ final class PrimaryEntityIntegration {
     /** @return array<string,mixed> */
     public static function resolve_legacy_entity(): array {
         $site_type = (string) get_option( 'hws_site_type', '' );
+        $publication_user = Field::get( 'smpi_publication_user', 'option' );
+        if ( in_array( $publication_user, [ null, false, '', [] ], true ) ) {
+            $publication_user = Field::get( 'publication_user', 'option' );
+        }
+
         if ( 'news_outlet' === $site_type ) {
-            $publication_user = self::acf_option( [ 'smpi_publication_user', 'publication_user' ] );
             $id = self::object_id( $publication_user );
             if ( $id ) return [ 'source' => 'wordpress_user', 'object_id' => $id, 'entity_type' => 'publication', 'migrated_from' => 'SMP publication user' ];
         }
 
-        $founder = self::acf_option( [ 'founder' ] );
+        $founder = Field::get( 'founder', 'option' );
         if ( is_array( $founder ) ) {
             $id = self::object_id( $founder['founder_user'] ?? $founder['user'] ?? 0 );
             if ( $id ) return [ 'source' => 'wordpress_user', 'object_id' => $id, 'entity_type' => 'person', 'migrated_from' => 'SFPF founder user' ];
         }
 
-        $website = self::acf_option( [ 'website' ] );
+        $website = Field::get( 'website', 'option' );
         if ( is_array( $website ) ) {
             $id = self::object_id( $website['company'] ?? 0 );
             if ( $id ) return [ 'source' => 'wordpress_user', 'object_id' => $id, 'entity_type' => 'organization', 'migrated_from' => 'Website company user' ];
         }
 
-        $publication_user = self::acf_option( [ 'smpi_publication_user', 'publication_user' ] );
         $id = self::object_id( $publication_user );
         return $id ? [ 'source' => 'wordpress_user', 'object_id' => $id, 'entity_type' => 'publication', 'migrated_from' => 'SMP publication user' ] : [];
-    }
-
-    private static function acf_option( array $names ): mixed {
-        if ( ! \Hexa\PluginCore\Fields\Field::available() ) return null;
-        foreach ( $names as $name ) {
-            // During startup (before ACF has started) read the saved option instead of starting ACF too early.
-            $value = \Hexa\PluginCore\Fields\Field::get( $name, 'option' );
-            if ( null !== $value && false !== $value && '' !== $value && [] !== $value ) return $value;
-        }
-        return null;
     }
 
     private static function object_id( mixed $value ): int {

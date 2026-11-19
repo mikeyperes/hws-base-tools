@@ -37,7 +37,7 @@ final class TrimmedAcfTextTag extends \Elementor\Core\DynamicTags\Tag {
         $this->add_control(
             'key',
             [
-                'label'       => __( 'ACF field name or key', 'hws-base-tools' ),
+                'label'       => __( 'Field name or key', 'hws-base-tools' ),
                 'type'        => \Elementor\Controls_Manager::TEXT,
                 'placeholder' => 'field_key:field_name',
                 'ai'          => [ 'active' => false ],

@@ -9,7 +9,7 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields register and save in Core using their existing keys and values.
+- Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields use Core with their existing keys. Legacy primary-entity migration reads founder, website and publication-user options through Core.
 
 - Bundles Hexa WP Core 3.63.0, including the reusable read-only press-release author/person client for consuming plugins. No new Base Tools screen or visitor output is activated.
 
@@ -29,7 +29,7 @@ Quick Start defaults empty permalinks to `/%postname%/`, explicitly writes and v
 
 Wordfence validates an existing or protected site-specific key through its save API. A missing key returns `site_license_registration_required` with official free-license instructions and remains incomplete until registration and terms are complete. It never calls the anonymous premium-downgrade endpoint or shares another site's key.
 
-### Optional ACF form compatibility
+### Website Settings field editor
 
 Website Settings forms use the shared Hexa WP Core field editor.
 
@@ -349,7 +349,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 
 ### Site values and Website Settings content
 - **Does:** prints a core site value or a Website Settings field anywhere, including inside Elementor text widgets.
-- **Use:** `[hws_site_value field="site_name|home_url|contact_email|..." format="text|url|email|html" fallback=""]`; `[website_content field="website_mission_statement"]` for any Website Settings ACF field; `[website_url social="linkedin"]` for the Website profile's social links; `[company id="title"]` for the primary company.
+- **Use:** `[hws_site_value field="site_name|home_url|contact_email|..." format="text|url|email|html" fallback=""]`; `[website_content field="website_mission_statement"]` for any Website Settings field; `[website_url social="linkedin"]` for the Website profile's social links; `[company id="title"]` for the primary company.
 - **Code:** `src/BrandAssets/legacy-brand-functions.php`
 
 ### Founder and profile photos
@@ -371,7 +371,7 @@ A Brand Assets slot for one 1200x630 image. While it holds an image, every post 
 - **Code:** `src/CompanyPages/CompanyPages.php`
 
 ### Team
-- **Does:** the Team Member post type (`team-member`, archive `/team/`), its ACF fields and the `[hws_team_members]` listing grid. The plugin prints only the grid; the rest of the team page is the site's own design around it.
+- **Does:** the Team Member post type (`team-member`, archive `/team/`), its Core fields and the `[hws_team_members]` listing grid. The plugin prints only the grid; the rest of the team page is the site's own design around it.
 - **Switch:** Settings → HWS Base Tools → Team (`options-general.php?page=hws-core-tools&tab=team`): one switch turns the post type, its fields and the shortcode on or off together (`enable_team_member_directory_templates` plus the Team Member content type settings). Team page defaults in `hws_team_page_settings`.
 - **Use:** `[hws_team_members style="portrait_grid|editorial_list|compact_directory" design="default|none" columns="3" limit="24" orderby="menu_order|title|date" order="ASC|DESC" show_excerpt="1" link_profiles="1" featured_only="0" category="" roles_first="Founder, Co-Founder, CEO, President, COO, CTO"]` (people whose position is in `roles_first` come first, in that order); the Team tab's shortcode builder writes it and shows its preview and HTML. Elementor query ID `featured_team_members` for Posts/Loop widgets.
 - **HTML structure and styling:** [docs/team-members.md](docs/team-members.md): the grid's markup, every attribute, the classes (`.hws-team-directory`, `.hws-team-card`, `.hws-team-member-media`, `-name`, `-position`, `-excerpt`, `-link`), the built-in CSS and how to style it in Elementor and HTML drafts.

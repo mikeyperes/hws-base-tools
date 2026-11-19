@@ -34,8 +34,8 @@ final class ContentTypesTab {
         echo ( new EntityFieldInventoryRenderer() )->render(
             PrimaryEntityIntegration::manager()->resolve(),
             [
-                'title'          => 'All available WordPress and ACF fields',
-                'description'    => 'Inspect every WordPress and ACF field available to the selected primary author. Empty fields remain listed, while protected credential values are never printed.',
+                'title'          => 'All available WordPress and Core fields',
+                'description'    => 'Inspect every WordPress and Core field available to the selected primary author. Empty fields remain listed, while protected credential values are never printed.',
                 'persist_prefix' => 'hws-primary-author-fields',
             ]
         );

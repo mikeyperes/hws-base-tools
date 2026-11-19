@@ -598,8 +598,8 @@ activate_snippets("non_admin");
 function get_snippets($type = "")
 {
 
-    // ─── ACF FIELD SNIPPETS ────────────────────────────────────────────
-    // ACF structures are managed exclusively by the Core-rendered Custom Post
+    // ─── FIELD SNIPPETS ────────────────────────────────────────────
+    // Field structures are managed exclusively by the Core-rendered Custom Post
     // Types tab. Their established option names remain the compatibility layer.
     $snippets_acf = [];
 
@@ -627,7 +627,7 @@ function get_snippets($type = "")
     [
         'id'               => 'enable_acf_source_tracker',
         'name'             => 'ACF Source Tracker',
-        'description'      => 'Shows a subtle source header on each ACF field group (registering plugin plus the unique group key) with a faint per-source colour accent, so field origins are trackable. Generic engine; currently active on the user edit/profile screen.',
+        'description'      => 'Shows a subtle source header on each field group (registering plugin plus the unique group key) with a faint per-source colour accent, so field origins are trackable. Generic engine; currently active on the user edit/profile screen.',
         'info'             => 'Default off. Generic: auto-detects which plugin or theme registered each group by its unique key. Active screens are filterable via the hws_acf_source_tracker_screens filter.',
         'function'         => 'enable_acf_source_tracker',
         'scope_admin_only' => true,

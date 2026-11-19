@@ -1223,7 +1223,7 @@ function company_shortcode( $atts ): string {
  *           [company id="url_{key}"]
  *
  * Requirements:
- *  - Advanced Custom Fields: get_field() available.
+ *  - Hexa WP Core Fields loaded.
  *  - Options page group “website” with sub-field “company” (ACF user, return_format=array).
  *  - Optional ACF user field “urls” on that user (array of platform => url).
  *
@@ -1393,7 +1393,7 @@ jQuery(function($){
     // ACF fields
     dev.append(
         $('<div>').css({ marginBottom:'8px' }).append(
-            $('<div>').css({ fontWeight:600, fontSize:'12px', color:'#6b7280', marginBottom:'6px', textTransform:'uppercase' }).text('ACF Fields'),
+            $('<div>').css({ fontWeight:600, fontSize:'12px', color:'#6b7280', marginBottom:'6px', textTransform:'uppercase' }).text('Fields'),
             shortcodeRow('Biography', '[company id="biography"]'),
             shortcodeRow('Public Email', '[company id="additional_public_email"]'),
             shortcodeRow('Public Phone', '[company id="additional_public_phone"]'),
@@ -1661,7 +1661,7 @@ jQuery(function($){
     // ACF fields
     dev.append(
         $('<div>').css({ marginBottom:'8px' }).append(
-            $('<div>').css({ fontWeight:600, fontSize:'12px', color:'#6b7280', marginBottom:'6px', textTransform:'uppercase' }).text('ACF Fields'),
+            $('<div>').css({ fontWeight:600, fontSize:'12px', color:'#6b7280', marginBottom:'6px', textTransform:'uppercase' }).text('Fields'),
             shortcodeRow('Biography', '[founder id="biography"]'),
             shortcodeRow('Public Email', '[founder id="additional_public_email"]'),
             shortcodeRow('Public Phone', '[founder id="additional_public_phone"]'),

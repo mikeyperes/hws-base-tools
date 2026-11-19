@@ -43,7 +43,7 @@ final class ShortcodeCatalog {
                 'label' => 'Team Member Directory',
                 'shortcode' => '[hws_team_members]',
                 'description' => 'Displays published HWS Team Member entries through the selected clean directory template.',
-                'test_method' => 'Confirm the Team Member CPT and ACF fields are active, then render each style and verify names, positions, images, and responsive layout.',
+                'test_method' => 'Confirm the Team Member CPT and Core fields are active, then render each style and verify names, positions, images, and responsive layout.',
                 'source' => 'src/TeamMembers/TeamMemberDirectory.php',
                 'provider' => 'HWS Base Tools',
                 'parameters' => [
