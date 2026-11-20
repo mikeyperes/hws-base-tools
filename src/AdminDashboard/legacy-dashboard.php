@@ -3678,7 +3678,7 @@ function render_brand_gallery_panel() {
             <div style="display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:18px;align-items:start;min-width:0;">
                 <div style="border:1px solid #dcdcde;border-radius:6px;background:#fff;padding:14px;min-width:0;">
                     <strong style="display:block;margin-bottom:6px;">Gallery field</strong>
-                    <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">Shared image gallery for brand assets. The dashboard saves attachment IDs and syncs them to the ACF option field.</p>
+                    <p style="margin:0 0 12px;color:#50575e;font-size:13px;line-height:1.5;">Shared image gallery for brand assets. The dashboard saves attachment IDs and syncs them to the Core option field.</p>
                     <div style="display:grid;gap:8px;font-size:12px;color:#50575e;">
                         <div>Option: <code><?php echo esc_html( $payload['option'] ); ?></code></div>
                         <div>Field: <code><?php echo esc_html( $payload['acf_field'] ); ?></code></div>

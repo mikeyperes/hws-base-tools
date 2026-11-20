@@ -50,7 +50,7 @@ final class UserImpersonationFeature implements ModuleInterface {
                 <?php endforeach; ?>
             </fieldset>
             <label><span>Additional owner user fields (optional)</span><input type="text" class="regular-text" data-hws-feature-field="owner_fields" value="<?php echo esc_attr( implode( ', ', $settings['owner_fields'] ) ); ?>"></label>
-            <p class="description">Comma-separated post metadata / ACF user field names. The author is always included; matching accounts appear once. You can search any other user. The feature is disabled by default.</p>
+            <p class="description">Comma-separated post metadata / Core user field names. The author is always included; matching accounts appear once. You can search any other user. The feature is disabled by default.</p>
             <button type="button" class="button hws-feature-save-settings" data-feature-id="<?php echo esc_attr( self::FEATURE_OPTION ); ?>">Save Settings</button>
             <span class="hws-feature-setting-status" aria-live="polite"></span>
         </div>

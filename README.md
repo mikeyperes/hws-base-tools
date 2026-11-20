@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Website Settings, field diagnostics, and View As User identify Core fields.
+
 - The User Profile field migration identifies Hexa WP Core in its field-engine error message.
 
 - Bundles Hexa WP Core 3.64.0. Website Settings, Website Identity and profile fields use Core with their existing keys. Legacy primary-entity migration reads founder, website and publication-user options through Core. The legacy field reference and brand gallery use Core field labels.

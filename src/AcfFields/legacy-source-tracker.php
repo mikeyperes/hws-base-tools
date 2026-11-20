@@ -295,7 +295,7 @@ function hws_acf_source_for_group( array $group, array $file_map, array $labels,
 		$file  = $file_map[ $key ]['file'];
 		$line  = $file_map[ $key ]['line'];
 	} elseif ( empty( $group['local'] ) ) {
-		$label = 'Database (ACF UI)';
+		$label = 'Database (legacy field groups)';
 		$slug  = 'acf-database';
 	} else {
 		$label = 'Unknown source';
