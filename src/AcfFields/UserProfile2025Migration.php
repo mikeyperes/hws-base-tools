@@ -194,7 +194,7 @@ final class UserProfile2025Migration {
         }
 
         if ( ! \Hexa\PluginCore\Fields\Field::available() ) {
-            $report['errors'][] = 'ACF update_field() is unavailable.';
+            $report['errors'][] = 'The Hexa WP Core field engine is unavailable.';
             return $report;
         }
 
