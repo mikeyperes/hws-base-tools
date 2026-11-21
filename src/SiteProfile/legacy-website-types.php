@@ -73,22 +73,9 @@ function get_website_type_presets() {
  * @return string HTML for the toggle switch
  */
 function render_toggle_switch( $id, $label = '', $checked = false, $onclick = '', $extra_class = '' ) {
-    // Build the checked attribute
-    $checked_attr = $checked ? 'checked' : '';
-
-    // Build onclick attribute if provided
-    $onclick_attr = $onclick ? ' onclick="' . esc_attr( $onclick ) . '"' : '';
-
-    // Output the toggle HTML
-    $html = '<label class="hws-toggle-switch ' . esc_attr( $extra_class ) . '">';
-    $html .= '<input type="checkbox" id="' . esc_attr( $id ) . '" ' . $checked_attr . $onclick_attr . '>';
-    $html .= '<span class="hws-toggle-slider"></span>';
-    if ( $label ) {
-        $html .= '<span class="hws-toggle-label">' . esc_html( $label ) . '</span>';
-    }
-    $html .= '</label>';
-
-    return $html;
+    return \Hexa\PluginCore\WpAdminComponents\CoreUi::legacy_toggle(
+        (string) $id, (string) $label, (bool) $checked, (string) $onclick, (string) $extra_class, 'hws'
+    );
 }
 
 /**

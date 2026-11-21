@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Uses Hexa WP Core 3.66.0 for the existing snippet activation and debug logging, while retaining the plugin’s option keys and settings controls.
+
 - The plugin updater uses the shared Hexa WP Core 3.65.3 configuration with its existing settings. Active legacy plugin files migrate through Core with the same activation behavior.
 
 - Bundles Hexa WP Core 3.65.2. WordPress refuses updates of Git copies before downloading, even when another plugin overrides the pre-install response.
