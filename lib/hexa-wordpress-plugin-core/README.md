@@ -207,6 +207,11 @@
 - **Extend:** `hexa_plugin_core/plugin_bridge_owners`.
 - **Code:** `src/PluginProvisioning/` (docs: `docs/plugin-provisioning.md`)
 
+### Managed plugin updater setup
+
+- **Use:** Build updater settings from the plugin header, slug and AJAX prefix, with overrides for existing settings. The same package also migrates active legacy plugin basenames while preserving each plugin’s activation policy.
+- **Docs:** [Updater configuration and legacy basenames](docs/updater.md#managed-plugin-updaters)
+
 ### Plugin updater
 - **Does:** updates the plugin from GitHub through WordPress or the Git Report panel and keeps its activation state. Both update paths refuse Git checkouts before downloading and direct administrators to Git. Ignored metadata is removed from the extracted update package.
 - **Use:** `$config = UpdaterConfig::from_plugin_file( __FILE__, [...] )`, `( new GitHubPluginUpdater( $config ) )->register()`, `( new UpdaterAjaxController( $config ) )->register()`, `( new UpdaterPanelRenderer( $config ) )->render()`; `bin/build-php74-release.sh` makes the PHP 7.4 release zip.

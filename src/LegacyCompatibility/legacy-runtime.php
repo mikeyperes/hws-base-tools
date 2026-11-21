@@ -36,50 +36,11 @@ if ( ! defined( 'HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE' ) ) {
 }
 
 function hws_migrate_active_plugin_basename_to_canonical(): void {
-    if ( ! function_exists( 'plugin_basename' ) ) {
-        return;
-    }
-
-    $legacy_basename    = plugin_basename( HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE );
-    $canonical_basename = plugin_basename( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE );
-
-    if ( $legacy_basename === $canonical_basename ) {
-        return;
-    }
-
-    $active_plugins = (array) get_option( 'active_plugins', [] );
-    $updated        = [];
-    $changed        = false;
-
-    foreach ( $active_plugins as $plugin ) {
-        if ( $plugin === $legacy_basename ) {
-            if ( ! in_array( $canonical_basename, $updated, true ) ) {
-                $updated[] = $canonical_basename;
-            }
-            $changed = true;
-            continue;
-        }
-
-        if ( $plugin === $canonical_basename && in_array( $canonical_basename, $updated, true ) ) {
-            $changed = true;
-            continue;
-        }
-
-        $updated[] = $plugin;
-    }
-
-    if ( $changed ) {
-        update_option( 'active_plugins', array_values( $updated ) );
-    }
-
-    if ( is_multisite() ) {
-        $network_active = (array) get_site_option( 'active_sitewide_plugins', [] );
-        if ( isset( $network_active[ $legacy_basename ] ) ) {
-            $activated_at = $network_active[ $legacy_basename ];
-            unset( $network_active[ $legacy_basename ] );
-            $network_active[ $canonical_basename ] = $network_active[ $canonical_basename ] ?? $activated_at;
-            update_site_option( 'active_sitewide_plugins', $network_active );
-        }
+    if ( function_exists( 'plugin_basename' ) ) {
+        \Hexa\PluginCore\PluginUpdates\LegacyPluginBasenameMigration::migrate(
+            plugin_basename( HWS_BASE_TOOLS_LEGACY_PLUGIN_FILE ),
+            plugin_basename( HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE )
+        );
     }
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\hws_migrate_active_plugin_basename_to_canonical', 1 );
@@ -297,24 +258,19 @@ function hws_get_hexa_plugin_core_updater_config(): \Hexa\PluginCore\PluginUpdat
         return $config;
     }
 
-    $config = \Hexa\PluginCore\PluginUpdates\UpdaterConfig::from_plugin_file(
+    $config = \Hexa\PluginCore\PluginUpdates\UpdaterConfig::from_managed_plugin_file(
         HWS_BASE_TOOLS_CANONICAL_PLUGIN_FILE,
         'https://github.com/' . Config::$github_repo,
+        Config::$plugin_folder_name,
+        'hws_base_tools_core_updater',
         [
-            'plugin_slug'               => Config::$plugin_folder_name,
-            'proper_folder_name'        => Config::$plugin_folder_name,
-            'runtime_folder_name'       => Config::get_runtime_plugin_folder_name(),
-            'plugin_basename'           => Config::get_plugin_basename(),
-            'canonical_plugin_basename' => Config::get_canonical_plugin_basename(),
-            'plugin_starter_file'       => Config::$plugin_starter_file,
-            'github_branch'             => Config::$github_branch,
-            'requires'                  => PluginMetadata::REQUIRES_WORDPRESS,
-            'requires_php'              => PluginMetadata::REQUIRES_PHP,
-            'tested'                    => PluginMetadata::TESTED_WORDPRESS,
-            'nonce_action'              => 'hws_base_tools_ajax_nonce',
-            'nonce_param'               => 'nonce',
-            'ajax_action_prefix'        => 'hws_base_tools_core_updater',
-            'progress_key'              => 'hws_base_tools_core_update_progress',
+            'plugin_starter_file' => Config::$plugin_starter_file,
+            'github_branch'       => Config::$github_branch,
+            'requires'            => PluginMetadata::REQUIRES_WORDPRESS,
+            'requires_php'        => PluginMetadata::REQUIRES_PHP,
+            'tested'              => PluginMetadata::TESTED_WORDPRESS,
+            'nonce_action'        => 'hws_base_tools_ajax_nonce',
+            'plugin_basename'     => Config::get_plugin_basename(),
         ]
     );
 

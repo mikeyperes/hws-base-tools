@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- The plugin updater uses the shared Hexa WP Core 3.65.3 configuration with its existing settings. Active legacy plugin files migrate through Core with the same activation behavior.
+
 - Bundles Hexa WP Core 3.65.2. WordPress refuses updates of Git copies before downloading, even when another plugin overrides the pre-install response.
 
 - Bundles Hexa WP Core 3.65.1. WordPress and the Update Center direct Git copies to Git and clean ignored metadata from the downloaded update package. Base Tools uses Core for this check and cleanup.
