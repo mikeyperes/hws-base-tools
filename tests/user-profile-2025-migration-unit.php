@@ -2,10 +2,13 @@
 
 declare( strict_types=1 );
 
+/** Verifies the profile migration using native Core fields and WordPress metadata. */
+
 $users = [ 1, 2 ];
 $user_meta = [
     1 => [
-        'urls'          => [ 'linkedin' => 'https://linkedin.com/in/canonical' ],
+        'urls'          => '',
+        'urls_linkedin' => 'https://linkedin.com/in/canonical',
         '_urls'         => 'field_684253229b32a',
         'linkedin_url'  => 'https://linkedin.com/in/legacy',
         '_linkedin_url' => 'field_legacy_linkedin',
@@ -46,14 +49,8 @@ $user_meta = [
     ],
 ];
 $write_log = [];
-$hooks = [];
-$removed_groups = [];
 $options = [];
 $get_users_calls = [];
-
-function add_action( string $hook, callable $callback, int $priority = 10 ): void {
-    $GLOBALS['hooks'][] = [ $hook, $callback, $priority ];
-}
 
 function get_option( string $key, mixed $default = false ): mixed {
     return $GLOBALS['options'][ $key ] ?? $default;
@@ -71,73 +68,77 @@ function get_userdata( int $user_id ): object|false {
     return (object) [ 'ID' => $user_id, 'user_url' => '' ];
 }
 
-function metadata_exists( string $type, int $user_id, string $key ): bool {
-    return array_key_exists( $key, $GLOBALS['user_meta'][ $user_id ] ?? [] );
+// Core formats the registered gallery fields via the same WordPress media API as a live site.
+final class WP_Post {
+    public string $post_type = 'attachment';
+    public string $post_title = 'Profile photo';
+    public string $post_mime_type = 'image/jpeg';
+    public string $post_author = '2';
+    public string $post_content = '';
+    public string $post_excerpt = '';
+    public string $post_name = 'profile-photo';
+    public string $post_status = 'inherit';
+    public int $post_parent = 0;
+    public string $post_date_gmt = '';
+    public string $post_modified_gmt = '';
+    public int $menu_order = 0;
+}
+
+function get_post( int $post_id ): ?WP_Post {
+    return in_array( $post_id, [ 101, 102 ], true ) ? new WP_Post() : null;
+}
+
+function wp_get_attachment_url( int $post_id ): string {
+    return 'https://example.test/uploads/' . $post_id . '.jpg';
+}
+
+function wp_get_attachment_metadata( int $post_id ): array {
+    return [ 'width' => 100, 'height' => 100 ];
+}
+
+function get_attached_file( int $post_id ): string {
+    return '';
+}
+
+function wp_basename( string $path ): string {
+    return basename( $path );
+}
+
+function get_attachment_link( int $post_id ): string {
+    return 'https://example.test/?attachment_id=' . $post_id;
+}
+
+function get_post_meta( int $post_id, string $key, bool $single = false ): mixed {
+    return get_metadata( 'post', $post_id, $key, $single );
+}
+
+function wp_mime_type_icon( int $post_id ): string {
+    return '';
+}
+
+function get_intermediate_image_sizes(): array {
+    return [];
 }
 
 function get_user_meta( int $user_id, string $key, bool $single = false ): mixed {
-    return $GLOBALS['user_meta'][ $user_id ][ $key ] ?? '';
-}
-
-function get_field( string $field_name, string $post_id, bool $format_value = true ): mixed {
-    $user_id = (int) substr( $post_id, 5 );
-    $value = $GLOBALS['user_meta'][ $user_id ][ $field_name ] ?? false;
-    if ( ! $format_value && 'urls' === $field_name && is_array( $value ) ) {
-        return array_combine(
-            array_map( static fn( string $name ): string => 'field_raw_' . $name, array_keys( $value ) ),
-            array_values( $value )
-        );
-    }
-    return $value;
+    return get_metadata( 'user', $user_id, $key, $single );
 }
 
 function update_user_meta( int $user_id, string $key, mixed $value ): bool {
-    $GLOBALS['write_log'][] = [ 'update_user_meta', $user_id, $key, $value ];
-    $GLOBALS['user_meta'][ $user_id ][ $key ] = $value;
-    return true;
+    return update_metadata( 'user', $user_id, $key, $value );
 }
 
 function delete_user_meta( int $user_id, string $key ): bool {
-    $GLOBALS['write_log'][] = [ 'delete_user_meta', $user_id, $key ];
-    unset( $GLOBALS['user_meta'][ $user_id ][ $key ] );
-    return true;
+    return delete_metadata( 'user', $user_id, $key );
 }
 
-function update_field( string $field_key, mixed $value, string $post_id ): bool {
-    $field_names = [
-        'field_684253229b32a'                    => 'urls',
-        'field_684348d1832e2'                    => 'subtitle',
-        'field_hws_user_profile_2025_location'   => 'location',
-        'field_hws_user_profile_2025_photos'     => 'photos',
-        'field_6842_additional_group'            => 'additional',
-        'field_hws_additional_staff_writer'      => 'staff_writer',
-        'field_hws_user_profile_2025_team_member' => 'team_member',
-        'field_hws_user_profile_2025_team_member_title' => 'team_member_title',
-        'field_hws_user_profile_2025_profile_type' => 'what_best_describe_you',
-        'field_hws_user_profile_2025_profile_photo' => 'profile_photo',
-        'field_hws_additional_muckrack_verified' => 'muckrack_verified',
-        'field_hws_additional_muckrack_url'      => 'muckrack_url',
-    ];
-    $user_id = (int) substr( $post_id, 5 );
-    $name = $field_names[ $field_key ] ?? '';
-    if ( '' === $name ) {
-        return false;
-    }
-    $GLOBALS['write_log'][] = [ 'update_field', $user_id, $field_key, $value ];
-    $GLOBALS['user_meta'][ $user_id ][ $name ] = $value;
-    $GLOBALS['user_meta'][ $user_id ][ '_' . $name ] = $field_key;
-    // Match ACF's no-op contract: references can be refreshed while the
-    // top-level call reports that the field value itself did not change.
-    return false;
-}
-
-function acf_remove_local_field_group( string $group_key ): void {
-    $GLOBALS['removed_groups'][] = $group_key;
-}
-
-require_once __DIR__ . '/bootstrap-fields.php';
+require_once __DIR__ . '/fixtures/native-migration-storage.php';
+require_once dirname( __DIR__ ) . '/src/AcfFields/QuoteRepeaterDefinition.php';
+require_once dirname( __DIR__ ) . '/src/AcfFields/user-profile-2025.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/UserProfile2025Migration.php';
 
+use Hexa\PluginCore\Fields\Field;
+use Hexa\PluginCore\Fields\FieldGroups;
 use HWS\BaseTools\AcfFields\UserProfile2025Migration;
 
 $failures = [];
@@ -148,21 +149,30 @@ $expect = static function ( bool $condition, string $message ) use ( &$failures 
     }
 };
 
+FieldGroups::add( \hws_base_tools\hws_user_profile_2025_group() );
+FieldGroups::add( \hws_base_tools\hws_user_additional_fields_group() );
+foreach ( UserProfile2025Migration::DEPRECATED_GROUP_KEYS as $key ) {
+    FieldGroups::add( [ 'key' => $key ] );
+}
+
 UserProfile2025Migration::register();
-$init_registrations = array_values( array_filter( array_merge( $hooks, $GLOBALS['hexa_test_hooks'] ?? [] ), static fn( array $hook ): bool => in_array( $hook[0], [ 'acf/init', 'hexa_fields/init' ], true ) ) );
+$init_registrations = $GLOBALS['hexa_test_hooks']['hexa_fields/init'] ?? [];
 $expect(
-    [] !== $init_registrations && PHP_INT_MAX === $init_registrations[0][2],
-    'deprecated local groups are suppressed after all field-group registrations (ACF or native)'
+    [] !== $init_registrations && PHP_INT_MAX === $init_registrations[0][1],
+    'deprecated local groups are suppressed after all field-group registrations'
 );
 
+$registered_deprecated_groups = static function (): array {
+    return array_values( array_intersect(
+        UserProfile2025Migration::DEPRECATED_GROUP_KEYS,
+        array_column( FieldGroups::native(), 'key' )
+    ) );
+};
 UserProfile2025Migration::remove_deprecated_local_groups();
-$expect( [] === $removed_groups, 'deprecated groups remain visible until the canonical option is enabled' );
+$expect( UserProfile2025Migration::DEPRECATED_GROUP_KEYS === $registered_deprecated_groups(), 'deprecated groups remain visible until the canonical option is enabled' );
 $options[ UserProfile2025Migration::PROFILE_OPTION ] = 1;
 UserProfile2025Migration::remove_deprecated_local_groups();
-$expect(
-    UserProfile2025Migration::DEPRECATED_GROUP_KEYS === $removed_groups,
-    'all known deprecated profile groups are removed when the canonical option is enabled'
-);
+$expect( [] === $registered_deprecated_groups(), 'all known deprecated profile groups are removed when the canonical option is enabled' );
 
 $snapshot = $user_meta;
 $conflict_report = UserProfile2025Migration::migrate_user( 1, true, true );
@@ -179,22 +189,23 @@ $expect( [] === $write_log && $snapshot === $user_meta, 'clean dry-run performs 
 
 $real_report = UserProfile2025Migration::migrate_user( 2, false, true );
 $migrated = $user_meta[2];
+$urls = Field::get( 'urls', 'user_2' );
 $expect( [] === $real_report['conflicts'] && [] === $real_report['errors'], 'real migration completes without conflicts or errors' );
-$expect( 'https://facebook.com/example' === ( $migrated['urls']['facebook'] ?? '' ), 'flat Facebook URL reaches the canonical URLs group' );
-$expect( 'https://linkedin.com/company/example' === ( $migrated['urls']['linkedin'] ?? '' ), 'nested social URL reaches the canonical URLs group' );
-$expect( 'https://wellfound.com/company/example' === ( $migrated['urls']['wellfound'] ?? '' ), 'Wellfound remains distinct in the canonical URLs group' );
-$expect( 'https://www.wikidata.org/wiki/Q42' === ( $migrated['urls']['wikidata'] ?? '' ), 'legacy Wikidata URL reaches the canonical URLs group' );
-$expect( 'https://www.threads.net/@example' === ( $migrated['urls']['threads'] ?? '' ), 'legacy Threads URL reaches the canonical URLs group' );
-$expect( 'Chief Executive Officer' === ( $migrated['subtitle'] ?? '' ), 'legacy title reaches the canonical subtitle' );
-$expect( '1' === ( $migrated['staff_writer'] ?? '' ), 'nested settings value reaches the canonical direct field' );
-$expect( '0' === ( $migrated['muckrack_verified'] ?? '' ), 'a false boolean is preserved as meaningful profile data' );
-$expect( [ 102, 101 ] === ( $migrated['photos'] ?? [] ), 'legacy profile photo is merged into the canonical gallery' );
+$expect( 'https://facebook.com/example' === ( $urls['facebook'] ?? '' ), 'flat Facebook URL reaches the canonical URLs group' );
+$expect( 'https://linkedin.com/company/example' === ( $urls['linkedin'] ?? '' ), 'nested social URL reaches the canonical URLs group' );
+$expect( 'https://wellfound.com/company/example' === ( $urls['wellfound'] ?? '' ), 'Wellfound remains distinct in the canonical URLs group' );
+$expect( 'https://www.wikidata.org/wiki/Q42' === ( $urls['wikidata'] ?? '' ), 'legacy Wikidata URL reaches the canonical URLs group' );
+$expect( 'https://www.threads.net/@example' === ( $urls['threads'] ?? '' ), 'legacy Threads URL reaches the canonical URLs group' );
+$expect( 'Chief Executive Officer' === Field::get( 'subtitle', 'user_2' ), 'legacy title reaches the canonical subtitle' );
+$expect( true === Field::get( 'staff_writer', 'user_2' ), 'nested settings value reaches the canonical direct field' );
+$expect( '0' === Field::get( 'muckrack_verified', 'user_2', false ), 'a false boolean is preserved as meaningful profile data' );
+$expect( [ 102, 101 ] === array_column( Field::get( 'photos', 'user_2' ) ?: [], 'ID' ), 'legacy profile photo is merged into the canonical gallery' );
 $expect( 'field_hws_user_profile_2025_location' === ( $migrated['_location'] ?? '' ), 'same-name legacy fields receive the canonical ACF reference' );
 $expect( 'field_hws_user_profile_2025_team_member' === ( $migrated['_team_member'] ?? '' ), 'team-member compatibility flag receives canonical ownership' );
 $expect( 'field_hws_user_profile_2025_profile_type' === ( $migrated['_what_best_describe_you'] ?? '' ), 'publication profile classification receives canonical ownership' );
 $expect( ! isset( $migrated['facebook_url'], $migrated['job_title'], $migrated['settings'], $migrated['socials'] ), 'migrated deprecated metadata is removed' );
-$expect( '101' === ( $migrated['profile_photo'] ?? '' ), 'primary profile photo remains available under its compatibility field name' );
-$expect( isset( $migrated['location'], $migrated['additional'], $migrated['photos'] ), 'canonical same-name content is retained' );
+$expect( '101' === Field::get( 'profile_photo', 'user_2', false ), 'primary profile photo remains available under its compatibility field name' );
+$expect( 'New York, NY' === Field::get( 'location', 'user_2' ) && 'hello@example.com' === ( Field::get( 'additional', 'user_2' )['public_email'] ?? '' ) && isset( $migrated['photos'] ), 'canonical same-name content is retained' );
 $batch_report = UserProfile2025Migration::migrate_all( true, false );
 $expect(
     2 === $batch_report['users_scanned']

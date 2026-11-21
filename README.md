@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- The testimonial quote and user-profile migration tests exercise native Hexa WP Core Fields with WordPress metadata fixtures.
+
 - Website Settings, field diagnostics, and View As User identify Core fields.
 
 - The User Profile field migration identifies Hexa WP Core in its field-engine error message.
