@@ -120,11 +120,11 @@ final class MailAuthenticationAdmin {
     }
 
     public static function handle_test(): void {
-        if ( ! current_user_can( PluginMetadata::ADMIN_CAPABILITY ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( PluginMetadata::ADMIN_CAPABILITY ) ) {
             wp_send_json_error( [ 'message' => 'You are not allowed to test mail authentication.' ], 403 );
         }
 
-        check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+        \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( self::NONCE_ACTION, 'nonce' );
         $recipient = isset( $_POST['recipient'] ) ? sanitize_email( (string) wp_unslash( $_POST['recipient'] ) ) : '';
         $result    = ( new Smtp2goAuthenticationService() )->run( $recipient );
 

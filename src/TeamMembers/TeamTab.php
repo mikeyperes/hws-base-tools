@@ -360,11 +360,11 @@ final class TeamTab implements ModuleInterface {
     }
 
     private static function authorize(): void {
-        if ( ! current_user_can( PluginMetadata::ADMIN_CAPABILITY ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( PluginMetadata::ADMIN_CAPABILITY ) ) {
             wp_send_json_error( [ 'message' => 'You are not allowed to manage team settings.' ], 403 );
         }
         $nonce = isset( $_POST['nonce'] ) ? (string) wp_unslash( $_POST['nonce'] ) : '';
-        if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $nonce, self::NONCE_ACTION ) ) {
             wp_send_json_error( [ 'message' => 'This page expired. Reload it and try again.' ], 403 );
         }
     }

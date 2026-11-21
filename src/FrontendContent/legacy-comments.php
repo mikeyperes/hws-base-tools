@@ -132,7 +132,7 @@ function get_comments_stats() {
  * AJAX: Get current stats
  */
 function ajax_get_comments_stats() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -145,7 +145,7 @@ function ajax_get_comments_stats() {
  * AJAX: Batch toggle comments on/off
  */
 function toggle_wordpress_comments_batch() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
 
@@ -221,7 +221,7 @@ function toggle_wordpress_comments_batch() {
  * AJAX: Batch toggle pingbacks on/off
  */
 function toggle_wordpress_pingbacks_batch() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
 
@@ -301,7 +301,7 @@ function check_users_must_be_registered_to_comment() {
  * AJAX: Batch delete comments (spam, pending, or all)
  */
 function ajax_delete_comments_batch() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized' ] );
     }
 

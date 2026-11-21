@@ -112,7 +112,7 @@ final class LegacyEventBridge implements ModuleInterface {
      */
     public static function handle_modify_wp_config_constants() {
         try {
-            if ( ! current_user_can( 'manage_options' ) ) {
+            if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
                 wp_send_json_error( [ 'message' => 'Unauthorized' ] );
                 return;
             }
@@ -160,7 +160,7 @@ final class LegacyEventBridge implements ModuleInterface {
      */
     public static function handle_toggle_snippet() {
         try {
-            if ( ! current_user_can( 'manage_options' ) ) {
+            if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
                 wp_send_json_error( 'Unauthorized' );
                 return;
             }

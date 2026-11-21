@@ -383,7 +383,7 @@ function hws_get_login_mask_state_payload(): array {
  * AJAX: Return fresh masked login dashboard state.
  */
 function ajax_get_login_mask_state() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -396,7 +396,7 @@ function ajax_get_login_mask_state() {
  * AJAX: Toggle login mask public URLs on/off
  */
 function ajax_toggle_login_urls() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
     hws_require_ajax_nonce_or_error();
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     if ( $enabled && ! RemoteActionPolicy::legacy_get_routes_allowed() ) {
@@ -411,7 +411,7 @@ function ajax_toggle_login_urls() {
  * AJAX: Clear the login activity log
  */
 function ajax_clear_login_log() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
     hws_require_ajax_nonce_or_error();
     hws_login_log_clear();
     wp_send_json_success( [ 'message' => 'Log cleared' ] );
@@ -421,7 +421,7 @@ function ajax_clear_login_log() {
  * AJAX: Run a login mask action from the dashboard
  */
 function ajax_login_mask_action() {
-    if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
     hws_require_ajax_nonce_or_error();
 
     $action_type = isset( $_POST['action_type'] ) ? sanitize_key( $_POST['action_type'] ) : '';

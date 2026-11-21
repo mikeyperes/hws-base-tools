@@ -178,7 +178,7 @@ function hws_backup_cleaner_get_cron_status() {
  * AJAX: Delete backups
  */
 function ajax_delete_backups() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -233,7 +233,7 @@ function ajax_delete_backups() {
  * AJAX: Toggle backup cleaner
  */
 function ajax_backup_cleaner_toggle() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -260,7 +260,7 @@ function ajax_backup_cleaner_toggle() {
  * AJAX: Update backup cleaner settings
  */
 function ajax_backup_cleaner_update() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -283,7 +283,7 @@ function ajax_backup_cleaner_update() {
  * AJAX: Run backup cleaner now
  */
 function ajax_backup_cleaner_run() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 

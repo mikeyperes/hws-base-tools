@@ -541,7 +541,7 @@ function hws_normalize_dashboard_tab_id( string $tab_id ): string {
 }
 
 function ajax_load_dashboard_tab() {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2525,7 +2525,7 @@ function hws_execute_quick_setup( array $inputs = [] ) {
  * AJAX: Quick Setup
  */
 function ajax_quick_setup() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2545,7 +2545,7 @@ function ajax_quick_setup() {
 }
 
 function ajax_get_overview_state() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2555,7 +2555,7 @@ function ajax_get_overview_state() {
 }
 
 function ajax_save_site_type() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
     }
 
@@ -2576,7 +2576,7 @@ function ajax_save_site_type() {
 }
 
 function ajax_save_site_basics() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
     }
 
@@ -2594,7 +2594,7 @@ function ajax_save_site_basics() {
 }
 
 function ajax_test_site_basics() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
     }
 
@@ -2608,7 +2608,7 @@ function ajax_test_site_basics() {
  * AJAX: Toggle secret URLs
  */
 function ajax_toggle_secret_urls() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2629,7 +2629,7 @@ function ajax_toggle_secret_urls() {
  * AJAX: Toggle secret setup URL
  */
 function ajax_toggle_secret_setup() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2650,7 +2650,7 @@ function ajax_toggle_secret_setup() {
  * AJAX: Toggle secret permalinks purge URL
  */
 function ajax_toggle_secret_permalinks() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2671,7 +2671,7 @@ function ajax_toggle_secret_permalinks() {
  * AJAX: Enable auto-updates for ALL plugins
  */
 function ajax_enable_all_auto_updates() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -2731,7 +2731,7 @@ function ajax_toggle_all_debug() {
  * AJAX: Save the master secret password
  */
 function ajax_save_master_secret() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4383,7 +4383,7 @@ function hws_sync_brand_asset_to_wp_core( string $key, int $attachment_id ): str
 }
 
 function ajax_save_brand_asset() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4420,7 +4420,7 @@ function ajax_save_brand_asset() {
 }
 
 function ajax_clear_brand_asset() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4450,7 +4450,7 @@ function ajax_clear_brand_asset() {
 }
 
 function ajax_save_brand_gallery() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4494,7 +4494,7 @@ function ajax_save_brand_gallery() {
 }
 
 function ajax_clear_brand_gallery() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4513,7 +4513,7 @@ function ajax_clear_brand_gallery() {
 }
 
 function ajax_save_brand_colors() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4551,7 +4551,7 @@ function ajax_save_brand_colors() {
 }
 
 function ajax_get_elementor_colors() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -4561,7 +4561,7 @@ function ajax_get_elementor_colors() {
 }
 
 function ajax_copy_favicon() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 

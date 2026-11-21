@@ -90,7 +90,7 @@ add_action( 'init', __NAMESPACE__ . '\\hws_log_cleaner_init' );
  * AJAX: Return fresh dashboard state for the log cleaner tab.
  */
 function hws_log_cleaner_ajax_get_state() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
@@ -226,7 +226,7 @@ function hws_log_cleaner_delete_file( $path ) {
  */
 function hws_log_cleaner_ajax_toggle() {
     try {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
@@ -256,7 +256,7 @@ function hws_log_cleaner_ajax_toggle() {
  */
 function hws_log_cleaner_ajax_update_settings() {
     try {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
             wp_send_json_error( [ 'message' => 'Unauthorized' ] );
             return;
         }
@@ -294,7 +294,7 @@ function hws_log_cleaner_ajax_update_settings() {
  */
 function hws_log_cleaner_ajax_delete_debug() {
     try {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
@@ -327,7 +327,7 @@ function hws_log_cleaner_ajax_delete_debug() {
  */
 function hws_log_cleaner_ajax_delete_error() {
     try {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized' );
             return;
         }
@@ -360,7 +360,7 @@ function hws_log_cleaner_ajax_delete_error() {
  */
 function hws_log_cleaner_ajax_run_now() {
     try {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
             wp_send_json_error( 'Unauthorized' );
             return;
         }

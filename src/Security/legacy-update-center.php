@@ -122,7 +122,7 @@ add_action( 'wp_ajax_hws_update_center', __NAMESPACE__ . '\\ajax_update_center' 
  * Expects POST: { action: 'hws_update_center', update_type: '...', slug: '...' }
  */
 function ajax_update_center() {
-    if ( ! current_user_can( 'update_plugins' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'update_plugins' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -172,7 +172,7 @@ add_action( 'wp_ajax_hws_toggle_update_urls', __NAMESPACE__ . '\\ajax_toggle_upd
  * AJAX: Toggle update center secret URLs on/off
  */
 function ajax_toggle_update_urls() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 

@@ -100,12 +100,12 @@ function hws_get_elementor_db_state_payload() {
  * AJAX: Return a fresh Elementor DB updater state payload.
  */
 function hws_elementor_db_ajax_get_state() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
 
-    check_ajax_referer( 'hws_elementor_db_nonce', 'nonce' );
+    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
 
     wp_send_json_success( hws_get_elementor_db_state_payload() );
 }
@@ -284,12 +284,12 @@ function hws_elementor_db_updater_run() {
  * AJAX: Toggle auto-update enabled/disabled
  */
 function hws_elementor_db_ajax_toggle() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
 
-    check_ajax_referer( 'hws_elementor_db_nonce', 'nonce' );
+    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
 
     $enabled = get_option( Elementor_DB_Updater_Config::OPT_ENABLED, true );
     $new_state = ! $enabled;
@@ -318,12 +318,12 @@ function hws_elementor_db_ajax_toggle() {
  * AJAX: Update interval settings
  */
 function hws_elementor_db_ajax_update_settings() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
 
-    check_ajax_referer( 'hws_elementor_db_nonce', 'nonce' );
+    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
 
     $interval = isset( $_POST['interval'] ) ? (int) $_POST['interval'] : Elementor_DB_Updater_Config::DEFAULT_INTERVAL;
     $interval = max( 1, min( 30, $interval ) ); // Clamp between 1-30 days
@@ -347,12 +347,12 @@ function hws_elementor_db_ajax_update_settings() {
  * AJAX: Run database update now
  */
 function hws_elementor_db_ajax_run_now() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
         return;
     }
 
-    check_ajax_referer( 'hws_elementor_db_nonce', 'nonce' );
+    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
 
     $report = hws_elementor_db_updater_run();
 

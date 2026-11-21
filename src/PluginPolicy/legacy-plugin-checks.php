@@ -167,11 +167,11 @@ function hws_install_hws_github_plugin_package( string $slug, array $plugin ) {
 }
 
 function ajax_install_hws_github_plugin() {
-    if ( ! current_user_can( 'install_plugins' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'install_plugins' ) ) {
         wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
     }
 
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
         wp_send_json_error( 'Security check failed.' );
     }
 
@@ -206,7 +206,7 @@ function ajax_install_hws_github_plugin() {
     }
 
     if ( ! is_plugin_active( $plugin_file ) ) {
-        if ( ! current_user_can( 'activate_plugins' ) ) {
+        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'activate_plugins' ) ) {
             wp_send_json_error( 'Installed, but you do not have permission to activate plugins.' );
         }
 
@@ -239,13 +239,13 @@ function ajax_install_hws_github_plugin() {
  */
 function ajax_install_plugin() {
     // Check permissions
-    if ( ! current_user_can( 'install_plugins' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'install_plugins' ) ) {
         wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
         return;
     }
 
     // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
         wp_send_json_error( 'Security check failed.' );
         return;
     }
@@ -286,13 +286,13 @@ function ajax_install_plugin() {
  */
 function ajax_activate_plugin() {
     // — Check permissions
-    if ( ! current_user_can( 'activate_plugins' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'activate_plugins' ) ) {
         wp_send_json_error( 'Unauthorized — you do not have permission to activate plugins.' );
         return;
     }
 
     // — Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
         wp_send_json_error( 'Security check failed.' );
         return;
     }
@@ -876,7 +876,7 @@ function render_tab_plugins() {
  * Force update check AJAX handler
  */
 function hws_ct_force_update_check() {
-    if ( ! current_user_can( 'update_plugins' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'update_plugins' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
     }
 

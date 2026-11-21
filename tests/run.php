@@ -830,7 +830,7 @@ expect_true(
 $force_handler = source( 'src/PluginPolicy/legacy-plugin-checks.php' );
 $force_offset = strpos( $force_handler, 'function hws_ct_force_update_check' );
 $force_source = false === $force_offset ? '' : substr( $force_handler, $force_offset, 700 );
-expect_true( str_contains( $force_source, "current_user_can( 'update_plugins' )" ), 'force update AJAX checks capability' );
+expect_true( str_contains( $force_source, "AjaxGuard::allows( 'update_plugins' )" ), 'force update AJAX checks capability' );
 expect_true( str_contains( $force_source, 'hws_require_ajax_nonce_or_error()' ), 'force update AJAX verifies nonce' );
 
 $generic_facade_source = source( 'src/LegacyCompatibility/legacy-generic-functions.php' );

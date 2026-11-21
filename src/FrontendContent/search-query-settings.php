@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'wp_ajax_hws_search_behavior_save', __NAMESPACE__ . '\\ajax_save_search_behavior' );
 
 function ajax_save_search_behavior(): void {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( [ 'message' => 'You are not allowed to change site-search behavior.' ], 403 );
     }
 

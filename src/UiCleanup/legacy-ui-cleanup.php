@@ -592,12 +592,12 @@ function display_settings_ui_cleanup() {
  */
 function ajax_toggle_ui_cleanup() {
     // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
         wp_send_json_error( 'Invalid nonce' );
     }
 
     // Check permissions
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 
@@ -622,12 +622,12 @@ function ajax_toggle_ui_cleanup() {
  */
 function ajax_ui_cleanup_bulk() {
     // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
+    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
         wp_send_json_error( 'Invalid nonce' );
     }
 
     // Check permissions
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( 'Unauthorized' );
     }
 

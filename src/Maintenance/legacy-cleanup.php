@@ -212,7 +212,7 @@ function hws_register_litespeed_redis_ajax(): void {
 add_action( 'init', __NAMESPACE__ . '\\hws_register_litespeed_redis_ajax', 20 );
 
 function hws_ajax_litespeed_redis_status(): void {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
     }
 
@@ -221,7 +221,7 @@ function hws_ajax_litespeed_redis_status(): void {
 }
 
 function hws_ajax_litespeed_redis_enable(): void {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
     }
 

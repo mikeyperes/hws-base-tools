@@ -74,7 +74,7 @@ function maybe_purge_footer_text_cache_after_acf_save( $post_id ): void {
 }
 
 function ajax_save_footer_text_settings() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
         return;
     }
@@ -133,7 +133,7 @@ function ajax_save_footer_text_settings() {
 }
 
 function ajax_save_footer_text_targeted_injection() {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
         return;
     }

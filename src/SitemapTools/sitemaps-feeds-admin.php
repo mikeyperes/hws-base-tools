@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 /** Settings, Sitemaps and Settings, RSS Feeds: every sitemap or feed, its check and what it contains; feeds also have an on/off switch. */
 
 function hws_sitemap_feeds_guard(): void {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( [ 'message' => 'You are not allowed to change these settings.' ], 403 );
     }
     hws_require_ajax_nonce_or_error();

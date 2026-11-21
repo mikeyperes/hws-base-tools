@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'wp_ajax_hws_listing_search_style_save', __NAMESPACE__ . '\\ajax_save_listing_search_style' );
 
 function ajax_save_listing_search_style(): void {
-    if ( ! current_user_can( Config::$settings_page_capability ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
         wp_send_json_error( [ 'message' => 'You are not allowed to change site-search settings.' ], 403 );
     }
 

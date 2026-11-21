@@ -680,7 +680,7 @@ if ( ! function_exists( __NAMESPACE__ . '\\display_settings_snippets' ) ) {
 }
 
 function ajax_hws_feature_save_settings(): void {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
     }
 
@@ -763,7 +763,7 @@ function ajax_hws_feature_save_settings(): void {
 }
 
 function ajax_hws_feature_run_test(): void {
-    if ( ! current_user_can( 'manage_options' ) ) {
+    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
         wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
     }
 

@@ -35,7 +35,7 @@ final class LoginLinkFallback implements ModuleInterface {
             }
         }
 
-        if ( is_user_logged_in() && current_user_can( 'read' ) ) {
+        if ( is_user_logged_in() && \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'read' ) ) {
             wp_safe_redirect( $target );
             exit;
         }
