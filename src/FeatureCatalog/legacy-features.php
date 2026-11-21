@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use HWS\BaseTools\FeatureCatalog\FeatureValueResolver;
 use HWS\BaseTools\FrontendContent\ReadingProgress;
 use HWS\BaseTools\FrontendContent\ScrollToTop;
@@ -680,11 +682,7 @@ if ( ! function_exists( __NAMESPACE__ . '\\display_settings_snippets' ) ) {
 }
 
 function ajax_hws_feature_save_settings(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $feature_id = isset( $_POST['feature_id'] ) ? sanitize_key( wp_unslash( $_POST['feature_id'] ) ) : '';
 
@@ -763,11 +761,7 @@ function ajax_hws_feature_save_settings(): void {
 }
 
 function ajax_hws_feature_run_test(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $feature_id = isset( $_POST['feature_id'] ) ? sanitize_key( wp_unslash( $_POST['feature_id'] ) ) : '';
     $report     = hws_run_feature_test( $feature_id );

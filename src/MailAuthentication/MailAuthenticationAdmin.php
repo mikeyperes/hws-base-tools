@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace HWS\BaseTools\MailAuthentication;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use Hexa\PluginCore\WpAdminComponents\DynamicButton;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
@@ -120,11 +122,7 @@ final class MailAuthenticationAdmin {
     }
 
     public static function handle_test(): void {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( PluginMetadata::ADMIN_CAPABILITY ) ) {
-            wp_send_json_error( [ 'message' => 'You are not allowed to test mail authentication.' ], 403 );
-        }
-
-        \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( self::NONCE_ACTION, 'nonce' );
+        AjaxGuard::require_access( PluginMetadata::ADMIN_CAPABILITY, self::NONCE_ACTION, 'nonce', capability_error: [ [ 'message' => 'You are not allowed to test mail authentication.' ], 403 ] );
         $recipient = isset( $_POST['recipient'] ) ? sanitize_email( (string) wp_unslash( $_POST['recipient'] ) ) : '';
         $result    = ( new Smtp2goAuthenticationService() )->run( $recipient );
 

@@ -1,4 +1,6 @@
 <?php namespace hws_base_tools;
+
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
 use function hws_base_tools\is_theme_auto_update_enabled;
 
 // Register AJAX handler for theme deletion
@@ -9,16 +11,14 @@ add_action( 'wp_ajax_hws_delete_themes', __NAMESPACE__ . '\\ajax_delete_themes' 
  */
 function ajax_delete_themes() {
     // Check permissions
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'delete_themes' ) ) {
-        wp_send_json_error( 'Unauthorized - you do not have permission to delete themes.' );
-        return;
-    }
-
-    // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Security check failed.' );
-        return;
-    }
+    AjaxGuard::require_access(
+        'delete_themes',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized - you do not have permission to delete themes.' ],
+        nonce_error: [ 'Security check failed.' ],
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     // Get themes to delete
     $themes_to_delete = isset( $_POST['themes'] ) ? array_map( 'sanitize_text_field', $_POST['themes'] ) : [];

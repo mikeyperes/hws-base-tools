@@ -2,6 +2,8 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupAjaxController;
 use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupConfig;
 use Hexa\PluginCore\ContentCleanup\ArticleMediaCleanupRenderer;
@@ -212,20 +214,24 @@ function hws_register_litespeed_redis_ajax(): void {
 add_action( 'init', __NAMESPACE__ . '\\hws_register_litespeed_redis_ajax', 20 );
 
 function hws_ajax_litespeed_redis_status(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
-        wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access(
+        Config::$settings_page_capability,
+        \hws_base_tools\HWS_AJAX_NONCE,
+        'nonce',
+        capability_error: [ [ 'message' => 'Permission denied.' ], 403 ],
+        nonce_source: AjaxGuard::CORE_NONCE
+    );
     wp_send_json_success( hws_litespeed_redis_service()->status() );
 }
 
 function hws_ajax_litespeed_redis_enable(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
-        wp_send_json_error( [ 'message' => 'Permission denied.' ], 403 );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access(
+        Config::$settings_page_capability,
+        \hws_base_tools\HWS_AJAX_NONCE,
+        'nonce',
+        capability_error: [ [ 'message' => 'Permission denied.' ], 403 ],
+        nonce_source: AjaxGuard::CORE_NONCE
+    );
     $result = hws_litespeed_redis_service()->enable();
     wp_send_json_success( $result );
 }

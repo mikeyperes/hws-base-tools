@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\PluginChecks\PluginInventoryAjaxController;
 use Hexa\PluginCore\PluginChecks\PluginInventoryRenderer;
 use Hexa\PluginCore\PluginChecks\PluginRecommendationRegistry;
@@ -167,13 +169,14 @@ function hws_install_hws_github_plugin_package( string $slug, array $plugin ) {
 }
 
 function ajax_install_hws_github_plugin() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'install_plugins' ) ) {
-        wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
-    }
-
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Security check failed.' );
-    }
+    AjaxGuard::require_access(
+        'install_plugins',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized - you do not have permission to install plugins.' ],
+        nonce_error: [ 'Security check failed.' ],
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     $slug   = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
     $plugin = hws_get_additional_hws_plugin( $slug );
@@ -206,7 +209,7 @@ function ajax_install_hws_github_plugin() {
     }
 
     if ( ! is_plugin_active( $plugin_file ) ) {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'activate_plugins' ) ) {
+        if ( ! current_user_can( 'activate_plugins' ) ) {
             wp_send_json_error( 'Installed, but you do not have permission to activate plugins.' );
         }
 
@@ -239,16 +242,14 @@ function ajax_install_hws_github_plugin() {
  */
 function ajax_install_plugin() {
     // Check permissions
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'install_plugins' ) ) {
-        wp_send_json_error( 'Unauthorized - you do not have permission to install plugins.' );
-        return;
-    }
-
-    // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Security check failed.' );
-        return;
-    }
+    AjaxGuard::require_access(
+        'install_plugins',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized - you do not have permission to install plugins.' ],
+        nonce_error: [ 'Security check failed.' ],
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     // Get plugin slug
     $slug = isset( $_POST['slug'] ) ? sanitize_text_field( $_POST['slug'] ) : '';
@@ -286,16 +287,14 @@ function ajax_install_plugin() {
  */
 function ajax_activate_plugin() {
     // — Check permissions
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'activate_plugins' ) ) {
-        wp_send_json_error( 'Unauthorized — you do not have permission to activate plugins.' );
-        return;
-    }
-
-    // — Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Security check failed.' );
-        return;
-    }
+    AjaxGuard::require_access(
+        'activate_plugins',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized — you do not have permission to activate plugins.' ],
+        nonce_error: [ 'Security check failed.' ],
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     // — Get plugin file path (e.g. 'wordfence/wordfence.php')
     $plugin_file = isset( $_POST['plugin_file'] ) ? sanitize_text_field( $_POST['plugin_file'] ) : '';
@@ -876,11 +875,7 @@ function render_tab_plugins() {
  * Force update check AJAX handler
  */
 function hws_ct_force_update_check() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'update_plugins' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ], 403 );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'update_plugins', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ], 403 ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_clean_update_cache();
     wp_update_plugins();

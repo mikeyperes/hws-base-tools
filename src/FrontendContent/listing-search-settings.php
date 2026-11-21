@@ -2,6 +2,8 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\Search\SearchBox;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
 use HWS\BaseTools\FrontendContent\SearchBoxFeature;
@@ -11,11 +13,13 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'wp_ajax_hws_listing_search_style_save', __NAMESPACE__ . '\\ajax_save_listing_search_style' );
 
 function ajax_save_listing_search_style(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
-        wp_send_json_error( [ 'message' => 'You are not allowed to change site-search settings.' ], 403 );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access(
+        Config::$settings_page_capability,
+        \hws_base_tools\HWS_AJAX_NONCE,
+        'nonce',
+        capability_error: [ [ 'message' => 'You are not allowed to change site-search settings.' ], 403 ],
+        nonce_source: AjaxGuard::CORE_NONCE
+    );
 
     $style = isset( $_POST['style'] ) ? sanitize_key( wp_unslash( $_POST['style'] ) ) : '';
     if ( ! isset( SearchBoxFeature::STYLES[ $style ] ) ) {

@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use HWS\BaseTools\Security\RemoteActionPolicy;
 
 /**
@@ -122,11 +124,7 @@ add_action( 'wp_ajax_hws_update_center', __NAMESPACE__ . '\\ajax_update_center' 
  * Expects POST: { action: 'hws_update_center', update_type: '...', slug: '...' }
  */
 function ajax_update_center() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'update_plugins' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'update_plugins', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $type = isset( $_POST['update_type'] ) ? sanitize_key( $_POST['update_type'] ) : '';
     $slug = isset( $_POST['slug'] ) ? sanitize_text_field( $_POST['slug'] ) : '';
@@ -172,11 +170,7 @@ add_action( 'wp_ajax_hws_toggle_update_urls', __NAMESPACE__ . '\\ajax_toggle_upd
  * AJAX: Toggle update center secret URLs on/off
  */
 function ajax_toggle_update_urls() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
 

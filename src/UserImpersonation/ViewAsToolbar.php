@@ -66,7 +66,7 @@ final class ViewAsToolbar {
             wp_send_json_error( [ 'message' => 'Only administrators can select a View As user.' ], 403 );
             return;
         }
-        \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( self::SEARCH_ACTION, 'nonce' );
+        check_ajax_referer( self::SEARCH_ACTION, 'nonce' );
         $location = isset( $_POST['view'] ) && is_string( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
         $post_id = absint( $_POST['post_id'] ?? 0 );
         if ( self::ANY_PAGE !== $location && ! UserImpersonationFeature::location_enabled( $location ) ) {
@@ -80,7 +80,7 @@ final class ViewAsToolbar {
         }
         if ( in_array( $location, [ 'post_editor', 'single_content' ], true ) ) {
             $post = get_post( $post_id );
-            if ( ! $post instanceof \WP_Post || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'edit_post', $post_id ) ) {
+            if ( ! $post instanceof \WP_Post || ! current_user_can( 'edit_post', $post_id ) ) {
                 wp_send_json_error( [ 'message' => 'Content not found or inaccessible.' ], 403 );
                 return;
             }

@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace HWS\BaseTools\MaintenanceMode;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\PluginRuntime\PluginMetadata;
 
@@ -99,12 +101,13 @@ final class MaintenanceModeAdmin {
     }
 
     private static function authorize(): void {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( PluginMetadata::ADMIN_CAPABILITY ) ) {
-            wp_send_json_error( [ 'message' => 'You are not allowed to manage maintenance mode.' ], 403 );
-        }
-        $nonce = isset( $_POST['nonce'] ) ? (string) wp_unslash( $_POST['nonce'] ) : '';
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $nonce, self::NONCE_ACTION ) ) {
-            wp_send_json_error( [ 'message' => 'The maintenance request expired. Refresh the page and try again.' ], 403 );
-        }
+        AjaxGuard::require_access(
+            PluginMetadata::ADMIN_CAPABILITY,
+            self::NONCE_ACTION,
+            false,
+            capability_error: [ [ 'message' => 'You are not allowed to manage maintenance mode.' ], 403 ],
+            nonce_error: [ [ 'message' => 'The maintenance request expired. Refresh the page and try again.' ], 403 ],
+            nonce_source: static fn() => isset( $_POST['nonce'] ) ? (string) wp_unslash( $_POST['nonce'] ) : ''
+        );
     }
 }

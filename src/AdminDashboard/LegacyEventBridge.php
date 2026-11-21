@@ -2,6 +2,8 @@
 
 namespace HWS\BaseTools\AdminDashboard;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\CoreContracts\ModuleInterface;
 
 final class LegacyEventBridge implements ModuleInterface {
@@ -112,12 +114,7 @@ final class LegacyEventBridge implements ModuleInterface {
      */
     public static function handle_modify_wp_config_constants() {
         try {
-            if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-                wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-                return;
-            }
-
-            \hws_base_tools\hws_require_ajax_nonce_or_error();
+            AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
             $constants = isset( $_POST['constants'] ) ? $_POST['constants'] : [];
             if ( empty( $constants ) ) {
@@ -160,12 +157,7 @@ final class LegacyEventBridge implements ModuleInterface {
      */
     public static function handle_toggle_snippet() {
         try {
-            if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-            \hws_base_tools\hws_require_ajax_nonce_or_error();
+            AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
             if ( ! isset( $_POST['snippet_id'] ) || empty( $_POST['snippet_id'] ) ) {
                 wp_send_json_error( 'No snippet ID provided' );

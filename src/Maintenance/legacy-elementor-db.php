@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 /**
  * Elementor Database Auto-Updater with Cron Management
  *
@@ -100,12 +102,7 @@ function hws_get_elementor_db_state_payload() {
  * AJAX: Return a fresh Elementor DB updater state payload.
  */
 function hws_elementor_db_ajax_get_state() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-        return;
-    }
-
-    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
+    AjaxGuard::require_access( 'manage_options', 'hws_elementor_db_nonce', 'nonce', capability_error: [ 'Unauthorized' ] );
 
     wp_send_json_success( hws_get_elementor_db_state_payload() );
 }
@@ -284,12 +281,7 @@ function hws_elementor_db_updater_run() {
  * AJAX: Toggle auto-update enabled/disabled
  */
 function hws_elementor_db_ajax_toggle() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-        return;
-    }
-
-    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
+    AjaxGuard::require_access( 'manage_options', 'hws_elementor_db_nonce', 'nonce', capability_error: [ 'Unauthorized' ] );
 
     $enabled = get_option( Elementor_DB_Updater_Config::OPT_ENABLED, true );
     $new_state = ! $enabled;
@@ -318,12 +310,7 @@ function hws_elementor_db_ajax_toggle() {
  * AJAX: Update interval settings
  */
 function hws_elementor_db_ajax_update_settings() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-        return;
-    }
-
-    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
+    AjaxGuard::require_access( 'manage_options', 'hws_elementor_db_nonce', 'nonce', capability_error: [ 'Unauthorized' ] );
 
     $interval = isset( $_POST['interval'] ) ? (int) $_POST['interval'] : Elementor_DB_Updater_Config::DEFAULT_INTERVAL;
     $interval = max( 1, min( 30, $interval ) ); // Clamp between 1-30 days
@@ -347,12 +334,7 @@ function hws_elementor_db_ajax_update_settings() {
  * AJAX: Run database update now
  */
 function hws_elementor_db_ajax_run_now() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-        return;
-    }
-
-    \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( 'hws_elementor_db_nonce', 'nonce' );
+    AjaxGuard::require_access( 'manage_options', 'hws_elementor_db_nonce', 'nonce', capability_error: [ 'Unauthorized' ] );
 
     $report = hws_elementor_db_updater_run();
 

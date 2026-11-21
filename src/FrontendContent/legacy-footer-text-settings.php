@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -74,12 +76,7 @@ function maybe_purge_footer_text_cache_after_acf_save( $post_id ): void {
 }
 
 function ajax_save_footer_text_settings() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-        return;
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled   = ! empty( $_POST['enabled'] );
     $template  = isset( $_POST['template'] ) ? sanitize_key( wp_unslash( $_POST['template'] ) ) : 'whisper';
@@ -133,12 +130,7 @@ function ajax_save_footer_text_settings() {
 }
 
 function ajax_save_footer_text_targeted_injection() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-        return;
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled   = ! empty( $_POST['enabled'] );
     $selector  = isset( $_POST['selector'] ) ? trim( wp_strip_all_tags( wp_unslash( $_POST['selector'] ) ) ) : '';

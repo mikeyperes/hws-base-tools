@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 /**
  * HWS Base Tools - UI Cleanup Settings
  *
@@ -592,14 +594,15 @@ function display_settings_ui_cleanup() {
  */
 function ajax_toggle_ui_cleanup() {
     // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Invalid nonce' );
-    }
-
-    // Check permissions
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
+    AjaxGuard::require_access(
+        'manage_options',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized' ],
+        nonce_error: [ 'Invalid nonce' ],
+        nonce_first: true,
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     // Get option key
     $option = isset( $_POST['option'] ) ? sanitize_key( $_POST['option'] ) : '';
@@ -622,14 +625,15 @@ function ajax_toggle_ui_cleanup() {
  */
 function ajax_ui_cleanup_bulk() {
     // Verify nonce
-    if ( ! isset( $_POST['nonce'] ) || ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::verify_explicit_nonce( $_POST['nonce'], HWS_AJAX_NONCE ) ) {
-        wp_send_json_error( 'Invalid nonce' );
-    }
-
-    // Check permissions
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
+    AjaxGuard::require_access(
+        'manage_options',
+        HWS_AJAX_NONCE,
+        false,
+        capability_error: [ 'Unauthorized' ],
+        nonce_error: [ 'Invalid nonce' ],
+        nonce_first: true,
+        nonce_source: static fn() => $_POST['nonce'] ?? null
+    );
 
     $mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : '';
     $options = get_ui_cleanup_options();

@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 /**
  * Comments Management System
  *
@@ -132,11 +134,7 @@ function get_comments_stats() {
  * AJAX: Get current stats
  */
 function ajax_get_comments_stats() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_send_json_success( get_comments_stats() );
 }
@@ -145,11 +143,7 @@ function ajax_get_comments_stats() {
  * AJAX: Batch toggle comments on/off
  */
 function toggle_wordpress_comments_batch() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     global $wpdb;
 
@@ -221,11 +215,7 @@ function toggle_wordpress_comments_batch() {
  * AJAX: Batch toggle pingbacks on/off
  */
 function toggle_wordpress_pingbacks_batch() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     global $wpdb;
 
@@ -301,11 +291,7 @@ function check_users_must_be_registered_to_comment() {
  * AJAX: Batch delete comments (spam, pending, or all)
  */
 function ajax_delete_comments_batch() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     global $wpdb;
 

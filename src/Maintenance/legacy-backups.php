@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 /**
  * Backup Detection & Auto-Cleanup System
  *
@@ -178,11 +180,7 @@ function hws_backup_cleaner_get_cron_status() {
  * AJAX: Delete backups
  */
 function ajax_delete_backups() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $delete_all = isset( $_POST['delete_all'] ) && $_POST['delete_all'];
     $plugin = isset( $_POST['plugin'] ) ? sanitize_text_field( $_POST['plugin'] ) : '';
@@ -233,11 +231,7 @@ function ajax_delete_backups() {
  * AJAX: Toggle backup cleaner
  */
 function ajax_backup_cleaner_toggle() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled = isset( $_POST['enabled'] ) && $_POST['enabled'] === '1';
     update_option( Backup_Cleaner_Config::OPT_ENABLED, $enabled );
@@ -260,11 +254,7 @@ function ajax_backup_cleaner_toggle() {
  * AJAX: Update backup cleaner settings
  */
 function ajax_backup_cleaner_update() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $days = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : Backup_Cleaner_Config::DEFAULT_DAYS;
     $days = max( 1, min( 30, $days ) );
@@ -283,11 +273,7 @@ function ajax_backup_cleaner_update() {
  * AJAX: Run backup cleaner now
  */
 function ajax_backup_cleaner_run() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $report = hws_backup_cleaner_run();
 

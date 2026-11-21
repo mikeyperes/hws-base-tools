@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use HWS\BaseTools\AdminDashboard\DashboardRegistry;
 use HWS\BaseTools\BrandAssets\PrimaryAuthorImage;
 use HWS\BaseTools\Security\RemoteActionPolicy;
@@ -541,11 +543,7 @@ function hws_normalize_dashboard_tab_id( string $tab_id ): string {
 }
 
 function ajax_load_dashboard_tab() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( Config::$settings_page_capability, \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $tab_id = isset( $_POST['tab'] ) ? hws_normalize_dashboard_tab_id( (string) wp_unslash( $_POST['tab'] ) ) : hws_normalize_dashboard_tab_id( '' );
 
@@ -2525,11 +2523,7 @@ function hws_execute_quick_setup( array $inputs = [] ) {
  * AJAX: Quick Setup
  */
 function ajax_quick_setup() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $inputs = [];
     if ( isset( $_POST["inputs"] ) && is_array( $_POST["inputs"] ) ) {
@@ -2545,21 +2539,13 @@ function ajax_quick_setup() {
 }
 
 function ajax_get_overview_state() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_send_json_success( hws_get_overview_state_payload() );
 }
 
 function ajax_save_site_type() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $site_type = isset( $_POST['site_type'] ) ? hws_sanitize_site_type( (string) wp_unslash( $_POST['site_type'] ) ) : '';
 
@@ -2576,11 +2562,7 @@ function ajax_save_site_type() {
 }
 
 function ajax_save_site_basics() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $title     = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
     $tagline   = isset( $_POST['tagline'] ) ? sanitize_text_field( wp_unslash( $_POST['tagline'] ) ) : '';
@@ -2594,11 +2576,7 @@ function ajax_save_site_basics() {
 }
 
 function ajax_test_site_basics() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized.' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_send_json_success( hws_test_site_basics_state() );
 }
@@ -2608,11 +2586,7 @@ function ajax_test_site_basics() {
  * AJAX: Toggle secret URLs
  */
 function ajax_toggle_secret_urls() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     if ( $enabled && ! RemoteActionPolicy::legacy_get_routes_allowed() ) {
@@ -2629,11 +2603,7 @@ function ajax_toggle_secret_urls() {
  * AJAX: Toggle secret setup URL
  */
 function ajax_toggle_secret_setup() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     if ( $enabled && ! RemoteActionPolicy::legacy_get_routes_allowed() ) {
@@ -2650,11 +2620,7 @@ function ajax_toggle_secret_setup() {
  * AJAX: Toggle secret permalinks purge URL
  */
 function ajax_toggle_secret_permalinks() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $enabled = isset( $_POST['enabled'] ) && intval( $_POST['enabled'] ) === 1;
     if ( $enabled && ! RemoteActionPolicy::legacy_get_routes_allowed() ) {
@@ -2671,11 +2637,7 @@ function ajax_toggle_secret_permalinks() {
  * AJAX: Enable auto-updates for ALL plugins
  */
 function ajax_enable_all_auto_updates() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     // Get ALL plugins
     $all_plugins = array_keys( get_plugins() );
@@ -2731,11 +2693,7 @@ function ajax_toggle_all_debug() {
  * AJAX: Save the master secret password
  */
 function ajax_save_master_secret() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $new_secret = isset( $_POST['secret'] ) ? sanitize_text_field( wp_unslash( $_POST['secret'] ) ) : '';
 
@@ -4383,11 +4341,7 @@ function hws_sync_brand_asset_to_wp_core( string $key, int $attachment_id ): str
 }
 
 function ajax_save_brand_asset() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $key           = isset( $_POST['key'] ) ? hws_normalize_brand_asset_key( (string) wp_unslash( $_POST['key'] ) ) : '';
     $attachment_id = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
@@ -4420,11 +4374,7 @@ function ajax_save_brand_asset() {
 }
 
 function ajax_clear_brand_asset() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $key        = isset( $_POST['key'] ) ? hws_normalize_brand_asset_key( (string) wp_unslash( $_POST['key'] ) ) : '';
     $definition = hws_get_brand_asset_definition( $key );
@@ -4450,11 +4400,7 @@ function ajax_clear_brand_asset() {
 }
 
 function ajax_save_brand_gallery() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $raw_ids = $_POST['attachment_ids'] ?? [];
     $raw_ids = is_array( $raw_ids ) ? wp_unslash( $raw_ids ) : wp_unslash( (string) $raw_ids );
@@ -4494,11 +4440,7 @@ function ajax_save_brand_gallery() {
 }
 
 function ajax_clear_brand_gallery() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     if ( function_exists( __NAMESPACE__ . '\\hws_update_brand_gallery_ids' ) ) {
         hws_update_brand_gallery_ids( [] );
@@ -4513,11 +4455,7 @@ function ajax_clear_brand_gallery() {
 }
 
 function ajax_save_brand_colors() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $current           = hws_get_brand_colors_payload();
     $primary_color     = isset( $_POST['primary_color'] )
@@ -4551,21 +4489,13 @@ function ajax_save_brand_colors() {
 }
 
 function ajax_get_elementor_colors() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_send_json_success( hws_get_elementor_color_assets() );
 }
 
 function ajax_copy_favicon() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     $source = isset( $_POST['source'] ) ? sanitize_key( $_POST['source'] ) : '';
 

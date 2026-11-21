@@ -1,5 +1,7 @@
 <?php namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 /**
  * Log File Cleaner with Cron Management
  *
@@ -90,12 +92,7 @@ add_action( 'init', __NAMESPACE__ . '\\hws_log_cleaner_init' );
  * AJAX: Return fresh dashboard state for the log cleaner tab.
  */
 function hws_log_cleaner_ajax_get_state() {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-        return;
-    }
-
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
     wp_send_json_success( hws_log_cleaner_get_status() );
 }
@@ -226,12 +223,7 @@ function hws_log_cleaner_delete_file( $path ) {
  */
 function hws_log_cleaner_ajax_toggle() {
     try {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized' );
-            return;
-        }
-
-        hws_require_ajax_nonce_or_error();
+        AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
         $status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : '';
         $enabled = ( $status === 'enabled' );
@@ -256,12 +248,7 @@ function hws_log_cleaner_ajax_toggle() {
  */
 function hws_log_cleaner_ajax_update_settings() {
     try {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => 'Unauthorized' ] );
-            return;
-        }
-
-        hws_require_ajax_nonce_or_error();
+        AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ [ 'message' => 'Unauthorized' ] ], nonce_source: AjaxGuard::CORE_NONCE );
 
         $interval   = isset( $_POST['interval'] ) ? absint( $_POST['interval'] ) : Log_Cleaner_Config::DEFAULT_INTERVAL;
         $size_limit = isset( $_POST['size_limit'] ) ? absint( $_POST['size_limit'] ) : Log_Cleaner_Config::DEFAULT_SIZE_LIMIT;
@@ -294,12 +281,7 @@ function hws_log_cleaner_ajax_update_settings() {
  */
 function hws_log_cleaner_ajax_delete_debug() {
     try {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized' );
-            return;
-        }
-
-        hws_require_ajax_nonce_or_error();
+        AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
         $log_paths = Log_Cleaner_Config::get_log_paths();
         $path = $log_paths['debug_log'];
@@ -327,12 +309,7 @@ function hws_log_cleaner_ajax_delete_debug() {
  */
 function hws_log_cleaner_ajax_delete_error() {
     try {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized' );
-            return;
-        }
-
-        hws_require_ajax_nonce_or_error();
+        AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
         $log_paths = Log_Cleaner_Config::get_log_paths();
         $path = $log_paths['error_log'];
@@ -360,12 +337,7 @@ function hws_log_cleaner_ajax_delete_error() {
  */
 function hws_log_cleaner_ajax_run_now() {
     try {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized' );
-            return;
-        }
-
-        hws_require_ajax_nonce_or_error();
+        AjaxGuard::require_access( 'manage_options', \hws_base_tools\HWS_AJAX_NONCE, 'nonce', capability_error: [ 'Unauthorized' ], nonce_source: AjaxGuard::CORE_NONCE );
 
         $report = hws_log_cleaner_run();
 

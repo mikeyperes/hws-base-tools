@@ -4,6 +4,8 @@ declare( strict_types=1 );
 
 namespace HWS\BaseTools\Founders;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\CoreContracts\ModuleInterface;
 use Hexa\PluginCore\ShortcodeRegistry\ShortcodeBreakdown;
 use Hexa\PluginCore\SmartSearch\SmartSearchRenderer;
@@ -29,12 +31,13 @@ final class FoundersTab implements ModuleInterface {
     }
 
     private static function guard(): void {
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => 'You are not allowed to change these settings.' ], 403 );
-        }
-        if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::check_request_nonce( self::NONCE, 'nonce', false ) ) {
-            wp_send_json_error( [ 'message' => 'This page expired. Reload it and try again.' ], 403 );
-        }
+        AjaxGuard::require_access(
+            'manage_options',
+            self::NONCE,
+            'nonce',
+            capability_error: [ [ 'message' => 'You are not allowed to change these settings.' ], 403 ],
+            nonce_error: [ [ 'message' => 'This page expired. Reload it and try again.' ], 403 ]
+        );
     }
 
     private static function saved( string $message ): void {

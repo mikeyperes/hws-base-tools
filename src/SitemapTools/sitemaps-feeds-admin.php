@@ -2,6 +2,8 @@
 
 namespace hws_base_tools;
 
+use Hexa\PluginCore\WpAdminAjax\AjaxGuard;
+
 use Hexa\PluginCore\WpAdminComponents\CoreUi;
 use HWS\BaseTools\AdminDashboard\SettingsAutosave;
 use HWS\BaseTools\SitemapTools\FeedListShortcode;
@@ -15,10 +17,13 @@ defined( 'ABSPATH' ) || exit;
 /** Settings, Sitemaps and Settings, RSS Feeds: every sitemap or feed, its check and what it contains; feeds also have an on/off switch. */
 
 function hws_sitemap_feeds_guard(): void {
-    if ( ! \Hexa\PluginCore\WpAdminAjax\AjaxGuard::allows( Config::$settings_page_capability ) ) {
-        wp_send_json_error( [ 'message' => 'You are not allowed to change these settings.' ], 403 );
-    }
-    hws_require_ajax_nonce_or_error();
+    AjaxGuard::require_access(
+        Config::$settings_page_capability,
+        \hws_base_tools\HWS_AJAX_NONCE,
+        'nonce',
+        capability_error: [ [ 'message' => 'You are not allowed to change these settings.' ], 403 ],
+        nonce_source: AjaxGuard::CORE_NONCE
+    );
 }
 
 /** Adds the display dates to a stored check result. */
