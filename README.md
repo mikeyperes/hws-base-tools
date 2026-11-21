@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.65.0. Core editors can edit flexible-content layouts, grouped and seamless clones, and map locations using the existing WordPress field storage.
+
 - The testimonial quote and user-profile migration tests exercise native Hexa WP Core Fields with WordPress metadata fixtures.
 
 - Website Settings, field diagnostics, and View As User identify Core fields.
