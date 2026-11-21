@@ -121,6 +121,16 @@ $git_head = "ref: refs/heads/main\n";
 file_put_contents( $runtime_dir . '/.git/HEAD', $git_head );
 
 $updater = new GitHubPluginUpdater( $config );
+$download_refusal = $updater->pre_download( false, 'update.zip', null, [ 'plugin' => $runtime ] );
+updater_activation_expect(
+    is_wp_error( $download_refusal ) && 'hexa_plugin_core_git_checkout' === $download_refusal->get_error_code()
+    && 'This plugin copy is updated through Git.' === $download_refusal->get_error_message(),
+    'the native bulk updater refuses a Git copy before downloading the package'
+);
+updater_activation_expect(
+    'cached.zip' === $updater->pre_download( 'cached.zip', 'update.zip', null, [ 'plugin' => 'another/another.php' ] ),
+    'the download hook leaves other plugins’ update packages alone'
+);
 $refusal = $updater->pre_install( true, $hook );
 updater_activation_expect(
     is_wp_error( $refusal ) && 'This plugin copy is updated through Git.' === $refusal->get_error_message(),
@@ -154,6 +164,10 @@ file_put_contents( $extracted . '/hws-base-tools.php', 'new plugin version' );
 file_put_contents( $runtime_dir . '/hws-base-tools.php', 'previous plugin version' );
 file_put_contents( $runtime_dir . '/.DS_Store', 'live plugin marker' );
 
+updater_activation_expect(
+    false === $updater->pre_download( false, 'update.zip', null, $hook ),
+    'the native updater permits a normal installation to download its package'
+);
 updater_activation_expect( true === $updater->pre_install( true, $hook ), 'the native updater permits a normal installed copy' );
 $outside_package = $updater->source_selection( $runtime_dir, $package_root, null, $hook );
 updater_activation_expect(

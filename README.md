@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.65.2. WordPress refuses updates of Git copies before downloading, even when another plugin overrides the pre-install response.
+
 - Bundles Hexa WP Core 3.65.1. WordPress and the Update Center direct Git copies to Git and clean ignored metadata from the downloaded update package. Base Tools uses Core for this check and cleanup.
 
 - Bundles Hexa WP Core 3.65.0. Core editors can edit flexible-content layouts, grouped and seamless clones, and map locations using the existing WordPress field storage.

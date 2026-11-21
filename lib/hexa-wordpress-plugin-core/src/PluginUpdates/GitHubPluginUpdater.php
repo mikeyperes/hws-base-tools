@@ -20,6 +20,7 @@ final class GitHubPluginUpdater implements ModuleInterface {
     public function register(): void {
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'check_for_update' ] );
         add_filter( 'plugins_api', [ $this, 'plugin_info' ], 10, 3 );
+        add_filter( 'upgrader_pre_download', [ $this, 'pre_download' ], PHP_INT_MAX, 4 );
         add_filter( 'upgrader_pre_install', [ $this, 'pre_install' ], 9, 2 );
         add_filter( 'upgrader_source_selection', [ $this, 'source_selection' ], 10, 4 );
         add_filter( 'upgrader_post_install', [ $this, 'post_install' ], 10, 3 );
@@ -132,6 +133,19 @@ final class GitHubPluginUpdater implements ModuleInterface {
             ],
             'download_link'  => $package['package'],
         ];
+    }
+
+    /** Refuses to download an update for an installed plugin Git copy. */
+    public function pre_download( mixed $reply, mixed $package, mixed $upgrader, array $hook_extra ): mixed {
+        if ( is_wp_error( $reply ) || ! $this->matches_plugin_update_target( $hook_extra ) ) {
+            return $reply;
+        }
+
+        // Bug: A later pre-install filter can discard the Git checkout refusal.
+        // Fix: WordPress sees the refusal when it asks for the package.
+        // Why this way: WordPress exits that update before running any install hooks.
+        // Test: tests/plugin-update-activation.php
+        return UpdaterFilesystem::git_checkout_update_error( $this->config ) ?? $reply;
     }
 
     /** Protects installed Git copies before WordPress can replace their files. */
