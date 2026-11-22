@@ -21,6 +21,7 @@
 ### Existing AJAX guards
 
 - **Use:** Run a handler’s capability and nonce guards through Core while retaining the action’s existing check order and failure response.
+- **Code:** `WpAdminAjax\AjaxGuard::require_access()` and the existing capability and nonce helpers.
 
 ### Legacy snippet activation
 
