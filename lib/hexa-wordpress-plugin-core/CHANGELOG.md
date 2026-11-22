@@ -1,3 +1,6 @@
+## 3.67.0 - 2026-11-21
+
+- Share the existing PR Wire syndication feed, deletion manifest and author profile contracts.
 ## 3.66.3 - 2026-11-21
 
 - Remove the three temporary AJAX compatibility methods once all active plugin callers have migrated.

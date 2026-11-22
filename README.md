@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Bundles Hexa WP Core 3.67.0 with the shared PR Wire syndication formats.
+
 - Complete admin AJAX guards use Hexa WP Core 3.66.3 while retaining action names, role requirements, nonce fields, and responses.
 
 - Uses Hexa WP Core 3.66.0 for the existing snippet activation and debug logging, while retaining the plugin’s option keys and settings controls.
