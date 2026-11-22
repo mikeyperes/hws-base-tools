@@ -6,14 +6,12 @@ namespace HWS\BaseTools\ContentTypes;
 
 use Hexa\PluginCore\ContentTypes\ContentTypeRegistrar;
 use Hexa\PluginCore\ContentTypes\ContentTypeRegistry;
+use HWS\BaseTools\ContentTypes\Organization\OrganizationContentType;
 
 defined( 'ABSPATH' ) || exit;
 
 final class SharedContentTypes {
-    /**
-     * @deprecated Organization is registered by SFPF Person Profile Integration.
-     *             The constant remains for integrations that reference the key.
-     */
+    /** Organization is registered by the shared Organization provider. */
     public const ORGANIZATION = 'organization';
     public const TESTIMONIAL = 'testimonial';
     public const TEAM_MEMBER = 'team-member';
@@ -56,6 +54,7 @@ final class SharedContentTypes {
             ]
         );
         self::$registry->add_many( self::core_definitions() );
+        OrganizationContentType::register();
         self::migrate_legacy_settings();
         return self::$registry;
     }

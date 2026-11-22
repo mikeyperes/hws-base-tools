@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Owns Organization registration on sites with an eligible saved configuration. Existing SFPF editor controls and SMC fields stay in use.
+
 - Bundles Hexa WP Core 3.67.0 with the shared PR Wire syndication formats.
 
 - Complete admin AJAX guards use Hexa WP Core 3.66.3 while retaining action names, role requirements, nonce fields, and responses.

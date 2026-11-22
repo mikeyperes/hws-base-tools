@@ -18,6 +18,8 @@
 
 ## Features
 
+- Existing post-type settings and rewrite signatures can stay in a feature plugin when a shared provider takes over registration.
+
 ### Press-release syndication
 
 - **Use:** Publish and read existing PR Wire feeds, deletion manifests and author profiles with shared formats. See [the wire contract](docs/press-release-syndication.md).
