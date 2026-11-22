@@ -9,6 +9,8 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
+- Restores the WordPress REST fields declared by managed field groups through Hexa WP Core.
+
 - Owns Organization registration and its settings independently of feature plugins. Existing Organization values are copied once from the active SFPF configuration.
 
 - Leaves the backup-plugin blocker off where no setting has been saved. Existing selections stay in use.

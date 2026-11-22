@@ -1,3 +1,7 @@
+## 3.67.2 - 2026-11-21
+
+- Restore the legacy WordPress REST field property for Core-managed groups with REST exposure enabled.
+
 ## 3.67.1 - 2026-11-21
 
 - Preserve existing post-type controls and rewrite signatures during an external ownership transfer.
