@@ -45,13 +45,22 @@ final class BackupPluginBlocker {
         add_action( 'admin_init', [ self::class, 'deactivate_installed' ], 0 );
     }
 
-    /** Preserve the disabled state when a site has never saved the switch. */
-    public static function seed_default(): void {
+    /** Keep the historical on default when Base Tools is activated for the first time. */
+    public static function seed_on_activation(): void {
+        // Bug: Seeding every missing switch as off also changed first-time installations.
+        // Fix: Seed on during activation only when the existing runtime option has never been initialized.
+        // Why this way: WordPress skips activation hooks on updates, and the runtime option distinguishes reactivation from first activation.
+        // Test: tests/shared-content-types-unit.php.
+        self::seed_default( null === get_option( 'hws_secret_urls_enabled', null ) );
+    }
+
+    /** Initialize an unset switch while preserving any saved selection. */
+    public static function seed_default( bool $enabled = false ): void {
         // Bug: An upgrade could enable the blocker on a site that never chose it.
-        // Fix: Seed the missing switch as off and keep any explicit selection.
+        // Fix: Seed the missing switch as off during normal boot and keep any explicit selection.
         // Why this way: An update must not deactivate existing backup plugins or remove their cron hooks.
         if ( null === get_option( self::FEATURE_OPTION, null ) ) {
-            add_option( self::FEATURE_OPTION, 0 );
+            add_option( self::FEATURE_OPTION, (int) $enabled );
         }
     }
 

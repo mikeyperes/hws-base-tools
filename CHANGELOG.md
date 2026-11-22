@@ -1,3 +1,7 @@
+# 13.74.32 - 2026-11-21
+
+- Keep the backup blocker on by default for first-time activation. Existing installs with no saved choice default to off.
+
 # 13.74.9 - 2026-11-13
 
 - Bundles Hexa WP Core 3.61.0 (schema structures registry, Person profile schema nodes).
