@@ -7,6 +7,7 @@ use Hexa\PluginCore\EntitySources\EntityFieldInventoryRenderer;
 use Hexa\PluginCore\FieldStructures\AcfFieldGroupRenderer;
 use HWS\BaseTools\AcfFields\SharedAcfStructures;
 use HWS\BaseTools\ContentTypes\SharedContentTypes;
+use HWS\BaseTools\ContentTypes\Organization\OrganizationContentType;
 use HWS\BaseTools\SiteProfile\PrimaryEntityIntegration;
 
 defined( 'ABSPATH' ) || exit;
@@ -19,6 +20,14 @@ final class ContentTypesTab {
                 'title' => 'Custom Post Types',
                 'description' => 'HWS-owned shared content types. Organization fields and schema are extended by SMC; Knowledge Base and Resources are owned by SMP Publication.',
                 'persist_prefix' => 'hws',
+            ]
+        );
+
+        echo ( new ContentTypeRenderer() )->render(
+            OrganizationContentType::registry(),
+            [
+                'title' => 'Organization',
+                'persist_prefix' => 'hws-organization',
             ]
         );
 

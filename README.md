@@ -9,7 +9,9 @@ Shared WordPress site configuration, administration, and operational tooling for
 
 ## Features
 
-- Owns Organization registration on sites with an eligible saved configuration. Existing SFPF editor controls and SMC fields stay in use.
+- Owns Organization registration and its settings independently of feature plugins. Existing Organization values are copied once from the active SFPF configuration.
+
+- Leaves the backup-plugin blocker off where no setting has been saved. Existing selections stay in use.
 
 - Bundles Hexa WP Core 3.67.0 with the shared PR Wire syndication formats.
 

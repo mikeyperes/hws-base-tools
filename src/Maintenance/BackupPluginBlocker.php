@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Backup plugin blocker: keeps All-in-One WP Migration (and its extensions) and
- * UpdraftPlus off the site. Default on. Every block is silent: no notice
+ * UpdraftPlus off the site when enabled. Every block is silent: no notice
  * names the block or this plugin.
  *
  * While on, installing either plugin (upload, plugin search or WP-CLI) fails,
@@ -45,10 +45,13 @@ final class BackupPluginBlocker {
         add_action( 'admin_init', [ self::class, 'deactivate_installed' ], 0 );
     }
 
-    /** On by default: a site that never set the switch (new install or rollout) gets it on once. */
+    /** Preserve the disabled state when a site has never saved the switch. */
     public static function seed_default(): void {
+        // Bug: An upgrade could enable the blocker on a site that never chose it.
+        // Fix: Seed the missing switch as off and keep any explicit selection.
+        // Why this way: An update must not deactivate existing backup plugins or remove their cron hooks.
         if ( null === get_option( self::FEATURE_OPTION, null ) ) {
-            add_option( self::FEATURE_OPTION, 1 );
+            add_option( self::FEATURE_OPTION, 0 );
         }
     }
 

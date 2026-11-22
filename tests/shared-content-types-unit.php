@@ -21,6 +21,12 @@ final class WP_Post_Type {
 }
 
 function get_current_blog_id(): int { return $GLOBALS['blog_id'] ?? 1; }
+function is_multisite(): bool { return false; }
+function add_option( string $key, mixed $value ): bool {
+    if ( array_key_exists( $key, $GLOBALS['options'] ) ) return false;
+    $GLOBALS['options'][ $key ] = $value;
+    return true;
+}
 
 function get_option( string $key, mixed $default = false ): mixed {
     return $GLOBALS['options'][ $key ] ?? $default;
@@ -56,6 +62,7 @@ $hooks = [];
 
 require_once __DIR__ . '/bootstrap-fields.php';
 require_once dirname( __DIR__ ) . '/src/ContentTypes/Organization/OrganizationContentType.php';
+require_once dirname( __DIR__ ) . '/src/Maintenance/BackupPluginBlocker.php';
 require_once dirname( __DIR__ ) . '/src/ContentTypes/SharedContentTypes.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/QuoteRepeaterDefinition.php';
 require_once dirname( __DIR__ ) . '/src/AcfFields/LegacySmp/register-acf-testimonial.php';
@@ -83,25 +90,41 @@ $expect(
 OrganizationContentType::register_type();
 $expect( ! post_type_exists( 'organization' ), 'standalone sites without an Organization setting preserve the disabled state' );
 
-eval( 'namespace SFPF\PersonProfile\ContentTypes\Organization; final class OrganizationContentType {}' );
+$options['active_plugins'] = [ 'sfpf-person-profile-integration/initialization.php' ];
 $options['sfpf_content_type_settings'] = [ 'organization' => [
     'enabled' => 1, 'singular' => 'Company', 'plural' => 'Companies', 'rewrite_slug' => 'company',
 ] ];
-$expect( OrganizationContentType::provides_registration(), 'SFPF can use the active provider for the existing enabled type' );
+OrganizationContentType::migrate_person_profile_settings();
+$owned = $options[OrganizationContentType::SETTINGS_OPTION]['organization'];
+$expect( $owned['enabled'] === 1 && $owned['rewrite_slug'] === 'company', 'Base Tools saves current Organization settings in its own option' );
+$options['sfpf_content_type_settings']['organization']['rewrite_slug'] = 'changed-legacy';
+OrganizationContentType::migrate_person_profile_settings();
+$expect( $options[OrganizationContentType::SETTINGS_OPTION]['organization'] === $owned, 'legacy settings never overwrite the Base Tools copy' );
+unset( $options['active_plugins'], $options['sfpf_content_type_settings'] );
 OrganizationContentType::register_type();
 $expect( ( $registered['organization']['labels']['name'] ?? '' ) === 'Companies'
     && ( $registered['organization']['rewrite']['slug'] ?? '' ) === 'company'
     && ( $registered['organization']['has_archive'] ?? '' ) === 'organizations',
-    'SFPF labels, URL and archive settings stay in use' );
-unset( $registered['organization'], $options['sfpf_content_type_settings'] );
+    'Organization registers with the same settings when SFPF is absent' );
+unset( $registered['organization'], $options[OrganizationContentType::SETTINGS_OPTION] );
 $custom = [ 'labels' => [ 'name' => 'Affiliate Organizations', 'singular_name' => 'Affiliate Organization' ], 'has_archive' => false, 'rewrite' => [ 'slug' => 'organization', 'with_front' => true ] ];
 $options['hws_organization_registration_args'] = $custom;
+$options[OrganizationContentType::SETTINGS_OPTION] = [ 'organization' => [ 'enabled' => 1 ] ];
 OrganizationContentType::register_type();
 $expect( $registered['organization'] === $custom, 'the adopted CPT UI registration keeps every supplied argument' );
 $expect( OrganizationContentType::skip_migrated_cptui_type( false ), 'CPT UI skips Organization only after Base Tools registers it' );
 $blog_id=2;
 $expect( ! OrganizationContentType::skip_migrated_cptui_type( false ), 'the CPT UI skip does not leak to another multisite blog' );
-unset( $blog_id, $registered['organization'], $options['hws_organization_registration_args'] );
+unset( $blog_id, $registered['organization'], $options['hws_organization_registration_args'], $options[OrganizationContentType::SETTINGS_OPTION] );
+
+$blocker = \HWS\BaseTools\Maintenance\BackupPluginBlocker::class;
+$backup_hooks = $hooks;
+$blocker::seed_default();
+$expect( $options[$blocker::FEATURE_OPTION] === 0 && $hooks === $backup_hooks, 'missing backup blocker stays off without registering deactivation or cron hooks' );
+$options[$blocker::FEATURE_OPTION] = 1;
+$blocker::seed_default();
+$expect( $options[$blocker::FEATURE_OPTION] === 1, 'explicit backup-blocker choices are preserved' );
+unset( $options[$blocker::FEATURE_OPTION] );
 
 $testimonial_group = \hws_base_tools\enable_acf_testimonial();
 $testimonial_fields = array_column( $testimonial_group['fields'] ?? [], null, 'name' );
@@ -139,7 +162,7 @@ foreach ( $definitions as $post_type => $definition ) {
 SharedContentTypes::boot();
 $init_hooks = array_values( array_filter( $hooks, static fn( array $hook ): bool => 'init' === $hook[0] ) );
 $expect(
-    2 === count( $init_hooks ) && [ 4, 0 ] === array_column( $init_hooks, 2 ),
+    3 === count( $init_hooks ) && [ 3, 4, 0 ] === array_column( $init_hooks, 2 ),
     'existing shared types stay at priority zero and Organization stays at priority four'
 );
 $expect( str_contains( (string) file_get_contents( dirname( __DIR__ ) . '/lib/hexa-wordpress-plugin-core/src/ContentTypes/ContentTypeRegistry.php' ), 'FieldGroups::ready' ), 'registry registers its field groups through Hexa WP Core Fields (ACF or native)' );
